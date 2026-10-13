@@ -1,0 +1,156 @@
+/* rope: grayscale only (R5.6); line style and weight carry the meaning (R5.7). Solid = query, dashed = key, dotted = before the turn,
+   thick gray bar = the shadow (one pair's share of the score), thick box = where the position enters, dots = turns over the text,
+   hollow = turns at the training length, thick stem = past the angles met in training. Green and red appear only for the challenge's
+   goal (the kit's .goal and cmpChart). Every element with cursor:help carries a tooltip (R1.1). */
+.rp-graph{padding:10px 12px 12px;min-width:0}
+.rp-vis{min-width:0;overflow:hidden}
+.rp-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin:0 0 6px}
+.rp-note{margin:6px 0 0;font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.rp-note b{color:var(--ink);font-weight:650}
+.rp-note .rp-cond{color:var(--ink-3)}
+.rp-svg{display:block;max-width:100%;height:auto;overflow:hidden}
+.rp-svg text{font-family:var(--font-mono);font-size:11px;fill:var(--ink-2)}
+.rp-svg text.rp-b{fill:var(--ink);font-weight:650}
+.rp-svg text.rp-mut{fill:var(--ink-3)}
+.rp-svg text.rp-num{font-size:11.5px;fill:var(--ink)}
+.rp-svg text.rp-sm{font-size:10px}
+/* dials and arrows */
+.rp-dial{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.rp-dial.rp-on{stroke:var(--ink);stroke-width:2.6}
+.rp-q{stroke:var(--ink);stroke-width:3;stroke-linecap:round;fill:none}
+.rp-qs{stroke:var(--ink-2);stroke-width:1.6;stroke-linecap:round;fill:none}
+.rp-k{stroke:var(--ink-2);stroke-width:3;stroke-dasharray:6 4;fill:none}
+.rp-c{stroke:var(--ink-3);stroke-width:2;stroke-dasharray:1.5 3.5;stroke-linecap:round;fill:none}
+.rp-svg .rp-hd{stroke-dasharray:none;stroke-width:1;stroke-linejoin:round}
+.rp-q.rp-hd{fill:var(--ink);stroke:var(--ink)}
+.rp-qs.rp-hd{fill:var(--ink-2);stroke:var(--ink-2)}
+.rp-k.rp-hd{fill:var(--ink-2);stroke:var(--ink-2)}
+.rp-c.rp-hd{fill:var(--ink-3);stroke:var(--ink-3)}
+.rp-arc{fill:none;stroke:var(--ink-2);stroke-width:1.4}
+.rp-arc.rp-arcb{stroke:var(--ink);stroke-width:2}
+.rp-shadow{stroke:var(--ink-3);stroke-opacity:.55;stroke-width:7;stroke-linecap:butt}
+.rp-drop{stroke:var(--ink-3);stroke-width:1.2;stroke-dasharray:2 3}
+.rp-hand{stroke:var(--ink-2);stroke-width:1.6;stroke-linecap:round}
+.rp-hbar{fill:var(--ink-3);fill-opacity:.75}
+.rp-mask{cursor:help}
+.rp-maskc{fill:var(--sunken);stroke:var(--line);stroke-width:1.4;stroke-dasharray:5 4}
+/* part 2: the 128 numbers, the brackets of the 64 pairs */
+.rp-numc{fill:var(--ink);stroke:none}
+.rp-numc.rp-p0{stroke:var(--ink);stroke-width:2}
+.rp-brk{fill:none;stroke:var(--ink-3);stroke-width:1.2}
+.rp-brk.on{stroke:var(--ink);stroke-width:2.2}
+/* parts 1 and 7: score grids */
+.rp-cell{fill:var(--ink);stroke:var(--line);stroke-width:1}
+.rp-cell.rp-hot{stroke:var(--ink);stroke-width:2.6}
+/* part 4's curve, the turns chart */
+.rp-axis{stroke:var(--line);stroke-width:1}
+.rp-curve{fill:none;stroke:var(--ink-2);stroke-width:2}
+.rp-dot{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
+.rp-dotw{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.rp-wrapbg{fill:var(--ink);fill-opacity:.06}
+.rp-one{stroke:var(--ink);stroke-width:2}
+.rp-grid{stroke:var(--line);stroke-width:1;stroke-opacity:.7}
+.rp-trn{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.5}
+.rp-stem{stroke:var(--ink);stroke-width:3;stroke-linecap:butt}
+.rp-hit{fill:transparent;pointer-events:all}
+.rp-dot2{fill:var(--ink);stroke:var(--surface);stroke-width:1}
+.rp-pt .rp-dot2{pointer-events:none}
+.rp-pt:hover .rp-dot2{stroke:var(--ink);stroke-width:2}
+.rp-mini,.rp-big,.rp-cellg,.rp-pt{cursor:help}
+.rp-big:focus{outline:none}
+.rp-big:focus-visible .rp-dial{stroke:var(--ink);stroke-width:3}
+/* part 2: "added at the input" next to "turned inside attention" */
+.rp-cmp{margin-top:6px;padding-top:8px;border-top:1px solid var(--line)}
+.rp-cmp-t{font-size:12.5px;font-weight:650;color:var(--ink);margin:0 0 4px}
+.rp-cmp-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.rp-col{border:1px solid var(--line);border-radius:8px;padding:7px 9px 9px;background:var(--surface);min-width:0}
+.rp-col-h{font-size:13px;font-weight:650;color:var(--ink);line-height:1.3}
+.rp-col-s{font-size:11.5px;color:var(--ink-3);line-height:1.3;margin:1px 0 6px}
+.rp-box{border:1px solid var(--line);border-radius:6px;padding:4px 7px;font-size:11.5px;line-height:1.3;color:var(--ink-2);background:var(--surface-2);text-align:center;overflow-wrap:anywhere}
+.rp-box.rp-posbox{border:2.5px solid var(--ink);color:var(--ink);font-weight:650}
+.rp-op{text-align:center;font-size:11.5px;line-height:1.2;color:var(--ink-3);margin:1px 0}
+.rp-row{display:flex;align-items:center;gap:4px}
+.rp-row>.rp-box{flex:1 1 0;min-width:0}
+.rp-row>.rp-op{margin:0;flex:none}
+/* the metric cards: three per row at every width, short values (R7.8) */
+.metrics.rp-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+/* legend swatches (grayscale; line style and weight carry the meaning, R5.7) */
+.rp-sw{display:inline-block;flex:none;margin-right:6px;vertical-align:middle}
+.rp-sw-q{width:16px;height:0;border-top:3px solid var(--ink)}
+.rp-sw-k{width:16px;height:0;border-top:3px dashed var(--ink-2)}
+.rp-sw-c{width:16px;height:0;border-top:2px dotted var(--ink-3)}
+.rp-sw-arc{width:12px;height:12px;border:2px solid transparent;border-top-color:var(--ink);border-radius:50%}
+.rp-sw-dot{width:9px;height:9px;border-radius:50%;background:var(--ink)}
+.rp-sw-dot2{width:7px;height:7px;border-radius:50%;background:var(--ink)}
+.rp-sw-cell{width:12px;height:12px;background:var(--ink);opacity:.3;border-radius:2px}
+.rp-sw-hot{width:12px;height:12px;border:2.5px solid var(--ink);border-radius:2px;box-sizing:border-box}
+.rp-sw-brk{width:14px;height:5px;border:1.5px solid var(--ink-3);border-top:none;box-sizing:border-box}
+.rp-sw-pos{width:16px;height:11px;border:2.5px solid var(--ink);border-radius:3px;box-sizing:border-box}
+.rp-sw-shadow{width:16px;height:0;border-top:7px solid var(--ink-3);opacity:.55}
+.rp-sw-one{width:16px;height:0;border-top:2px solid var(--ink)}
+.rp-sw-wrap{width:12px;height:12px;border:1px solid var(--line);box-sizing:border-box;position:relative;overflow:hidden}
+.rp-sw-wrap::before{content:'';position:absolute;inset:0;background:var(--ink);opacity:.1}
+.rp-sw-trn{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--ink-2);background:var(--surface);box-sizing:border-box}
+.rp-sw-stem{width:3px;height:13px;background:var(--ink)}
+#rp-legend>span{cursor:help}
+.rp-lv .levers{margin-top:4px}
+.rp-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.rp-prod li{margin-bottom:6px}
+.rp-prod code{overflow-wrap:anywhere;word-break:break-word}
+.rp-ch-res .cmp{margin-top:10px}
+.rp-dk{display:block;flex:none}
+.rp-dk .rp-dial{fill:none;stroke:var(--ink-3)}
+#rp-ch-goal.rp-over b{color:var(--c-oom)}
+.rp-scope{margin:6px 12px 0;cursor:help}
+/* round 1 of the reviews: the row of "bites" (A2), each arrow's turn (A4), the previous state of the chart (A6), the mini bar (A12),
+   why Next is greyed out (A13), the legend under the chart on phones (O14), the base options in two rows (A14) */
+.rp-rowbox{fill:none;stroke:var(--ink-2);stroke-width:1.4;stroke-dasharray:4 3;pointer-events:none}
+.rp-turnq{fill:none;stroke:var(--ink-2);stroke-width:1.6}
+.rp-turnk{fill:none;stroke:var(--ink-3);stroke-width:1.6;stroke-dasharray:4 3}
+.rp-svg .rp-ah{stroke:none;stroke-dasharray:none}
+.rp-turnq.rp-ah{fill:var(--ink-2)}
+.rp-turnk.rp-ah{fill:var(--ink-3)}
+.rp-hbar.rp-top{stroke:var(--ink);stroke-width:2}
+.rp-prev{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-opacity:.55;pointer-events:none}
+.rp-dkc{fill:var(--ink-3);fill-opacity:.35}
+.rp-dkc.on{fill:var(--ink);fill-opacity:1}
+.rp-dkone{stroke:var(--ink);stroke-width:1.2}
+.rp-dkline{fill:none;stroke:var(--ink-2);stroke-width:1.6}
+.rp-dk .rp-dial{fill:none;stroke:var(--ink-3)}
+.rp-dkk{stroke:var(--ink-3);stroke-width:1.6;stroke-dasharray:3 2}
+.rp-sw-row{width:16px;height:11px;border:1.4px dashed var(--ink-2);border-radius:3px;box-sizing:border-box}
+.rp-sw-turn{width:14px;height:8px;border:1.6px solid var(--ink-2);border-bottom:none;border-radius:8px 8px 0 0;box-sizing:border-box}
+.rp-sw-bar{width:16px;height:9px;background:var(--ink-3);opacity:.8;outline:2px solid var(--ink);outline-offset:-1px;border-radius:2px}
+.rp-sw-prev{width:8px;height:8px;border-radius:50%;border:1px solid var(--ink-3);opacity:.7;box-sizing:border-box}
+.rp-why{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.pbar .rp-why{margin-top:6px}
+.rp-why-off{display:none}
+#rp-ctl-base .seg-ctl{display:grid;grid-template-columns:1fr 1fr}
+@media (max-width:760px){
+  .rp-why-off{display:block;visibility:hidden}
+  .rp-stage{display:flex;flex-direction:column}
+  .rp-stage>.stage-head{order:1}
+  .rp-stage>.rp-graph{order:2}
+  .rp-stage>#rp-legend{order:3;margin-top:10px}
+  .rp-stage>.rp-scope{order:4}
+  .rp-stage>.rp-metrics{order:5}
+  .rp-stage>.math{order:6}
+}
+#rp-ctl-base .seg-ctl button:nth-child(2n){border-right:0}
+#rp-ctl-base .seg-ctl button:nth-child(-n+2){border-bottom:1px solid var(--line)}
+.rp-lk{display:inline;white-space:normal;text-align:inherit}
+.rp-lk:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+/* Show the math as a few blocks (the owner, 2026-10-09, H1/H2): a lead line in words, the formula typeset, then the numbers; a hairline
+   between blocks */
+#rp-mathbody .rp-mb+.rp-mb{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
+#rp-mathbody .rp-mlead{font-family:var(--font-ui);font-size:13px;line-height:1.5;color:var(--ink-2);margin:2px 0 4px}
+.rp-math-line{overflow-x:auto;max-width:100%;margin:4px 0;font-size:15px}
+/* a formula that does not fit its box (the owner's review of 2026-10-09, R6.37): the name with “=” first; the right-hand side beside it
+   while its widest term fits there, else on its own line, indented under the name; its terms wrap onto the next line under its first term */
+#rp-mathbody .rp-fw{display:flex;flex-wrap:wrap;align-items:baseline;padding-left:1.4em}
+#rp-mathbody .rp-fwn{flex:none;margin-left:-1.4em;white-space:nowrap}
+#rp-mathbody .rp-fwr{flex:1 1 0%;min-width:min-content}
+#rp-mathbody .rp-fg{display:inline-block;max-width:100%}
+#rp-mathbody .rp-fp{display:inline-block;white-space:nowrap}
+#rp-mathbody .rp-fq{margin-right:1em}
+#rp-mathbody .rp-msub{font-family:var(--font-ui);font-weight:600;color:var(--ink-2);margin:8px 0 2px}

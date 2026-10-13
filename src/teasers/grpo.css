@@ -1,0 +1,11 @@
+/* GRPO home-tile teaser */
+.tz-grpo-c{fill:var(--surface);stroke:var(--ink-3);stroke-width:1}
+.tz-grpo-c.ok{fill:var(--ink-2);stroke:var(--ink-2)}
+.tz-grpo-mean{stroke:var(--ink);stroke-width:2;stroke-dasharray:6 3}
+.tz-grpo-true{stroke:var(--ink-3);stroke-width:1.5}
+.tz-grpo-ax{font-family:var(--font-mono);font-size:9px;fill:var(--ink-3)}
+.sw.tz-grpo-swok{background:var(--ink-2)}
+.sw.tz-grpo-swmean{background:transparent;border-top:2px dashed var(--ink);height:0;align-self:center}
+.sw.tz-grpo-swtrue{background:transparent;border-top:1.5px solid var(--ink-3);height:0;align-self:center}
+.tz-grpo-lab{font-family:var(--font-mono);font-size:9.5px;fill:var(--ink);font-weight:650}
+.tz-grpo-lab.tz-grpo-labt{fill:var(--ink-2);font-weight:500}

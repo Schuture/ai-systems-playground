@@ -1,0 +1,11 @@
+/* Vector index home-tile teaser */
+.tz-vix-c{fill:var(--surface);stroke:var(--line-2);stroke-width:1}
+.tz-vix-c.on{fill:#138F82;stroke:#138F82}
+.tz-vix-t{fill:var(--sunken);stroke:var(--line);stroke-width:1}
+.tz-vix-r{fill:var(--c-ok)}
+.tz-vix-m{fill:var(--ink-2)}
+.sw.tz-vix-swon{background:#138F82}
+.sw.tz-vix-swoff{background:var(--surface);border:1px solid var(--line-2)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tz-vix-c.on{fill:#3CC3B3;stroke:#3CC3B3}:root:not([data-theme="light"]) .sw.tz-vix-swon{background:#3CC3B3}}
+:root[data-theme="dark"] .tz-vix-c.on{fill:#3CC3B3;stroke:#3CC3B3}
+:root[data-theme="dark"] .sw.tz-vix-swon{background:#3CC3B3}

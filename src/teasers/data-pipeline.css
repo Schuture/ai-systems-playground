@@ -1,0 +1,12 @@
+/* data-pipeline teaser: MinHash's S-curve for 20 groups, grayscale (R5.6); two marked points (0.8 and 0.5). The SVG has a fixed
+   viewBox, so the tile keeps its height at every position of the slider. */
+.tz-dl-vis{padding:2px 0;min-width:0}
+.tz-dl-vis svg{display:block;width:100%;height:auto;overflow:visible}
+.tz-dl-ax{stroke:var(--line);stroke-width:1}
+.tz-dl-gl{stroke:var(--line-2);stroke-width:1;stroke-dasharray:3 3}
+.tz-dl-t{font:9.5px var(--font-mono);fill:var(--ink-3)}
+.tz-dl-cur{fill:none;stroke:var(--ink);stroke-width:2}
+.tz-dl-mk{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 2}
+.tz-dl-pt{fill:var(--ink-2);stroke:var(--surface);stroke-width:1.5}
+.tz-dl-v{font:10px var(--font-mono);fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round} /* a halo, so the curve never strikes through a label */
+.tz-dl-swc{height:0!important;border:0!important;border-top:2px solid var(--ink)!important;border-radius:0!important}

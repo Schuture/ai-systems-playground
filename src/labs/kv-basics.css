@@ -1,0 +1,147 @@
+/* kv-basics: the step × token grid of the toy, the Llama-3.1-8B speed and memory bars, the tile. Colours: tokens only (R5.6):
+   computed cells are grayscale, cached cells are amber (KV cache) outlines, the weights are blue, red only for a stale value. */
+.kvb-stage .stage-head{align-items:center}
+.kvb-vseg{min-width:0}
+.kvb-vseg button{padding:5px 9px;font-size:12px;white-space:nowrap}
+
+/* ---------- toy: one grid per layer, the tokens as columns, the decode steps as rows ---------- */
+.kvb-graph{padding:10px 12px 12px}
+.kvb-grid{--kvb-lab:58px;display:grid;gap:2px;min-width:0}
+.kvb-row{display:grid;grid-template-columns:var(--kvb-lab) repeat(9,minmax(0,1fr));gap:2px;align-items:center;min-width:0}
+.kvb-toks{align-items:end;margin-bottom:2px}
+.kvb-tok{display:flex;flex-direction:column;align-items:center;min-width:0;font-family:var(--font-mono);line-height:1.15;padding-bottom:4px}
+.kvb-tok i{font-style:normal;font-size:9.5px;color:var(--ink-3)}
+.kvb-tok b{font-weight:600;font-size:11.5px;color:var(--ink);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:clip}
+/* the word the latest decode step wrote (legend: "underlined"): a line along the bottom of its column head, drawn on the cell so the
+   word's clipping box cannot cut it off, for words set across and upright alike (r12 N1) */
+.kvb-tok.kvb-new{box-shadow:inset 0 -2px 0 var(--ink)}
+.kvb-layer{display:grid;gap:2px;margin-top:4px}
+.kvb-lcap{font-family:var(--font-mono);font-size:11px;color:var(--ink-2);margin:2px 0 2px}
+.kvb-rl{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;padding-left:4px;border-radius:2px;line-height:13px}
+.kvb-rl[data-tipx]{cursor:help}
+.kvb-srow{border-radius:3px}
+.kvb-srow.kvb-done .kvb-rl{color:var(--ink-2)}
+.kvb-srow.kvb-cur{background:var(--surface-2)}
+.kvb-srow.kvb-cur .kvb-rl{color:var(--ink);font-weight:600}
+.kvb-c{height:12px;border-radius:2px;box-sizing:border-box;min-width:0}
+.kvb-c.kvb-comp{background:var(--ink-2)}
+.kvb-c.kvb-read{border:2px solid var(--c-kv);background:transparent}
+.kvb-chk{margin-top:2px}
+.kvb-chk .kvb-rl{color:var(--ink-2)}
+.kvb-d{font-size:10.5px;text-align:center;color:var(--ink-3);line-height:13px;white-space:nowrap;overflow:hidden;min-width:0}
+.kvb-d.kvb-bad{color:var(--c-oom);font-weight:600}
+.kvb-note{margin-top:10px}
+/* legend swatches */
+.sw.kvb-sw-comp{background:var(--ink-2);border-color:transparent}
+.sw.kvb-sw-read{background:transparent;border:2px solid var(--c-kv)}
+.sw.kvb-sw-cur{background:var(--surface-2);border-color:var(--line)}
+.sw.kvb-sw-stale{background:var(--c-oom);border-color:transparent}
+.sw.kvb-sw-new{background:transparent;border:0;border-bottom:2px solid var(--ink);border-radius:0}
+/* narrow stages: the English words stand upright so nine columns fit */
+@container (max-width:560px){
+  .kvb-grid{--kvb-lab:44px}
+  .kvb-rl{font-size:10px;padding-left:2px}
+  .kvb-d{font-size:9.5px;letter-spacing:-.02em}
+  html[lang="en"] .kvb-tok b{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10.5px;max-height:64px}
+}
+
+/* ---------- Llama-3.1-8B: speed bars and the memory bar ---------- */
+.kvb-ctitle{font-size:13px;font-weight:650;margin:2px 0 8px;line-height:1.35}
+.kvb-ctitle+.kvb-sp{margin-top:0}
+.kvb-sp{display:grid;gap:10px;margin-bottom:14px}
+.kvb-sprow{display:grid;gap:3px;border-radius:3px;cursor:help}
+.kvb-sph{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:12.5px}
+.kvb-spl{font-weight:600;color:var(--ink)}
+.kvb-spv{font-size:12px;color:var(--ink-2)}
+.kvb-spt{position:relative;height:16px;background:var(--surface-2);border-radius:2px}
+.kvb-spt i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2);border-radius:2px;min-width:2px;transition:width .22s ease-out}
+.kvb-sprow[data-k="wo"] .kvb-spt i{background:var(--ink-3)}
+.kvb-goal{position:absolute;top:-4px;bottom:-4px;width:0;border-left:1.5px dashed var(--ink)}
+.kvb-axis{position:relative;height:15px;font-size:10.5px;color:var(--ink-3);margin-top:2px}
+.kvb-axis span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.kvb-axis span:first-child{transform:none}
+.kvb-axis span:last-child{transform:translateX(-100%)}
+.kvb-axlab{font-size:10.5px;color:var(--ink-3);text-align:right;margin-top:-2px}
+.kvb-mem{position:relative;height:30px;border:1px solid var(--line);border-radius:3px;background:var(--surface);overflow:hidden;cursor:help}
+.kvb-mem i{position:absolute;top:0;bottom:0;display:flex;align-items:center;overflow:hidden;white-space:nowrap;font-style:normal;font-family:var(--font-mono);font-size:11px;padding-left:6px;box-sizing:border-box;transition:left .22s ease-out,width .22s ease-out}
+.kvb-mw{left:0;background:var(--c-weights);color:var(--on-weights)}
+.kvb-mk{background:var(--c-kv);color:var(--on-kv)}
+.kvb-mf{background:repeating-linear-gradient(135deg,transparent 0 5px,var(--line) 5px 6px);padding:0!important}
+.kvb-mem+.kvb-axis span:last-child{transform:translateX(-100%)}
+
+/* ---------- rail ---------- */
+.kvb-gen{gap:8px}
+.kvb-genrow{display:flex;gap:8px;flex-wrap:wrap}
+.kvb-genout{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;font-weight:620;color:var(--ink-2)}
+.kvb-genout output{font-weight:500;color:var(--ink);font-size:13px}
+.kvb-genend{margin:0}
+/* the “How these times are computed” link follows the part-6 result’s bold sentence, in the same paragraph */
+.linkbtn.kvb-how{margin-left:2px}
+.kvb-ch-res{scroll-margin-top:120px}
+
+/* ---------- settings ---------- */
+.kvb-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.kvb-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+#kvb-ctl-eff .lbl{display:block}
+
+/* ---------- connect ---------- */
+.kvb-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.kvb-prod li{margin-bottom:6px}
+.kvb-see{margin-top:12px}
+
+/* ---------- mini result bar ---------- */
+.kvb-dkg{display:grid;grid-template-columns:repeat(9,5px);gap:1px;width:max-content}
+.kvb-dkg i{width:5px;height:3px;border-radius:1px;background:transparent;box-sizing:border-box}
+.kvb-dkg i.kvb-comp{background:var(--ink-2)}
+.kvb-dkg i.kvb-read{background:var(--c-kv)}
+.kvb-dks{display:grid;gap:3px;min-width:48px}
+.kvb-dks i{display:block;height:5px;border-radius:2px;background:var(--ink-2);min-width:2px}
+.kvb-dks i+i{background:var(--ink-3)}
+
+/* ---------- home tile ---------- */
+.kvb-tzv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.kvb-tzf{margin:0;display:grid;gap:3px;justify-items:center;min-width:0}
+.kvb-tzf figcaption{font-family:var(--font-mono);font-size:11px;color:var(--ink-2)}
+.kvb-tzs{width:100%;max-width:96px;height:auto;display:block}
+.kvb-tzbox{fill:none;stroke:var(--line);stroke-width:1}
+.kvb-tzc{fill:var(--ink-2)}
+.kvb-tzr{fill:none;stroke:var(--c-kv);stroke-width:2.2;stroke-linejoin:round}
+.kvb-tzcells .kvb-tzr{stroke-width:1.3}
+.kvb-tzn{font-size:11px;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.kvb-spt i,.kvb-mem i{transition:none}}
+
+/* four metric cards: two columns on narrow stages, one row on wide ones */
+.kvb-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.kvb-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* the challenge shows only the two times */
+.kvb-metrics.kvb-m2{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* H1 (the owner, 2026-10-09): a formula the reader needs stands on its own line, typeset (A.ui.math); it scrolls sideways on a phone */
+.kvb-fx{margin:6px 0;overflow-x:auto;max-width:100%}
+/* H1/H2 (the owner, 2026-10-09): Show the math in short blocks with a hairline between them; in each block the name and the typeset
+   formula, then this run's numbers under the terms they replace, the "=" signs lined up; a table wider than its box is set again by fitMath (below), so nothing scrolls sideways */
+.kvb-mb{padding:8px 0 10px}
+.kvb-mb+.kvb-mb{border-top:1px solid var(--line)}
+.kvb-mb .kvb-mlead{margin:0 0 4px;font-family:var(--font-ui);font-size:13.5px;line-height:1.5}
+.kvb-mb .kvb-mvec{margin:0}
+.kvb-fx{overflow-x:auto;max-width:100%}
+.kvb-mt{border-collapse:collapse}
+.kvb-mt th,.kvb-mt td{padding:1px 3px;text-align:center;white-space:nowrap;vertical-align:baseline;font-weight:400;border:0;background:none}
+.kvb-mt th{font-family:var(--font-ui);text-align:right;white-space:nowrap;padding-right:6px;color:var(--ink-2)}
+.kvb-mt tr.kvb-mname th{color:var(--ink);font-weight:600}
+.kvb-mt tr.kvb-mname:not(:first-child) th,.kvb-mt tr.kvb-mname:not(:first-child) td{padding-top:8px}
+.kvb-mt td.kvb-mres{text-align:left;white-space:normal}
+.kvb-mb .kvb-mnote{margin:4px 0 0;font-family:var(--font-ui);font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+/* Show the math on a box too narrow for its table (the owner's review of 2026-10-09): fitMath sets the block again, the name on its own
+   line, the formula broken before an operator with the numbers under the terms they replace, nothing scrolling sideways */
+.kvb-mtn{border-collapse:collapse}
+.kvb-mtn th,.kvb-mtn td{padding:1px 0;border:0;background:none;font-weight:400;text-align:left;vertical-align:top}
+.kvb-mtn tr.kvb-mname th{font-family:var(--font-ui);font-weight:600;color:var(--ink);white-space:normal;padding:0 0 2px}
+.kvb-mtn tr.kvb-mname:not(:first-child) th{padding-top:8px}
+.kvb-mtn .kvb-mlbl{font-weight:400;color:var(--ink-2)}
+.kvb-mtn td.kvb-meq{width:1%;padding-right:3px;white-space:nowrap}
+.kvb-mtn td.kvb-mres{white-space:normal;padding-left:3px;line-height:1.5}
+.kvb-mfl{display:flex;flex-wrap:wrap;align-items:flex-start;row-gap:6px}
+.kvb-mu{display:inline-grid;align-items:center;justify-items:center}
+.kvb-mc{padding:1px 3px;white-space:normal;line-height:1.5;text-align:center}
+.kvb-mc0{display:flex;align-items:center;justify-content:center;height:1.9em;white-space:nowrap}
+.kvb-mtall .kvb-mc0{height:3.1em}

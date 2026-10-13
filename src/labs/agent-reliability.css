@@ -1,0 +1,113 @@
+/* agent-reliability: the grid of 30 tasks × n steps (canvas), the player, the success curve against the number of steps,
+   the metric cards. Colours (R5.6): grayscale, hatching and outlines; green and red only for ✓ / ✗ and the challenge's goal. */
+.arl-stage .stage-head{align-items:center}
+.arl-graph{padding:12px 14px 14px;display:grid;gap:10px;min-width:0}
+.arl-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.arl-legend{margin-top:0}
+.arl-legend>span{cursor:help;display:inline-flex;align-items:center}
+.arl-okm{color:var(--c-ok);margin-right:2px}
+.arl-badm{color:var(--c-oom);margin-right:6px}
+
+/* ---------- the grid of tasks ---------- */
+.arl-grid{position:relative;min-width:0;cursor:help;outline-offset:3px;border-radius:2px}
+.arl-grid canvas{display:block;max-width:100%}
+
+/* ---------- the player ---------- */
+.arl-player{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.arl-play{min-width:92px}
+.arl-speed button{font-size:12px;padding:3px 9px}
+.arl-scrub{flex:1 1 140px;min-width:120px}
+/* the tally keeps two lines' height, so the stage does not jump while the tasks run (R7.9) */
+.arl-tally{font-size:11.5px;line-height:1.45;color:var(--ink-2);min-height:2.9em}
+
+/* ---------- the curve ---------- */
+.arl-curve{display:grid;gap:4px;min-width:0}
+/* H5 (the owner, 2026-10-09): a hairline between the tasks running (grid, legend, player) and the success curve */
+.arl-graph>.arl-grid~.arl-curve:not([hidden]){border-top:1px solid var(--line);padding-top:10px}
+.arl-svgw{min-width:0;min-height:132px;outline-offset:3px;cursor:help}
+.arl-svgw.arl-wait{cursor:default;background:var(--surface-2);border-radius:3px}
+.arl-svgw svg{display:block;max-width:100%;height:auto;overflow:visible}
+.arl-gl{stroke:var(--line-2);stroke-width:1}
+.arl-tk{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.arl-plain{fill:none;stroke:var(--ink-3);stroke-width:1.6;stroke-dasharray:4 3}
+.arl-mine{fill:none;stroke:var(--ink);stroke-width:2.2}
+.arl-ln{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink)}
+.arl-ln2{fill:var(--ink-3)}
+.arl-mk{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 3}
+.arl-dot{fill:var(--ink)}
+.arl-dot2{fill:var(--surface);stroke:var(--ink-3);stroke-width:1.5}
+.arl-vl{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink);paint-order:stroke fill;stroke:var(--surface);stroke-width:3.5px;stroke-linejoin:round}
+.arl-vl2{font-weight:400;fill:var(--ink-3)}
+
+/* ---------- legend swatches (the same shapes as the cells; R5.11: the step where a task goes wrong has a red outline) ---------- */
+.sw.arl-sw-ok{background:var(--ink-2);border-color:transparent}
+.sw.arl-sw-rt{width:16px;border:0;border-radius:0;background:linear-gradient(90deg,transparent 0 6px,var(--surface) 6px 7px,var(--ink-2) 7px);box-shadow:inset 0 0 0 1px var(--ink-3)}
+.sw.arl-sw-si{background:repeating-linear-gradient(135deg,var(--ink) 0 1.2px,var(--surface) 1.2px 3.2px);border:1.2px solid var(--c-oom)}
+.sw.arl-sw-pa{background:var(--line-2);border-color:transparent}
+.sw.arl-sw-st{background:var(--surface);border:1.6px solid var(--c-oom)}
+/* narrow cells (R5.10): a retried step is drawn as one mid-gray cell, and its swatch says so */
+.sw.arl-sw-rt.arl-tight{width:12px;background:var(--ink-3);box-shadow:none}
+
+/* ---------- metric cards ---------- */
+.arl-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.arl-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.arl-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
+
+/* ---------- rail ---------- */
+.arl-fx{margin:8px 0 10px;overflow-x:auto}
+.arl-lv{margin-top:6px}
+.arl-mt{margin-top:12px}
+.arl-ch-res{scroll-margin-top:120px}
+.arl-app .goal.arl-goal{display:grid;grid-template-columns:minmax(0,1fr);gap:1px}
+.arl-app .goal.arl-goal span:last-child{white-space:normal}
+.goal.arl-over b{color:var(--c-oom)}
+.arl-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+.arl-remlist li{margin-bottom:8px}
+.arl-rem{font-size:12.5px;white-space:nowrap}
+.arl-rem[aria-pressed="true"]{font-weight:650;text-decoration:none}
+
+/* ---------- settings ---------- */
+.arl-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.arl-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.arl-grp .ctl>.lbl{display:block}
+.arl-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.arl-row .ctl-note{flex-basis:100%}
+.arl-app .ctl output{white-space:nowrap}
+
+/* ---------- connect ---------- */
+.arl-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.arl-prod li{margin-bottom:6px}
+.arl-prod code{word-break:break-word}
+
+/* ---------- the dock's mini bar: right, wrong at the end, stopped ---------- */
+.arl-dk{position:relative;height:12px;width:100%;min-width:48px;background:var(--surface-2);border-radius:2px;overflow:hidden;display:flex}
+.arl-dk i{display:block;height:100%}
+.arl-dk i.ok{background:var(--ink-2)}
+.arl-dk i.wr{background:repeating-linear-gradient(135deg,var(--ink) 0 1.2px,var(--surface) 1.2px 3.2px)}
+.arl-dk i.st{background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--ink)}
+
+@media (max-width:760px){
+  /* phones: the picture first; its legend sits right under the grid (R5.9) */
+  .arl-stage{display:flex;flex-direction:column}
+  .arl-stage>.stage-head{order:1}
+  .arl-stage>.arl-graph{order:2}
+  .arl-stage>.arl-scope{order:4}
+  .arl-stage>.metrics{order:5}
+  .arl-stage>details.math{order:6}
+  .arl-graph{padding:10px 10px 12px}
+  .arl-play{min-width:84px}
+  .arl-scrub{flex-basis:100%}
+}
+@media (prefers-reduced-motion:reduce){.arl-dk i{transition:none}}
+/* R7.9: the batch caption changes every few seconds while the tasks run: one line, never wrapped */
+#arl-batch{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Show the math in short blocks (the owner, 2026-10-09): a hairline between blocks; a chain's “=” signs in one column */
+.arl-mb{padding:8px 0 10px}
+.arl-mb+.arl-mb{border-top:1px solid var(--line)}
+.arl-mb>p{margin:0 0 6px}
+.arl-mb>p:last-child{margin-bottom:0}
+.arl-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3}
+.arl-eq-l{text-align:right}
+/* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
+@media (max-width:560px){.arl-eqs-nm{grid-template-columns:max-content max-content}.arl-eqs-nm>.arl-eq-l{grid-column:1/-1;text-align:left}.arl-eqs-nm>.arl-eq-l:empty{display:none}}

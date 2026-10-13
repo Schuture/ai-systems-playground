@@ -1,0 +1,11 @@
+/* scaling-law teaser: one iso-FLOP curve on fixed axes (100M–1T parameters, loss 1.9–3.2), grayscale (R5.6); the lowest point is a
+   ring with a dashed drop line to the size axis. The picture keeps its height at every position of the slider. */
+.tz-sl-vis{min-width:0;padding:2px 0}
+.tz-sl-vis svg{display:block;width:100%;height:120px}
+.tz-sl-gl{stroke:var(--line-2);stroke-width:1}
+.tz-sl-tk{font-family:var(--font-mono);font-size:9.5px;fill:var(--ink-3)}
+.tz-sl-cur{fill:none;stroke:var(--ink);stroke-width:2.2}
+.tz-sl-min{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.tz-sl-drop{stroke:var(--ink-2);stroke-width:1.2;stroke-dasharray:3 3}
+.tz-sl-swc{height:0!important;border:0!important;border-top:2.2px solid var(--ink)!important;border-radius:0!important;align-self:center}
+.tz-sl-swm{width:10px!important;height:10px!important;border:2px solid var(--ink)!important;border-radius:50%!important;background:transparent!important;box-sizing:border-box}

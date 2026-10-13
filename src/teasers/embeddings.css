@@ -1,0 +1,10 @@
+/* Embeddings home-tile teaser */
+.tz-emb-q{fill:var(--surface);stroke:var(--ink-3);stroke-width:1}
+.tz-emb-q.ok{fill:var(--c-ok);stroke:var(--c-ok)}
+.tz-emb-line{fill:none;stroke:var(--ink);stroke-width:2}
+.tz-emb-now{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
+.tz-emb-dot{fill:var(--ink)}
+.tz-emb-ax{font-family:var(--font-mono);font-size:9px;fill:var(--ink-3)}
+.sw.tz-emb-swok{background:var(--c-ok)}
+.sw.tz-emb-swno{background:var(--surface);border:1px solid var(--ink-3)}
+.sw.tz-emb-swline{background:transparent;border-top:2px solid var(--ink);height:0;align-self:center}

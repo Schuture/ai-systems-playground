@@ -1,0 +1,229 @@
+/* backprop: the computation graph (parameter boxes, operation boxes with value and gradient), the backward player, the gradient
+   check panel (the loss curve, autograd's slope solid, the finite-difference slope dashed), and the challenge's checks.
+   Colours (R5.6): grayscale only; green and red only for a check that passes or fails and for the error banner. */
+.bp-stage .stage-head{align-items:center}
+.bp-stage .stage-actions{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:flex-end}
+.bp-graph{padding:12px 14px 14px;display:grid;gap:12px;min-width:0}
+.bp-sub{font-size:12px;color:var(--ink-2);line-height:1.35}
+
+/* ---------- the graph ---------- */
+.bp-gwrap{min-width:0;overflow:hidden}
+.bp-svg{display:block;max-width:100%;height:auto;margin:0 auto}
+.bp-svg text{font-family:var(--font-mono);fill:var(--ink-2)}
+.bp-e{fill:none;stroke:var(--ink-3);stroke-width:1.3}
+.bp-e.bp-on{stroke:var(--ink);stroke-width:2.6}
+.bp-arh{fill:var(--ink-3)}
+.bp-n{cursor:help;outline:none}
+.bp-n rect{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.bp-n.bp-par rect{stroke:var(--ink-2);stroke-width:2.4}
+.bp-n.bp-known rect{fill:var(--surface-2)}
+.bp-n.bp-src rect{stroke:var(--ink);stroke-width:2}
+.bp-n.bp-on rect{stroke:var(--ink);stroke-width:2;stroke-dasharray:5 3}
+.bp-n.bp-errn rect{stroke:var(--c-oom);stroke-width:2.4;fill:var(--c-oom-soft)}
+.bp-n:focus-visible rect{stroke:var(--ink);stroke-width:2.6}
+.bp-svg .bp-t1{font-size:9.8px;font-weight:650;fill:var(--ink)}
+.bp-svg .bp-t2{font-size:10.5px;fill:var(--ink-2)}
+.bp-svg .bp-t3{font-size:10.5px;fill:var(--ink-3)}
+.bp-n.bp-known .bp-t3{fill:var(--ink);font-weight:650}
+.bp-svg .bp-tag{font-size:10px;fill:var(--ink-3)}
+.bp-cl rect{fill:var(--surface);stroke:var(--ink);stroke-width:1.2}
+.bp-svg .bp-cl text{font-size:10.5px;font-weight:650;fill:var(--ink)}
+.bp-svg .bp-fant{font-size:10.5px;font-weight:650;fill:var(--ink)}
+.bp-svg .bp-fan.bp-bad .bp-fant{fill:var(--c-oom)}
+
+/* ---------- the backward player ---------- */
+.bp-pwrap{display:grid;gap:8px;min-width:0;border-top:1px solid var(--line-2);padding-top:10px}
+.bp-player{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.bp-pb{min-width:36px;justify-content:center}
+.bp-playbtn{min-width:86px}
+.bp-scrub{display:flex;align-items:center;gap:8px;flex:1 1 200px;max-width:100%}
+.bp-scrub input[type=range]{flex:1 1 auto;min-width:80px}
+.bp-scrub output{font-size:12px;white-space:nowrap;color:var(--ink-2);min-width:6.5em;flex:none}
+.bp-speed button{font-size:12px;padding:3px 9px}
+.bp-read{margin:0;font-size:13px;line-height:1.45;color:var(--ink-2);min-height:4.4em;overflow-wrap:anywhere}
+.bp-err{font-size:13px;line-height:1.45;color:var(--c-oom);background:var(--c-oom-soft);border:1px solid var(--c-oom);border-radius:4px;padding:8px 10px;overflow-wrap:anywhere}
+.bp-player.bp-inline{margin-top:8px}
+.bp-player.bp-inline .bp-scrub{flex-basis:140px}
+
+/* ---------- the gradient check ---------- */
+/* the check and the error come first in the chart: they are the part's result (R3.10). On a wide stage they sit beside the graph,
+   so the sticky stage keeps the graph, the check and the player on one screen at 1440 × 900 (review A6) */
+.bp-top{display:grid;gap:12px;min-width:0}
+.bp-side{display:grid;gap:12px;min-width:0;order:-1;align-content:start}
+.bp-side:not(:has(>:not([hidden]))){display:none}
+@container (min-width:576px){
+  .bp-top.bp-two{grid-template-columns:max-content minmax(0,1fr);align-items:start}
+  .bp-top.bp-two>.bp-side{order:0}
+  .bp-top.bp-two .bp-check{border-bottom:0;padding-bottom:0}
+  .bp-side>.bp-metrics{grid-template-columns:minmax(0,1fr)!important;margin:0}
+}
+.bp-check{display:grid;gap:8px;min-width:0;border-bottom:1px solid var(--line-2);padding-bottom:10px}
+.bp-check .bp-sub{font-weight:650;color:var(--ink);font-size:12.5px}
+.bp-ckrow{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;min-width:0}
+.bp-cksvg{display:block;max-width:100%;height:auto;flex:none;border-radius:3px;cursor:help;outline-offset:2px}
+.bp-ckbg{fill:var(--surface-2)}
+.bp-curve{fill:none;stroke:var(--ink-3);stroke-width:2}
+.bp-tan{fill:none;stroke:var(--ink);stroke-width:2}
+.bp-tan.bp-bad{stroke:var(--c-oom)}
+.bp-sec{fill:none;stroke:var(--ink-2);stroke-width:2;stroke-dasharray:6 4}
+.bp-dot{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.5}
+.bp-pt{fill:var(--ink)}
+.bp-cknum{display:grid;gap:4px;min-width:150px;flex:1 1 150px;font-size:12.5px;color:var(--ink-2)}
+.bp-cknum>div{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.bp-cknum>div[data-tipx]{cursor:help}
+.bp-cknum b{color:var(--ink);font-size:13px;white-space:nowrap}
+.bp-cknum .okc{color:var(--c-ok);font-weight:650}
+.bp-cknum .bp-bad{color:var(--c-oom);font-weight:650}
+.bp-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+.bp-chips>.bp-sub{flex:1 1 100%}
+.bp-chip{font-family:var(--font-mono);font-size:12px;line-height:1.2;padding:4px 8px;border:1px solid var(--line);border-radius:3px;background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.bp-chip:hover{border-color:var(--ink-3)}
+.bp-chip.bp-on{border:1.5px solid var(--ink);color:var(--ink);font-weight:650}
+.bp-chip.bp-ok{color:var(--c-ok)}
+.bp-chip.bp-bad{color:var(--c-oom)}
+
+/* ---------- legend swatches ---------- */
+.sw.bp-sw-par{background:var(--surface);border:2.4px solid var(--ink-2)}
+.sw.bp-sw-op{background:var(--surface);border:1px solid var(--line)}
+.sw.bp-sw-on{background:transparent;border:1.5px dashed var(--ink)}
+.sw.bp-sw-tan{width:16px;height:0;border:0;border-top:2px solid var(--ink);border-radius:0;margin:0 6px 3px 0}
+.sw.bp-sw-sec{width:16px;height:0;border:0;border-top:2px dashed var(--ink-2);border-radius:0;margin:0 6px 3px 0}
+#bp-legend>span{cursor:help}
+
+/* ---------- metric cards ---------- */
+.bp-metrics[data-n="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+.bp-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.bp-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.bp-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.bp-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;max-width:100%;cursor:help}
+.bp-scope span{border-bottom:1px dotted var(--line-2)}
+
+/* ---------- rail ---------- */
+.bp-mt{margin-top:12px}
+.bp-ch-res{scroll-margin-top:120px}
+#bp-ch-res{scroll-margin-top:120px}
+.bp-lv{margin-top:6px}
+.bp-app .goal span:last-child{white-space:nowrap}
+.bp-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+.bp-app .inline-ctl .seg-ctl button{white-space:nowrap}
+.bp-lv .lever .lv-r{grid-column:2 / 4;grid-row:2;padding-top:0}
+.bp-lv .lever .lv-d{grid-row:3}
+.bp-lv .lever .lv-r:empty{display:none}
+.bp-why{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.pbar .bp-why{margin-top:6px}
+.bp-remlist{padding-left:18px}
+.bp-remlist li{margin-bottom:8px}
+.bp-rem{font-size:12.5px;white-space:nowrap}
+.bp-rem[aria-pressed="true"]{font-weight:650;text-decoration:none}
+.bp-app .goal.bp-goal{display:grid;grid-template-columns:minmax(0,1fr);gap:1px}
+.bp-app .goal.bp-goal span:last-child{white-space:normal}
+.bp-nw{white-space:nowrap}
+
+/* ---------- the challenge's checks ---------- */
+.bp-chks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}
+.bp-chk{display:grid;gap:2px;text-align:left;font:inherit;font-size:12.5px;line-height:1.3;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--ink);cursor:pointer;min-width:0}
+.bp-chk:hover:not(:disabled){border-color:var(--ink-3)}
+.bp-chk .mono{font-size:11.5px;color:var(--ink-3);overflow-wrap:anywhere}
+.bp-chk:disabled{cursor:default;opacity:1}
+.bp-chk.bp-ok{border-color:var(--c-ok)}
+.bp-chk.bp-ok .mono{color:var(--c-ok)}
+.bp-chk.bp-bad{border-color:var(--c-oom)}
+.bp-chk.bp-bad .mono{color:var(--c-oom)}
+.bp-sig{margin:12px 0;min-width:0;overflow-x:auto}
+.bp-sig table{width:100%;border-collapse:collapse;font-size:12px;line-height:1.35}
+.bp-sig th,.bp-sig td{padding:4px 5px;border-bottom:1px solid var(--line-2);text-align:center;vertical-align:top}
+.bp-sig th:first-child,.bp-sig td:first-child{text-align:left}
+.bp-sig td.bp-x{color:var(--c-oom);font-weight:650}
+.bp-sig td.bp-v{color:var(--ink-3)}
+.bp-sig tr.bp-on td{background:var(--surface-2);font-weight:650}
+
+/* ---------- connect ---------- */
+.bp-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.bp-prod li{margin-bottom:6px}
+.bp-prod code,.refs code{word-break:break-word}
+
+/* ---------- mini result bar: each parameter's gradient size ---------- */
+.bp-dk{display:flex;gap:3px;width:100%;min-width:60px;cursor:help}
+.bp-dk span{position:relative;flex:1 1 0;min-width:0;height:13px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.bp-dk i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);opacity:.55}
+.bp-dk em{position:absolute;left:3px;top:0;font-style:normal;font-family:var(--font-mono);font-size:9.5px;line-height:13px;color:var(--ink)}
+
+@media (max-width:760px){
+  /* phones: the picture first, its legend right under it (R7.3) */
+  .bp-stage{display:flex;flex-direction:column}
+  .bp-stage>.stage-head{order:1}
+  .bp-stage>.bp-graph{order:2}
+  .bp-stage>.legend-row{order:3}
+  .bp-stage>.bp-scope{order:4}
+  .bp-stage>.metrics{order:4}
+  .bp-stage>details.math{order:5}
+  .bp-graph{padding:10px 10px 12px}
+  .bp-read{min-height:7.3em}
+  .bp-speed{flex:1 1 100%}
+}
+@media (max-width:420px){.bp-app .pb-dots{gap:3px}.bp-chks{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- round 3 (review 2026-10-03): the formula of the current step, next to the graph ---------- */
+/* forward and backward of the operation the player is on: each formula on one line, its numbers on the next. Every line has a fixed
+   height and the script gives the box the height of the tallest step, so nothing around it moves while stepping (R7.8) */
+.bp-fx{display:block;min-width:0;padding:8px 8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);box-sizing:border-box}
+.bp-fx[hidden]{display:none}
+.bp-fxh{height:26px;font-size:12.5px;font-weight:650;color:var(--ink);line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-fxl{height:18px;font-size:11px;line-height:18px;color:var(--ink-3);border-top:1px solid var(--line-2)}
+.bp-fxm,.bp-fxn,.bp-fxt{display:flex;align-items:center;min-width:0;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:thin}
+.bp-fxm{height:36px}
+.bp-fxm.bp-fxf{height:26px}
+.bp-fxn{height:24px;padding-left:4px}
+.bp-fxt{height:24px;font-size:12px;color:var(--ink-2)}
+.bp-fxm math{font-size:13.5px;color:var(--ink)}
+.bp-fxn math{font-size:12px;color:var(--ink-2)}
+.bp-top.bp-two{column-gap:8px}
+/* review v6: formulas the page needs, each on its own line (R6.29) */
+.bp-ml{margin:4px 0 8px;overflow-x:auto;overflow-y:hidden}
+.bp-ml math{font-size:15px}
+.bp-mls{margin:2px 0 8px}
+.bp-mls .bp-ml{margin:2px 0}
+/* H1 (2026-10-09): the formulas of the boxes, typeset in HTML under the graph (an SVG text keeps only the box's name) */
+.bp-ops{width:0;min-width:100%;box-sizing:border-box;margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.5;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;color:var(--ink-2)}
+.bp-ops-k{flex-basis:100%;font-size:11.5px;color:var(--ink-3)}
+.bp-op{white-space:nowrap}
+.bp-mname{font-family:var(--font-ui);font-size:13px;margin-right:.3em}
+/* Show the math as short blocks (H2, 2026-10-09): a hairline between blocks, the "=" of a chain in one column, numbers in tables */
+.bp-mblk{padding:8px 0 6px;border-top:1px solid var(--line-2)}
+.bp-mblk:first-child{border-top:0;padding-top:0}
+.bp-mlead,.bp-msym,.bp-mblk>p{font-family:var(--font-ui);font-size:13px;line-height:1.55}
+.bp-mfx{display:flex;flex-wrap:wrap;align-items:center;gap:.2em .6em;overflow-x:auto;max-width:100%;margin:4px 0}
+.bp-eq{display:grid;grid-template-columns:max-content max-content;column-gap:.3em;row-gap:.6em;align-items:center;overflow-x:auto;max-width:100%;margin:4px 0}
+.bp-eq-l{justify-self:end}
+.bp-mtab-w{overflow-x:auto;max-width:100%;padding-block:.3em}
+.bp-mtab{border-collapse:collapse;font-size:12px;margin:2px 0}
+.bp-mtab th,.bp-mtab td{padding:3px 14px 3px 0;text-align:left;vertical-align:top;white-space:nowrap}
+.bp-mtab th{font-weight:500;color:var(--ink-3);border-bottom:1px solid var(--line)}
+.bp-mtab td>div+div{margin-top:4px}
+/* the owner's review of 2026-10-09 (R6.37: a row the reader has to scroll sideways is not read): on a phone-wide stage the backward
+   table's three columns do not fit, so each step becomes two lines: its number and operation, then what it adds into the inputs'
+   gradients, under the operation */
+@container (max-width:480px){
+  .bp-mtab-b,.bp-mtab-b tbody{display:block}
+  .bp-mtab-b tr{display:grid;grid-template-columns:3em minmax(0,1fr);row-gap:3px;padding:4px 0;border-bottom:1px solid var(--line-2)}
+  .bp-mtab-b tr:first-child{border-bottom:1px solid var(--line)}
+  .bp-mtab-b th,.bp-mtab-b td{padding:0;border:0}
+  .bp-mtab-b>tbody>tr>:nth-child(3),.bp-mtab-b>tr>:nth-child(3){grid-column:2}
+}
+
+/* ---------- 知识梳理 (2026-10-12): formulas on their own line, and the lab's graph as a display ---------- */
+.primer .bp-prfx{margin:2px 0 14px;padding:.3em 0;overflow-x:auto;overflow-y:hidden}
+.primer .bp-prfx math{font-size:1.08em}
+.pr-fr.pr-bp{padding:0;min-width:0}
+/* on a wide page what each box computes stands beside the graph; on a phone it goes under it, as in the lab */
+.primer .pr-bp .bp-gwrap{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:10px 28px;align-items:center;overflow:visible}
+.primer .pr-bp .bp-svg{width:380px;max-width:100%;margin:0}
+.primer .pr-bp .bp-n{cursor:default}
+.primer .pr-bp .bp-ops{width:auto;min-width:0;margin:0;padding:4px 0 4px 22px;border-top:0;border-left:1px solid var(--line);flex-direction:column;align-items:flex-start;gap:8px;font-size:14px}
+.primer .pr-bp .bp-ops-k{flex-basis:auto;font-size:12.5px}
+@media (max-width:760px){
+  .primer .pr-bp .bp-gwrap{grid-template-columns:minmax(0,1fr)}
+  .primer .pr-bp .bp-svg{margin:0 auto}
+  .primer .pr-bp .bp-ops{border-left:0;border-top:1px solid var(--line);padding:8px 0 0;flex-direction:row;flex-wrap:wrap;gap:4px 14px;font-size:12.5px}
+  .primer .pr-bp .bp-ops-k{flex-basis:100%}
+}

@@ -1,0 +1,242 @@
+/* data-pipeline: the funnel (a canvas of 1,000 squares with four bins, labels drawn beside each bin), its player, the MinHash
+   curve with one dot per pair, the mix's epochs, the five rule switches. Colours (R5.6): grayscale for the picture; red only for
+   a wrong call (R5.11); green and red for the challenge's goals. */
+.dl-app [hidden]{display:none!important}
+.dl-stage .stage-head{align-items:center}
+.dl-graph{padding:12px 14px 14px;display:grid;gap:14px;min-width:0}
+.dl-graph>div{min-width:0}
+.dl-phone{display:none}
+.dl-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+
+/* ---------- the funnel ---------- */
+.dl-cvwrap{position:relative;width:100%;min-width:0}
+.dl-cvwrap canvas{display:block;cursor:crosshair;touch-action:pan-y}
+.dl-leg{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;font-size:12px;color:var(--ink-2);line-height:1.35}
+.dl-leg>span{display:inline-flex;align-items:center;gap:6px}
+.dl-leg .sw{display:inline-block;width:10px;height:10px;flex:0 0 auto;border-radius:1px}
+.dl-sw-in{background:var(--ink-2)}
+.dl-sw-out{background:var(--ink-3);opacity:.55}
+.dl-sw-red{background:var(--c-oom)}
+.dl-player{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:10px}
+.dl-player .ctl{display:flex;align-items:center;gap:6px;margin:0}
+.dl-player .ctl>.lbl{font-size:12px}
+.dl-player .seg-ctl button{font-size:12px;padding:3px 9px}
+/* H7 (the owner, 2026-10-09, on GRPO's player: “重放按钮和速度按钮没有对齐”): Replay, the step buttons and the speed buttons share one
+   height and one centre line */
+.dl-player .btn.sm,.dl-player .seg-ctl{height:30px;box-sizing:border-box}
+.dl-player .btn.sm{padding-top:0;padding-bottom:0}
+.dl-player .seg-ctl button{padding-top:0;padding-bottom:0}
+.dl-play{min-width:92px;justify-content:center}
+.dl-scrub{display:flex;align-items:center;gap:8px;flex:1 1 200px;min-width:0}
+.dl-scrub input{flex:1 1 auto;min-width:0}
+.dl-count{font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+
+/* ---------- hover card for one page ---------- */
+.dl-tt{max-width:320px}
+.dl-tt p{margin:4px 0}
+.dl-tt table{border-collapse:collapse;margin:4px 0;font-size:12px}
+.dl-tt th{text-align:left;font-weight:500;padding:1px 10px 1px 0;color:inherit;opacity:.85}
+.dl-tt td{text-align:right;padding:1px 0}
+.dl-ttr{color:var(--c-oom);font-weight:650}
+
+/* ---------- the MinHash curve; the legend sits beside it ---------- */
+.dl-crow{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.dl-curve svg{display:block;width:100%;height:auto;overflow:visible}
+.dl-leg-side{margin:0}
+.dl-leg-side>span{align-items:flex-start}
+.dl-leg-side .sw{margin-top:3px}
+.dl-legn{color:var(--ink-3)}
+.dl-gl{stroke:var(--line-2);stroke-width:1}
+.dl-tk{stroke:var(--line);stroke-width:1}
+.dl-ax{font:11px var(--font-mono);fill:var(--ink-3)}
+.dl-axt{font:11.5px var(--font-ui);fill:var(--ink-2)}
+.dl-cur{fill:none;stroke:var(--ink);stroke-width:2.2}
+.dl-ref{fill:none;stroke:var(--ink-3);stroke-width:1.5;stroke-dasharray:5 4}
+.dl-reft{font:11px var(--font-ui);fill:var(--ink-2)}
+.dl-d1{fill:var(--ink-2);opacity:.75}
+.dl-d0{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.2}
+.dl-dr{fill:var(--c-oom)}
+.dl-goalz{fill:var(--c-ok-soft);stroke:var(--c-ok);stroke-width:1;stroke-dasharray:3 2}
+.dl-gok{fill:var(--c-ok)}
+.dl-gbad{fill:var(--c-oom)}
+.dl-gt{font:11.5px var(--font-mono);fill:var(--ink)}
+.dl-sw-cur{height:3px!important;background:var(--ink)}
+.dl-sw-ref{height:0!important;border-top:2px dashed var(--ink-3)}
+.dl-sw-goal{background:var(--c-ok-soft);border:1px dashed var(--c-ok)}
+.dl-sw-d1{border-radius:50%!important;background:var(--ink-2)}
+.dl-sw-d0{border-radius:50%!important;border:1.2px solid var(--ink-2);box-sizing:border-box}
+.dl-sw-dr{border-radius:50%!important;background:var(--c-oom)}
+
+/* ---------- the mix: epochs per domain ---------- */
+.dl-mix{display:grid;gap:10px}
+.dl-mrow{display:grid;grid-template-columns:150px minmax(0,1fr) 78px;gap:10px;align-items:center;cursor:help;border-radius:3px;outline-offset:2px}
+.dl-ml{font-size:12.5px;color:var(--ink);line-height:1.25}
+.dl-ml small{display:block;font-size:11px;color:var(--ink-3)}
+.dl-mtrk{position:relative;height:16px;background:var(--surface-2);border-radius:2px}
+.dl-mtrk i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2);border-radius:2px;transition:width .25s ease-out}
+.dl-mtrk i.over{background:var(--c-oom)}
+.dl-mtrk b{position:absolute;top:-3px;bottom:-3px;width:0}
+.dl-m1{border-left:1.5px solid var(--ink)}
+.dl-m3{border-left:1.5px dashed var(--ink)}
+.dl-mrow em{font:600 12px var(--font-mono);font-style:normal;text-align:right;color:var(--ink)}
+.dl-mrow em.over{color:var(--c-oom)}
+.dl-mleg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ink-2);margin-top:2px}
+.dl-mleg span{display:inline-flex;align-items:center;gap:6px}
+.dl-mleg i{display:inline-block;width:0;height:12px}
+.dl-m1l{border-left:1.5px solid var(--ink)}
+.dl-m3l{border-left:1.5px dashed var(--ink)}
+.dl-mol{width:10px!important;height:10px!important;background:var(--c-oom)}
+
+/* ---------- metric cards ---------- */
+.dl-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dl-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.dl-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* ---------- formulas on their own line ---------- */
+.dl-fx{margin:8px 0 10px;overflow-x:auto;font-size:15px;line-height:1.3}
+
+/* ---------- rail: rule switches, levers, challenge ---------- */
+.dl-rules{display:grid;gap:6px;margin:8px 0 4px}
+.dl-sw{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;text-align:left;padding:7px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);color:var(--ink);cursor:pointer;font:inherit}
+.dl-sw:hover{border-color:var(--ink-3)}
+.dl-sw i{position:relative;width:28px;height:16px;border-radius:8px;background:var(--line);transition:background .15s}
+.dl-sw i::after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:var(--surface);transition:left .15s}
+.dl-sw[aria-pressed="true"] i{background:var(--ink-2)}
+.dl-sw[aria-pressed="true"] i::after{left:14px}
+.dl-sw span{display:grid;gap:1px;min-width:0}
+.dl-sw b{font-size:13px;font-weight:650}
+.dl-sw small{font-size:11.5px;color:var(--ink-2);line-height:1.3}
+.dl-sw em{font:600 12px var(--font-mono);font-style:normal;color:var(--ink-2);min-width:24px;text-align:right}
+.dl-sw[aria-pressed="false"] b{color:var(--ink-3)}
+.dl-lv{margin-top:6px}
+.dl-br{margin-top:10px;display:grid;gap:8px}
+.dl-br p{margin:0}
+.dl-mt{margin-top:12px}
+.dl-ch-res{scroll-margin-top:120px}
+.goal.dl-over b{color:var(--c-oom)}
+.dl-app .goal span:last-child{text-align:right}
+.dl-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+.dl-app .inline-ctl .seg-ctl button{white-space:nowrap}
+.dl-asm{margin:6px 0 12px;padding-left:18px;color:var(--ink-2)}
+.dl-asm li{margin-bottom:3px}
+.dl-remlist{margin:0 0 10px;padding-left:18px}
+.dl-remlist li{margin-bottom:8px}
+.dl-rem{margin-left:2px}
+
+/* ---------- settings ---------- */
+.dl-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.dl-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.dl-grp .ctl>label{display:flex}
+.dl-app .ctl output{white-space:nowrap}
+.controls .dl-rules{margin:0}
+.controls .dl-sw small{display:none}
+
+/* ---------- connect ---------- */
+.dl-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.dl-prod li{margin-bottom:6px}
+.dl-prod code,.dl-app .refs code{word-break:break-word}
+
+/* ---------- dock: a tiny bar of the pages left ---------- */
+.dl-dk{position:relative;height:10px;width:100%;min-width:48px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.dl-dk i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2)}
+
+@media (max-width:760px){
+  /* phones: the picture first, then the numbers (R7.3) */
+  .dl-stage{display:flex;flex-direction:column}
+  .dl-stage>.stage-head{order:1}
+  .dl-stage>.dl-graph{order:2}
+  .dl-stage>.metrics{order:3}
+  .dl-stage>details.math{order:4}
+  .dl-graph{padding:10px 10px 12px}
+  .dl-phone:not(:empty){display:block}
+  .dl-mrow{grid-template-columns:104px minmax(0,1fr) 64px;gap:6px}
+}
+@media (prefers-reduced-motion:reduce){.dl-mtrk i,.dl-sw i,.dl-sw i::after{transition:none}}
+
+/* ---------- fixes after the review (b8v2): the challenge's zoomed strip; a math line inside a paragraph ---------- */
+.dl-zf{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:4 3}
+.dl-gt{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round} /* a halo, so a curve never strikes through a reading */
+.dl-zt{font-size:11px}
+span.dl-fx{display:block}
+
+/* ---------- fixes after review codex-b9v3: the curve laid out for its own width, its axis titles in HTML (应修 4) ---------- */
+.dl-cplot{min-width:0}
+.dl-axy{font-size:12px;color:var(--ink-2);line-height:1.3;margin:0 0 2px}
+.dl-axx{font-size:12px;color:var(--ink-2);line-height:1.3;text-align:center;margin-top:2px}
+
+/* ---------- part 4's example: three pages, their whole-text hashes and MinHash signatures (应修 3) ---------- */
+.dl-xbox{display:grid;gap:10px;min-width:0;padding-bottom:12px;border-bottom:1px solid var(--line-2)}
+.dl-xbox .dl-cap{margin:0}
+.dl-xpgs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.dl-xpg{display:flex;flex-direction:column;gap:4px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
+.dl-xpg.bad{border-color:var(--c-oom);box-shadow:inset 0 0 0 1px var(--c-oom)}
+.dl-xh{display:flex;align-items:baseline;gap:6px;font-size:12px;color:var(--ink-2);line-height:1.3}
+.dl-xk{font:700 13px var(--font-mono);color:var(--ink)}
+.dl-xt{margin:0;font-size:12px;line-height:1.55;color:var(--ink)}
+.dl-xti{font-weight:700}
+/* a run of shaded words: one background, padding that takes room in the line (never a box-shadow, which a later word would paint
+   over the glyphs before it; owner's review b8) */
+.dl-xon{background:var(--line);border-radius:2px;padding:1px 2px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.dl-xm{font-size:11.5px;color:var(--ink-2);line-height:1.4}
+.dl-xhash{font:11.5px var(--font-mono);color:var(--ink)}
+.dl-xv{margin:2px 0 0;font-size:12px;line-height:1.4;font-weight:600;color:var(--ink)}
+.dl-xv.dl-xbad{color:var(--c-oom)}
+.dl-xsig{display:grid;gap:6px;min-width:0}
+.dl-xsig.off .dl-xgrid{opacity:.45}
+.dl-xsh{font-size:12px;color:var(--ink-2);line-height:1.4}
+.dl-xgrid{display:grid;grid-template-columns:auto repeat(3,max-content);gap:3px 8px;align-items:center;justify-content:start}
+.dl-xrow{display:contents}
+.dl-xl{font:700 12px var(--font-mono);color:var(--ink);padding-right:2px}
+.dl-xg{display:inline-flex;gap:2px;padding:2px;border:2px solid transparent;border-radius:3px}
+.dl-xg.hit{border-color:var(--ink)}
+.dl-xax .dl-xg{justify-content:center;padding-block:0;font-size:11px;color:var(--ink-3)}
+.dl-xbox .dl-xc{display:inline-block;min-width:26px;padding:2px 0;text-align:center;font:11.5px var(--font-mono);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:2px;cursor:help}
+.dl-xbox .dl-xc.same{background:var(--ink-2);border-color:var(--ink-2);color:var(--surface)}
+.dl-xbox .dl-xc:hover,.dl-xbox .dl-xc:focus{outline:2px solid var(--ink);outline-offset:1px;border-color:var(--ink)}
+.dl-xbox .dl-xc.same:hover,.dl-xbox .dl-xc.same:focus{background:var(--ink-2)}
+.dl-xbox .dl-xc:not(.same):hover,.dl-xbox .dl-xc:not(.same):focus{background:var(--surface)}
+.dl-sw-xw{background:var(--line);border:1px solid var(--ink-3)}
+.dl-sw-xs{background:var(--ink-2)}
+.dl-sw-xg{border:2px solid var(--ink);box-sizing:border-box}
+.dl-xtip table{border-collapse:collapse;margin:4px 0;font-size:12px}
+.dl-xtip th{text-align:left;font-weight:700;padding:1px 10px 1px 0}
+.dl-xtip td{padding:1px 10px 1px 0;vertical-align:top}
+.dl-xtip p{margin:4px 0 0}
+.dl-xtip .dl-fx{margin:6px 0 2px;font-size:13px;overflow:visible}
+@container (max-width:520px){
+  .dl-xpgs{grid-template-columns:minmax(0,1fr);gap:8px}
+  .dl-xgrid{gap:3px 4px}
+  .dl-xg{gap:1px;padding:1px}
+  .dl-xbox .dl-xc{min-width:20px;font-size:11px;padding:2px 0}
+}
+
+/* ---------- the challenge's result after Submit (owner's review b8, R1; as in train-capstone): the verdict, then your setting next to
+   the cheapest one (shared settings written once, the differing ones as chips), the one change that helps most, and the settings
+   that pass behind a closed disclosure; on the chart, the cheapest setting's curve once it is shown ---------- */
+.dl-gap{margin:6px 0 8px}
+.dl-sum{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.dl-sumcap{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.dl-same{margin:0 0 4px;color:var(--ink-2);line-height:1.45}
+.dl-c3{list-style:none;margin:0;padding:0}
+.dl-c3r{display:grid;gap:5px;padding:7px 0 8px;border-bottom:1px solid var(--line-2)}
+.dl-c3h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0}
+.dl-c3t{font-size:13px;font-weight:700;color:var(--ink);margin-right:2px}
+.dl-chip{font-size:11.5px;line-height:1.45;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--ink-2);white-space:nowrap}
+.dl-chip.on{border-color:var(--ink);color:var(--ink);font-weight:700;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--ink)}
+.dl-c3v{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.dl-c3c{display:grid;gap:1px;min-width:0}
+.dl-c3c small{font-size:11px;color:var(--ink-3);line-height:1.3}
+.dl-c3c b{font-size:13px;font-weight:650;color:var(--ink)}
+.dl-c3c.dl-over b{color:var(--c-oom)}
+.dl-next{margin:9px 0 0;font-size:13.5px;line-height:1.5}
+.dl-why{margin:7px 0 0;line-height:1.5;color:var(--ink-2)}
+.dl-all{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
+.dl-all>summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--ink);padding:4px 0}
+.dl-allb>p{margin:6px 0}
+.dl-tbl{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.dl-tbl th{font-weight:650;font-size:11.5px;color:var(--ink);text-align:right;padding:4px 4px;border-bottom:1px solid var(--line);vertical-align:bottom}
+.dl-tbl td{text-align:right;padding:3px 4px;border-bottom:1px solid var(--line-2);color:var(--ink-2);font-family:var(--font-mono)}
+.dl-tbl th:first-child,.dl-tbl td:first-child{text-align:left;font-family:var(--font-ui,inherit)}
+.dl-tbl tr.me td{font-weight:700;color:var(--ink);background:var(--surface-2)}
+.dl-bestc{fill:none;stroke:var(--c-ok);stroke-width:1.8;stroke-dasharray:1.5 3;stroke-linecap:round}
+.dl-sw-best{height:0!important;border-top:2.5px dotted var(--c-ok)}

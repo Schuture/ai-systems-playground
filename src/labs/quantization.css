@@ -1,0 +1,152 @@
+/* quantization: one block of 32 weights on a number line (before / after rounding, the grid of stored values, the weights that
+   become 0), the schemes as rows (bits per weight, output error, same pick as BF16), and the serving view (step times split into
+   reading weights / KV cache / compute, and the weights against 70 GiB lines). Colours (R5.6): weights blue, KV cache amber,
+   red only for the outlier that wipes out its block (R5.11) and the challenge's over-budget memory; green only for the goal. */
+.qz-stage .stage-head{align-items:center}
+.qz-stage .stage-head>div:first-child{min-width:0}
+.qz-stage .meter-title{overflow-wrap:anywhere}
+#qz-ctl-sch-wrap .seg-ctl button{padding:7px 2px}
+.qz-graph{padding:12px 14px 14px;display:grid;gap:14px;min-width:0}
+.qz-graph>[hidden]{display:none!important}
+.qz-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+.qz-phone:empty{display:none}
+@media (min-width:761px){.qz-phone{display:none}}
+.qz-graph>.qz-blockv:not([hidden])~.qz-chart:not([hidden]){border-top:1px solid var(--line);padding-top:12px}
+
+/* ---------- the block of weights ---------- */
+.qz-blockv{min-width:0;display:grid;gap:6px}
+.qz-tp{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;min-width:0}
+.qz-tp:empty{display:none}
+.qz-phs{display:flex;flex-wrap:wrap;gap:4px}
+.qz-ph{font:inherit;font-size:11.5px;padding:3px 8px;border:1px solid var(--line-2);border-radius:999px;background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.qz-ph:hover{border-color:var(--ink-3);color:var(--ink)}
+.qz-ph.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.qz-tbtns{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.qz-speed{display:inline-flex;gap:6px;align-items:center}
+.qz-speed-l{font-size:11.5px;color:var(--ink-3)}
+.qz-speed .seg{margin:0}
+.qz-svg{display:block;width:100%;height:auto;overflow:visible;max-width:100%}
+.qz-plot{fill:var(--surface);stroke:var(--line-2);stroke-width:1}
+.qz-ax{stroke:var(--line);stroke-width:1}
+.qz-zero{stroke:var(--ink-3);stroke-width:1}
+.qz-yl,.qz-xl{font-size:10.5px;fill:var(--ink-3);font-family:var(--font-mono)}
+.qz-xl{font-family:var(--font-ui)}
+.qz-seg{fill:var(--surface-2);stroke:var(--line-2);stroke-width:1}
+.qz-seg2{fill:var(--sunken)}
+.qz-grid{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 3;opacity:.55}
+.qz-mv{stroke:var(--ink-3);stroke-width:1.2}
+.qz-orig{fill:none;stroke:var(--c-weights);stroke-width:1.6}
+.qz-orig.qz-set{stroke-width:2.4}
+.qz-q{fill:var(--c-weights);stroke:none}
+.qz-x{stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+.qz-ol{font-size:10.5px;fill:var(--ink-2);font-family:var(--font-mono)}
+.qz-orig.qz-red{stroke:var(--c-oom)}
+.qz-q.qz-red{fill:var(--c-oom)}
+.qz-mv.qz-red{stroke:var(--c-oom)}
+.qz-redt{fill:var(--c-oom);font-weight:650}
+.qz-legend{flex-wrap:wrap;gap:4px 14px}
+.qz-sw{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:5px;vertical-align:-2px;font-style:normal;text-align:center;line-height:12px;font-size:12px}
+.qz-sw-o{border:1.6px solid var(--c-weights);border-radius:50%;box-sizing:border-box}
+.qz-sw-q{background:var(--c-weights);border-radius:50%;transform:scale(.8)}
+.qz-sw-x{color:var(--ink);font-weight:700}
+.qz-sw-g{border-top:1px dashed var(--ink-3);height:0;width:14px;vertical-align:3px;border-radius:0}
+.qz-sw-r{border:1.6px solid var(--c-oom);border-radius:50%;box-sizing:border-box}
+.qz-sw-b{background:var(--surface-2);border:1px solid var(--line-2)}
+.qz-sw-w{background:var(--c-weights)}
+.qz-sw-kv{background:var(--c-kv)}
+.qz-sw-c{background:var(--ink-3)}
+.qz-sw-long{border:2px solid var(--ink);box-sizing:border-box}
+.qz-sw-gl{border-left:2px dashed var(--ink);width:0;height:12px;border-radius:0}
+.qz-note{color:var(--ink-2);line-height:1.45;min-height:1.45em}
+.qz-note:empty{display:none}
+
+/* ---------- the schemes ---------- */
+.qz-chart{min-width:0}
+.qz-crows{display:grid;gap:4px}
+.qz-crow{display:grid;grid-template-columns:minmax(0,1.6fr) 44px minmax(60px,2fr) 50px 50px;gap:8px;align-items:center;padding:3px 6px;border-radius:4px;font-size:12.5px;min-width:0}
+.qz-crow.me{background:var(--surface-2);outline:1px solid var(--line-2)}
+.qz-cl{color:var(--ink);min-width:0;overflow-wrap:anywhere;line-height:1.3}
+.qz-cl em{font-style:normal;font-size:10.5px;color:var(--ink-3);margin-left:6px;white-space:nowrap}
+.qz-cb,.qz-cv,.qz-ca{font-family:var(--font-mono);font-size:12px;text-align:right;color:var(--ink-2);white-space:nowrap}
+.qz-crow.me .qz-cl{font-weight:650}
+.qz-ct{position:relative;height:12px;background:var(--surface-2);border-radius:2px;min-width:0}
+.qz-ct i{position:absolute;left:0;top:0;bottom:0;background:var(--c-weights);border-radius:2px;transition:width .25s ease-out}
+.qz-chead{margin-top:6px;line-height:1.4}
+@media (max-width:480px){.qz-crow{grid-template-columns:minmax(0,1.4fr) 36px minmax(36px,1.2fr) 44px 46px;gap:5px;padding:3px 2px;font-size:11.5px}.qz-cl em{display:block;margin-left:0}}
+
+/* ---------- step times and memory ---------- */
+.qz-serve{display:flex;flex-direction:column;gap:14px;min-width:0}
+.qz-serve.qz-memfirst .qz-mem{order:-1}
+.qz-serve>*+*{border-top:1px solid var(--line);padding-top:12px}
+.qz-serve.qz-memfirst .qz-mem{border-top:0;padding-top:0}
+.qz-serve.qz-memfirst .qz-steps{border-top:1px solid var(--line);padding-top:12px}
+.qz-steps{display:grid;gap:10px;min-width:0}
+.qz-sk{display:grid;gap:3px;min-width:0}
+.qz-skh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px}
+.qz-skh b{font-weight:650;color:var(--ink)}
+.qz-skh span{font-family:var(--font-mono);color:var(--ink)}
+.qz-skh em{font-style:normal;color:var(--ink-3);margin-left:8px}
+.qz-skr{display:grid;grid-template-columns:76px minmax(0,1fr) 56px;gap:8px;align-items:center;font-size:11.5px}
+.qz-skl{color:var(--ink-3)}
+.qz-skr.long .qz-skl{color:var(--ink);font-weight:650}
+.qz-skt{position:relative;height:12px;background:var(--surface-2);border-radius:2px;display:flex;overflow:hidden;min-width:0}
+.qz-skr.long .qz-skt{outline:2px solid var(--ink);outline-offset:0}
+.qz-skt i{display:block;height:100%;flex:none;transition:width .25s ease-out}
+.qz-w{background:var(--c-weights)}
+.qz-kv{background:var(--c-kv)}
+.qz-c{background:var(--ink-3)}
+.qz-skv{font-family:var(--font-mono);text-align:right;color:var(--ink-2);white-space:nowrap}
+.qz-mem{min-width:0}
+.qz-mrows{display:grid;gap:5px}
+.qz-mrow{display:grid;grid-template-columns:62px minmax(0,1fr) 64px;grid-template-areas:"l t v" ". n n";gap:2px 8px;align-items:center;padding:3px 6px;border-radius:4px;font-size:12px}
+.qz-mrow.me{background:var(--surface-2);outline:1px solid var(--line-2)}
+.qz-ml{grid-area:l;color:var(--ink)}
+.qz-mrow.me .qz-ml{font-weight:650}
+.qz-mt{grid-area:t;position:relative;height:12px;background:var(--surface-2);border-radius:2px;min-width:0}
+.qz-mt i{position:absolute;left:0;top:0;bottom:0;background:var(--c-weights);border-radius:2px;transition:width .25s ease-out}
+.qz-gl{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed var(--ink);z-index:1}
+.qz-mv2{grid-area:v;font-family:var(--font-mono);text-align:right;color:var(--ink);white-space:nowrap}
+.qz-mn{grid-area:n;color:var(--ink-3);font-size:11px}
+.qz-gls{position:relative;height:16px;margin:2px 0 0 76px;margin-right:78px}
+.qz-gls span{position:absolute;transform:translateX(-50%);white-space:nowrap;font-family:var(--font-mono);font-size:10.5px}
+
+/* ---------- rail ---------- */
+.qz-lead{margin:6px 0 4px}
+.qz-lv .levers{margin-top:6px}
+.qz-ic{margin-top:8px}
+.qz-saved{margin:6px 0 0;color:var(--ink-3)}
+/* part 2: the three steps of quantization, in the card's own font (S1) */
+.qz-steps3{margin:6px 0 8px;padding-left:20px;display:grid;gap:4px;font:inherit}
+.qz-steps3 li{line-height:1.5}
+.qz-rem{margin:0 0 10px;padding-left:18px;display:grid;gap:8px}
+.qz-rem li{line-height:1.5}
+.qz-goal{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
+.qz-goal.qz-over b{color:var(--c-oom)}
+.qz-goal.met b{color:var(--c-ok)}
+.qz-ch-sub{margin-top:8px}
+.qz-ch-res .cmp{margin-top:10px}
+
+/* ---------- Settings ---------- */
+.qz-grp{border-top:1px solid var(--line-2);padding-top:8px;margin-top:4px}
+.qz-gh{font-size:11.5px;font-weight:650;color:var(--ink-2);margin-bottom:4px}
+.qz-asm{margin:0;padding-left:16px;display:grid;gap:3px;font-size:12px;line-height:1.4;color:var(--ink-2)}
+.qz-asm b{color:var(--ink);font-weight:600}
+.qz-prod{padding-left:18px;display:grid;gap:6px;min-width:0}
+.qz-prod code,.qz-prod a{overflow-wrap:anywhere}
+.qz-app .t.qz-td,.pop .t.qz-td{cursor:help}
+
+/* ---------- Show the math: short blocks, a chain's “=” signs in one column ---------- */
+.qz-mb{padding:8px 0 10px}
+.qz-mb+.qz-mb{border-top:1px solid var(--line)}
+.qz-mb>p{margin:0 0 6px}
+.qz-mb>p:last-child{margin-bottom:0}
+.qz-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3}
+.qz-eq-l{text-align:right}
+@media (max-width:560px){.qz-eqs-nm{grid-template-columns:max-content max-content}.qz-eqs-nm>.qz-eq-l{grid-column:1/-1;text-align:left}.qz-eqs-nm>.qz-eq-l:empty{display:none}}
+
+/* ---------- the mini result bar (dock) ---------- */
+.qz-dk{position:relative;height:10px;background:var(--surface-2);border-radius:2px;min-width:60px}
+.qz-dk i{position:absolute;left:0;top:0;bottom:0;background:var(--c-weights);border-radius:2px}
+.qz-dk b{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed var(--ink)}
+/* five cards share the row: the change note under a value wraps inside its card */
+.qz-metrics .metric .d{white-space:normal;overflow-wrap:anywhere}

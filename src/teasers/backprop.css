@@ -1,0 +1,16 @@
+/* backprop teaser: two lanes of boxes in grayscale (R5.6): solid arrows = forward values, dashed arrows = backward gradients */
+.tz-bp-range{width:100%;margin:0}
+.tz-bp-vis text{font-family:var(--font-mono);font-size:10px;fill:var(--ink-2)}
+.tz-bp-vis text.tz-bp-lane{font-size:10px;fill:var(--ink-3)}
+.tz-bp-vis text.tz-bp-cap{font-size:9.5px;fill:var(--ink-3)}
+.tz-bp-vis text.tz-bp-val{font-size:10.5px;font-weight:650;fill:var(--ink)}
+.tz-bp-vis text.tz-bp-op{font-size:9.5px;fill:var(--ink-2)}
+.tz-bp-box{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.tz-bp-box.tz-bp-on{stroke:var(--ink);stroke-width:2}
+.tz-bp-fw{stroke:var(--ink-2);stroke-width:1.6}
+.tz-bp-fwh{fill:var(--ink-2)}
+.tz-bp-bk{stroke:var(--ink);stroke-width:1.6;stroke-dasharray:4 3}
+.tz-bp-bkh{fill:var(--ink)}
+.tz-bp-sw{display:inline-block;width:14px;height:0;margin-right:5px;flex:none}
+.tz-bp-swfw{border-top:1.6px solid var(--ink-2)}
+.tz-bp-swbk{border-top:1.6px dashed var(--ink)}

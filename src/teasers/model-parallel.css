@@ -1,0 +1,15 @@
+/* model-parallel teaser: a 4-row GPipe Gantt chart, grayscale (R5.6): outlined forwards, solid backwards, hatched idle time.
+   Every row keeps its height at every position of the slider. */
+.tz-mp-vis{padding:2px 0;min-width:0}
+.tz-mp-rows{display:grid;gap:5px;min-width:0}
+.tz-mp-row{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;align-items:center;min-width:0}
+.tz-mp-lab{font-family:var(--font-mono);font-size:10.5px;color:var(--ink);white-space:nowrap}
+.tz-mp-trk{position:relative;height:16px;min-width:0;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.tz-mp-trk i{position:absolute;top:0;bottom:0;box-sizing:border-box}
+.tz-mp-f{background:var(--surface);border:1px solid var(--ink-2);border-radius:1px}
+.tz-mp-b{background:var(--ink-2)}
+.tz-mp-i{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line) 3px 4px)}
+.tz-mp-swf{background:var(--surface);border:1px solid var(--ink-2)}
+.tz-mp-swb{background:var(--ink-2);border-color:var(--ink-2)}
+.tz-mp-swi{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line) 3px 4px)}
+.tz-mp-gn{font-weight:650;color:var(--ink)}

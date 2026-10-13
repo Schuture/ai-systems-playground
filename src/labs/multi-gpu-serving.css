@@ -1,0 +1,118 @@
+/* multi-gpu-serving: tensor, pipeline and expert parallelism for serving */
+.mgs-graph{display:flex;flex-direction:column;gap:0}
+.mgs-blk{padding:6px 0}
+.mgs-blk+.mgs-blk{border-top:1px solid var(--line)}
+.mgs-bh{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);margin:0 0 6px;min-height:1.35em;overflow-wrap:anywhere}
+.mgs-gpus{width:100%;min-width:0}
+.mgs-svg{display:block;max-width:100%;height:auto}
+.mgs-svg text{font-family:var(--font-mono);font-size:11px;fill:var(--ink-2)}
+.mgs-svg .mgs-gn{font-size:10px;fill:var(--ink)}
+.mgs-svg .mgs-bt{font-size:10px;fill:var(--ink-2)}
+.mgs-svg .mgs-ibt{font-size:10px;fill:var(--ink-3)}
+.mgs-node{fill:none;stroke:var(--line);stroke-width:1}
+.mgs-gbox{fill:var(--sunken);stroke:var(--ink-3);stroke-width:.8}
+.mgs-gbox.bad{stroke:var(--c-oom);stroke-width:1.6}
+.mgs-gpu.off .mgs-gbox{stroke-dasharray:3 2;opacity:.6}
+.mgs-m.w{fill:var(--c-weights)}
+.mgs-m.kv{fill:var(--c-kv)}
+.mgs-m.oh{fill:var(--c-overhead)}
+.mgs-br{fill:none;stroke:var(--ink-3);stroke-width:1}
+.mgs-ib{stroke:var(--ink-3);stroke-width:2;stroke-dasharray:4 3}
+.mgs-ib.bad{stroke:var(--c-oom)}
+.mgs-ring{fill:none;stroke:var(--ink-2);stroke-width:1.6;stroke-dasharray:6 4;opacity:0;transition:opacity .2s}
+.mgs-ring.bad{stroke:var(--c-oom)}
+.mgs-merging .mgs-ring{opacity:1}
+.mgs-busy .mgs-m.w,.mgs-busy .mgs-m.kv{opacity:.7}
+.mgs-legend{display:flex;flex-wrap:wrap;gap:2px 14px;margin:4px 0 2px;font-size:12px}
+.mgs-legend>span,.mgs-leg>span{display:inline-flex;align-items:center;gap:6px;cursor:help}
+.mgs-sw{display:inline-block;width:14px;height:10px;border-radius:2px;flex:none}
+.mgs-sw.w{background:var(--c-weights)}
+.mgs-sw.kv{background:var(--c-kv)}
+.mgs-sw.oh{background:var(--c-overhead)}
+.mgs-sw.bad{background:var(--c-oom)}
+.mgs-sw.cm{background:var(--ink-3)}
+.mgs-sw.ar{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,transparent 2px 4px);border:1px solid var(--ink-2)}
+.mgs-sw.ep{background:var(--ink-3)}
+.mgs-sw.avgl{width:2px;height:12px;background:var(--ink);border-radius:0}
+/* one layer, played */
+.mgs-layer{width:100%;min-width:0}
+.mgs-lbar{position:relative;height:22px;background:var(--sunken);border-radius:4px;overflow:hidden}
+.mgs-seg{position:absolute;top:0;bottom:0;display:block;cursor:help}
+.mgs-seg.cm{background:var(--ink-3)}
+.mgs-seg.ar{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--sunken) 2px 5px)}
+.mgs-seg.ar.bad{background:repeating-linear-gradient(135deg,var(--c-oom) 0 2px,var(--c-oom-soft) 2px 5px)}
+.mgs-head{position:absolute;top:-2px;bottom:-2px;width:2px;margin-left:-1px;background:var(--ink);pointer-events:none}
+.mgs-lscale{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);margin-top:2px}
+.mgs-nofit{margin:4px 0;color:var(--c-oom);font-weight:600}
+.mgs-run{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 0 2px}
+.mgs-run .btn{min-height:30px}
+.mgs-speed{display:inline-flex;align-items:center;gap:6px;flex:none}
+.mgs-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
+.mgs-app .mgs-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;min-height:30px}
+.mgs-prog{flex:1 1 140px;min-width:120px}
+.mgs-sum{margin:4px 0 0;font-size:13.5px}
+/* the TP sweep */
+.mgs-swp{display:flex;flex-direction:column;gap:4px}
+.mgs-swp{gap:1px}
+.mgs-sw-row{display:grid;grid-template-columns:minmax(0,9em) minmax(60px,1fr) minmax(0,7em);gap:8px;align-items:center;font-size:12.5px;padding:0 4px;border-radius:4px;line-height:1.3}
+.mgs-sw-row.on{background:var(--sunken);font-weight:600}
+.mgs-sw-l{font-family:var(--font-mono);font-size:11.5px;overflow-wrap:anywhere}
+.mgs-sw-tr{display:flex;height:12px;background:var(--sunken);border-radius:3px;overflow:hidden;min-width:0}
+.mgs-sw-row.on .mgs-sw-tr{background:var(--bg,transparent);outline:1px solid var(--line)}
+.mgs-sw-tr i{display:block;height:100%}
+.mgs-sw-tr i.cm{background:var(--ink-3)}
+.mgs-sw-tr i.ar{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,transparent 2px 4px)}
+.mgs-sw-tr i.ar.bad{background:repeating-linear-gradient(135deg,var(--c-oom) 0 2px,var(--c-oom-soft) 2px 4px)}
+.mgs-sw-v{font-size:11.5px;text-align:right;white-space:nowrap}
+@media (max-width:560px){.mgs-sw-row{grid-template-columns:minmax(0,8em) minmax(40px,1fr) minmax(0,6em)}}
+/* MoE: work per GPU */
+.mgs-ep{margin:10px 0 6px;padding:8px 10px;border:1px solid var(--line);border-radius:6px}
+.mgs-ep-row{display:grid;grid-template-columns:3.6em minmax(0,1fr) 3.4em;gap:8px;align-items:center;font-size:12px;margin:3px 0}
+.mgs-ep-l{font-family:var(--font-mono);font-size:11px;color:var(--ink-2)}
+.mgs-ep-tr{position:relative;height:10px;background:var(--sunken);border-radius:3px}
+.mgs-ep-tr i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:3px}
+.mgs-ep-tr i.bad{background:var(--c-oom)}
+.mgs-ep-avg{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink)}
+.mgs-ep-v{text-align:right;font-size:11.5px}
+.mgs-leg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:11.5px}
+/* challenge */
+.mgs-goal{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
+.mgs-goal.mgs-over b{color:var(--c-oom)}
+.mgs-goal.met b{color:var(--c-ok)}
+.mgs-ch-res{margin-top:10px}
+.mgs-app .seg-ctl[data-key="chpp"] button:disabled{opacity:.4;cursor:not-allowed}
+/* text lists */
+.mgs-prod li{margin:4px 0}
+.mgs-prod code{overflow-wrap:anywhere;word-break:break-word}
+.mgs-rem{margin:4px 0 0;padding-left:20px}
+.mgs-rem>li{margin:0 0 8px}
+.mgs-rem>li>p{margin:0 0 4px}
+.mgs-sys{margin:4px 0 8px;padding-left:18px}
+.mgs-sys li{margin:3px 0}
+/* dock */
+.mgs-dk{display:flex;height:8px;background:var(--sunken);border-radius:4px;overflow:hidden;min-width:60px}
+.mgs-dk i{display:block;height:100%}
+.mgs-dk i.cm{background:var(--ink-3)}
+.mgs-dk i.ar{background:var(--ink-2)}
+.mgs-dk i.ar.bad{background:var(--c-oom)}
+/* show the math */
+.mgs-mb{padding:8px 0 10px}
+.mgs-mb+.mgs-mb{border-top:1px solid var(--line)}
+.mgs-mb>p{margin:0 0 6px}
+.mgs-mb-res{margin-bottom:0}
+.mgs-eqs{display:grid;grid-template-columns:max-content max-content minmax(0,max-content);justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.35em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3;max-width:100%}
+.mgs-eq-l{text-align:right}
+.mathbody{container-type:inline-size}
+@container (max-width:560px){.mgs-eqs{grid-template-columns:max-content minmax(0,1fr)}.mgs-eqs>.mgs-eq-l{grid-column:1/-1;text-align:left}.mgs-eqs>.mgs-eq-l:empty{display:none}.mgs-eq-r{min-width:0;overflow-x:auto}}
+.drill-a .mgs-eqs{font-size:14px}
+@media (prefers-reduced-motion:reduce){.mgs-ring{transition:none}}
+/* metric values fit their box at every width (S22): a smaller number, the unit smaller still */
+.mgs-metrics .metric .v{font-size:clamp(14px,3.6cqi,17px)}
+.mgs-metrics .metric .v .u{font-size:.76em;color:var(--ink-2)}
+.mgs-sw-note{margin:2px 0 0;line-height:1.35}
+/* dock in the MoE part: one bar per GPU */
+.mgs-dk.mgs-dk-ep{align-items:flex-end;gap:2px;height:14px;background:none}
+.mgs-dk.mgs-dk-ep i{flex:1;border-radius:1px}
+.mgs-dk.mgs-dk-ep i.bad{background:var(--c-oom)}
+.mgs-ep-row{cursor:help}
+.mgs-metrics .metric .v.txt{white-space:normal;font-size:14px;line-height:1.25}

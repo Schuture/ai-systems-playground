@@ -1,0 +1,222 @@
+/* checkpointing: the loss picture (reference, run, crash, resumed run, red where the resumed run is worse), the checkpoint's
+   compartments above it, the files on disk, the wasted-share curves with a 12-hour strip, the player, and the challenge's goal rows.
+   Colours (R5.6): grayscale, dashes and hatching; red only for the failure and its cost (R5.11); green and red for the goal rows. */
+.ckp-app [hidden]{display:none!important}
+.ckp-stage .stage-head{align-items:center}
+.ckp-graph{padding:12px 14px 14px;min-width:0}
+/* H5/H6 (the owner, 2026-10-09): in the interval picture the curve's legend sits right under the curve, and the sum of the three
+   wasted terms is a block of its own under a hairline (before, the curve's legend came after the sum, and the two ran together) */
+.ckp-graph:has(>.ckp-terms:not([hidden])){display:flex;flex-direction:column}
+.ckp-graph>.ckp-box{order:0}.ckp-graph>.ckp-chart{order:1}.ckp-graph>.ckp-leg{order:2}.ckp-graph>.ckp-terms{order:3}.ckp-graph>.ckp-player{order:4}
+.ckp-graph>.ckp-terms:not([hidden]){border-top:1px solid var(--line);padding-top:10px;margin-top:12px}
+.ckp-chart{min-width:0;overflow:hidden}
+.ckp-chart svg{display:block;max-width:100%;overflow:visible}
+
+/* ---------- the checkpoint's compartments ---------- */
+.ckp-box{margin:0 0 10px}
+.ckp-boxt{font-size:12.5px;font-weight:650;color:var(--ink);margin-bottom:6px}
+.ckp-cells{display:flex;flex-wrap:wrap;gap:6px}
+.ckp-cell{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border:1.5px dashed var(--line);border-radius:4px;font-size:12px;color:var(--ink-3);cursor:help;background:var(--surface)}
+.ckp-cell i{font-style:normal;font-family:var(--font-mono);font-size:11px;width:1em;text-align:center}
+.ckp-cell.on{border:1.5px solid var(--ink);color:var(--ink);background:var(--surface-2)}
+.ckp-cell:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+
+/* ---------- the loss picture ---------- */
+.ckp-grid{stroke:var(--line-2);stroke-width:1}
+.ckp-ax{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.ckp-r{text-anchor:end}
+.ckp-mid{text-anchor:middle}
+.ckp-ref{fill:none;stroke:var(--ink-3);stroke-width:1.6;stroke-linejoin:round;opacity:.75}
+.ckp-run{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
+.ckp-res{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-dasharray:5 3;stroke-linejoin:round}
+.ckp-worse{fill:var(--c-oom-soft);stroke:none}
+.ckp-ck{fill:var(--surface);stroke:var(--ink);stroke-width:1.4}
+.ckp-ck.on{fill:var(--ink)}
+.ckp-crashl{stroke:var(--c-oom);stroke-width:1.2;stroke-dasharray:3 3}
+.ckp-x{font-family:var(--font-ui);font-size:15px;font-weight:700;fill:var(--c-oom);text-anchor:middle}
+.ckp-ax.ckp-bad{fill:var(--c-oom);font-weight:650}
+.ckp-badzone{fill:var(--c-oom-soft)}
+.ckp-ax.ckp-lref{fill:var(--ink-3)}
+.ckp-ax.ckp-lrun,.ckp-ax.ckp-lres{fill:var(--ink);font-weight:650}
+.ckp-ax{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+
+/* ---------- the files on disk ---------- */
+.ckp-fs{display:grid;gap:10px;padding:4px 0}
+.ckp-frow{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr);gap:12px;align-items:center}
+.ckp-ft{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.ckp-files{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.ckp-file{display:flex;flex-direction:column;gap:2px;padding:6px 10px;border:1.5px solid var(--ink);border-radius:4px;background:var(--surface);cursor:help;min-width:0;max-width:100%}
+.ckp-file b{font-size:12.5px;overflow-wrap:anywhere}
+.ckp-file span{font-size:11.5px;color:var(--ink-2)}
+.ckp-file.rec{border-style:dashed;border-color:var(--ink-2)}
+.ckp-file.bad{border-color:var(--c-oom);background:repeating-linear-gradient(135deg,var(--c-oom-soft) 0 6px,var(--surface) 6px 10px)}
+.ckp-file.bad span{color:var(--c-oom)}
+.ckp-file:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.ckp-verdict{padding:6px 10px;border-radius:4px;font-size:12.5px;font-weight:650;line-height:1.4}
+.ckp-verdict.bad{color:var(--c-oom);background:var(--c-oom-soft);border-left:3px solid var(--c-oom)}
+.ckp-verdict.ok{color:var(--c-ok);background:var(--c-ok-soft);border-left:3px solid var(--c-ok)}
+
+/* ---------- the wasted-share picture ---------- */
+.ckp-wc{fill:none;stroke:var(--ink-3);stroke-width:1.4;stroke-linejoin:round}
+.ckp-wc.ckp-wca{stroke-dasharray:5 3}
+.ckp-wc.on{stroke:var(--ink);stroke-width:2.2}
+.ckp-opt{fill:var(--ink-2)}
+.ckp-now{fill:var(--surface);fill-opacity:.4;stroke:var(--ink);stroke-width:2.2}
+/* the challenge's limits on the curve (R15): the pale range breaks the storage or rollback limit; the green dot is the least within them */
+.ckp-nofit{fill:var(--sunken);fill-opacity:.78}
+.ckp-best{fill:var(--c-ok);stroke:var(--surface);stroke-width:1.5}
+.ckp-best-l{stroke:var(--c-ok);stroke-width:1.2;stroke-dasharray:3 3}
+.ckp-ax.ckp-best-t{fill:var(--c-ok);font-weight:650}
+.ckp-train{fill:var(--line)}
+.ckp-save{fill:var(--ink)}
+.ckp-save.ckp-savea{fill:var(--ink-3)}
+.ckp-lost{fill:var(--c-oom-soft);stroke:var(--c-oom);stroke-width:1}
+/* the restart has its own colour, grey hatching, so that it reads apart from the red lost work (owner b8) */
+.ckp-rst{fill:url(#ckp-hatch);stroke:var(--ink-2);stroke-width:1}
+.ckp-hbg{fill:var(--surface)}
+.ckp-hl{stroke:var(--ink-2);stroke-width:1.5}
+.ckp-fail{stroke:var(--c-oom);stroke-width:2}
+
+/* legend beside the picture, under it (R5.9) */
+.ckp-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-family:var(--font-mono);font-size:11px;line-height:1.35;color:var(--ink-2)}
+.ckp-leg>span{display:inline-flex;align-items:center;cursor:help}
+.ckp-leg .sw{width:14px;height:10px;margin-right:5px;flex:none}
+.sw.ckp-sw-ref{background:none;border:0;border-top:2px solid var(--ink-3);height:0;border-radius:0}
+.sw.ckp-sw-run,.sw.ckp-sw-sync{background:none;border:0;border-top:2px solid var(--ink);height:0;border-radius:0}
+.sw.ckp-sw-res,.sw.ckp-sw-async{background:none;border:0;border-top:2px dashed var(--ink);height:0;border-radius:0}
+.sw.ckp-sw-worse{background:var(--c-oom-soft);border-color:var(--c-oom)}
+.sw.ckp-sw-ck{width:8px;height:8px;border:1.4px solid var(--ink);border-radius:0;background:var(--surface)}
+.sw.ckp-sw-now{width:10px;height:10px;border:2px solid var(--ink);border-radius:50%;background:transparent}
+.sw.ckp-sw-save{background:var(--ink);border-color:var(--ink)}
+.sw.ckp-sw-lost{background:var(--c-oom-soft);border-color:var(--c-oom)}
+.sw.ckp-sw-rst{background:repeating-linear-gradient(135deg,var(--ink-2) 0 1.5px,var(--surface) 1.5px 4px);border-color:var(--ink-2)}
+.sw.ckp-sw-savea{background:var(--ink-3);border-color:var(--ink-3);width:4px!important}
+.sw.ckp-sw-fail{width:2px;height:12px;background:var(--c-oom);border-color:var(--c-oom);border-radius:0}
+.sw.ckp-sw-train{background:var(--line);border-color:var(--line)}
+.sw.ckp-sw-nofit{background:var(--sunken);border-color:var(--line)}
+.sw.ckp-sw-best{width:9px;height:9px;border-radius:50%;background:var(--c-ok);border-color:var(--c-ok)}
+
+/* ---------- the three terms of the wasted share, under the interval picture (owner b8, part 4) ---------- */
+.ckp-terms{margin:8px 0 2px}
+.ckp-terms-h{font-size:12.5px;font-weight:650;color:var(--ink);margin-bottom:5px}
+.ckp-tbar{position:relative;display:flex;height:14px;border:1px solid var(--line);border-radius:3px;background:var(--surface);overflow:hidden}
+.ckp-tbar i{display:block;height:100%;flex:none}
+.ckp-tbar .save{background:var(--ink)}
+.ckp-tbar .lost{background:var(--c-oom-soft);box-shadow:inset 0 0 0 1px var(--c-oom)}
+.ckp-tbar .rst{background:repeating-linear-gradient(135deg,var(--ink-2) 0 1.5px,var(--surface) 1.5px 4px);box-shadow:inset 0 0 0 1px var(--ink-2)}
+.ckp-tscale{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin-top:2px}
+.ckp-tlist{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:4px;font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.ckp-tlist>span{display:inline-flex;align-items:center;gap:5px;cursor:help;white-space:nowrap}
+.ckp-tlist .sw{width:14px;height:10px;flex:none}
+.ckp-tlist b{font-family:var(--font-mono);font-weight:650;color:var(--ink)}
+.ckp-tlist .ckp-tsum{color:var(--ink)}
+/* the formula's terms with their meaning, in the rail (one row each) */
+.ckp-tt{width:100%;border-collapse:collapse;margin:6px 0 8px;font-size:13px;line-height:1.45}
+.ckp-tt td{padding:5px 4px;vertical-align:middle;border-top:1px solid var(--line-2)}
+.ckp-tt tr:first-child td{border-top:0}
+.ckp-tt-k{white-space:nowrap;width:1%}
+.ckp-tt-k .sw{display:inline-block;width:12px;height:10px;margin-right:6px;vertical-align:middle;border-width:1px;border-style:solid;border-radius:2px}
+.ckp-tt b{display:block;font-weight:650;color:var(--ink)}
+.ckp-tt-v{text-align:right;white-space:nowrap;width:1%;font-weight:650;color:var(--ink)}
+
+/* ---------- the data each step reads, under the loss picture (owner b8, scenario 3) ---------- */
+.ckp-ep0{fill:var(--line)}
+.ckp-ep1{fill:var(--line-2)}
+.ckp-epn{font-family:var(--font-mono);font-size:10px;fill:var(--ink-2);text-anchor:middle}
+.ckp-twice{fill:var(--c-oom-soft);stroke:var(--c-oom);stroke-width:1.2}
+.ckp-never{fill:url(#ckp-nhatch);stroke:var(--c-oom);stroke-width:1;stroke-dasharray:3 2}
+.ckp-nbg{fill:var(--surface)}
+.ckp-nl{stroke:var(--c-oom);stroke-width:1.2}
+.ckp-ax.ckp-dsl{fill:var(--c-oom);font-weight:650}
+/* chart text at 11 px on a phone, where the charts are drawn at their real width (readable at 390, R7.8) */
+@media (max-width:760px){.ckp-ax,.ckp-ds .ckp-epn{font-size:11px}}
+
+/* ---------- the player ---------- */
+.ckp-player{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:8px}
+.ckp-player .ctl{display:flex;align-items:center;gap:6px;margin:0}
+.ckp-player .ctl>.lbl,.ckp-player .ctl-label{font-size:12px;margin:0}
+.ckp-player .seg-ctl button{font-size:12px;padding:3px 9px}
+/* H7 (the owner, 2026-10-09, on GRPO's player: “重放按钮和速度按钮没有对齐”): Replay, the step buttons and the speed buttons share one
+   height and one centre line */
+.ckp-player .btn.sm,.ckp-player .seg-ctl{height:30px;box-sizing:border-box}
+.ckp-player .btn.sm{padding-top:0;padding-bottom:0}
+.ckp-player .seg-ctl button{padding-top:0;padding-bottom:0}
+.ckp-player [data-act="play"]{min-width:96px;justify-content:center}
+.ckp-scrub{flex:1 1 160px;min-width:0;width:100%}
+.ckp-phase{flex-basis:100%;margin:0;font-size:11.5px;color:var(--ink-2);min-height:1.4em;line-height:1.4}
+
+/* ---------- metric cards ---------- */
+.ckp-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.ckp-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* ---------- rail ---------- */
+.ckp-fx{margin:8px 0;overflow-x:auto;max-width:100%}
+.ckp-parts{display:grid;gap:6px;margin:8px 0}
+.ckp-part{display:grid;grid-template-columns:20px minmax(0,1fr);gap:8px;align-items:start;text-align:left;padding:7px 9px;border:1.5px dashed var(--line);border-radius:6px;background:var(--surface);color:var(--ink-2);font:inherit;font-size:13px;line-height:1.4;cursor:pointer}
+.ckp-part b{display:block;color:var(--ink);font-weight:650}
+.ckp-part .small{display:block;color:var(--ink-3)}
+.ckp-part.on,.ckp-part[aria-pressed="true"]{border:1.5px solid var(--ink);background:var(--surface-2)}
+.ckp-part.fixed{cursor:default}
+.ckp-part:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.ckp-sw{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border:1.5px solid var(--ink-2);border-radius:3px;font-size:12px;font-weight:700;color:var(--ink);background:var(--surface)}
+.ckp-defs{list-style:none;margin:8px 0;padding:0;display:grid;gap:6px}
+.ckp-defs li{display:grid;grid-template-columns:6.5em minmax(0,1fr);gap:8px;font-size:13px;line-height:1.45}
+/* aligned lists (R2.11): one item per line, the names in one column, what each does in the next, at every width */
+.ckp-defs.ckp-al{grid-template-columns:max-content minmax(0,1fr);gap:4px 10px;font-size:13px;line-height:1.45}
+/* the lists of real systems pair a long name (PyTorch 分布式存档) with a long file name: in the narrow rail two columns broke both
+   mid-word, so each name gets its own line and what it does sits under it, indented (R2.11, R7.8) */
+.ckp-defs.ckp-al:not(.ckp-sym){grid-template-columns:minmax(0,1fr);gap:0}
+.ckp-defs.ckp-al:not(.ckp-sym) span{padding:0 0 6px .9em}
+.ckp-defs.ckp-al li{display:contents}
+.ckp-defs.ckp-al b{font-weight:650;color:var(--ink)}
+.ckp-defs.ckp-sym b{font-family:var(--font-mono);font-weight:600}
+.ckp-remlist{margin:6px 0 10px;padding-left:18px;display:grid;gap:8px}
+.ckp-rem{font-size:12px;white-space:nowrap}
+.ckp-mt{margin-top:10px}
+.ckp-lv{margin:8px 0}
+.ckp-prod{margin:0;padding-left:18px;display:grid;gap:8px;font-size:13px}
+.ckp-prod code{word-break:break-all}
+.ckp-tg{margin:0 6px 6px 0}
+/* the Settings toggles (owner b8: hovering a pressed one emptied it). The kit's .btn.ghost:hover sets a light background and is more
+   specific than a plain .ckp-tg rule, so the white label vanished on white. These rules out-rank it: a pressed toggle stays dark with a
+   light label on hover, focus and press, in both themes; hover darkens it a little instead. */
+.btn.ghost.ckp-tg[aria-pressed="true"],.btn.ghost.ckp-tg[aria-pressed="true"]:active,.btn.ghost.ckp-tg[aria-pressed="true"]:focus{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn.ghost.ckp-tg[aria-pressed="true"]:hover{background:var(--ink-2);color:var(--surface);border-color:var(--ink-2)}
+.btn.ghost.ckp-tg[aria-pressed="false"]:hover,.btn.ghost.ckp-tg[aria-pressed="false"]:active{background:var(--surface-2);color:var(--ink);border-color:var(--ink)}
+.btn.ghost.ckp-tg:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.ckp-goal.ckp-miss{border-color:var(--c-oom);background:var(--c-oom-soft)}
+.ckp-goal.met{border-color:var(--c-ok);background:var(--c-ok-soft)}
+.ckp-ch-res .cmp{margin-top:10px}
+/* the challenge's result (R1, as the train-capstone lab): your plan next to the best, shared settings once, the differing ones marked */
+.ckp-sum{margin-top:10px;display:grid;gap:8px}
+.ckp-sum-cap{font-size:13px;font-weight:650;color:var(--ink)}
+.ckp-sum-same{margin:0;font-size:12.5px;color:var(--ink-2)}
+.ckp-plans{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ckp-plan{border:1px solid var(--line);border-radius:5px;padding:7px 9px;background:var(--surface);display:grid;gap:4px}
+.ckp-plan.best{border-color:var(--c-ok)}
+.ckp-plan.bad{border-color:var(--c-oom)}
+.ckp-plan-h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}
+.ckp-plan-t{font-size:12.5px;font-weight:650;color:var(--ink);margin-right:2px}
+.ckp-chip{display:inline-block;padding:1px 7px;border:1px solid var(--line);border-radius:10px;font-size:12px;color:var(--ink-2);background:var(--surface-2);white-space:nowrap}
+.ckp-chip.on{border-color:var(--ink);color:var(--ink);font-weight:650;background:var(--surface)}
+.ckp-plan-m{display:flex;flex-wrap:wrap;gap:2px 12px;font-family:var(--font-mono);font-size:12px;color:var(--ink-2)}
+.ckp-plan-m span{white-space:nowrap}
+.ckp-plan-m .bad{color:var(--c-oom);font-weight:650}
+.ckp-gap,.ckp-next,.ckp-why{margin:0;font-size:13px;line-height:1.5}
+details.ckp-all{border-top:1px solid var(--line-2);padding-top:6px}
+details.ckp-all summary{cursor:pointer;font-size:13px;font-weight:650;color:var(--ink)}
+.ckp-allb{display:grid;gap:6px;margin-top:6px}
+.ckp-allb ol{margin:0;padding-left:20px;display:grid;gap:3px;font-size:12.5px}
+.ckp-allb li.me{font-weight:650;color:var(--ink)}
+
+@media (max-width:760px){
+  .ckp-frow{grid-template-columns:minmax(0,1fr);gap:6px}
+  .ckp-defs li{grid-template-columns:minmax(0,1fr);gap:0}
+}
+
+/* long file and option names in the rail wrap instead of widening the rail */
+#ckp-rail code{overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+
+/* the compartments say “not saved” in words, not only with ∅ (owner b8, scenario 3) */
+.ckp-cell .ckp-no{font-style:normal;color:var(--ink-2);font-weight:650}
+.ckp-tlist .ckp-op{font-style:normal;color:var(--ink-3);font-family:var(--font-mono)}

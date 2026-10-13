@@ -1,0 +1,140 @@
+/* GRPO lab */
+.grpo-app [hidden]{display:none!important}
+.grpo-head{align-items:flex-start;gap:10px}
+.grpo-st-title{font-weight:650;font-size:15px;min-width:0}
+.grpo-transport{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:6px 0 10px}
+.grpo-transport .ctl{margin:0}
+.grpo-transport .seg-ctl{margin:0}
+.grpo-pan{border-top:1px solid var(--line);padding-top:8px;margin-top:8px;min-width:0}
+.grpo-pan:first-of-type{border-top:0}
+.grpo-pt{font-weight:600;font-size:13px;line-height:1.35;margin-bottom:4px;min-width:0}
+.grpo-leg{margin:2px 0 4px;flex-wrap:wrap}
+.grpo-gsvg,.grpo-csvg{display:block;width:100%;overflow:visible}
+.grpo-gnote{min-height:2.7em;color:var(--ink-2);margin:2px 0 0}
+.grpo-ax{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.grpo-grid{stroke:var(--line-2);stroke-width:1}
+.grpo-zero{stroke:var(--ink-3);stroke-width:1}
+.grpo-empty{font-size:13px;fill:var(--ink-3)}
+.grpo-chip rect{fill:var(--surface);stroke:var(--ink-3);stroke-width:1}
+.grpo-chip.ok rect{fill:var(--ink-2);stroke:var(--ink-2)}
+.grpo-chip.no rect{fill:var(--surface);stroke:var(--ink-3);stroke-dasharray:3 2}
+.grpo-chip.eq rect{opacity:.45}
+.grpo-chip-a{font-family:var(--font-mono);font-size:11px;fill:var(--ink)}
+.grpo-chip.ok .grpo-chip-a,.grpo-chip.ok .grpo-chip-m{fill:var(--surface)}
+.grpo-chip-m{font-size:11px;font-weight:700;fill:var(--ink-2)}
+.grpo-rdot{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.5}
+.grpo-rdot.ok{fill:var(--ink-2)}
+.grpo-base{stroke:var(--ink);stroke-width:2;stroke-dasharray:6 4}
+.grpo-base-t{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.grpo-adv.up{fill:var(--ink-2)}
+/* H6: a negative advantage is the same filled bar as a positive one, pointing down (its direction and its label give the sign), so the
+   legend's one bar names every bar; no hollow mark left unnamed */
+.grpo-adv.dn{fill:var(--ink-2)}
+.grpo-adv-t{font-family:var(--font-mono);font-size:10px;fill:var(--ink)}
+.grpo-adv-t.sm{font-size:8.5px}
+.grpo-eq-t{font-size:12px;font-weight:650;fill:var(--ink-3)}
+.sw.grpo-sw-ok{background:var(--ink-2)}
+.sw.grpo-sw-no{background:var(--surface);border:1px dashed var(--ink-3)}
+.sw.grpo-sw-base{background:transparent;border-top:2px dashed var(--ink);height:0;align-self:center}
+.sw.grpo-sw-adv{background:var(--ink-2);width:6px}
+.sw.grpo-sw-grad{background:repeating-linear-gradient(45deg,var(--ink-3) 0 2px,var(--surface) 2px 4px)}
+.sw.grpo-sw-opt{background:var(--ink-3)}
+.grpo-probs{display:grid;gap:3px}
+.grpo-prow{display:grid;grid-template-columns:minmax(76px,auto) minmax(0,1fr) 44px 84px;gap:8px;align-items:center;width:100%;background:none;border:1px solid transparent;border-radius:6px;padding:2px 4px;text-align:left;cursor:pointer;color:var(--ink);font:inherit}
+.grpo-prow:hover{background:var(--surface-2)}
+.grpo-prow.on{border-color:var(--ink-3);background:var(--surface-2)}
+.grpo-pq{font-size:12px;white-space:nowrap}
+.grpo-ptrack{position:relative;height:12px;background:var(--sunken);border-radius:3px;min-width:0}
+.grpo-pfill{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:3px;transition:width .2s}
+.grpo-pref{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);z-index:1}
+.grpo-pv{font-size:12px;text-align:right}
+.grpo-ptag{color:var(--ink-3);white-space:nowrap}
+.grpo-chead{display:flex;flex-direction:column;gap:4px}
+.grpo-chead .grpo-pt{margin:0}
+.grpo-chead .ctl,.grpo-chead .seg-ctl{margin:0}
+.grpo-line{fill:none;stroke:var(--ink);stroke-width:2}
+.grpo-ghost{fill:none;stroke:var(--ink-3);stroke-width:1.5;stroke-dasharray:5 4}
+.grpo-dot{fill:var(--ink)}
+.grpo-cl{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.grpo-cl.on{fill:var(--ink);font-weight:650}
+.grpo-pq-line{fill:none;stroke:var(--ink-3);stroke-width:1.2}
+.grpo-pq-line.on{stroke:var(--ink);stroke-width:2.6}
+.grpo-ptick{stroke:var(--ink-2);stroke-width:1.5}
+.grpo-ckey{color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 14px}
+.grpo-k{display:inline-flex;align-items:center;gap:4px}
+.grpo-mem{display:grid;gap:8px;margin-top:4px}
+.grpo-mrow{display:grid;grid-template-columns:minmax(0,118px) minmax(0,1fr) 68px;gap:8px;align-items:center}
+.grpo-mname{font-size:12px;line-height:1.25}
+.grpo-mtot{font-size:12px;text-align:right;white-space:nowrap}
+.grpo-mtrack{display:flex;gap:2px;min-width:0}
+.grpo-mseg{display:flex;flex-direction:column;gap:2px;min-width:0;cursor:help}
+.grpo-mbar{display:flex;height:16px;border-radius:3px;overflow:hidden;outline:1px solid var(--surface)}
+.grpo-mseg.val .grpo-mbar{outline:2px solid var(--ink);outline-offset:-1px}
+.grpo-mb{display:block;height:100%}
+.grpo-mb.w{background:var(--c-weights)}
+.grpo-mb.grad{background:repeating-linear-gradient(45deg,var(--ink-3) 0 2px,var(--surface) 2px 4px)}
+.grpo-mb.opt{background:var(--ink-3)}
+.grpo-mlab{font-size:10.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grpo-mnote{margin:6px 0 0}
+.grpo-metrics{margin-top:10px}
+.grpo-metrics .metric .sub{font-size:11px}
+.grpo-math-line{margin:8px 0;overflow-x:auto;max-width:100%}
+.grpo-ib{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.grpo-ib .inline-ctl{flex:1 1 200px;margin:0}
+.grpo-j{cursor:pointer}
+.grpo-prod li{margin-bottom:6px}
+.grpo-dk{height:8px;background:var(--sunken);border-radius:3px;overflow:hidden;width:60px}
+.grpo-dk i{display:block;height:100%;background:var(--ink-2)}
+@media (max-width:760px){
+  .grpo-prow{grid-template-columns:minmax(64px,auto) minmax(0,1fr) 40px;gap:6px}
+  .grpo-ptag{display:none}
+  .grpo-mrow{grid-template-columns:minmax(0,80px) minmax(0,1fr) 62px;gap:6px}
+  .grpo-mlab{font-size:9.5px}
+}
+
+.grpo-adv.big{fill:var(--c-oom);stroke:var(--c-oom)}
+.grpo-big-t{font-size:10.5px;font-weight:650;fill:var(--c-oom);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.grpo-mrow .grpo-mfz{grid-column:2 / 4;color:var(--ink-3);margin-top:-4px}
+.grpo-chead .seg-ctl button{white-space:nowrap}
+.sw.grpo-sw-big{background:var(--c-oom)}
+/* batch 9 review fixes: the curves of part 6 told apart by line style (S18), the questions as dots on the chosen curve; the note under
+   the group keeps three lines on a phone so the stage does not jump while a run plays (R7.9) */
+.grpo-pq-line.g2{stroke-dasharray:6 4}
+.grpo-pq-line.g64{stroke-dasharray:1.5 3}
+.grpo-pdot{fill:var(--ink);stroke:var(--surface);stroke-width:1.5;cursor:help}
+@media (max-width:760px){.grpo-gnote{min-height:4.1em}}
+/* the owner's review of 2026-10-09 */
+/* 1. one control row: the speed label beside its buttons, every button the same height and the same font, so they share one baseline */
+.grpo-transport .ctl{display:flex;align-items:center;gap:6px}
+.grpo-transport .ctl>.lbl{font-size:13px;line-height:1.2}
+.grpo-transport .btn.sm,.grpo-transport .seg-ctl{height:32px;box-sizing:border-box}
+.grpo-transport .btn.sm{padding-top:0;padding-bottom:0;line-height:1.2}
+.grpo-transport .seg-ctl button{padding:0 10px;font-family:var(--font-ui);font-size:13px;line-height:1.2}
+.grpo-transport{padding-bottom:10px;border-bottom:1px solid var(--line)}
+/* 2. the link to the advantage bars frames the bars only; a bar that is hovered, clicked or focused gets its own ring */
+.grpo-bars-hl{fill:var(--surface-2);stroke:var(--ink);stroke-width:2}
+.grpo-adv[data-tipx]{cursor:help}
+.grpo-adv[data-tipx]:hover,.grpo-adv:focus{stroke:var(--ink);stroke-width:2.5px;outline:none}
+.grpo-leg-hl{outline:2px solid var(--ink);outline-offset:2px;border-radius:3px}
+/* 4. the part of a formula a sentence talks about */
+.grpo-mhl{background:var(--surface-2);outline:1.5px solid var(--ink-3);outline-offset:1px;border-radius:2px}
+/* 6. the three kinds of groups: all right green, some right blue, all wrong red, in the bars, the legend and the words */
+.grpo-prow.k-ok .grpo-pfill,.sw.grpo-sw-k.ok{background:var(--c-ok)}
+.grpo-prow.k-mix .grpo-pfill,.sw.grpo-sw-k.mix{background:var(--c-weights)}
+.grpo-prow.k-wrong .grpo-pfill,.sw.grpo-sw-k.wrong{background:var(--c-oom)}
+.grpo-kt.ok{color:var(--c-ok)}
+.grpo-kt.mix{color:var(--c-weights)}
+.grpo-kt.wrong{color:var(--c-oom)}
+.grpo-kt{font-weight:650}
+.sw.grpo-sw-tick{width:2px;height:14px;background:var(--ink);border-radius:0;align-self:center}
+.grpo-leg-lead{color:var(--ink-2)}
+.grpo-pnote{margin:6px 0 0}
+/* Show the math and the drill: a chain broken at “=”, each “=” under the one above */
+.grpo-eqs{display:grid;grid-template-columns:max-content max-content minmax(0,max-content);column-gap:.4em;row-gap:.5em;align-items:center;margin:6px 0 10px;padding-block:.3em;overflow-x:auto;max-width:100%}
+.grpo-eq-l{justify-self:end}
+.grpo-eqs math{font-size:1.05em}
+.grpo-mb-lead{margin:14px 0 4px}
+.grpo-mb-lead:first-child{margin-top:4px}
+.grpo-mb-sub{margin:6px 0 2px;color:var(--ink-2)}
+/* Show the math reads as prose with formulas, not as code */
+#grpo-mathbody{font-family:var(--font-ui);font-size:13.5px;line-height:1.6}

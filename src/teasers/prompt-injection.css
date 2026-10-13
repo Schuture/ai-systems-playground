@@ -1,0 +1,15 @@
+/* prompt-injection teaser: grayscale (R5.6); red only for the injected instruction (⚠) and the send that leaks the files (✗), as in
+   the lab's replay (R5.11). The visual keeps three rows, so the tile keeps its height when the switch flips. */
+.tz-pin-vis{display:grid;gap:5px;cursor:help;outline-offset:3px;font-size:12px;line-height:1.4;min-width:0}
+.tz-pin-page,.tz-pin-row{display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px;align-items:baseline;min-width:0}
+.tz-pin-page>span:last-child{padding:3px 6px;border:1px solid var(--line);border-radius:3px;background:repeating-linear-gradient(135deg,var(--line-2) 0 1px,var(--surface) 1px 6px);overflow-wrap:anywhere}
+.tz-pin-k{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3)}
+.tz-pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;padding:0 3px;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.tz-pin-row code{font-family:var(--font-mono);font-size:11px}
+.tz-pin-tool{display:inline-block;border:1px solid var(--ink-3);border-radius:3px;padding:0 4px;margin:0 2px 2px 0}
+.tz-pin-tool.off{text-decoration:line-through;color:var(--ink-3);border-style:dashed}
+.tz-pin-row>span:last-child{min-width:0;overflow-wrap:anywhere}
+.tz-pin-bad>span:last-child{color:var(--c-oom);font-weight:650}
+.tz-pin-sw-un{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1px,var(--surface) 1px 3.5px)}
+.tz-pin-sw-hid{background:var(--c-oom-soft);border:1.5px solid var(--c-oom)}
+.tz-pin-sw-bad{background:var(--c-oom);border-color:transparent}

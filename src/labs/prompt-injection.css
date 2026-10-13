@@ -1,0 +1,184 @@
+/* prompt-injection: the tools row, one task replayed (what the model reads beside what the agent does), the 100 tasks as cells,
+   then the metric cards, compact, under the picture (R7.12). Colours (R5.6, R5.11): grayscale, hatching, outlines and dots; red only
+   for the injected instruction and a harmful action, each with ⚠ or ✗ and a word beside it; green only for a goal met. */
+.pin-stage .stage-head{align-items:center}
+.pin-graph{padding:12px 14px 14px;display:grid;gap:12px;min-width:0}
+.pin-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.pin-sub{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin-bottom:4px}
+.pin-legend{margin-top:6px}
+.pin-legend>span{cursor:help;display:inline-flex;align-items:center}
+
+/* ---------- the tools row ---------- */
+.pin-tools{display:grid;gap:4px;min-width:0}
+.pin-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.pin-chip{display:inline-grid;gap:1px;border:1.5px solid var(--ink);border-radius:4px;padding:4px 8px;background:var(--surface);cursor:help;min-width:0}
+.pin-chip code{font-family:var(--font-mono);font-size:12px;color:var(--ink)}
+.pin-chip>span{font-size:11.5px;color:var(--ink-2);line-height:1.3}
+.pin-chip.off{border-style:dashed;border-color:var(--ink-3);background:transparent}
+.pin-chip.off code{text-decoration:line-through;color:var(--ink-3)}
+.pin-chip.off>span{color:var(--ink-3)}
+.pin-plus{color:var(--ink-3);font-weight:700}
+.pin-tw{font-size:12.5px;line-height:1.4;color:var(--ink-2);min-height:1.4em}
+.pin-tw.on{color:var(--ink);font-weight:650}
+
+/* ---------- the replay: context beside actions. Each box gets one height per replay from the script (the whole replay, capped by
+   max-height), so it does not jump while it plays (R7.9) and a short replay leaves no empty box; the newest block scrolls into view ---------- */
+.pin-rp{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;min-width:0}
+.pin-ctx-w,.pin-log-w{min-width:0;display:flex;flex-direction:column}
+.pin-ctx{max-height:286px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:6px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);cursor:help;outline-offset:2px}
+.pin-blk{display:grid;grid-template-columns:62px minmax(0,1fr);gap:6px;align-items:baseline;padding:5px 7px;border:1px solid var(--ink-3);border-radius:3px;background:var(--surface);font-size:12.5px;line-height:1.4;flex:none}
+.pin-role{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3)}
+.pin-bt{min-width:0;overflow-wrap:anywhere;color:var(--ink)}
+.pin-blk.un{border-color:var(--line);background:repeating-linear-gradient(135deg,var(--line-2) 0 1px,var(--surface) 1px 6px)}
+.pin-blk.pv{border:1.5px dotted var(--ink-2)}
+.pin-blk.call{background:var(--surface-2);border-color:var(--line)}
+.pin-blk.call .pin-bt{font-family:var(--font-mono);font-size:11.5px}
+.pin-blk.call.inj{border-left:3px dashed var(--ink)}
+.pin-blk.held{border-style:dashed;color:var(--ink-3)}
+.pin-blk.held .pin-bt{color:var(--ink-2);font-style:italic}
+.pin-blk.ans{border-color:var(--ink-2)}
+.pin-blk.wait{display:block;border:1px dashed var(--line);color:var(--ink-3);font-size:12px}
+mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;padding:1px 3px;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.pin-tag{color:var(--c-oom);font-weight:700;white-space:nowrap}
+/* the harmful action, where it happens: the assistant's call in the context and its line in the log */
+.pin-blk.harm{border:1.5px solid var(--c-oom);background:var(--c-oom-soft)}
+.pin-blk.call.inj.harm{border-left:3px dashed var(--c-oom)}
+.pin-blk.harm .pin-bt{color:var(--ink)}
+.pin-hx{background:var(--c-oom-soft);border-radius:2px;padding:1px 3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+/* the moment the replay reaches a red mark: one short pulse */
+@keyframes pinHot{0%{box-shadow:0 0 0 0 var(--c-oom)}70%{box-shadow:0 0 0 5px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.pin-blk.harm.pin-now,.pin-li.harm.pin-now,.pin-hx.pin-now,.pin-now mark.pin-hid{animation:pinHot 1s ease-out 1}
+.pin-ctx.pin-one{display:block}
+.pin-stream{margin:0;font-size:12.5px;line-height:1.65;color:var(--ink);overflow-wrap:anywhere}
+.pin-tok{font-family:var(--font-mono);font-size:11px;color:var(--ink-3)}
+.pin-more{color:var(--ink-3)}
+
+.pin-log{list-style:none;margin:0;padding:6px;max-height:286px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface)}
+.pin-li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:6px;align-items:baseline;padding:5px 7px;border:1px solid var(--line-2);border-radius:3px;font-size:12.5px;line-height:1.4;flex:none}
+.pin-li>b{font-weight:700;color:var(--ink-2)}
+.pin-li code{font-family:var(--font-mono);font-size:11.5px;overflow-wrap:anywhere}
+.pin-li.blk>b,.pin-li.no>b{color:var(--ink)}
+.pin-li.harm{border:1.5px solid var(--c-oom);background:var(--c-oom-soft)}
+.pin-li.harm>b{color:var(--c-oom)}
+.pin-li.inj{border-left:3px dashed var(--ink)}
+.pin-li.none{display:block;border-style:dashed;color:var(--ink-3)}
+.pin-ms{font-weight:700;margin-right:5px;color:var(--ink-2)}
+.pin-ms.blk{color:var(--ink)}
+.pin-ms.harm{color:var(--c-oom)}
+
+/* ---------- legend swatches (the same marks as in the picture) ---------- */
+.sw.pin-sw-tr{background:var(--surface);border:1px solid var(--ink-3)}
+.sw.pin-sw-un{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1px,var(--surface) 1px 3.5px);border-color:var(--line)}
+.sw.pin-sw-hid{background:var(--c-oom-soft);border:1.5px solid var(--c-oom)}
+.sw.pin-sw-hx{background:var(--c-oom-soft);border:1.5px solid var(--c-oom);border-radius:2px}
+.sw.pin-sw-pv{background:var(--surface);border:1.5px dotted var(--ink-2)}
+.sw.pin-sw-inj{width:14px;background:var(--surface-2);border:1px solid var(--line);border-left:3px dashed var(--ink);border-radius:0}
+.sw.pin-sw-done{background:var(--ink-3);border-color:var(--ink-3)}
+.sw.pin-sw-fail{background:var(--surface);border:1px solid var(--ink-3)}
+.sw.pin-sw-poi{background:var(--surface);border:2px solid var(--ink)}
+.sw.pin-sw-harm{background:var(--c-oom);border:2px solid var(--ink)}
+.sw.pin-sw-ask{background:radial-gradient(circle,var(--ink) 0 2.3px,transparent 2.6px),var(--surface);border:1px solid var(--ink-3)}
+.sw.pin-sw-smp{background:var(--surface);border:1px solid var(--ink-3);outline:2px solid var(--ink);outline-offset:1px;margin-left:3px}
+
+/* ---------- the player ---------- */
+.pin-player{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.pin-play{min-width:92px}
+.pin-speed button{font-size:12px;padding:3px 9px}
+.pin-scrub{flex:1 1 140px;min-width:120px}
+
+/* ---------- the 100 tasks ---------- */
+.pin-gridw{display:grid;gap:4px;min-width:0}
+/* H5 (the owner, 2026-10-09): a hairline between the stage’s three blocks: the tools, the replay of one task, the 100 tasks */
+.pin-graph>.pin-tools:not(:empty)~#pin-rp-cap,.pin-graph>.pin-rp~.pin-gridw{border-top:1px solid var(--line);padding-top:12px}
+.pin-grid{cursor:help;outline-offset:3px;border-radius:2px;min-width:0}
+.pin-strips{display:grid;gap:6px}
+.pin-strip{display:grid;gap:3px;min-width:0}
+.pin-sl{font-size:11.5px;color:var(--ink-2);line-height:1.3}
+.pin-cells{display:flex;flex-wrap:wrap;gap:3px}
+.pin-c{position:relative;display:block;width:12px;height:12px;box-sizing:border-box;border:1px solid var(--ink-3);border-radius:2px;background:var(--surface)}
+.pin-c.done{background:var(--ink-3)}
+.pin-c.poi{border:2px solid var(--ink)}
+.pin-c.harm{background:var(--c-oom)}
+.pin-c.ask::after{content:"";position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 1px var(--surface)}
+.pin-c.smp{outline:2px solid var(--ink);outline-offset:1px}
+.pin-c.wait{background:var(--surface-2);border-color:var(--line-2)}
+
+/* ---------- metric cards and the math: the cards sit under the picture and stay small (R7.12). The replay, the status chip and
+   the 100 tasks show a change first; at 1440 × 900 the cards are in the sticky stage's own scroll, under the 100 tasks ---------- */
+.pin-stage>.pin-metrics{margin:10px 0 4px;gap:6px}
+.pin-metrics .metric{padding:5px 8px 4px}
+.pin-metrics .metric .k{font-size:10.5px;line-height:1.3}
+.pin-metrics .metric .v{font-size:16px;line-height:1.2;margin-top:1px}
+.pin-metrics .metric .sub{font-size:11px;line-height:1.3}
+.pin-metrics .metric .d{font-size:10.5px;min-height:13px;line-height:1.25}
+.metric.pin-bad .v{color:var(--c-oom)}
+.pin-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
+.pin-fx{margin:8px 0 10px;overflow-x:auto}
+
+/* ---------- rail ---------- */
+.pin-lv{margin-top:6px}
+.pin-tri{margin:6px 0 8px;padding-left:18px}
+.pin-tri li{margin-bottom:4px}
+.pin-teams{margin:6px 0 8px;padding-left:18px}
+.pin-teams li{margin-bottom:7px}
+.pin-remlist li{margin-bottom:8px}
+.pin-mt{margin-top:12px}
+.pin-ch-res{scroll-margin-top:120px}
+.pin-app .goal.pin-goal{display:grid;grid-template-columns:minmax(0,1fr);gap:1px}
+.pin-app .goal.pin-goal span:last-child{white-space:normal}
+.goal.pin-over b{color:var(--c-oom)}
+.pin-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+
+/* ---------- settings ---------- */
+.pin-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.pin-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.pin-grp .ctl>.lbl{display:block}
+.pin-app .ctl output{white-space:nowrap}
+
+/* ---------- connect ---------- */
+.pin-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.pin-prod li{margin-bottom:6px}
+.pin-prod code,.pin-prod a{overflow-wrap:anywhere;word-break:break-word}
+.pin-out{margin-top:6px}
+
+/* ---------- the dock's mini bar: tasks done, harmful ---------- */
+.pin-dk{position:relative;height:12px;width:100%;min-width:48px;background:var(--surface-2);border-radius:2px;overflow:hidden;display:flex}
+.pin-dk i{display:block;height:100%}
+.pin-dk i.dn{background:var(--ink-3)}
+.pin-dk i.hm{background:var(--c-oom)}
+
+/* side by side while the stage has room (1440 has it); stacked below that */
+@container (max-width:540px){
+  .pin-rp{grid-template-columns:minmax(0,1fr)}
+  .pin-ctx{max-height:200px}
+  .pin-log{max-height:176px}
+}
+@media (max-width:760px){
+  /* phones: the same order as wide screens (the replay, the 100 tasks, then the cards); each legend sits under what it labels (R5.9) */
+  .pin-graph{padding:10px 10px 12px}
+  .pin-play{min-width:84px}
+  .pin-scrub{flex-basis:100%}
+  .pin-blk{grid-template-columns:54px minmax(0,1fr)}
+  /* the three tools fit one row: the names stay, what each brings is in the chip's tooltip and the warning line */
+  .pin-chip>span{display:none}
+  .pin-chip{padding:2px 5px}
+  .pin-chip code{font-size:11px}
+  .pin-chips{gap:4px}
+  .pin-tools{gap:2px}
+}
+@media (prefers-reduced-motion:reduce){.pin-dk i{transition:none}.pin-blk.harm.pin-now,.pin-li.harm.pin-now,.pin-hx.pin-now,.pin-now mark.pin-hid{animation:none}}
+/* the four sending rules are long: two per row, so no label is clipped in the narrow Settings column or the task card */
+.pin-app .seg-ctl[data-key="rule"],.pin-app .seg-ctl[data-key="chR"]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.pin-app .seg-ctl[data-key="rule"] button,.pin-app .seg-ctl[data-key="chR"] button{border-right:0;border-bottom:1px solid var(--line);line-height:1.35;overflow-wrap:anywhere}
+.pin-app .seg-ctl[data-key="rule"] button:nth-child(odd),.pin-app .seg-ctl[data-key="chR"] button:nth-child(odd){border-right:1px solid var(--line)}
+.pin-app .seg-ctl[data-key="rule"] button:nth-child(n+3),.pin-app .seg-ctl[data-key="chR"] button:nth-child(n+3){border-bottom:0}
+
+/* Show the math in short blocks (the owner, 2026-10-09): a hairline between blocks; a chain's “=” signs in one column */
+.pin-mb{padding:8px 0 10px}
+.pin-mb+.pin-mb{border-top:1px solid var(--line)}
+.pin-mb>p{margin:0 0 6px}
+.pin-mb>p:last-child{margin-bottom:0}
+.pin-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3}
+.pin-eq-l{text-align:right}
+/* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
+@media (max-width:560px){.pin-eqs-nm{grid-template-columns:max-content max-content}.pin-eqs-nm>.pin-eq-l{grid-column:1/-1;text-align:left}.pin-eqs-nm>.pin-eq-l:empty{display:none}}

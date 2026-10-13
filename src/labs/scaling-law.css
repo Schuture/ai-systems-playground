@@ -1,0 +1,187 @@
+/* scaling-law: one log-axis chart in three views (parameters and tokens with budget diagonals; iso-FLOP curves; training plus
+   serving compute by size), part 3's loss-terms bar, the legend beside the chart.
+   Colours (R5.6): grayscale, dashes and rings only; green only for a plan that meets the challenge's goal, red only when it fails. */
+.sl-app [hidden]{display:none!important}
+.sl-stage .stage-head{align-items:center}
+.sl-graph{padding:12px 14px 12px;display:grid;gap:10px;min-width:0}
+.sl-graph>div{min-width:0}
+.sl-vsw .ctl{margin:0}
+.sl-vsw .seg-ctl{flex-wrap:wrap}
+.sl-chart{min-width:0;width:100%}
+.sl-svg{display:block;width:100%;height:auto;overflow:visible}
+
+/* ---------- chart strokes ---------- */
+.sl-gl{stroke:var(--line-2);stroke-width:1}
+.sl-tk{font:10.5px var(--font-mono);fill:var(--ink-3)}
+.sl-al{font:11.5px var(--font-ui);fill:var(--ink-2)}
+.sl-lab{font:11px var(--font-mono);fill:var(--ink-2)}
+.sl-iso{stroke:var(--ink-3);stroke-width:1;fill:none;opacity:.55}
+.sl-iso.on{stroke:var(--ink);stroke-width:2.5;opacity:1}
+.sl-isol{fill:var(--ink-3)}
+.sl-isol.on{fill:var(--ink);font-weight:700}
+.sl-r20{stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:6 4;fill:none}
+.sl-goalc{stroke:var(--ink);stroke-width:2;stroke-dasharray:7 4;fill:none}
+.sl-goall{fill:var(--ink);font-family:var(--font-ui)}
+.sl-cap{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:2 3;fill:none}
+.sl-capl{fill:var(--ink);font-family:var(--font-ui)}
+.sl-real{cursor:help;outline:none}
+.sl-real circle{fill:var(--surface);stroke:var(--ink-2);stroke-width:2}
+.sl-real:focus-visible circle{stroke:var(--ink);stroke-width:3}
+.sl-reall{fill:var(--ink);font-family:var(--font-ui)}
+.sl-me{fill:var(--ink);stroke:var(--surface);stroke-width:2}
+.sl-me.ok{fill:var(--c-ok)}
+.sl-me.bad{fill:var(--c-oom)}
+.sl-mel{fill:var(--ink);font-family:var(--font-ui);font-weight:650}
+.sl-lead{stroke:var(--ink-2);stroke-width:1}
+.sl-cur{stroke:var(--ink-3);stroke-width:1.2;fill:none;opacity:.6}
+.sl-cur.on{stroke:var(--ink);stroke-width:2.6;opacity:1}
+.sl-cur.sl-dotted{stroke-dasharray:1.5 4;stroke-linecap:round}
+.sl-minp{stroke:var(--ink-2);stroke-width:1.3;stroke-dasharray:5 4;fill:none}
+.sl-min{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.8;cursor:help;outline:none}
+.sl-min.on{stroke:var(--ink);stroke-width:2.6}
+.sl-minl{fill:var(--ink-2);font-family:var(--font-ui)}
+.sl-trn{stroke:var(--ink-2);stroke-width:1.8;stroke-dasharray:6 4;fill:none}
+.sl-tot{stroke:var(--ink);stroke-width:2.6;fill:none}
+.sl-trnl{fill:var(--ink-2);font-family:var(--font-ui)}
+.sl-totl{fill:var(--ink);font-family:var(--font-ui);font-weight:650}
+
+/* ---------- legend, beside the chart ---------- */
+.sl-leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ink-2)}
+.sl-leg:empty{display:none}
+.sl-leg>span{display:inline-flex;align-items:center;gap:6px;cursor:help;border-radius:3px;outline-offset:2px}
+.sl-sw{display:inline-block;width:20px;height:0;flex:none}
+.sl-sw.iso,.sl-sw.cur{border-top:2.5px solid var(--ink)}
+.sl-sw.r20,.sl-sw.minp,.sl-sw.trn{border-top:2px dashed var(--ink-2)}
+.sl-sw.goal{border-top:2px dashed var(--ink)}
+.sl-sw.dot{border-top:2.5px dotted var(--ink)}
+.sl-sw.tot{border-top:2.6px solid var(--ink)}
+.sl-sw.real,.sl-sw.min{width:10px;height:10px;border:2px solid var(--ink-2);border-radius:50%;box-sizing:border-box}
+.sl-sw.me{width:11px;height:11px;border-radius:50%;background:var(--ink)}
+
+/* ---------- part 3: the loss as three stacked parts ---------- */
+.sl-terms{display:grid;gap:10px;padding:4px 0 2px}
+.sl-tcap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.sl-trows{display:grid;gap:6px}
+.sl-trow{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) 52px;gap:10px;align-items:center;cursor:help;border-radius:3px;outline-offset:2px}
+.sl-tn{font-size:12.5px;color:var(--ink);line-height:1.3}
+.sl-ttr{position:relative;height:16px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.sl-ttr i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;transition:width .2s ease-out}
+.sl-trow.n .sl-ttr i{background:var(--ink-2)}
+.sl-trow.d .sl-ttr i{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,transparent 2px 5px);box-shadow:inset 0 0 0 1.5px var(--ink-2)}
+.sl-trow.e .sl-ttr{background:none;height:auto}
+.sl-trow.e .sl-ttr em{font-size:11.5px;font-style:normal;color:var(--ink-3);line-height:1.3}
+.sl-trow b{font-size:13px;text-align:right;color:var(--ink)}
+/* H5 (2026-10-09): the total under the three terms, set off by a hairline like a sum */
+.sl-tsum{font-size:13px;color:var(--ink-2);border-top:1px solid var(--line);padding-top:6px}
+.sl-tn math{font-size:1em}
+.sl-tsum b{color:var(--ink)}
+.sl-tsl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.sl-tsl .inline-ctl{margin:0}
+
+/* ---------- metric cards ---------- */
+.sl-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.sl-metrics[data-n="4"],.sl-metrics[data-n="5"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.sl-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}.sl-metrics[data-n="5"]{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
+/* ---------- formulas on their own line ---------- */
+.sl-fx{margin:6px 0 8px;padding:6px 2px;overflow-x:auto;overflow-y:hidden;font-size:15px;line-height:normal}
+/* a chain wraps before its “=” (M; the owner's review of 2026-10-09: no Show the math row scrolls sideways): the left side, then the
+   steps, each new line under the previous “=”; formulas side by side wrap between them */
+.sl-ch{display:flex;align-items:baseline}
+.sl-chl{flex:none}
+.sl-wr{display:flex;flex-wrap:wrap;align-items:baseline;row-gap:.4em;min-width:0}
+.sl-ch>.sl-wr{flex:1 1 0}
+.sl-wr>span{flex:none}
+.sl-fx.sl-wq{column-gap:1.1em}
+
+/* ---------- rail ---------- */
+.sl-plans{margin:4px 0 10px;padding-left:18px}
+.sl-plans li{margin-bottom:3px}
+.sl-mt{margin-top:12px}
+.sl-ch-res{scroll-margin-top:120px}
+.goal.sl-over b{color:var(--c-oom)}
+.sl-lv{margin-top:6px}
+.sl-app .goal span:last-child{text-align:right}
+.sl-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+.sl-app .inline-ctl .seg-ctl button{white-space:nowrap}
+.sl-asm{margin:6px 0 12px;padding-left:18px;color:var(--ink-2)}
+.sl-asm li{margin-bottom:3px}
+.sl-remlist{margin:0 0 10px;padding-left:18px}
+.sl-remlist li{margin-bottom:8px}
+.sl-rem{margin-left:2px}
+
+/* ---------- part 3: the three terms named before their symbols ---------- */
+.sl-terml{margin:4px 0 10px;padding-left:18px}
+.sl-terml li{margin-bottom:6px}
+
+/* ---------- Show the math: a label over a line of numbers ---------- */
+.sl-mlab{margin:8px 0 0;color:var(--ink-2);font-size:13px}
+.mathbody .sl-fx{margin:2px 0 6px}
+.mathbody .sl-fx.sl-fxc{margin-top:-4px;padding-left:1.6em}
+
+/* ---------- the challenge's result: your plan, the cheapest, a counterexample (R1, after train-capstone) ---------- */
+.sl-hint{margin:6px 0 8px}
+.sl-sum{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.sl-scap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+.sl-same{margin:0 0 4px;color:var(--ink-2);line-height:1.45}
+.sl-c3{list-style:none;margin:0;padding:0}
+.sl-c3r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:7px 0 8px;border-bottom:1px solid var(--line-2)}
+.sl-c3h{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0}
+.sl-c3t{font-size:13px;font-weight:700;color:var(--ink);margin-right:2px}
+.sl-chip{font-size:11.5px;line-height:1.45;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--ink-2);white-space:nowrap}
+.sl-chip.on{border-color:var(--ink);color:var(--ink);font-weight:700;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--ink)}
+.sl-c3trk{position:relative;height:14px;background:var(--surface-2);border-radius:2px;min-width:0}
+.sl-sg{position:absolute;top:0;bottom:0;left:0;cursor:help;outline-offset:1px}
+.sl-sg.tr{background:var(--ink-2);border-radius:2px 0 0 2px}
+.sl-sg.sv{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,transparent 2px 5px);box-shadow:inset 0 0 0 1.5px var(--ink-2)}
+.sl-c3d{font-size:12.5px;font-weight:650;color:var(--ink);white-space:nowrap;text-align:right;min-width:4.6em;cursor:help}
+.sl-c3s{grid-column:1/-1;font-size:12px;line-height:1.4;color:var(--ink-2)}
+.sl-c3leg{display:flex;flex-wrap:wrap;gap:3px 12px;margin:7px 0 2px;color:var(--ink-2);font-size:11.5px}
+.sl-c3leg span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.sl-sw2{display:inline-block;width:14px;height:10px;border-radius:2px;flex:none}
+.sl-sw2.tr{background:var(--ink-2)}
+.sl-sw2.sv{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,transparent 2px 5px);box-shadow:inset 0 0 0 1.5px var(--ink-2)}
+.sl-gap,.sl-next{margin:9px 0 0;font-size:13.5px;line-height:1.5}
+.sl-why{margin:7px 0 0;line-height:1.5;color:var(--ink-2)}
+.sl-all{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
+.sl-all>summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--ink);padding:4px 0}
+.sl-allb>p{margin:6px 0}
+.sl-tblw{max-width:100%;overflow-x:auto}
+.sl-tbl{border-collapse:collapse;font-size:12.5px;width:100%}
+.sl-tbl th,.sl-tbl td{padding:3px 4px;text-align:right;border-bottom:1px solid var(--line-2);white-space:nowrap}
+.sl-tbl th{font-weight:650;color:var(--ink-2);font-size:11.5px;vertical-align:bottom;white-space:normal;line-height:1.25}
+.sl-tbl th:first-child,.sl-tbl td:first-child{text-align:left}
+.sl-tbl tr.me td{font-weight:750;color:var(--ink)}
+.sl-tbl tr.ok td:last-child{color:var(--ink)}
+
+/* ---------- settings ---------- */
+.sl-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.sl-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.sl-app .ctl output{white-space:nowrap}
+
+/* ---------- connect ---------- */
+.sl-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.sl-prod li{margin-bottom:6px}
+.sl-prod code,.sl-app .refs code{word-break:break-word}
+
+/* ---------- dock: the size on a 100M–1T track; ring = the best size, dot = the current one ---------- */
+.sl-dk{position:relative;height:12px;width:100%;min-width:48px;background:var(--surface-2);border-radius:2px}
+.sl-dk b{position:absolute;top:1px;width:10px;height:10px;margin-left:-5px;box-sizing:border-box;border:2px solid var(--ink-2);border-radius:50%}
+.sl-dk i{position:absolute;top:2px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:var(--ink)}
+
+@media (max-width:760px){
+  /* phones: the picture first, then the numbers (R7.3) */
+  .sl-stage{display:flex;flex-direction:column}
+  .sl-stage>.stage-head{order:1}
+  .sl-stage>.sl-graph{order:2}
+  .sl-stage>.metrics{order:3}
+  .sl-stage>details.math{order:4}
+  .sl-graph{padding:10px 10px 10px}
+  .sl-tsl{grid-template-columns:minmax(0,1fr)}
+  .sl-trow{grid-template-columns:minmax(0,1fr) 52px;gap:4px 10px}
+  .sl-trow .sl-tn{grid-column:1/-1}
+  .sl-trow .sl-ttr{grid-column:1}
+  .sl-leg{gap:5px 12px;font-size:11.5px}
+}
+@media (prefers-reduced-motion:reduce){.sl-ttr i{transition:none}}
+@media (max-width:760px){.mathbody .sl-fx{font-size:13.5px}}

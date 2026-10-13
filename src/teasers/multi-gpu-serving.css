@@ -1,0 +1,10 @@
+/* teaser: multi-gpu-serving */
+.tz-mgs-vis{display:block;width:100%;height:auto;max-height:118px}
+.tz-mgs-vis text{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-2)}
+.tz-mgs-box{fill:var(--sunken);stroke:var(--ink-3);stroke-width:.8}
+.tz-mgs-box.bad{stroke:var(--c-oom);stroke-width:1.4}
+.tz-mgs-w{fill:var(--c-weights)}
+.tz-mgs-kv{fill:var(--c-kv)}
+.tz-mgs-oh{fill:var(--c-overhead)}
+.tz-mgs-over{fill:var(--c-oom);opacity:.35}
+.tz-mgs-br{fill:none;stroke:var(--ink-3);stroke-width:1}

@@ -1,0 +1,14 @@
+/* number-formats teaser: four range strips in grayscale (R5.6): solid = normal numbers, hatched = subnormal, line = the value;
+   red only for a value the format loses or overflows */
+.tz-nf-in{width:100%}
+.tz-nf-vis text{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.tz-nf-vis text.tz-nf-lab{fill:var(--ink-2);font-size:10.5px}
+.tz-nf-bg{fill:var(--surface-2)}
+.tz-nf-norm{fill:var(--ink-3)}
+.tz-nf-hl{fill:var(--ink-3)}
+.tz-nf-v{stroke:var(--ink);stroke-width:1.5}
+.tz-nf-bad{fill:var(--c-oom-soft);stroke:var(--c-oom);stroke-width:2}
+.tz-leg .sw.tz-nf-sw-n{background:var(--ink-3);border-color:transparent}
+.tz-leg .sw.tz-nf-sw-s{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 4px);border-color:var(--line)}
+.tz-leg .sw.tz-nf-sw-v{width:0;height:11px;border:0;border-left:1.5px solid var(--ink);border-radius:0;margin:0 6px 0 3px}
+.tz-leg .sw.tz-nf-sw-b{border-radius:50%;background:var(--c-oom-soft);border:2px solid var(--c-oom)}

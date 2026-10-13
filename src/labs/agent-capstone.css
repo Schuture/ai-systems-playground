@@ -1,0 +1,147 @@
+/* agent-capstone: the score strip (success, its 95% interval, the goal lines), the grid of runs (tasks × runs, canvas),
+   the player, the causes of failure, the metric cards. Colours (R5.6): grayscale for the picture; red only for a run with an
+   unsafe action and for ✗; green only for ✓ and passing rows. */
+.acp-stage .stage-head{align-items:center}
+.acp-graph{padding:12px 14px 14px;display:grid;gap:8px;min-width:0}
+/* H5 (the owner, 2026-10-09): a hairline between the stage’s three blocks: the runs, the success rate, why runs fail */
+#acp-score-cap,#acp-cause-cap{border-top:1px solid var(--line);padding-top:10px;margin-top:4px}
+.acp-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+
+/* ---------- the score strip ---------- */
+.acp-score{min-width:0;min-height:70px;outline-offset:3px;cursor:help}
+.acp-score.acp-wait{cursor:default;background:var(--surface-2);border-radius:3px}
+.acp-score svg{display:block;max-width:100%;height:auto;overflow:visible}
+.acp-score svg text{font-family:var(--font-mono);font-size:10px;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.acp-axl{stroke:var(--line-2);stroke-width:1}
+.acp-tk{fill:var(--ink-3)}
+.acp-goal{stroke:var(--ink);stroke-width:1.4;stroke-dasharray:5 3}
+.acp-gt{fill:var(--ink);font-weight:650}
+.acp-goal2{stroke:var(--ink-2);stroke-width:1.4;stroke-dasharray:1.5 2.5}
+.acp-gt2{fill:var(--ink-2)}
+.acp-b1-ci{stroke:var(--ink);stroke-width:2}
+.acp-b1-pt{fill:var(--ink)}
+.acp-b1-lb{fill:var(--ink);font-weight:650}
+.acp-b0-ci{stroke:var(--ink-3);stroke-width:1.6;stroke-dasharray:3 2}
+.acp-b0-pt{fill:var(--surface);stroke:var(--ink-3);stroke-width:1.6}
+.acp-b0-lb{fill:var(--ink-3)}
+
+/* ---------- the grid of runs ---------- */
+.acp-gridw{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px;align-items:start;min-width:0}
+.acp-rowl{display:flex;flex-direction:column;font-family:var(--font-mono);font-size:10px;color:var(--ink-3)}
+.acp-rowl span{display:flex;align-items:center;white-space:nowrap;line-height:1}
+.acp-gridc{min-width:0}
+.acp-grid{position:relative;min-width:0;cursor:help;outline-offset:3px;border-radius:2px}
+.acp-grid canvas{display:block;max-width:100%}
+/* the kinds sit under their columns (R5.9); a label wider than its bracket spills inward, never past the grid */
+.acp-kinds{position:relative;height:34px;margin-top:3px}
+.acp-kind{position:absolute;top:0;display:flex;flex-direction:column;align-items:center;cursor:help;line-height:1.2}
+.acp-kind.acp-k0{align-items:flex-start}
+.acp-kind.acp-k9{align-items:flex-end}
+.acp-kind i{display:block;align-self:stretch;height:5px;border:1px solid var(--ink-3);border-top:0;margin-bottom:2px}
+.acp-kind b{font-size:11px;font-weight:650;color:var(--ink-2);white-space:nowrap}
+.acp-kind span{font-family:var(--font-mono);font-size:10px;color:var(--ink-3);white-space:nowrap}
+.acp-legend{margin-top:0}
+.acp-legend>span{cursor:help;display:inline-flex;align-items:center}
+
+/* legend swatches: the same fills as the cells */
+.sw.acp-sw-ok{background:var(--ink-2);border-color:transparent}
+.sw.acp-sw-no{background:var(--surface);border:1px solid var(--ink-3)}
+.sw.acp-sw-un{background:var(--c-oom);border-color:transparent}
+.sw.acp-sw-wait{background:var(--surface-2);border-color:transparent}
+
+/* ---------- the player ---------- */
+.acp-player{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.acp-play{min-width:92px}
+.acp-speed button{font-size:12px;padding:3px 9px}
+.acp-scrub{flex:1 1 140px;min-width:120px}
+/* the tally keeps two lines' height, so the stage does not jump while the runs play (R7.9) */
+.acp-tally{font-size:11.5px;line-height:1.45;color:var(--ink-2);min-height:2.9em}
+
+/* ---------- why runs fail ---------- */
+.acp-causes{display:grid;gap:4px;min-width:0}
+.acp-cz{display:grid;grid-template-columns:minmax(0,13em) minmax(0,1fr) 2.8em;align-items:center;gap:8px;font-size:12px;cursor:help}
+.acp-czl{color:var(--ink-2);line-height:1.25}
+.acp-czt{display:block;height:9px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.acp-czt i{display:block;height:100%;background:var(--ink-3)}
+.acp-cz-u .acp-czt i{background:var(--c-oom)}
+.acp-czv{text-align:right;color:var(--ink)}
+
+/* ---------- metric cards ---------- */
+.acp-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.acp-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.acp-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
+
+/* ---------- rail ---------- */
+.acp-lv{margin-top:6px}
+.acp-goal-l{margin:6px 0 10px;padding-left:18px}
+.acp-goal-l li{margin-bottom:3px}
+.acp-one{margin:4px 0 10px;padding-left:18px}
+.acp-one li{margin-bottom:2px}
+.acp-one li.acp-best{font-weight:650}
+.acp-rem{padding-left:18px}
+.acp-rem li{margin-bottom:10px}
+.acp-rem-b{display:inline-block;margin-top:4px}
+.acp-rem-b[aria-pressed="true"]{font-weight:650;border-color:var(--ink)}
+.acp-mis{padding-left:18px}
+.acp-mis li{margin-bottom:6px}
+.acp-gl{list-style:none;padding:0;margin:6px 0 8px;display:grid;gap:3px}
+.acp-gl li{display:flex;gap:6px;font-size:13px;line-height:1.4}
+.acp-met>span{color:var(--c-ok)}
+.acp-miss>span{color:var(--c-oom)}
+.acp-live{margin-top:10px}
+.acp-mt{margin-top:12px}
+.acp-ch-res{scroll-margin-top:120px}
+.acp-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+/* a long option (“裁剪 + 摘要 + 笔记”) breaks at its spaces, never inside a word */
+.acp-app .seg-ctl button{word-break:keep-all;overflow-wrap:anywhere}
+
+/* ---------- settings ---------- */
+.acp-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.acp-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.acp-as-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.acp-as output{white-space:nowrap;font-family:var(--font-mono);font-size:12.5px;color:var(--ink)}
+.acp-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.acp-row .ctl-note{flex-basis:100%}
+
+/* a formula on its own line inside a capability-card answer (R6.29) */
+.acp-fx{display:block;margin:6px 0 8px;overflow-x:auto;font-size:15px;line-height:1.3}
+/* the challenge's comparison chart: the value label is drawn over the goal line, on its own background, so the line never runs
+   through the text (S9, R5.10; the kit fix is asked of the integrator) */
+.acp-app .cmp-track .g{z-index:0;top:0;bottom:0}
+.acp-app .cmp-track .cmp-val{z-index:1;padding:2px 4px}
+
+/* ---------- connect ---------- */
+.acp-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.acp-prod li{margin-bottom:6px}
+
+/* ---------- the dock's mini bar: the interval, the dot and the goal, on the stage's 40% to 100% axis ---------- */
+.acp-dk{position:relative;height:12px;width:100%;min-width:48px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.acp-dk i{position:absolute;top:0;height:100%;display:block}
+.acp-dk i.ci{background:var(--ink-3);opacity:.45}
+.acp-dk i.gl{width:0;border-left:1.5px dashed var(--ink)}
+.acp-dk i.pt{width:4px;margin-left:-2px;background:var(--ink)}
+
+@media (max-width:760px){
+  /* phones: the picture first; its legend sits right under the grid (R5.9) */
+  .acp-stage{display:flex;flex-direction:column}
+  .acp-stage>.stage-head{order:1}
+  .acp-stage>.acp-graph{order:2}
+  .acp-stage>.acp-scope{order:4}
+  .acp-stage>.metrics{order:5}
+  .acp-stage>details.math{order:6}
+  .acp-graph{padding:10px 10px 12px}
+  .acp-play{min-width:84px}
+  .acp-scrub{flex-basis:100%}
+  .acp-cz{grid-template-columns:minmax(0,10.5em) minmax(0,1fr) 2.6em;gap:6px}
+  .acp-tally{min-height:4.4em}
+}
+
+/* Show the math in short blocks (the owner, 2026-10-09): a hairline between blocks; a chain's “=” signs in one column */
+.acp-mb{padding:8px 0 10px}
+.acp-mb+.acp-mb{border-top:1px solid var(--line)}
+.acp-mb>p{margin:0 0 6px}
+.acp-mb>p:last-child{margin-bottom:0}
+.acp-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3}
+.acp-eq-l{text-align:right}
+/* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
+@media (max-width:560px){.acp-eqs-nm{grid-template-columns:max-content max-content}.acp-eqs-nm>.acp-eq-l{grid-column:1/-1;text-align:left}.acp-eqs-nm>.acp-eq-l:empty{display:none}}

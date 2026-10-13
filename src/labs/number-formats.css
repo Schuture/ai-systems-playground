@@ -1,0 +1,196 @@
+/* number-formats: one value in each format (bit boxes, stored value, error), the range strips on a log axis, the number lines
+   near 1.0, and one training step (the gradient's and the update's paths, the weight over 40 updates).
+   Colours (R5.6): grayscale and hatching only; red only for a lost or overflowing value, green only for a kept one or the goal. */
+.nf-stage .stage-head{align-items:center}
+.nf-stage .stage-actions{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:flex-end}
+.nf-view button{font-size:12px;padding:3px 9px;white-space:nowrap}
+.nf-graph{padding:12px 14px 14px;display:grid;gap:12px;min-width:0}
+.nf-a,.nf-b,.nf-c{display:grid;gap:12px;min-width:0}
+.nf-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.nf-sub,.nf-sub2{font-size:11.5px;color:var(--ink-2);line-height:1.35}
+/* H5 (the owner, 2026-10-09: information runs together without a divider): the step chart starts a block of its own under a hairline */
+#nf-chart-cap{border-top:1px solid var(--line);padding-top:10px;margin-top:4px}
+.nf-graph[data-focus="bits"] .nf-rows,.nf-graph[data-focus="range"] .nf-range,.nf-graph[data-focus="zoom"] .nf-zoom,.nf-graph[data-focus="recipe"] .nf-paths{outline:2px dashed var(--ink-3);outline-offset:4px;border-radius:4px}
+
+/* ---------- one row per format: name, stored value, error; the bit boxes ---------- */
+.nf-rows{display:grid;gap:9px;min-width:0}
+.nf-row{display:grid;gap:3px;min-width:0}
+.nf-rh{display:flex;align-items:baseline;gap:4px 12px;flex-wrap:wrap;min-width:0}
+.nf-fn{font-family:var(--font-mono);font-size:12px;font-weight:650;color:var(--ink);min-width:78px;outline-offset:2px}
+.nf-rh .nf-fn{cursor:help}
+.nf-fn em{font-style:normal;font-weight:400;color:var(--ink-2)}
+.nf-val{font-size:12.5px;color:var(--ink)}
+.nf-err{font-size:11.5px;color:var(--ink-2)}
+.nf-err.nf-bad{color:var(--c-oom);font-weight:650}
+.nf-bits{display:flex;flex-wrap:nowrap;gap:0 5px;min-width:0;max-width:100%;overflow:hidden;cursor:help;outline-offset:2px}
+.nf-fld{display:inline-flex}
+.nf-bit{display:inline-block;flex:none;height:19px;line-height:17px;box-sizing:border-box;text-align:center;font-style:normal;font-family:var(--font-mono);font-size:10px;color:var(--ink);border:1px solid var(--line-2);margin-right:-1px;background:var(--surface);overflow:hidden}
+.nf-bit.nf-sgn{border:1.5px solid var(--ink);margin-right:0}
+.nf-bit.nf-exp{background:repeating-linear-gradient(135deg,var(--surface) 0 3px,var(--line-2) 3px 4.5px)}
+.nf-bit.nf-man{background:var(--surface)}
+.nf-row.nf-bad .nf-bit{color:var(--ink-3)}
+.nf-row.nf-bad .nf-fn{color:var(--c-oom)}
+
+/* ---------- the range strips on a log axis ---------- */
+.nf-range{--nf-sl:82px;display:grid;gap:4px;min-width:0}
+.nf-range[hidden]{display:none}
+.nf-tens{margin-left:var(--nf-sl);display:grid;gap:2px;min-width:0}
+.nf-trow{position:relative;height:17px}
+.nf-band{position:absolute;bottom:0;height:7px;background:var(--surface-2);border:1px solid var(--ink-3);border-radius:2px;box-sizing:border-box;cursor:help;outline-offset:2px}
+.nf-band em,.nf-tmark em{position:absolute;bottom:7px;left:0;font-style:normal;font-family:var(--font-mono);font-size:10px;line-height:1.1;color:var(--ink-2);white-space:nowrap}
+.nf-band.nf-right em{left:auto;right:0}
+.nf-tmark{position:absolute;bottom:0;height:9px;width:0;border-left:2px solid var(--ink-2);cursor:help;outline-offset:2px}
+.nf-tmark em{left:3px;bottom:3px}
+.nf-strips{position:relative;display:grid;gap:5px;min-width:0;padding:3px 0}
+.nf-strip{display:grid;grid-template-columns:var(--nf-sl) minmax(0,1fr);align-items:center;min-width:0}
+.nf-sl{font-family:var(--font-mono);font-size:11px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px}
+.nf-st{position:relative;height:15px;background:var(--surface-2);border-radius:2px;cursor:help;outline-offset:2px}
+.nf-st i{position:absolute;top:0;bottom:0;display:block}
+.nf-st i.nf-norm{background:var(--ink-3)}
+.nf-st i.nf-sub{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 4px)}
+.nf-more{position:absolute;top:0;line-height:15px;font-weight:400;font-family:var(--font-mono);font-size:9.5px;color:var(--surface);padding:0 4px;white-space:nowrap;z-index:1}
+.nf-more.nf-left{left:0}
+.nf-more.nf-right{right:0}
+.nf-more.nf-short span{display:none}   /* the value's dot sits near this end: the arrow only, the strip's tooltip has the number */
+.nf-dot{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--surface);border:2px solid var(--ink);box-sizing:border-box;z-index:3}
+.nf-dot.nf-bad{background:var(--c-oom-soft);border-color:var(--c-oom)}
+.nf-vline{position:absolute;top:-3px;bottom:-3px;width:0;border-left:1.5px solid var(--ink);z-index:2;pointer-events:none}
+.nf-axis{position:relative;height:14px;margin-left:var(--nf-sl)}
+.nf-axis span{position:absolute;top:0;transform:translateX(-50%);font-family:var(--font-mono);font-size:10px;color:var(--ink-3);white-space:nowrap}
+.nf-axis span:first-child{transform:none}
+
+/* ---------- the update view: number lines near 1.0 ---------- */
+.nf-zoom{display:grid;gap:12px;min-width:0}
+.nf-zr{display:grid;gap:2px;min-width:0}
+.nf-zhd{display:flex;align-items:baseline;gap:4px 12px;flex-wrap:wrap}
+.nf-zl{position:relative;height:24px;margin:0 6px;border-bottom:1.5px solid var(--ink-3);cursor:help;outline-offset:3px}
+.nf-zl i{position:absolute;bottom:0;display:block;font-style:normal}
+.nf-zt{height:11px;width:0;border-left:1.5px solid var(--ink-2)}
+.nf-dense{left:0;right:0;height:11px;background:repeating-linear-gradient(90deg,var(--ink-3) 0 1px,transparent 1px 3px)}
+.nf-zh{height:17px;width:0;border-left:1.5px dashed var(--ink-3)}
+.nf-zx{position:absolute;top:0;width:0;height:0;margin-left:-5px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid var(--ink);z-index:2}
+.nf-zs{position:absolute;bottom:-5px;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:var(--ink);z-index:3}
+.nf-zs.nf-bad{background:var(--c-oom)}
+.nf-zr.nf-bad .nf-fn{color:var(--c-oom)}
+.nf-zaxis{margin:0 6px}
+
+/* ---------- the recipe view: the two paths and the weight over 40 updates ---------- */
+.nf-paths{display:grid;gap:8px;min-width:0}
+.nf-pline{display:flex;flex-wrap:wrap;align-items:center;gap:5px 4px;min-width:0}
+.nf-pl{font-size:11.5px;font-weight:650;color:var(--ink);min-width:74px}
+.nf-step{font-family:var(--font-mono);font-size:11.5px;line-height:1.3;padding:2px 6px;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);color:var(--ink);white-space:nowrap;cursor:help;outline-offset:2px}
+.nf-step.nf-ok{border-color:var(--c-ok);color:var(--c-ok);background:var(--c-ok-soft)}
+.nf-step.nf-bad{border-color:var(--c-oom);color:var(--c-oom);background:var(--c-oom-soft)}
+.nf-ar{color:var(--ink-3);font-size:12px}
+.nf-chart{min-width:0}
+.nf-chart svg{display:block;max-width:100%;height:auto;overflow:visible}
+.nf-chart .nf-ax{stroke:var(--line-2);stroke-width:1}
+.nf-chart .nf-lx{fill:none;stroke:var(--ink-3);stroke-width:1.5;stroke-dasharray:2 3}
+.nf-chart .nf-lm{fill:none;stroke:var(--ink);stroke-width:3}
+.nf-chart .nf-lc{fill:none;stroke:var(--ink-2);stroke-width:1.5}
+.nf-chart .nf-lo{fill:none;stroke:var(--ink);stroke-width:3;stroke-dasharray:7 4}
+.nf-chart text{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+
+/* ---------- legend swatches ---------- */
+.sw.nf-sw-s{background:var(--surface);border:1.5px solid var(--ink)}
+.sw.nf-sw-e{background:repeating-linear-gradient(135deg,var(--surface) 0 2px,var(--ink-3) 2px 3px);border-color:var(--line-2)}
+.sw.nf-sw-m{background:var(--surface);border-color:var(--line-2)}
+.sw.nf-sw-bad{background:var(--c-oom-soft);border-color:var(--c-oom)}
+.sw.nf-sw-ok{background:var(--c-ok-soft);border-color:var(--c-ok)}
+.sw.nf-sw-sub{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 4px);border-color:var(--line)}
+.sw.nf-sw-v{width:0;height:13px;border:0;border-left:1.5px solid var(--ink);border-radius:0;margin:0 7px 0 3px}
+.sw.nf-sw-band{background:var(--surface-2);border:1px solid var(--ink-3);height:7px}
+.sw.nf-sw-t{width:0;height:11px;border:0;border-left:1.5px solid var(--ink-2);border-radius:0;margin:0 7px 0 3px}
+.sw.nf-sw-h{width:0;height:13px;border:0;border-left:1.5px dashed var(--ink-3);border-radius:0;margin:0 7px 0 3px}
+.sw.nf-sw-x{width:0;height:0;border:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid var(--ink);border-radius:0;vertical-align:1px}
+.sw.nf-sw-d{border-radius:50%;background:var(--ink);border-color:transparent;width:9px;height:9px}
+.sw.nf-sw-lx{width:16px;height:0;border:0;border-top:1.5px dotted var(--ink-3);border-radius:0;vertical-align:3px}
+.sw.nf-sw-lm{width:16px;height:0;border:0;border-top:3px solid var(--ink);border-radius:0;vertical-align:3px}
+.sw.nf-sw-lc{width:16px;height:0;border:0;border-top:1.5px solid var(--ink-2);border-radius:0;vertical-align:3px}
+.sw.nf-sw-lo{width:16px;height:0;border:0;border-top:3px dashed var(--ink);border-radius:0;vertical-align:3px}
+#nf-legend>span{cursor:help}
+
+/* ---------- metric cards ---------- */
+.nf-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.nf-metrics .metric .v{overflow-wrap:anywhere}
+
+/* ---------- rail ---------- */
+.nf-mt{margin-top:12px}
+.nf-ch-res{scroll-margin-top:120px}
+.nf-app .goal.nf-over b{color:var(--c-oom)}
+.nf-app .goal.nf-goal span:first-child{white-space:normal}
+.nf-checks{margin-top:10px}
+.nf-lv,.nf-chlv{margin-top:6px}
+.nf-lv .lever .lv-r,.nf-chlv .lever .lv-r{grid-column:2 / 4;grid-row:2;padding-top:0}
+.nf-lv .lever .lv-d,.nf-chlv .lever .lv-d{grid-row:3}
+.nf-lv .lever .lv-r:empty,.nf-chlv .lever .lv-r:empty{display:none}
+.nf-why{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.pbar .nf-why{margin-top:6px}
+.nf-phone{display:none}
+.nf-remlist li{margin-bottom:8px}
+.nf-rem{font-size:12.5px;white-space:nowrap}
+.nf-rem[aria-pressed="true"]{font-weight:650;text-decoration:none}
+.nf-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+
+/* ---------- settings ---------- */
+.nf-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.nf-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.nf-grp .ctl>.lbl{display:block}
+.nf-app .ctl output{white-space:nowrap}
+.nf-app .seg-ctl{flex-wrap:wrap}
+
+/* ---------- connect ---------- */
+.nf-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.nf-prod li{margin-bottom:6px}
+.nf-prod code{word-break:break-word}
+
+/* the mini result bar: this lab draws no chips there (review A3), so its empty visual slot gives the sentence the room */
+body:has(#nf-app) #dkVis:empty{display:none}
+
+/* ---------- the challenge's comparison chart (kit .cmp, scoped to this lab's result box) ---------- */
+.nf-ch-res .cmp-val{white-space:nowrap}
+.nf-whyd{margin:10px 0 4px}
+.nf-whyd>summary{cursor:pointer;font-size:13px;font-weight:650;color:var(--ink)}
+
+@media (max-width:760px){
+  /* phones: the picture first, its legend right under it (R7.3) */
+  .nf-stage{display:flex;flex-direction:column}
+  .nf-stage>.stage-head{order:1}
+  .nf-stage>.nf-graph{order:2}
+  .nf-stage>.legend-row{order:3}
+  .nf-stage>.metrics{order:4}
+  .nf-stage>details.math{order:5}
+  .nf-graph{padding:10px 10px 12px}
+  .nf-range{--nf-sl:66px}
+  .nf-fn{min-width:66px}
+  .nf-phone:not(:empty){display:block}
+  .nf-pl{min-width:0;width:100%}
+  .nf-more span{display:none}   /* phones: the arrows only, so the value's dot never covers a number; the strip's tooltip has both ends */
+}
+@media (max-width:420px){.nf-app .pb-dots{gap:3px}}
+
+/* R5.9: each sub-chart's key sits right under it */
+.nf-key{margin:6px 0 10px}
+/* Show the math as short blocks (H2, 2026-10-09): a lead line, then the formula's rows in a grid; blocks are split by a hairline */
+.nf-mb{padding:10px 0}
+.nf-mb:first-child{padding-top:2px}
+.nf-mb+.nf-mb{border-top:1px solid var(--line)}
+.mathbody .nf-ml{margin:0 0 6px;font-family:var(--font-ui);font-size:13.5px;line-height:1.55;color:var(--ink-2)}
+.nf-mg{display:grid;justify-content:start;justify-items:center;align-items:center;column-gap:.35em;row-gap:.45em;overflow-x:auto;padding-block:.3em;margin-bottom:4px;font-size:13.5px}
+.nf-mg .nf-mn{justify-self:end}
+.nf-mg .nf-mw{justify-self:start}
+/* a cell never shrinks under its text: a formula with Chinese words in it would otherwise be squeezed and run into the next
+   column (H7); a row wider than the panel scrolls instead */
+.nf-mg>span{white-space:nowrap;min-width:max-content}
+.nf-mg .nf-mh{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sans Math',var(--font-ui);font-size:1.08em;white-space:nowrap}
+
+/* ---------- 知识梳理: formulas on their own line, wrapping under each other in a narrow column so nothing scrolls sideways; the FP32
+   bit pattern of −0.8125 in the lab's own bit cells, each field named under it (the mantissa field moves to its own line on a phone) ---------- */
+.primer .nf-prfx{display:flex;flex-wrap:wrap;align-items:center;column-gap:2.2em;row-gap:8px;margin:2px 0 14px;padding-left:1em;font-size:1.06em;line-height:1.3;min-width:0}
+.primer .nf-prfx>span{min-width:0;max-width:100%}
+.primer .nf-prbits{display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px 12px;margin:4px 0 14px;padding-left:1em;min-width:0}
+.primer .nf-prb{display:grid;gap:5px;justify-items:start;min-width:0}
+.primer .nf-prbits .nf-bit{width:17px;height:23px;line-height:21px;font-size:12.5px}
+.primer .nf-prb em{font-style:normal;font-size:14px;line-height:1.3;color:var(--ink-2);white-space:nowrap}
+@media (max-width:760px){.primer .nf-prfx{padding-left:.4em;column-gap:1.6em}.primer .nf-prbits{padding-left:.4em}}
+@media (max-width:480px){.primer .nf-prbits .nf-bit{width:12px;height:21px;line-height:19px;font-size:11px}}

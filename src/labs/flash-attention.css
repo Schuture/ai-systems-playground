@@ -1,0 +1,246 @@
+/* flash-attention: the toy's two lanes (HBM and the chip) with the matrices as grids of grey cells, the transfer line, one row's running
+   max and sum, the counter; the real-size bars (hatched: S and P; dotted: K and V again), the curve over context length, the SRAM gauge.
+   Colours (R5.6): grayscale, hatching and dots only; red only for "does not fit" and a missed goal, green only for "fits" and a met goal. */
+.fa-app [hidden]{display:none!important}
+.fa-stage .stage-head{align-items:center}
+.fa-stage .stage-actions{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:flex-end}
+.fa-view button,.fa-pathsw button{font-size:12px;padding:3px 9px}
+.fa-graph{padding:12px 14px 14px;display:grid;gap:12px;min-width:0}
+.fa-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+
+/* ---------- the toy: two lanes ---------- */
+.fa-toy{display:grid;gap:8px;min-width:0}
+.fa-lane{border:1px solid var(--line-2);border-radius:6px;padding:8px 10px 10px;background:var(--surface);min-width:0}
+.fa-lane.fa-chip{background:var(--surface-2)}
+.fa-lh{font-size:12px;color:var(--ink-2);margin-bottom:6px;line-height:1.3}
+.fa-lh b{color:var(--ink);font-family:var(--font-mono);font-size:12.5px;margin-right:4px}
+.fa-mats{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-start;min-width:0}
+.fa-m{margin:0;display:grid;gap:3px;justify-items:start;align-content:start;cursor:help;border-radius:4px;padding:3px 4px 4px;border:2px solid transparent;outline-offset:2px;min-width:0}
+.fa-m figcaption{font-size:11px;color:var(--ink-3);white-space:nowrap;line-height:1.25}
+.fa-m figcaption b{font-family:var(--font-mono);font-size:12px;color:var(--ink)}
+.fa-m.fa-on{border-color:var(--ink);background:var(--surface)}
+.fa-m.fa-on.fa-in figcaption b::after{content:' ▼';font-size:10px}
+.fa-m.fa-on.fa-out figcaption b::after{content:' ▲';font-size:10px}
+.fa-m.fa-none figcaption b{color:var(--ink-3)}
+.fa-grid{--cs:9px;display:grid;grid-template-columns:repeat(var(--c),var(--cs));gap:1px}
+.fa-grid i{display:block;width:var(--cs);height:var(--cs);border-radius:1px}
+.fa-grid i.fa-e{background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line-2)}
+.fa-grid i[data-h]{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.fa-grid.fa-empty{outline:1.5px dashed var(--ink-3);outline-offset:1px;border-radius:1px}
+.fa-grid.fa-empty i{background:transparent;box-shadow:none}
+.fa-two{display:flex;gap:4px}
+.fa-op{align-self:center;font-family:var(--font-mono);font-size:12px;color:var(--ink);padding:5px 8px;border:1px dashed var(--line-2);border-radius:4px;background:var(--surface);max-width:100%}
+.fa-never{display:grid;align-content:center;justify-items:center;gap:2px;min-width:92px;min-height:64px;padding:6px 8px;border:1.5px dashed var(--ink-3);border-radius:4px;font-size:11.5px;color:var(--ink-2);cursor:help;align-self:center;outline-offset:2px}
+.fa-never b{font-family:var(--font-mono);font-size:12px;color:var(--ink-3);text-decoration:line-through}
+.fa-mapg{--cs:15px;gap:2px}
+.fa-mapg i{background:var(--surface);box-shadow:inset 0 0 0 1px var(--line-2)}
+.fa-mapg i.fa-past{background:color-mix(in srgb,var(--ink-3) 35%,var(--surface))}
+.fa-mapg i.fa-now{background:var(--ink-2);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.fa-xfer{font-size:12.5px;line-height:1.45;color:var(--ink);min-height:2.9em;padding:4px 2px 4px 10px;border-left:3px solid var(--ink-3)}
+.fa-xs{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin-right:4px;white-space:nowrap}
+
+/* one row's running max and sum */
+.fa-row{min-width:0;overflow-x:auto}
+.fa-rh{font-size:12px;font-weight:650;color:var(--ink);margin-bottom:4px}
+.fa-rt{border-collapse:collapse;font-family:var(--font-mono);font-size:11.5px;width:100%;max-width:440px}
+.fa-rt th{font-weight:600;color:var(--ink-3);font-size:10.5px;text-align:right;padding:2px 8px;border-bottom:1px solid var(--line)}
+.fa-rt td{text-align:right;padding:2px 8px;border-bottom:1px solid var(--line-2);color:var(--ink-2);white-space:nowrap}
+.fa-rt th:first-child,.fa-rt td:first-child{text-align:left}
+.fa-rt tr.fa-e td{color:var(--ink-3)}
+.fa-rt tr.fa-up td{color:var(--ink);font-weight:700;background:var(--surface-2)}
+
+/* the counter: numbers moved so far, on standard attention's scale; hatched = S and P */
+.fa-cnt{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;min-width:0}
+.fa-cl{font-size:12px;color:var(--ink-2)}
+.fa-cbar{position:relative;height:14px;background:var(--surface-2);border-radius:2px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line-2)}
+.fa-cbar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2);transition:width .25s ease-out}
+.fa-cbar i.fa-sp{background:repeating-linear-gradient(135deg,var(--ink) 0 1.5px,var(--ink-3) 1.5px 5px)}
+.fa-cnt b{font-size:12.5px;color:var(--ink);min-width:3ch;text-align:right}
+
+/* the player (R3.9) */
+.fa-player{display:grid;gap:8px;margin-top:10px;min-width:0}
+.fa-pbtns{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.fa-play{min-width:86px}
+.fa-speed{display:inline-flex;cursor:help}
+/* H7 (the owner, 2026-10-09): ◂, play and ▸ and the speed buttons share one height and one baseline */
+.fa-pbtns>.btn.sm,.fa-speed .seg-ctl{height:32px;box-sizing:border-box}
+.fa-speed .seg-ctl button{font-size:12px;padding:0 9px;line-height:1.2;display:inline-flex;align-items:center}
+.fa-scrub{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;min-width:0}
+.fa-sl{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);white-space:nowrap;min-width:86px}
+.fa-scrub input{width:100%;min-width:0}
+#fa-stplay .fa-player{margin-top:2px;padding-top:8px;border-top:1px solid var(--line-2)}
+.fa-done{margin:8px 0 0;font-size:13px}
+
+/* ---------- real size: the bars ---------- */
+.fa-real{display:grid;gap:10px;min-width:0}
+.fa-bars{display:grid;gap:8px;min-width:0}
+.fa-brow{display:grid;grid-template-columns:112px minmax(0,1fr) 88px;gap:8px;align-items:center;cursor:help;border-radius:3px;outline-offset:2px;min-width:0}
+.fa-bl{font-size:12.5px;color:var(--ink);white-space:nowrap}
+.fa-btrk{position:relative;height:22px;background:var(--surface-2);border-radius:2px;display:flex;overflow:hidden;min-width:0}
+.fa-seg{display:block;height:100%;flex:none;transition:width .25s ease-out;box-sizing:border-box}
+.fa-seg.fa-base{background:var(--ink-2)}
+.fa-seg.fa-sp{background:repeating-linear-gradient(135deg,var(--ink-2) 0 1.5px,var(--surface) 1.5px 5px);box-shadow:inset 0 0 0 1px var(--ink-3)}
+.fa-seg.fa-kv{background:radial-gradient(circle,var(--ink-2) 1.1px,transparent 1.4px) 0 0/5px 5px,var(--surface);box-shadow:inset 0 0 0 1px var(--ink-3)}
+.fa-bv{font-size:12px;text-align:right;white-space:nowrap;color:var(--ink)}
+.fa-brow.fa-ghost .fa-btrk{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line-2)}
+.fa-brow.fa-ghost .fa-bv{color:var(--ink-3);font-size:11px;white-space:normal;line-height:1.2}
+.fa-brow.fa-ghost .fa-bl{color:var(--ink-3)}
+.fa-room{margin:0;font-size:12.5px;color:var(--ink-2);line-height:1.45}
+.fa-room b{color:var(--ink)}
+
+/* part 5: traffic against context length */
+.fa-curve{min-width:0}
+.fa-cvcap{font-size:12px;color:var(--ink-2);margin-bottom:4px;line-height:1.35}
+/* H5 (the owner, 2026-10-09: information runs together without a divider): the growth chart starts a block of its own, under a hairline */
+.fa-cvcap{border-top:1px solid var(--line);padding-top:8px;margin-top:10px}
+.fa-curve svg{display:block;width:100%;height:auto;overflow:visible}
+.fa-curve text{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-3)}
+.fa-curve line.fa-cv-grid{stroke:var(--line-2);stroke-width:1}
+.fa-curve line.fa-cv-tick{stroke:var(--ink-3);stroke-width:1}
+.fa-curve line.fa-cv-now{stroke:var(--ink-3);stroke-width:1.5;stroke-dasharray:2 3}
+.fa-curve polyline{fill:none;stroke-width:2;stroke-linejoin:round}
+.fa-curve polyline.fa-cv-std{stroke:var(--ink)}
+.fa-curve polyline.fa-cv-fa{stroke:var(--ink-2);stroke-dasharray:6 4}
+.fa-curve circle.fa-cv-std{fill:var(--ink)}
+.fa-curve circle.fa-cv-fa{fill:var(--surface);stroke:var(--ink-2);stroke-width:2}
+
+/* the SRAM gauge for one tile pair */
+.fa-gauge{display:grid;gap:6px;min-width:0}
+.fa-gcap{font-size:12.5px;color:var(--ink);line-height:1.4}
+.fa-fit{color:var(--c-ok);white-space:nowrap}
+.fa-nofit{color:var(--c-oom);white-space:nowrap}
+.fa-gtrk{position:relative;height:20px;background:var(--surface-2);border-radius:2px;display:flex;cursor:help;margin-bottom:16px;outline-offset:3px}
+.fa-gtrk>i{display:block;height:100%;flex:none;border-right:1px solid var(--surface);box-sizing:border-box;transition:width .25s ease-out}
+.fa-gtrk.fa-over{box-shadow:0 0 0 2px var(--c-oom)}
+.fa-g-q{background:var(--ink-2)}
+.fa-g-k{background:var(--ink-3)}
+.fa-g-s{background:repeating-linear-gradient(135deg,var(--ink-2) 0 1.5px,var(--surface) 1.5px 5px)}
+.fa-g-o{background:radial-gradient(circle,var(--ink-2) 1.1px,transparent 1.4px) 0 0/5px 5px,var(--surface)}
+.fa-glim{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed var(--ink);z-index:1}
+.fa-glim em{position:absolute;top:100%;right:3px;font-style:normal;font-family:var(--font-mono);font-size:10.5px;line-height:1.4;color:var(--ink);white-space:nowrap;font-weight:400}
+.fa-gkey{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--ink-2)}
+.fa-gkey span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.fa-gkey i{display:inline-block;width:12px;height:10px;border-radius:2px;box-shadow:inset 0 0 0 1px var(--line)}
+
+/* ---------- legend swatches ---------- */
+.sw.fa-sw-cell{background:color-mix(in srgb,var(--ink-2) 50%,var(--surface));border-color:transparent}
+.sw.fa-sw-on{background:transparent;border:2px solid var(--ink)}
+.sw.fa-sw-none{background:transparent;border:1.5px dashed var(--ink-3)}
+.sw.fa-sw-base{background:var(--ink-2);border-color:transparent}
+.sw.fa-sw-sp{background:repeating-linear-gradient(135deg,var(--ink-2) 0 1.5px,var(--surface) 1.5px 4px);border-color:var(--ink-3)}
+.sw.fa-sw-kv{background:radial-gradient(circle,var(--ink-2) 1px,transparent 1.3px) 0 0/4px 4px,var(--surface);border-color:var(--ink-3)}
+#fa-legend>span{cursor:help}
+
+/* ---------- metric cards ---------- */
+.fa-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.fa-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.fa-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.fa-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
+
+/* ---------- rail ---------- */
+.fa-mt{margin-top:12px}
+.fa-ch-res{scroll-margin-top:120px}
+.goal.fa-over b{color:var(--c-oom)}
+.fa-lv{margin-top:6px}
+.fa-lv .lever .lv-r{grid-column:2 / 4;grid-row:2;padding-top:0}
+.fa-lv .lever .lv-d{grid-row:3}
+.fa-lv .lever .lv-r:empty{display:none}
+.fa-why{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.pbar .fa-why{margin-top:6px}
+.fa-remlist li{margin-bottom:8px}
+.fa-app .goal.fa-goal{display:grid;grid-template-columns:minmax(0,1fr);gap:1px}
+.fa-app .goal.fa-goal span:last-child{white-space:normal}
+.fa-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+.fa-app .inline-ctl .seg-ctl button{white-space:nowrap}
+.fa-app .ctl output{white-space:nowrap}
+
+/* the challenge's chart: a pass shows on the row itself */
+#fa-ch-res .cmp-row.ok .cmp-track{background:var(--c-ok-soft);box-shadow:inset 0 0 0 2px var(--c-ok)}
+#fa-ch-res .cmp-row.ok.me .cmp-track{box-shadow:inset 0 0 0 2px var(--c-ok),0 0 0 1.5px var(--ink)}
+#fa-ch-res .cmp-row.ok .cmp-lab>span:first-child{color:var(--c-ok);font-weight:650}
+#fa-ch-res .cmp-leg i.ok{background:var(--c-ok-soft);box-shadow:inset 0 0 0 2px var(--c-ok)}
+
+/* ---------- settings ---------- */
+.fa-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.fa-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.fa-grp .ctl>.lbl{display:block}
+
+/* ---------- connect ---------- */
+.fa-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.fa-prod li{margin-bottom:6px}
+.fa-prod code,.fa-app .refs code{word-break:break-word}
+
+/* ---------- the dock's mini bars ---------- */
+.fa-dk{position:relative;height:9px;width:100%;min-width:48px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.fa-dk+.fa-dk{margin-top:3px}
+.fa-dk i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2)}
+.fa-dk+.fa-dk i{background:var(--ink-3)}
+
+@media (max-width:760px){
+  /* phones: the picture first, its legend right under it (R7.3) */
+  .fa-stage{display:flex;flex-direction:column}
+  .fa-stage>.stage-head{order:1}
+  .fa-stage>.fa-graph{order:2}
+  .fa-stage>.legend-row{order:3}
+  .fa-stage>.fa-scope{order:4}
+  .fa-stage>.metrics{order:4}
+  .fa-stage>details.math{order:5}
+  .fa-graph{padding:10px 10px 12px}
+  .fa-lane{padding:6px 8px 8px}
+  .fa-grid{--cs:8px}
+  .fa-mapg{--cs:13px}
+  .fa-mats{gap:6px 8px}
+  .fa-brow{grid-template-columns:100px minmax(0,1fr) 74px;gap:6px}
+  .fa-bl{font-size:12px}
+  .fa-cnt{grid-template-columns:minmax(0,1fr) auto}
+  .fa-cl{grid-column:1 / -1}
+  .fa-rt th,.fa-rt td{padding:2px 5px}
+}
+@media (prefers-reduced-motion:reduce){.fa-seg,.fa-cbar i,.fa-gtrk>i{transition:none}}
+
+/* formulas written out, one per line, and the per-pair comparison of part 5 (Yixiong's review) */
+.fa-fx{margin:6px 0;overflow-x:auto;overflow-y:hidden}
+.fa-fx math{font-size:1.08em}
+.fa-pair{margin:6px 0 8px;padding-left:18px}
+.fa-pair li{margin:4px 0}
+
+/* R5.9: each key beside what it labels. The curves are named at their right ends; the bar segments' key sits right under the bars,
+   the counter's under the counter, the 227 KiB mark's with the gauge's other keys */
+.fa-curve text.fa-cv-lab{font-family:inherit;font-size:11.5px;font-weight:600}
+.fa-curve text.fa-cv-lstd{fill:var(--ink)}
+.fa-curve text.fa-cv-lfa{fill:var(--ink-2)}
+.fa-bkey,.fa-ckey{display:flex;flex-wrap:wrap;gap:4px 14px;font-family:var(--font-mono);font-size:11px;color:var(--ink-2);min-width:0}
+.fa-bkey>span,.fa-ckey>span{cursor:help;display:inline-flex;align-items:center}
+.fa-ckey{grid-column:1/-1}
+.fa-gkey i.fa-g-lim{width:0;height:12px;border-radius:0;box-shadow:none;border-left:2px dashed var(--ink);margin:0 2px 0 3px}
+.fa-gkey>span[tabindex]{cursor:help}
+/* Show the math as short blocks (H2, 2026-10-09): a lead line, then the formula's rows in a grid; blocks are split by a hairline */
+.fa-mb{padding:10px 0}
+.fa-mb:first-child{padding-top:2px}
+.fa-mb+.fa-mb,.fa-mb+p,p+.fa-mb{border-top:1px solid var(--line)}
+.mathbody .fa-ml{margin:0 0 6px;font-family:var(--font-ui);font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+.fa-mg{display:grid;grid-template-columns:repeat(var(--n),auto);justify-content:start;justify-items:center;align-items:center;column-gap:.35em;row-gap:.45em;overflow-x:auto;padding-block:.3em;margin-bottom:4px;font-size:13.5px}
+.fa-mg .fa-mn{justify-self:end}
+.fa-mg .fa-mw{justify-self:start}
+/* a cell never shrinks under its text: a formula with Chinese words in it would otherwise be squeezed and run into the next
+   column (H7); a row wider than the panel scrolls instead */
+.fa-mg>span{white-space:nowrap;min-width:max-content}
+.fa-mg .fa-mh{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sans Math',var(--font-ui);font-size:1.08em;white-space:nowrap}
+/* the owner's review of 2026-10-09 (R6.37: a row the reader has to scroll sideways is not read): a long sum is cut before each “+”
+   into pieces, each with the reader's numbers under its terms; the pieces wrap onto the next line, indented under the first term.
+   A result in words and numbers wraps at its spaces */
+.fa-mg>.fa-sw{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:.35em;row-gap:.55em;padding-left:1.3em;min-width:0;white-space:normal}
+.fa-sw>.fa-sg:first-child,.fa-sw>.fa-sl{margin-left:-1.3em}
+.fa-sw>.fa-sl{flex-basis:100%;min-width:0}
+.fa-sg{display:inline-grid;justify-content:start;justify-items:center;align-items:center;column-gap:.35em;row-gap:.45em;grid-auto-rows:minmax(1.9em,auto)}
+.fa-sg>span{white-space:nowrap}
+.fa-sl{grid-template-columns:auto minmax(0,auto)!important;align-items:baseline}
+.fa-sl>.fa-mh,.fa-mg>.fa-mw.fa-mh:not(:has(math)){white-space:normal;min-width:0;justify-self:start}
+.fa-mg>.fa-sn{align-self:start;min-height:1.9em;display:flex;align-items:center}
+/* a narrow stage (a phone, or the 900 px layout): each name on its own line above its formula, the “=” rows under it */
+@container (max-width:540px){
+  .fa-mg{grid-template-columns:repeat(var(--n1),auto)}
+  .fa-mg>.fa-mn:not(:empty){grid-column:1/-1;justify-self:start}
+  .fa-mg>.fa-mn:empty{display:none}
+}
+.fa-metrics .k{overflow-wrap:anywhere}

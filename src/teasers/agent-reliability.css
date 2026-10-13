@@ -1,0 +1,10 @@
+/* agent-reliability teaser: grayscale only (R5.6). The row always holds 40 cell slots, so the tile keeps its height. */
+.tz-arl-vis{display:grid;gap:8px;padding:2px 0;cursor:help;outline-offset:3px}
+.tz-arl-row{display:grid;grid-template-columns:repeat(40,minmax(0,1fr));gap:2px;height:14px}
+.tz-arl-c{display:block;border-radius:1px;background:transparent;border:1px dashed var(--line-2);box-sizing:border-box}
+.tz-arl-c.on{background:var(--ink-3);border:0}
+.tz-arl-bar{position:relative;height:22px;background:var(--surface-2);border-radius:3px;overflow:hidden;min-width:0}
+.tz-arl-bar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2)}
+.tz-arl-bar span{position:absolute;right:6px;top:0;bottom:0;display:flex;align-items:center;font-family:var(--font-mono);font-size:11px;font-weight:650;color:var(--ink)}
+.tz-arl-sw{background:var(--ink-3);border-color:transparent}
+.tz-arl-sw2{background:var(--ink-2);border-color:transparent}

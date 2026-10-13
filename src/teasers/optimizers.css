@@ -1,0 +1,19 @@
+/* optimizers tile: the lab's valley from above in grayscale (R5.6): ellipses = loss levels, the picked optimizer's path solid (--ink),
+   the other one's dashed (--ink-3), ring = start, × = bottom. The legend draws its two line swatches with the paths' own classes. */
+.tz-op-vis{display:block;max-width:100%;height:auto;cursor:help}
+.tz-op-bg{fill:var(--surface);stroke:var(--line-2);stroke-width:1}
+.tz-op-ct{fill:none;stroke:var(--line);stroke-width:1}
+.tz-op-path{fill:none;stroke-linejoin:round;stroke-linecap:round}
+.tz-op-path.p{stroke:var(--ink);stroke-width:1.8}
+.tz-op-path.q{stroke:var(--ink-3);stroke-width:1.3;stroke-dasharray:4 3;stroke-linecap:butt}
+.tz-op-start{fill:var(--surface);stroke:var(--ink);stroke-width:1.8}
+.tz-op-min{fill:none;stroke:var(--ink);stroke-width:1.8}
+.tz-op-sw{display:block;flex:none;margin-right:5px;overflow:visible}
+.tz-op-mk{display:inline-block;flex:none;margin-right:5px;font-style:normal}
+.tz-op-mk.s{width:9px;height:9px;border:1.8px solid var(--ink);border-radius:50%}
+.tz-op-mk.m{font-family:var(--font-mono);font-size:12px;line-height:1;color:var(--ink)}
+/* the sentence and, invisible in the same grid cell, the other pick's sentence: the cell is as tall as the longer one */
+.tz-op-rd{display:grid;min-width:0}
+.tz-op-rd>p{grid-area:1/1;min-width:0}
+.tz-op-twin{margin:0;font-size:13px;line-height:1.45;visibility:hidden}
+.tz-op-twin b{font-weight:650}

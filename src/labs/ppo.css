@@ -1,0 +1,253 @@
+/* ---------- PPO lab (prefix ppo-) ----------
+   Grayscale for roles: the policy = solid ink, the SFT model (reference) = dashed outline, E (the reward model's gap) = hatched.
+   Red only for the failure moment (E taking over a prompt, quality falling while the score rises, a ratio running off);
+   green only for goals (status chip, challenge). */
+.ppo-app .stage-head>div:first-child{min-width:0}
+.ppo-st-title{font-weight:680;font-size:15.5px;line-height:1.3}
+.ppo-app [data-tipx]{cursor:help}
+.ppo-app [data-jump],.ppo-app button[data-tipx]{cursor:pointer}
+.ppo-app [hidden]{display:none!important}
+
+/* the RL loop: one step for the three prompts, phase by phase */
+.ppo-loop{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2)}
+.ppo-loop-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px}
+.ppo-phases{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:12.5px;min-width:0}
+.ppo-ph-k{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);margin-right:4px;white-space:nowrap}
+.ppo-ph{padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--ink-3);background:var(--surface);white-space:nowrap}
+.ppo-ph.done{color:var(--ink-2);border-color:var(--ink-3)}
+.ppo-ph.on{color:var(--surface);background:var(--ink);border-color:var(--ink);font-weight:650}
+.ppo-ph-a{color:var(--ink-3);font-size:11px}
+.ppo-loop-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.ppo-rows{display:grid;gap:6px;margin-top:9px}
+.ppo-row{display:grid;grid-template-columns:118px minmax(0,1fr);gap:8px;align-items:center;min-width:0}
+.ppo-rq{display:flex;flex-direction:column;gap:1px;font-size:12.5px;line-height:1.25;min-width:0;border-radius:3px}
+.ppo-rq:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.ppo-rv{font-size:11px;color:var(--ink-2);min-height:1.25em;white-space:nowrap}
+.ppo-chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;min-width:0}
+.ppo-chip{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:4px;align-items:baseline;padding:4px 6px 6px;border:1px solid var(--line);border-radius:4px;background:var(--surface);font-size:11.5px;line-height:1.3;min-width:0;overflow:hidden;transition:opacity .25s}
+.ppo-chip:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.ppo-chip.ppo-hide{opacity:0;visibility:hidden}
+.ppo-chip-gap{background:repeating-linear-gradient(135deg,var(--surface) 0 4px,var(--surface-2) 4px 7px)}
+.ppo-cl{grid-column:1 / -1;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ppo-cs{color:var(--ink-2)}
+.ppo-ca{text-align:right;white-space:nowrap;color:var(--ink-3)}
+.ppo-ca.up{color:var(--ink);font-weight:650}
+.ppo-ca.dn{color:var(--ink-2)}
+.ppo-cbar{position:absolute;left:0;bottom:0;height:3px;background:var(--ink);transition:width .3s ease-out}
+.ppo-cbar.dn{background:repeating-linear-gradient(90deg,var(--ink-2) 0 3px,transparent 3px 5px)}
+.ppo-speed{display:inline-flex;align-items:center;gap:6px;flex:none}
+.ppo-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
+.ppo-app .ppo-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;cursor:pointer}
+@container (max-width:560px){.ppo-row{grid-template-columns:minmax(0,1fr)}.ppo-rq{flex-direction:row;gap:8px;align-items:baseline}.ppo-chips{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* legend swatches */
+.ppo-legend>span{display:inline-flex;align-items:center}
+.ppo-sw{display:inline-block;flex:none;width:11px;height:11px;border-radius:2px;margin-right:6px;box-sizing:border-box;vertical-align:-1px}
+.ppo-sw-pi{background:var(--ink)}
+.ppo-sw-ref{border:1.5px dashed var(--ink)}
+.ppo-sw-gap{background:repeating-linear-gradient(135deg,var(--ink-2) 0 1.6px,var(--surface) 1.6px 4px);border:1px solid var(--ink-2)}
+.ppo-sw-band{background:var(--surface-2);border:1px solid var(--line)}
+.ppo-sw-bad{background:var(--c-oom);border-radius:50%}
+.ppo-sw-t{background:var(--ink)}
+.ppo-sw-f{background:var(--ink-3)}
+
+/* per-prompt bars: filled = the policy now, dashed outline = the SFT model */
+.ppo-bars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 16px;margin-top:10px}
+.ppo-bg{min-width:0}
+.ppo-bt{font-size:12.5px;font-weight:650;line-height:1.3;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:3px}
+/* H7 (the owner, 2026-10-09): a long prompt wraps onto a second line inside its box instead of running past it; every column keeps two lines,
+   so the three bar groups stay level */
+.ppo-bt{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;min-height:2.6em}
+.ppo-bt span{font-weight:400;color:var(--ink-2)}
+.ppo-bt:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.ppo-cols{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;align-items:end}
+.ppo-col{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;border-radius:3px}
+.ppo-col:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.ppo-cv{font-size:10.5px;color:var(--ink-2);white-space:nowrap}
+.ppo-ct{position:relative;width:100%;max-width:30px;height:96px;background:var(--surface-2);border-radius:2px 2px 0 0;border-bottom:1px solid var(--ink-3)}
+.ppo-fill{position:absolute;left:0;right:0;bottom:0;background:var(--ink);border-radius:2px 2px 0 0;transition:height .12s ease-out}
+.ppo-ghost{position:absolute;left:-2px;right:-2px;bottom:0;border:1.5px dashed var(--ink);border-bottom:0;border-radius:3px 3px 0 0;pointer-events:none}
+.ppo-gapc .ppo-fill{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--surface) 2px 5px);box-shadow:inset 0 0 0 1.5px var(--ink-2)}
+.ppo-hot .ppo-fill{background:repeating-linear-gradient(135deg,var(--c-oom) 0 2.5px,var(--c-oom-soft) 2.5px 5px);box-shadow:inset 0 0 0 1.5px var(--c-oom)}
+.ppo-hot .ppo-cv,.ppo-hot .ppo-cx{color:var(--c-oom);font-weight:700}
+.ppo-cx{font-size:11px;font-weight:650;color:var(--ink-2)}
+.ppo-kinds{margin-top:6px;line-height:1.4}
+@container (max-width:560px){.ppo-bars{gap:10px 8px}.ppo-bt span{display:none}.ppo-ct{height:80px}.ppo-cols{gap:2px}.ppo-cv{font-size:9.5px}}
+
+/* the training run */
+.ppo-run{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:12px}
+
+/* curves */
+.ppo-curve-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:8px 14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line-2)}
+.ppo-curve-title{font-size:13px;font-weight:650;line-height:1.35;flex:1 1 220px;min-width:0}
+.ppo-curve-head .ctl{gap:3px;flex:0 1 auto;min-width:0}
+.ppo-curve-head .ctl>.lbl{font-size:11.5px}
+.ppo-curve-head .seg-ctl button{padding:5px 8px;font-size:11.5px;white-space:nowrap}
+.ppo-curve{display:block;width:100%;height:170px;margin-top:6px;overflow:visible}
+.ppo-grid{stroke:var(--line-2);stroke-width:1}
+.ppo-ax{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-3)}
+.ppo-ref{stroke:var(--ink-3);stroke-width:1.2;stroke-dasharray:1.5 3}
+.ppo-now{stroke:var(--ink-2);stroke-width:1;stroke-dasharray:2 3}
+.ppo-band{fill:var(--surface-2);stroke:var(--line);stroke-width:1}
+.ppo-ln{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.ppo-l-rm{stroke:var(--ink);stroke-width:2.2}
+.ppo-l-q{stroke:var(--ink-2);stroke-width:2.4;stroke-dasharray:6 4;stroke-linecap:butt}
+.ppo-l-hack{stroke:var(--c-oom);stroke-width:3;stroke-dasharray:none}
+.ppo-l-max{stroke:var(--ink);stroke-width:1.8}
+.ppo-l-min{stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:4 3;stroke-linecap:butt}
+.ppo-l-fan{stroke:var(--ink-3);stroke-width:1.2}
+.ppo-bad{fill:var(--c-oom);stroke:var(--surface);stroke-width:1.5}
+.ppo-badt{font-family:var(--font-mono);font-size:11px;font-weight:650;fill:var(--c-oom);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.ppo-key{display:flex;flex-wrap:wrap;gap:4px 14px;font-family:var(--font-mono);font-size:11px;color:var(--ink-2);margin-top:4px}
+.ppo-key>span{display:inline-flex;align-items:center;gap:6px}
+.ppo-ks{display:inline-block;flex:none;overflow:visible}
+
+/* memory of the four models */
+.ppo-mem{margin-top:14px;padding-top:12px;border-top:1px solid var(--line-2)}
+.ppo-mem-t{font-size:13px;line-height:1.4;margin-bottom:6px}
+.ppo-mem.ppo-mem-top{margin:10px 0 4px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2)}
+.ppo-mem.ppo-mem-top .ppo-mbar{height:30px}
+.ppo-mbar{display:flex;gap:2px;height:24px;min-width:0}
+.ppo-mb{display:flex;align-items:center;min-width:3px;border-radius:2px;overflow:hidden;font-family:var(--font-mono);font-size:11px;white-space:nowrap}
+.ppo-mb>span{padding:0 6px;overflow:hidden;text-overflow:ellipsis}
+.ppo-mb-t{background:var(--ink);color:var(--surface)}
+.ppo-mb-f{background:var(--ink-3);color:var(--surface)}
+.ppo-mb-f>span{display:none}
+.ppo-mb:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.ppo-mem-k{display:flex;flex-wrap:wrap;gap:3px 14px;margin-top:5px;line-height:1.4}
+.ppo-mem-k>span{display:inline-flex;align-items:center}
+@container (max-width:560px){.ppo-mb-t>span{font-size:10px;padding:0 4px}}
+
+/* metrics: labels hold Greek letters, so no uppercase */
+.ppo-metrics{margin-top:14px}
+.ppo-metrics .metric{cursor:help}
+.ppo-metrics .metric .k{text-transform:none;letter-spacing:0;font-size:10.5px}
+.ppo-metrics .metric .sub{overflow-wrap:anywhere}
+.ppo-metrics .metric .d{height:auto;min-height:15px;line-height:1.3}
+
+/* show the math */
+.ppo-fx{margin:6px 0 8px;overflow-x:auto;overflow-y:hidden;max-width:100%}
+.ppo-app .mathbody .ppo-defs{font-size:12px;line-height:1.5;color:var(--ink-2);margin:0 0 10px}
+.ppo-mh{font-family:var(--font-mono);font-size:11px;letter-spacing:.02em;color:var(--ink-3);margin:8px 0 4px}
+.ppo-app .mathbody p{overflow-wrap:anywhere}
+.ppo-app .mathbody .t{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+
+/* rail extras */
+.ppo-tbtns{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}
+.ppo-app .goal+.progress{margin-bottom:8px}
+.ppo-app .preset span{overflow-wrap:anywhere}
+#ppo-insight>.eyebrow{text-transform:none;letter-spacing:.01em}
+.ppo-app .step-b a,.ppo-app .obs a{text-underline-offset:2px}
+.ppo-app .c-card code{overflow-wrap:anywhere}
+.ppo-prod{margin:0 0 8px;padding-left:18px;display:grid;gap:6px;font-size:13.5px;line-height:1.5}
+.ppo-app .cmp-val{background:var(--surface-2);padding:1px 3px;border-radius:2px;z-index:1}
+.ppo-app .cmp-row.me .cmp-val{background:var(--surface)}
+
+/* mini result bar */
+.ppo-dk{position:relative;height:12px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden}
+.ppo-dk-q{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2)}
+
+/* home tile teaser */
+.ppo-tz{display:block;width:100%;height:auto;overflow:visible}
+.ppo-tz-ax{stroke:var(--line);stroke-width:1}
+.ppo-tz-l{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.ppo-tz-l.ppo-tz-rm{stroke:var(--ink)}
+.ppo-tz-l.ppo-tz-q{stroke:var(--ink-2);stroke-dasharray:5 3;stroke-linecap:butt}
+.ppo-tz-l.ppo-tz-bad{stroke:var(--c-oom);stroke-width:2.6;stroke-dasharray:none}
+.ppo-tz-sw{display:inline-block;width:14px;height:0;margin-right:5px;border-top:2px solid var(--ink)}
+.ppo-tz-sw.ppo-tz-q{border-top:2px dashed var(--ink-2)}
+.ppo-tz-sw.ppo-tz-bad{border-top:2.5px solid var(--c-oom)}
+
+@media (prefers-reduced-motion:reduce){.ppo-fill,.ppo-cbar,.ppo-chip{transition:none}}
+
+/* review b9v1 fixes */
+/* B1: a rail card never grows wider than the rail (a long result line or formula wraps or scrolls inside it) */
+#ppo-rail .steps{grid-template-columns:minmax(0,1fr)}
+#ppo-rail .step,#ppo-rail .step-b,#ppo-rail .railcard,#ppo-rail .levers,#ppo-rail .lever{min-width:0;max-width:100%}
+#ppo-rail .lever .lv-r{white-space:normal;overflow-wrap:anywhere}
+#ppo-rail .ppo-fx{max-width:100%;overflow-x:auto}
+/* S4: the note under the bars when the three prompts have settled on the same distribution */
+.ppo-same{margin:6px 0 0;line-height:1.45;color:var(--ink-2)}
+/* S13: the tile draws 6 seeds; their lines are thin and solid, the SFT model dotted */
+.ppo-tz-l.ppo-tz-q{stroke:var(--ink-2);stroke-width:1.3;stroke-dasharray:none;opacity:.85}
+.ppo-tz-l.ppo-tz-ref{stroke:var(--ink-3);stroke-width:1.2;stroke-dasharray:1.5 3}
+.ppo-tz-sw.ppo-tz-q{border-top:1.5px solid var(--ink-2)}
+.ppo-tz-sw.ppo-tz-ref{border-top:1.5px dotted var(--ink-3)}
+.tz .seg-ctl[data-key="tzset"] button{padding-inline:6px;white-space:nowrap}
+
+/* review codex-b9v3 */
+/* item 2: Settings lists the knobs later parts introduce, as an aligned list (R2.11) */
+.ppo-later{line-height:1.45;color:var(--ink-2)}
+.ppo-later-h{font-weight:650;color:var(--ink);margin-bottom:4px}
+.ppo-later ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 10px}
+.ppo-later li{display:contents}
+.ppo-later li b{font-weight:600;color:var(--ink);white-space:nowrap}
+/* item 7: part 6's picture of step 1's batch, one panel per sign of the advantage */
+.ppo-clip{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2)}
+.ppo-clip-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:6px 14px}
+.ppo-clip-t{font-size:13.5px;font-weight:650;line-height:1.35;flex:1 1 240px;min-width:0}
+.ppo-clip-head .ctl{gap:3px;flex:0 1 auto;min-width:0}
+.ppo-clip-head .ctl>.lbl{font-size:11.5px}
+.ppo-clip-head .seg-ctl button{padding:5px 8px;font-size:12px;white-space:nowrap}
+.ppo-cps{display:grid;grid-template-columns:minmax(0,1fr);gap:6px 16px;margin-top:8px}
+@container (min-width:560px){.ppo-cps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ppo-cp{min-width:0;background:var(--surface);border:1px solid var(--line-2);border-radius:4px;padding:6px 6px 2px}
+.ppo-cp-t{font-size:12.5px;font-weight:650;line-height:1.3;padding:0 4px}
+.ppo-cp-svg{display:block;width:100%;height:156px;overflow:visible}
+.ppo-cp-slope{fill:none;stroke:var(--ink);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.ppo-cp-flat{fill:none;stroke:var(--ink-3);stroke-width:3.4;stroke-dasharray:6 3;stroke-linecap:butt}
+.ppo-cp-hit{fill:none;stroke:transparent;stroke-width:14;pointer-events:stroke}
+.ppo-cp-z{font-size:11px;fill:var(--ink-2);font-weight:600}
+.ppo-cp-z.ppo-cp-zf{fill:var(--ink-3);font-weight:500}
+.ppo-cd{cursor:help}
+.ppo-cd:focus{outline:none}
+.ppo-cd:focus circle,.ppo-cd:hover circle{stroke:var(--ink);stroke-width:2.4}
+.ppo-cd-on{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
+.ppo-cd-flat{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.8}
+.ppo-cd-bad{fill:var(--c-oom);stroke:var(--surface);stroke-width:1.5}
+.ppo-cd-end{fill:var(--ink-2);stroke:var(--surface);stroke-width:1.5}
+.ppo-cd-arr{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ppo-cd-arr.bad{stroke:var(--c-oom)}
+.ppo-cd-lead{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 2}
+.ppo-cd-v{font-family:var(--font-mono);font-size:11px;fill:var(--ink-2);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.ppo-cd-v.bad{fill:var(--c-oom)}
+.ppo-cp-key{margin-top:6px}
+.ppo-cp-cap{margin:6px 0 0;line-height:1.45;color:var(--ink-2)}
+/* the hover of a response in part 6's picture: an aligned list (R2.11) */
+.tip .ppo-tl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:2px 10px;text-align:left}
+.tip .ppo-tl>div{display:contents}
+.tip .ppo-tl span{opacity:.75}
+.tip .ppo-tl b{font-weight:600}
+.ppo-cp-svg .ppo-ax{font-size:11px}
+.ppo-cd-ex{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:3 2}
+.ppo-cd-arr.ex{stroke:var(--ink-2)}
+.ppo-cg{cursor:help}
+
+/* the owner's review of batch 9, item 3: part 6's picture plays step 1's batch pass by pass. Each frame's title, legend and caption are
+   stacked in one grid cell and only the current one is visible, so the panel keeps its height while the passes play (R7.9). */
+.ppo-stk{display:grid;min-width:0}
+.ppo-stk>[data-f]{grid-area:1 / 1;visibility:hidden;min-width:0}
+.ppo-stk>[data-f].on{visibility:visible}
+.ppo-clip-tw{flex:1 1 260px;min-width:0}
+.ppo-clip-s{margin:3px 0 0;line-height:1.45;color:var(--ink-2)}
+.ppo-clip-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
+/* H2 (the owner, 2026-10-09): a formula with its name in words on the left; a chain breaks at “=” onto lines that line up */
+.ppo-eq{display:grid;grid-template-columns:auto auto minmax(0,1fr);column-gap:.45em;align-items:center;margin:6px 0 8px}
+.ppo-eq-n{max-width:10em;line-height:1.35}
+.ppo-eq>.ppo-fx{margin:0}
+/* Show the math: one block per quantity, a hairline between blocks (H5) */
+.mathbody .ppo-mh{border-top:1px solid var(--line);padding-top:8px;margin-top:12px}
+.mathbody .ppo-mh:first-child{border-top:0;padding-top:0;margin-top:0}
+/* H7 (the owner, 2026-10-09: GRPO's 重放 and speed buttons did not line up): in a row with the speed buttons, the play or replay button
+   and the speed buttons share one height and one centre line, and the label 速度 sits beside its buttons */
+#ppo-app .ctl:has(>.seg-ctl[data-key$="pd"]),#ppo-app .ctl:has(.seg-ctl[data-key$="pd"]){display:flex;align-items:center;gap:6px;margin:0}
+#ppo-app .ctl:has(.seg-ctl[data-key$="pd"])>.lbl{margin:0}
+#ppo-app .seg-ctl[data-key$="pd"] button{height:30px;padding-top:0;padding-bottom:0}
+#ppo-app :has(>.ctl .seg-ctl[data-key$="pd"])>.btn{height:32px;padding-top:0;padding-bottom:0}
+
+/* ---------- 知识梳理: a formula on its own line; its pieces stay close and wrap only between them, so nothing scrolls sideways ---------- */
+.primer .ppo-prfx{display:flex;flex-wrap:wrap;align-items:center;column-gap:.35em;row-gap:6px;margin:2px 0 14px;padding-left:1em;font-size:1.06em;line-height:1.3;min-width:0}
+.primer .ppo-prfx>span{min-width:0;max-width:100%}
+.primer .ppo-nw{white-space:nowrap}
+@media (max-width:760px){.primer .ppo-prfx{padding-left:.4em}}
+@media (max-width:380px){.primer .ppo-prfx{font-size:1em}}

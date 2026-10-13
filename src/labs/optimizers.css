@@ -1,0 +1,131 @@
+/* optimizers: the valley seen from above with each optimizer's path, the size of the chosen step in x and in y, and the loss on a log scale.
+   Colours (R5.6): grayscale and line styles only (solid SGD, dashed momentum, dotted Adam, dash-dot Adam without bias correction);
+   green and red only for the challenge's goal and a run that diverges. */
+.op-graph{padding:12px 14px 14px;display:grid;gap:8px;min-width:0}
+.op-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.op-cap+svg,.op-cap+.op-bars{margin-top:-2px}
+
+/* ---------- the valley ---------- */
+.op-map,.op-loss{display:block;width:100%;height:auto;cursor:help;border-radius:3px;outline-offset:3px}
+.op-bg{fill:var(--surface);stroke:var(--line-2);stroke-width:1}
+.op-ct{fill:none;stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}
+.op-ct.in{stroke:var(--ink-3)}
+.op-path,.op-lline{fill:none;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.op-path.op-s0,.op-lline.op-s0,.op-swl.op-s0{stroke:var(--ink)}
+.op-path.op-s1,.op-lline.op-s1,.op-swl.op-s1{stroke:var(--ink-2)}
+.op-path.op-s2,.op-lline.op-s2,.op-swl.op-s2{stroke:var(--ink)}
+.op-path.op-s3,.op-lline.op-s3,.op-swl.op-s3{stroke:var(--ink-3)}
+.op-arrow{stroke:var(--ink);stroke-width:1.4;vector-effect:non-scaling-stroke}
+.op-ahd{fill:var(--ink)}
+.op-dot{fill:var(--ink)}
+.op-start{fill:var(--surface);stroke:var(--ink);stroke-width:2;vector-effect:non-scaling-stroke}
+.op-min{fill:none;stroke:var(--ink);stroke-width:2;vector-effect:non-scaling-stroke}
+.op-tl{font-family:var(--font-mono);font-size:13px;fill:var(--ink-2);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+
+/* ---------- the player: play / pause / replay and the speed first, then the step slider with back and forward (R3.9) ---------- */
+.op-player{display:grid;gap:6px;min-width:0;margin:2px 0 4px}
+.op-prow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.op-play{min-width:7.5em;justify-content:center}
+.op-spd{display:inline-flex;cursor:help;border-radius:3px}
+.op-spd .seg-ctl button{white-space:nowrap}
+.op-scrub{display:flex;align-items:center;gap:8px;min-width:0}
+.op-scrub input[type=range]{flex:1 1 auto;min-width:0}
+.op-scrub .btn{padding:4px 10px;flex:none}
+.op-scrub output{font-size:12px;color:var(--ink);white-space:nowrap;min-width:5.5em;text-align:right}
+
+/* ---------- the size of the chosen step in x and y ---------- */
+.op-bars{display:grid;gap:8px;min-width:0}
+.op-brow{display:grid;grid-template-columns:minmax(0,190px) 14px minmax(0,1fr) 62px;gap:3px 8px;align-items:center;min-width:0;cursor:help;border-radius:3px;outline-offset:2px}
+.op-bl{font-size:12px;color:var(--ink-2);line-height:1.3;min-width:0;overflow-wrap:anywhere}
+.op-bk{font-size:11.5px;color:var(--ink-3);text-align:center}
+.op-bv{font-size:12px;color:var(--ink);text-align:right;white-space:nowrap}
+.op-bnone{grid-column:2/-1}
+.op-btr{position:relative;height:10px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.op-b{position:absolute;left:0;top:0;bottom:0;display:block;transition:width .2s ease-out}
+.op-b.op-s0{background:var(--ink)}
+.op-b.op-s1{background:repeating-linear-gradient(90deg,var(--ink-2) 0 7px,transparent 7px 11px)}
+.op-b.op-s2{background:repeating-linear-gradient(90deg,var(--ink) 0 2.5px,transparent 2.5px 5.5px)}
+.op-b.op-s3{background:repeating-linear-gradient(90deg,var(--ink-3) 0 9px,transparent 9px 12px,var(--ink-3) 12px 14px,transparent 14px 17px)}
+
+/* ---------- part 7: the share of each weight that weight decay removes per step ---------- */
+.op-wd{display:none;min-width:0}
+.op-graph.op-wdmode>*{display:none}
+.op-graph.op-wdmode>.op-wd{display:grid;gap:12px}
+.op-wgrp{display:grid;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:4px;min-width:0}
+.op-wgrp.on{border-color:var(--ink-2)}
+.op-wh{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.op-wrow{display:grid;grid-template-columns:minmax(0,110px) minmax(0,1fr) 62px;gap:8px;align-items:center;min-width:0;cursor:help;border-radius:3px;outline-offset:2px}
+.op-wl{font-size:12px;color:var(--ink-2);line-height:1.3;min-width:0}
+.op-swb{position:static;display:inline-block;width:22px;height:9px;border-radius:2px;flex:none}
+
+/* ---------- the loss chart ---------- */
+.op-ax{font-family:var(--font-mono);font-size:11px;fill:var(--ink-3)}
+.op-dv{fill:var(--ink);font-weight:600}
+/* R5.9: names on the charts: the loss lines at their ends, the goal on its line, the paths on the map */
+.op-ll{fill:var(--ink-2);font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.op-gl{fill:var(--ink-3);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.op-pl{fill:var(--ink);font-weight:600}
+.op-goal{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}
+.op-kline{stroke:var(--ink-3);stroke-width:1;vector-effect:non-scaling-stroke}
+
+/* ---------- legend ---------- */
+#op-legend>span{display:inline-flex;align-items:center;gap:6px;cursor:help}
+.op-sw{flex:none;overflow:visible}
+.op-swl{stroke-width:2.2;fill:none}
+.op-swl.op-s2{stroke-width:2.6;stroke-linecap:round}
+.op-swg{stroke:var(--ink-3);stroke-width:1.2}
+.op-swa{font-size:13px;color:var(--ink);line-height:1}
+.op-dk{display:block;width:100%;max-width:120px;height:24px;overflow:hidden}
+
+/* ---------- metric cards ---------- */
+.op-metrics[data-n="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+.op-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.op-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.op-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.op-metrics .metric{cursor:help}
+.op-metrics .metric .v{white-space:normal}
+
+/* ---------- rail ---------- */
+.op-mt{margin-top:12px}
+.op-ch-res{scroll-margin-top:120px}
+.goal.op-over b{color:var(--c-oom)}
+.op-app .goal.op-chgoal{display:grid;grid-template-columns:minmax(0,1fr);gap:1px}
+.op-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+.op-app .inline-ctl .seg-ctl button{white-space:nowrap}
+.op-why{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.op-remlist{padding-left:18px}
+.op-remlist li{margin-bottom:8px}
+.op-prod li{margin-bottom:8px}
+.op-app .mathbody p{overflow-x:auto;max-width:100%}
+/* a formula's symbols explain themselves on hover (R1.4) */
+.op-app .mathbody .op-sym{cursor:help;text-decoration:underline dotted var(--ink-3);text-underline-offset:3px;border-radius:2px}
+.op-app .mathbody .op-sym:focus-visible{outline:2px solid var(--ink-3);outline-offset:1px}
+/* parts 6 and 7: the result goes under the title, so the title is never squeezed into a narrow column (R3.17, R7.8) */
+#op-ic-bc .lever .lv-r,#op-ic-wd .lever .lv-r{grid-column:2 / 4;grid-row:2;padding-top:0}
+#op-ic-bc .lever .lv-r:empty,#op-ic-wd .lever .lv-r:empty{display:none}
+#op-ic-bc .lever .lv-d,#op-ic-wd .lever .lv-d{grid-row:3}
+/* the arithmetic behind an explanation, folded away (R6.27) */
+.op-more{margin:8px 0 0;border-top:1px solid var(--line);padding-top:6px}
+.op-more>summary{cursor:pointer;font-size:12.5px;color:var(--ink-2);font-weight:600;width:fit-content}
+.op-more>summary:focus-visible{outline:2px solid var(--ink-3);outline-offset:2px}
+.op-more>p{margin:6px 0 0}
+/* the challenge's six learning rates: two rows of three, never one option alone on a row (R7.8) */
+.op-app #op-ic-chL .seg-ctl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+
+@media (max-width:560px){
+  .op-brow{grid-template-columns:14px minmax(0,1fr) 58px}
+  .op-bl{grid-column:1/-1}
+  .op-brow>span:empty{display:none}
+  .op-bnone{grid-column:1/-1}
+  .op-tl{font-size:22px}
+  .op-ax{font-size:16px}
+  .op-metrics[data-n="3"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .op-metrics[data-n="3"] .metric:last-child{grid-column:1 / -1}
+  .op-wrow{grid-template-columns:minmax(0,84px) minmax(0,1fr) 56px}
+}
+@media (prefers-reduced-motion:reduce){.op-b{transition:none}}
+/* H1 (2026-10-09): a typeset formula on its own line (the interview drill) */
+.op-fx{overflow-x:auto;max-width:100%;margin:4px 0}
+/* H5 (the owner's decision of 2026-10-09): a hairline between the kinds of information on the stage, the path on the map, the step
+   sizes and the loss curve; static, so the stage keeps its height while it plays (R7.9) */
+#op-bars-cap,#op-loss-cap{border-top:1px solid var(--line);padding-top:8px}

@@ -1,0 +1,15 @@
+/* rope teaser: two dials in grayscale (R5.6): solid = query, dashed = key, arc = the angle between */
+.tz-rope-vis text{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-2)}
+.tz-rope-vis text.tz-rope-cap{fill:var(--ink);font-weight:600}
+.tz-rope-vis text.tz-rope-lab{fill:var(--ink)}
+.tz-rope-dial{fill:none;stroke:var(--line-2);stroke-width:1.2}
+.tz-rope-q{stroke:var(--ink);stroke-width:2.6;stroke-linecap:round}
+.tz-rope-k{stroke:var(--ink-2);stroke-width:2.6;stroke-dasharray:5 3.5}
+.tz-rope-hd{stroke-dasharray:none;stroke-width:1}
+.tz-rope-q.tz-rope-hd{fill:var(--ink)}
+.tz-rope-k.tz-rope-hd{fill:var(--ink-2)}
+.tz-rope-arc{fill:none;stroke:var(--ink);stroke-width:1.8}
+.tz-rope-sw{display:inline-block;width:14px;height:0;margin-right:5px;flex:none}
+.tz-rope-sw.q{border-top:2.6px solid var(--ink)}
+.tz-rope-sw.k{border-top:2.6px dashed var(--ink-2)}
+.tz-rope-sw.a{width:11px;height:11px;border:2px solid transparent;border-top-color:var(--ink);border-radius:50%}

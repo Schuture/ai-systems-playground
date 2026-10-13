@@ -1,0 +1,16 @@
+/* tensors teaser: axis boxes lined up from the right, in grayscale (R5.6): solid = an axis, dashed = stretched, red = mismatch */
+.tz-tensors .seg-ctl{flex-wrap:wrap}
+.tz-tensors .seg-ctl button{white-space:nowrap;font-family:var(--font-mono);font-size:11px;padding-left:6px;padding-right:6px;flex:1 0 auto}
+.tz-tensors-vis{display:grid;gap:5px 6px;align-items:center;max-width:360px;min-width:0;max-height:130px;margin:8px 0 6px;cursor:help}
+.tz-tensors-rl{font-size:12px;color:var(--ink-2);white-space:nowrap;padding-right:2px}
+.tz-tensors-rl span{font-family:var(--font-mono);font-size:11px;color:var(--ink-3)}
+.tz-tensors-rout{font-weight:650;color:var(--ink)}
+.tz-tensors-ax{display:flex;align-items:center;justify-content:center;min-width:0;height:26px;padding:0 3px;box-sizing:border-box;border:1.5px solid var(--ink-2);border-radius:4px;background:var(--surface);font-family:var(--font-mono);font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tz-tensors-ax.tz-tensors-gh{border-style:dashed;border-color:var(--ink-3);background:transparent;color:var(--ink-2)}
+.tz-tensors-ax.tz-tensors-none{border:1px dotted var(--line-2);background:transparent;color:var(--ink-3)}
+.tz-tensors-ax.tz-tensors-out{background:var(--surface-2);font-weight:650}
+.tz-tensors-ax.tz-tensors-bad{border:2px solid var(--c-oom);color:var(--c-oom)}
+.tz-tensors-ax.tz-tensors-bad.tz-tensors-x{background:transparent;font-weight:650}
+.tz-leg .sw.tz-tensors-sw{background:var(--surface);border:1.5px solid var(--ink-2);box-sizing:border-box}
+.tz-leg .sw.tz-tensors-sw.tz-tensors-sw-gh{background:transparent;border-style:dashed;border-color:var(--ink-3)}
+.tz-leg .sw.tz-tensors-sw.tz-tensors-sw-bad{background:transparent;border:2px solid var(--c-oom)}

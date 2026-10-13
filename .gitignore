@@ -1,0 +1,5 @@
+src/out/
+src/ai-systems-playground.html
+__pycache__/
+*.pyc
+.DS_Store

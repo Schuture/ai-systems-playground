@@ -1,0 +1,49 @@
+/* ---------- Set B teasers (teasers/set-b.js): shared pieces ---------- */
+.tz-setb > *{min-width:0}
+.tz-setb .tz-lab output{white-space:nowrap}
+.tz-setb-read{border-radius:3px}
+.tz-setb-read.tz-setb-bump{animation:tz-setb-bump 1.1s ease-out}
+@keyframes tz-setb-bump{0%,30%{background:var(--surface-2);box-shadow:0 0 0 4px var(--surface-2)}100%{background:transparent;box-shadow:0 0 0 4px transparent}}
+/* data colours: blue weights (R5.6); gradients, optimizer states and adapters are grayscale */
+.tz-setb-w{background:var(--c-weights)}
+.tz-setb-g{background:var(--ink-3)}
+.tz-setb-o{background:repeating-linear-gradient(135deg,var(--ink-3) 0 2px,var(--surface-2) 2px 4.5px)}
+.tz-setb-a{background:var(--ink)}
+.sw.tz-setb-g,.sw.tz-setb-a{border-color:transparent}
+.tz-setb-axis{position:relative;height:14px;margin-top:3px;font-family:var(--font-mono);font-size:10px;color:var(--ink-3)}
+.tz-setb-axis span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.tz-setb-axis span:first-child{transform:none}
+.tz-setb-axis span:last-child{transform:translateX(-100%)}
+.tz-setb .tz-leg>span{min-width:0}
+.tz-setb-lead{color:var(--ink-3)}
+@media (prefers-reduced-motion:reduce){.tz-setb-read.tz-setb-bump{animation:none}}
+
+/* sampling: one row per candidate word */
+.tz-samp-title{font-size:11.5px;line-height:1.3;color:var(--ink-3);margin-bottom:4px}
+.tz-samp-rows{display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;gap:3px 8px;align-items:center;line-height:13px}
+.tz-samp-row{display:contents}
+.tz-samp-w{font-size:12px;color:var(--ink-2);white-space:nowrap}
+.tz-samp-trk{position:relative;height:11px;background:var(--surface-2);border-radius:2px}
+.tz-samp-fin{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink-2);border-radius:2px;transition:width .2s ease-out}
+.tz-samp-pre{position:absolute;left:0;top:0;bottom:0;width:0;border:1px dashed var(--ink-3);border-radius:2px;box-sizing:border-box}
+.tz-samp-v{font-size:11px;text-align:right;color:var(--ink)}
+.tz-samp-row.cut .tz-samp-w,.tz-samp-row.cut .tz-samp-v{color:var(--ink-3)}
+.tz-samp-row.cut .tz-samp-w{text-decoration:line-through;text-decoration-color:var(--ink-3)}
+.sw.tz-samp-swfin{background:var(--ink-2);border-color:transparent}
+.sw.tz-samp-swcut{background:transparent;border:1px dashed var(--ink-3)}
+@media (prefers-reduced-motion:reduce){.tz-samp-fin{transition:none}}
+
+/* tokenization-cost: each sentence over its UTF-8 bytes, with one bar per token underneath */
+.tz-tokn-cap{display:flex;justify-content:space-between;align-items:baseline;margin:3px 0 2px;font-size:11.5px;color:var(--ink-2)}
+.tz-tokn-cap b{font-family:var(--font-mono);font-weight:600;color:var(--ink)}
+.tz-tokn-strip{display:grid;gap:2px}
+.tz-tokn-glyphs,.tz-tokn-boxes{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr))}
+.tz-tokn-glyphs{height:16px}
+.tz-tokn-glyphs span{display:flex;align-items:flex-end;justify-content:center;min-width:0;font-family:var(--font-mono);font-size:11px;line-height:1;color:var(--ink);white-space:nowrap}
+.tz-tokn-glyphs em{font-style:normal;color:var(--ink-3)}
+.tz-tokn-zh .tz-tokn-glyphs span{font-family:var(--font-ui);font-size:13px}
+.tz-tokn-boxes{height:7px}
+.tz-tokn-boxes i{margin-right:2px;border-radius:2px;background:var(--ink-2)}
+.tz-tokn-boxes i.b{background:var(--ink-3)}
+.sw.tz-tokn-sw{width:18px;height:7px;border:0;background:linear-gradient(90deg,var(--ink-2) 0 44%,transparent 44% 56%,var(--ink-3) 56%)}
+.tz-tokn-dot{flex:none;width:10px;margin-right:5px;text-align:center;font-weight:700;color:var(--ink-3)}

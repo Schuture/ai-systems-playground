@@ -1,0 +1,118 @@
+/* llm-judge: one pair of answers with length bars and the judge's verdicts, the 300 verdicts as marks grouped by kind (named beside
+   them), and the win-rate bars with people's line. Colours (R5.6): grayscale only; green and red only for the challenge's goal. */
+.ljg-stage .stage-head{align-items:center}
+.ljg-graph{padding:12px 14px 14px;display:grid;gap:14px;min-width:0}
+.ljg-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+/* H5 (the owner, 2026-10-09): a hairline between the verdicts (waffle) and the win-rate bars below them */
+.ljg-graph>.ljg-wf:not([hidden])~.ljg-bars:not([hidden]){border-top:1px solid var(--line);padding-top:12px}
+.ljg-phone:empty{display:none}
+@media (min-width:761px){.ljg-phone{display:none}}
+
+/* ---------- the pair ---------- */
+.ljg-pair{border:1px solid var(--line-2);border-radius:6px;padding:9px 11px 10px;background:var(--surface);display:grid;gap:7px;min-width:0}
+.ljg-q{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;min-width:0}
+.ljg-qn{font-size:10.5px;color:var(--ink-3);white-space:nowrap}
+.ljg-qt{font-size:13.5px;color:var(--ink);line-height:1.4}
+.ljg-anss{display:grid;gap:5px}
+.ljg-ans{display:grid;grid-template-columns:18px minmax(0,1fr) 64px;gap:8px;align-items:center}
+.ljg-ans b{font-family:var(--font-mono);font-size:12.5px;color:var(--ink)}
+.ljg-lenbar{position:relative;height:12px;background:var(--surface-2);border-radius:2px}
+.ljg-lenbar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px;transition:width .25s ease-out}
+.ljg-w{font-size:11px;color:var(--ink-2);text-align:right;white-space:nowrap}
+.ljg-vd{display:flex;flex-wrap:wrap;gap:4px 8px}
+.ljg-vk{font-size:12px;line-height:1.4;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:1px 8px;white-space:nowrap}
+.ljg-vres{color:var(--ink);font-weight:650;border-color:var(--ink-3)}
+.ljg-lr{margin:0;font-size:11.5px;line-height:1.4}
+
+/* ---------- the 300 verdicts ---------- */
+.ljg-wfrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-start;min-width:0}
+.ljg-wfbox{flex:1 1 300px;min-width:0}
+.ljg-wfbox svg{display:block;max-width:100%;height:auto}
+.ljg-wfleg{list-style:none;margin:0;padding:0;display:grid;gap:4px;flex:0 0 auto;min-width:150px}
+.ljg-wfleg li{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);line-height:1.3}
+.ljg-wfleg li svg{flex:none}
+.ljg-wfleg li b{margin-left:auto;padding-left:8px;font-size:12px;color:var(--ink)}
+.ljg-mf{fill:var(--ink-2)}
+.ljg-mr{fill:none;stroke:var(--ink-2);stroke-width:1.3}
+.ljg-md{stroke:var(--ink-3);stroke-width:2;stroke-linecap:round}
+.ljg-mx{stroke:var(--ink-2);stroke-width:1.5;stroke-linecap:round;fill:none}
+.ljg-mon{fill:none;stroke:var(--ink);stroke-width:1.6}
+.ljg-svt{font-size:10.5px;fill:var(--ink-2);font-family:var(--font-mono)}
+/* part 5: two 10 × 10 blocks of the 100 labelled pairs, side by side (R5.10) */
+.ljg-agw{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:flex-start}
+.ljg-agb{margin:0;display:grid;gap:4px;min-width:0}
+.ljg-agb figcaption{font-size:11.5px;color:var(--ink-2);line-height:1.3;max-width:180px}
+.ljg-agb svg{display:block}
+
+/* ---------- the win-rate bars; people's win rate is a line across them, labelled under the last bar ---------- */
+.ljg-brows{display:grid;gap:6px}
+.ljg-brow,.ljg-axis{display:grid;grid-template-columns:minmax(96px,34%) minmax(0,1fr);gap:10px;align-items:center;min-width:0}
+.ljg-brow{border-radius:3px;outline-offset:2px;cursor:help}
+.ljg-bl{font-size:12px;line-height:1.3;color:var(--ink-2)}
+.ljg-brow.on .ljg-bl{color:var(--ink);font-weight:650}
+.ljg-bt{position:relative;height:20px;background:var(--surface-2);border-radius:2px;margin-right:42px}
+.ljg-axis .ljg-bt{height:16px;background:none}
+.ljg-bf{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px;transition:width .25s ease-out}
+.ljg-brow.on .ljg-bf{background:var(--ink-2);box-shadow:inset 0 0 0 2px var(--ink)}
+.ljg-brow.pp .ljg-bf{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 5px)}
+.ljg-ci{position:absolute;top:50%;height:0;border-top:1.5px solid var(--ink);z-index:2}
+.ljg-ci::before,.ljg-ci::after{content:'';position:absolute;top:-5px;height:8px;border-left:1.5px solid var(--ink)}
+.ljg-ci::before{left:0}.ljg-ci::after{right:0}
+.ljg-bv{position:absolute;top:50%;transform:translateY(-50%);margin-left:5px;font-size:11.5px;font-style:normal;color:var(--ink);white-space:nowrap;z-index:3;background:var(--surface);padding:0 2px;border-radius:2px}
+.ljg-hl{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed var(--ink);z-index:4}
+.ljg-50{position:absolute;top:0;bottom:0;width:0;border-left:1px dotted var(--ink-3);z-index:1}
+.ljg-hlab,.ljg-50lab{position:absolute;top:1px;transform:translateX(-50%);font-size:11px;font-style:normal;white-space:nowrap}
+.ljg-hlab{color:var(--ink);font-weight:650;background:var(--surface);padding:0 3px;border-radius:2px;z-index:2}
+.ljg-50lab{color:var(--ink-3)}
+
+/* ---------- the rail ---------- */
+.ljg-lv .levers{margin-top:6px}
+.ljg-pairnav{margin-top:6px}
+.ljg-remlist{margin:0 0 10px;padding-left:18px;display:grid;gap:8px}
+.ljg-remlist li{line-height:1.5}
+.ljg-rem{font-size:12px}
+.ljg-prac{margin-top:8px;border-top:1px solid var(--line-2);padding-top:6px}
+.ljg-prac ul{margin:4px 0 0;padding-left:18px;display:grid;gap:3px}
+.ljg-mt{margin-top:10px}
+.ljg-goal{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
+.ljg-goal.ljg-over b{color:var(--c-oom)}
+.ljg-goal.met b{color:var(--c-ok)}
+.ljg-cost b{color:var(--ink)}
+.ljg-ch-res .cmp{margin-top:10px}
+.fx{margin:6px 0;overflow-x:auto}
+
+/* ---------- Settings ---------- */
+.ljg-grp{border-top:1px solid var(--line-2);padding-top:8px;margin-top:4px}
+.ljg-gh{font-size:11.5px;font-weight:650;color:var(--ink-2);margin-bottom:4px}
+.ljg-asm{margin:0;padding-left:16px;display:grid;gap:3px;font-size:12px;line-height:1.4;color:var(--ink-2)}
+.ljg-asm b{color:var(--ink);font-weight:600}
+.ljg-prod{padding-left:18px;display:grid;gap:6px;min-width:0}
+.ljg-prod code,.ljg-prod a{overflow-wrap:anywhere}
+.ljg-mh{margin:10px 0 2px}
+/* Show the math in short blocks (the owner, 2026-10-09): a hairline between blocks; a chain's “=” signs in one column */
+.ljg-mb{padding:8px 0 10px}
+.ljg-mb+.ljg-mb{border-top:1px solid var(--line)}
+.ljg-mb>p{margin:0 0 6px}
+.ljg-mb>p:last-child{margin-bottom:0}
+.ljg-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3}
+.ljg-eq-l{text-align:right}
+/* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
+@media (max-width:560px){.ljg-eqs-nm{grid-template-columns:max-content max-content}.ljg-eqs-nm>.ljg-eq-l{grid-column:1/-1;text-align:left}.ljg-eqs-nm>.ljg-eq-l:empty{display:none}}
+/* a term whose tip holds a formula (log-odds, σ): it only explains, so it reads like a .def */
+.ljg-app .t.ljg-td,.pop .t.ljg-td{cursor:help}
+.ljg-app .t.ljg-td:hover,.ljg-app .t.ljg-td:focus,.pop .t.ljg-td:hover,.pop .t.ljg-td:focus{background:none;border-bottom:1px dotted var(--ink-3)}
+.ljg-wait{margin:2px 0 0}
+
+/* ---------- the mini result bar ---------- */
+.ljg-dk{position:relative;height:10px;background:var(--surface-2);border-radius:2px;min-width:60px}
+.ljg-dk i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2);border-radius:2px}
+.ljg-dk b{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed var(--ink)}
+
+@media (max-width:760px){
+  .ljg-graph{padding:10px 10px 12px}
+  .ljg-brow,.ljg-axis{grid-template-columns:minmax(0,1fr)}
+  .ljg-axis .ljg-bl{display:none}
+  .ljg-brow{gap:3px}
+  .ljg-wfleg{min-width:0;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+  .ljg-ans{grid-template-columns:16px minmax(0,1fr) 58px}
+}

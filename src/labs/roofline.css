@@ -1,0 +1,183 @@
+/* roofline: the roofline on log-log axes (one thick roof, the ridge dashed, kernels as dots, a dashed ring before the last change, the
+   previous GPU's roof thin and dashed), two lanes per kernel on one time axis (memory: blue for weights, amber for the KV cache, dotted
+   otherwise; computing: solid gray; the shorter lane's idle rest hatched), metric cards, the dock's mini bar.
+   Every class on the lab's own elements carries the rf- prefix (R9.1: the kit styles .cmp, .w, .kv …).
+   Colours (R5.6): blue = weights, amber = KV cache, grayscale for the rest; green and red only for the challenge's goal. */
+.rf-stage .stage-head{align-items:center}
+.rf-graph{padding:10px 12px 12px;display:grid;gap:10px;min-width:0}
+.rf-plot{min-width:0;overflow:hidden}
+.rf-svg{display:block;max-width:100%;height:auto;overflow:visible}
+
+/* ---------- the chart ---------- */
+.rf-svg .rf-grid{stroke:var(--line-2);stroke-width:1}
+.rf-svg text{font-family:var(--font-mono)}
+.rf-svg .rf-tick{font-size:10.5px;fill:var(--ink-3)}
+.rf-svg .rf-ax{font-size:11px;fill:var(--ink-2)}
+.rf-svg .rf-reg{font-size:10.5px;fill:var(--ink-3)}
+.rf-svg .rf-roof{fill:none;stroke:var(--ink);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.rf-svg .rf-rooflab{font-size:11px;fill:var(--ink);font-weight:600}
+.rf-svg .rf-ghost{fill:none;stroke:var(--ink-3);stroke-width:1.4;stroke-dasharray:5 4}
+.rf-svg .rf-glab{font-size:10.5px;fill:var(--ink-3)}
+.rf-svg .rf-ridge{stroke:var(--ink-2);stroke-width:1.4;stroke-dasharray:4 4}
+.rf-svg .rf-rlab{font-size:10.5px;fill:var(--ink-2)}
+.rf-svg .rf-hit{stroke:transparent;stroke-width:14;fill:transparent;pointer-events:all}
+.rf-svg .rf-rg,.rf-svg .rf-dot{cursor:help;outline:none}
+.rf-svg .rf-rg:focus-visible .rf-ridge{stroke:var(--ink);stroke-width:2.4}
+.rf-svg .rf-dot circle:first-child{fill:var(--ink);stroke:var(--surface);stroke-width:2;transition:cx .25s ease-out,cy .25s ease-out}
+.rf-svg .rf-dot:hover circle:first-child,.rf-svg .rf-dot:focus-visible circle:first-child{stroke:var(--ink);stroke-width:3}
+.rf-svg .rf-dot.rf-map circle:first-child{fill:var(--ink-2)}
+.rf-svg .rf-lead{stroke:var(--ink-3);stroke-width:1}
+.rf-svg .rf-prev{fill:none;stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:3 3}
+.rf-svg .rf-dlab{font-size:11px;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+
+/* ---------- the two lanes ---------- */
+.rf-time{display:grid;gap:10px;min-width:0}
+/* H5 (the owner, 2026-10-09: information runs together without a divider): the lanes start a block of their own under a hairline */
+.rf-time:not(:empty){border-top:1px solid var(--line);padding-top:10px}
+.rf-tk{display:grid;gap:4px;min-width:0}
+.rf-tcap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.rf-lane{display:grid;grid-template-columns:128px minmax(0,1fr) 70px;gap:8px;align-items:center;min-width:0}
+.rf-ln{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rf-lval{font-size:12px;color:var(--ink);text-align:right;white-space:nowrap}
+.rf-trk{position:relative;height:16px;background:var(--surface-2);border-radius:2px;cursor:help;outline-offset:2px}
+.rf-trk i{position:absolute;top:0;bottom:0;display:block;transition:width .25s ease-out,left .25s ease-out}
+.rf-bar{left:0;border-radius:2px 0 0 2px}
+.rf-bar.rf-mem.rf-w{background:var(--c-weights)}
+.rf-bar.rf-mem.rf-kv{background:var(--c-kv)}
+/* memory traffic that is neither weights nor KV cache: dotted, so it never reads as the solid gray of computing (R5.7) */
+.rf-bar.rf-mem.rf-x{background:radial-gradient(circle,var(--ink-2) 1.1px,transparent 1.5px) 0 0/4px 4px,var(--surface);box-shadow:inset 0 0 0 1px var(--ink-2)}
+.rf-bar.rf-cmp{background:var(--ink-2)}
+.rf-idle{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.2px,transparent 1.2px 5px);opacity:.75;border-radius:0 2px 2px 0}
+.rf-mapnote{margin:0;color:var(--ink-2)}
+
+/* ---------- the keys: one under the roofline, one under the lanes (review 2026-10-03: no legend above the chart) ---------- */
+.rf-key{margin-top:8px}
+.rf-key>span{cursor:help}
+.rf-svg .rf-axx{cursor:help}
+.sw.rf-sw-roof{width:16px;height:0;border:0;border-top:3px solid var(--ink);border-radius:0;margin:0 6px 3px 0}
+.sw.rf-sw-ridge{width:0;height:12px;border:0;border-left:1.5px dashed var(--ink-2);border-radius:0;margin:0 7px 0 4px}
+.sw.rf-sw-dot{width:10px;height:10px;border-radius:50%;background:var(--ink);border-color:transparent}
+.sw.rf-sw-prev{width:11px;height:11px;border-radius:50%;background:transparent;border:1.5px dashed var(--ink-2)}
+.sw.rf-sw-ghost{width:16px;height:0;border:0;border-top:1.5px dashed var(--ink-3);border-radius:0;margin:0 6px 3px 0}
+.sw.rf-sw-w{background:var(--c-weights);border-color:transparent}
+.sw.rf-sw-kv{background:var(--c-kv);border-color:transparent}
+.sw.rf-sw-cmp{background:var(--ink-2);border-color:transparent}
+.sw.rf-sw-x{background:radial-gradient(circle,var(--ink-2) 1.1px,transparent 1.5px) 0 0/4px 4px,var(--surface);border-color:var(--ink-2)}
+.sw.rf-sw-idle{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.2px,transparent 1.2px 4px);border-color:var(--line)}
+
+/* ---------- metric cards ---------- */
+.rf-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.rf-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.rf-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
+.rf-mh{margin-top:10px}
+.rf-mh:first-child{margin-top:0}
+/* Show the math as short blocks (H2, 2026-10-09): a lead line, then the formula's rows in a grid; blocks are split by a hairline */
+.rf-mb{padding:10px 0}
+.rf-mb:first-child{padding-top:2px}
+.rf-mb+.rf-mb{border-top:1px solid var(--line)}
+.mathbody .rf-ml{margin:0 0 6px;font-family:var(--font-ui);font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+.rf-mg{display:grid;grid-template-columns:repeat(var(--n),auto);justify-content:start;justify-items:center;align-items:center;column-gap:.3em;row-gap:.45em;overflow-x:auto;padding-block:.3em;margin-bottom:4px;font-size:13.5px}
+.rf-mg .rf-mn{justify-self:end}
+.rf-mg .rf-mw{justify-self:start}
+/* a cell never shrinks under its text: a formula with Chinese words in it would otherwise be squeezed and run into the next
+   column (H7); a row wider than the panel scrolls instead */
+.rf-mg>span{white-space:nowrap;min-width:max-content}
+/* the owner's review of 2026-10-09 (R6.37: a row the reader has to scroll sideways is not read): a long sum is cut before each “+”
+   into pieces, each with the reader's numbers under its terms; the pieces wrap onto the next line, indented under the first term */
+.rf-mg>.rf-sw{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:.3em;row-gap:.55em;padding-left:1.3em;min-width:0;white-space:normal}
+.rf-sw>.rf-sg:first-child,.rf-sw>.rf-sl{margin-left:-1.3em}
+.rf-sw>.rf-sl{flex-basis:100%}
+.rf-sg{display:inline-grid;justify-content:start;justify-items:center;align-items:center;column-gap:.3em;row-gap:.45em;grid-auto-rows:minmax(1.8em,auto)}
+.rf-sg>span{white-space:nowrap}
+.rf-mg>.rf-sn{align-self:start;min-height:1.8em;display:flex;align-items:center}
+/* a narrow stage (a phone, or the 900 px layout): each name on its own line above its formula, the “=” rows under it */
+@container (max-width:540px){
+  .rf-mg{grid-template-columns:repeat(var(--n1),auto)}
+  .rf-mg>.rf-mn:not(:empty){grid-column:1/-1;justify-self:start}
+  .rf-mg>.rf-mn:empty{display:none}
+}
+
+/* ---------- rail ---------- */
+.rf-mt{margin-top:12px}
+.rf-ch-res{scroll-margin-top:120px}
+.goal.rf-over b{color:var(--c-oom)}
+.rf-app .goal.rf-goal{display:grid;grid-template-columns:minmax(0,1fr);gap:1px}
+.rf-app .goal.rf-goal span:last-child{white-space:normal}
+.rf-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+.rf-app .inline-ctl .seg-ctl button{white-space:nowrap}
+.rf-lv{margin-top:6px}
+/* R7.8: an option's result goes on its own line under the title */
+.rf-lv .lever .lv-r{grid-column:2 / 4;grid-row:2;padding-top:0}
+.rf-lv .lever .lv-d{grid-row:3}
+.rf-lv .lever .lv-r:empty{display:none}
+.rf-why{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.pbar .rf-why{margin-top:6px}
+.rf-remlist li{margin-bottom:8px}
+/* the challenge's options: a pass shows on the row itself */
+#rf-ch-res .cmp-row.ok .cmp-track{box-shadow:inset 0 0 0 2px var(--c-ok)}
+#rf-ch-res .cmp-row.ok .cmp-lab>span:first-child{color:var(--c-ok);font-weight:650}
+
+/* ---------- settings ---------- */
+.rf-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.rf-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.rf-grp .ctl>.lbl{display:block}
+.rf-app .ctl output{white-space:nowrap}
+.rf-pnote{margin-top:4px}
+
+/* ---------- connect ---------- */
+.rf-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.rf-prod li{margin-bottom:6px}
+
+/* ---------- mini result bar (dock): the share of the peak, the goal's tick in the challenge ---------- */
+.rf-dk{position:relative;height:12px;width:100%;min-width:48px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.rf-dk i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2)}
+.rf-dk b{position:absolute;top:-1px;bottom:-1px;width:0;border-left:2px solid var(--ink)}
+
+/* phones: the part's one control at the top of the chart */
+.rf-phone{display:none}
+@media (max-width:760px){
+  /* the picture first, each sub-chart's key right under it (R7.3) */
+  .rf-stage{display:flex;flex-direction:column}
+  .rf-stage>.stage-head{order:1}
+  .rf-stage>.rf-graph{order:2}
+  .rf-stage>.rf-scope{order:4}
+  .rf-stage>.metrics{order:4}
+  .rf-stage>details.math{order:5}
+  .rf-graph{padding:8px 8px 10px}
+  .rf-phone:not(:empty){display:block}
+  .rf-lane{grid-template-columns:104px minmax(0,1fr) 62px;gap:6px}
+  .rf-ln,.rf-lval{font-size:11.5px}
+  .rf-tcap{font-size:12px}
+}
+@media (prefers-reduced-motion:reduce){.rf-trk i,.rf-svg .rf-dot circle:first-child{transition:none}}
+/* Settings: the five kernels wrap onto two or three rows instead of overflowing the column (R7.8) */
+#rf-ctl-k-wrap .seg-ctl{flex-wrap:wrap;gap:1px;background:var(--line)}
+#rf-ctl-k-wrap .seg-ctl button{flex:1 1 auto;min-width:max-content;border-right:0;white-space:nowrap}
+/* phones: the status badge beside the stage's title, so the chart starts higher (R7.3) */
+@media (max-width:760px){
+  .rf-stage>.stage-head{display:flex;flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:8px}
+  /* a long status chip (part 5) drops below the title instead of squeezing it */
+  .rf-stage>.stage-head>div:first-child{flex:1 1 200px;min-width:0}
+  .rf-stage .meter-sub{font-size:13.5px}
+  .rf-stage .stage-actions{flex:none}
+}
+.rf-app .railcard .obs+.small{margin-top:10px}
+
+/* v6 fixes: a term whose hover holds a formula (kit .t with an HTML tip) keeps the definition look; a formula inside an answer sits on its own line */
+.t.rf-dfx{cursor:help}
+.rf-fxl{display:block;margin:6px 0}
+/* the roofline formula needs the kit's wide tooltip width (the size of the kit's .tip.wide) */
+.tip:has(.rf-fxw){max-width:min(380px,calc(100vw - 16px))}
+/* a formula on its own line in a card body or a note (R6.29, H1 2026-10-09) */
+.rf-fxp{margin:6px 0;overflow-x:auto}
+/* the matmul formula breaks at each “=”, the chain indented under its name (H2: chains break at “=”, aligned) */
+.rf-fxp .rf-fxr{padding-left:1.5em}
+.rf-mg .rf-par{font-family:'STIX Two Math','Cambria Math','Latin Modern Math',serif;font-size:2.1em;line-height:1;font-weight:300;color:var(--ink)}
+
+/* 知识梳理 (primer, 2026-10-12): a formula on its own line; the lab's roofline as a display, without a kernel and without controls */
+.primer .rf-prx{display:block;padding:.3em 0;font-size:1.05em;max-width:100%}
+.pr-fr.rf-prfig{min-width:0}
+.primer .pr-rfbox{overflow:visible}
+.primer .pr-rfbox .rf-key{margin-top:6px}
+.primer .pr-rfbox .rf-key>span,.primer .pr-rfbox .rf-svg :is(.rf-axx,.rf-rg){cursor:default}
+.primer .rf-prfig :is(button,input,select,.ctl){display:none!important}

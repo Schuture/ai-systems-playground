@@ -1,0 +1,160 @@
+/* training-memory: the GPU column (high-water mark of one step, block by block, labels beside the blocks), the memory-over-time curve
+   with its cursor, peak and out-of-memory markers, the player, and the challenge's goal rows.
+   Colours (R5.6): grayscale, hatching and dots; the weights in the site's weights blue; red only where memory goes over the GPU (R5.11);
+   green and red for the challenge's goal rows. */
+.tmem-app [hidden]{display:none!important}
+.tmem-stage .stage-head{align-items:center}
+.tmem-graph{padding:12px 14px 14px;min-width:0}
+.tmem-vis{display:grid;grid-template-columns:minmax(200px,240px) minmax(0,1fr);gap:16px;align-items:start;min-width:0}
+.tmem-vis>div{min-width:0}
+.tmem-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px;min-height:2.7em}
+.tmem-col,.tmem-curve{min-width:0;overflow:hidden}
+.tmem-colsvg,.tmem-cvsvg{display:block;max-width:100%;overflow:visible}
+
+/* ---------- the column ---------- */
+.tmem-pbg{fill:var(--surface)}
+.tmem-pln{stroke:var(--ink-2);stroke-width:1.1}
+.tmem-pdot{fill:var(--ink-2)}
+.tmem-colsvg rect[class^="tmem-b-"]{stroke:var(--surface);stroke-width:1;cursor:help;outline:none}
+.tmem-colsvg rect[class^="tmem-b-"]:focus-visible{stroke:var(--ink);stroke-width:2}
+.tmem-b-w{fill:var(--c-weights)}
+.tmem-b-g{fill:url(#tmem-p-g)}
+.tmem-b-c{fill:var(--ink-3)}
+.tmem-b-m{fill:url(#tmem-p-m)}
+.tmem-b-v{fill:url(#tmem-p-v)}
+.tmem-b-a{fill:var(--line)}
+.tmem-b-l{fill:url(#tmem-p-l)}
+.tmem-over{fill:var(--c-oom-soft);stroke:var(--c-oom);stroke-width:1.5;stroke-dasharray:4 2}
+.tmem-gpu{fill:none;stroke:var(--ink);stroke-width:1.5;cursor:help;outline:none}
+.tmem-gpu:focus-visible{stroke-width:3}
+.tmem-ax{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.tmem-mid{text-anchor:middle}
+.tmem-bl{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink)}
+.tmem-q{font-family:var(--font-mono);font-size:30px;font-weight:700;fill:var(--ink-3)}
+.tmem-capl{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink)}
+.tmem-capline{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:5 3}
+.tmem-oomt{font-family:var(--font-ui);font-size:11px;font-weight:700;fill:var(--c-oom)}
+.tmem-halo,.tmem-capl{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+
+/* ---------- the curve ---------- */
+.tmem-grid{stroke:var(--line-2);stroke-width:1}
+.tmem-band{fill:var(--ink-3);opacity:.32}
+.tmem-area{fill:var(--line);opacity:.9}
+.tmem-overarea{fill:var(--c-oom-soft);opacity:.95}
+.tmem-line{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
+.tmem-bandl{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink)}
+.tmem-ph-f{fill:var(--ink-2)}
+.tmem-ph-b{fill:var(--ink-3)}
+.tmem-ph-o{fill:var(--ink)}
+.tmem-cursor{stroke:var(--ink-2);stroke-width:1;stroke-dasharray:2 2}
+.tmem-cdot{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
+.tmem-cdot.bad{fill:var(--c-oom)}
+.tmem-pk{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.tmem-pk.bad{stroke:var(--c-oom)}
+.tmem-pkl{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink)}
+.tmem-oomdot{fill:var(--c-oom);stroke:var(--surface);stroke-width:1.5}
+.tmem-curve0{display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);border-radius:4px;padding:0 16px;text-align:center}
+.tmem-curve0 p{margin:0;font-size:13px;color:var(--ink-3)}
+
+/* legend beside the curve, under it (R5.9) */
+.tmem-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-family:var(--font-mono);font-size:11px;line-height:1.35;color:var(--ink-2)}
+.tmem-leg>span{display:inline-flex;align-items:center;cursor:help}
+.tmem-leg .sw{width:12px;height:10px;margin-right:5px}
+.tmem-sw-band{background:var(--ink-3);opacity:.6;border-color:transparent}
+.tmem-sw-area{background:var(--line);border-color:var(--ink-3)}
+.tmem-sw-cap{background:none;border:0;border-top:2px dashed var(--ink);height:0!important;border-radius:0}
+.tmem-sw-over{background:var(--c-oom-soft);border-color:var(--c-oom)}
+
+/* ---------- the player ---------- */
+.tmem-player{margin-top:8px}
+.tmem-prow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.tmem-prow .ctl{display:flex;align-items:center;gap:6px;margin:0}
+.tmem-prow .ctl>.lbl{font-size:12px}
+.tmem-prow .seg-ctl button{font-size:12px;padding:3px 9px}
+/* H7 (the owner, 2026-10-09, on GRPO's player: “重放按钮和速度按钮没有对齐”): Replay, the step buttons and the speed buttons share one
+   height and one centre line */
+.tmem-prow .btn.sm,.tmem-prow .seg-ctl{height:30px;box-sizing:border-box}
+.tmem-prow .btn.sm{padding-top:0;padding-bottom:0}
+.tmem-prow .seg-ctl button{padding-top:0;padding-bottom:0}
+.tmem-play{min-width:96px;justify-content:center}
+.tmem-scrub{display:flex;align-items:center;margin-top:6px;min-width:0}
+.tmem-scrub input{flex:1 1 auto;min-width:0;width:100%}
+.tmem-phase{margin:4px 0 0;font-size:11.5px;color:var(--ink-2);min-height:1.4em;line-height:1.4}
+
+/* ---------- metric cards: four in a row when there is room ---------- */
+.tmem-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.tmem-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}.tmem-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* ---------- rail ---------- */
+.tmem-fx{margin:8px 0;overflow-x:auto;max-width:100%}
+/* a long sum wraps before a top-level “+” (MW; the owner's review of 2026-10-09: no Show the math row scrolls sideways), each new line
+   under the first term */
+.tmem-w{display:flex;align-items:baseline}
+.tmem-wl{flex:none}
+.tmem-wr{flex:1 1 0;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;row-gap:.35em}
+.tmem-wr>span{flex:none}
+.tmem-four{list-style:none;margin:8px 0;padding:0;display:grid;gap:6px}
+.tmem-four li{display:grid;grid-template-columns:8.2em minmax(0,1fr);gap:8px;font-size:13px;line-height:1.45}
+.tmem-four b{font-family:var(--font-mono);font-size:12.5px}
+.tmem-poplist{margin:4px 0 6px 1.2em;padding:0;list-style:disc}
+.tmem-poplist li{margin:2px 0}
+.tmem-remlist{margin:6px 0 10px;padding-left:18px;display:grid;gap:8px}
+.tmem-rem{font-size:12px;white-space:nowrap}
+.tmem-mt{margin-top:10px}
+.tmem-asm{margin:8px 0;padding-left:18px;display:grid;gap:4px}
+.tmem-tlist{margin:4px 0 8px;padding-left:18px;font-size:12.5px}
+.tmem-prod{margin:0;padding-left:18px;display:grid;gap:8px;font-size:13px}
+.tmem-prod code{word-break:break-all}
+.tmem-goal.tmem-miss{border-color:var(--c-oom);background:var(--c-oom-soft)}
+.tmem-goal.met{border-color:var(--c-ok);background:var(--c-ok-soft)}
+.tmem-ch-res{scroll-margin-top:120px}
+
+/* ---------- the challenge's result (R1 of the owner's review of batch 8, as train-capstone's summary): the reader's plan beside the
+   fastest plan, each with its two goals as bars and the goal's dashed line; red only beyond a goal (R5.11); the plans that pass in a
+   disclosure closed by default ---------- */
+.tmem-sum{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.tmem-sumcap{font-size:13px;font-weight:650;color:var(--ink);line-height:1.4;margin-bottom:4px}
+.tmem-same{margin:0 0 4px;color:var(--ink-2);line-height:1.45}
+.tmem-c3{list-style:none;margin:0;padding:0}
+.tmem-c3r{display:grid;gap:5px;padding:7px 0 8px;border-bottom:1px solid var(--line-2);min-width:0}
+.tmem-c3h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0}
+.tmem-c3t{font-size:13px;font-weight:700;color:var(--ink);margin-right:2px}
+.tmem-chip{font-size:11.5px;line-height:1.45;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--ink-2);white-space:nowrap}
+.tmem-chip.on{border-color:var(--ink);color:var(--ink);font-weight:700;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--ink)}
+.tmem-c3m{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;min-width:0}
+.tmem-c3k{font-size:12px;color:var(--ink-2);min-width:2.6em}
+.tmem-c3trk{position:relative;height:12px;background:var(--surface-2);border-radius:2px;min-width:0}
+.tmem-c3fill{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px 0 0 2px}
+.tmem-c3o{position:absolute;top:-1px;bottom:-1px;box-sizing:border-box;background:repeating-linear-gradient(135deg,var(--c-oom) 0 2px,transparent 2px 5px);border:1.5px solid var(--c-oom)}
+.tmem-c3g{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed var(--ink);margin-left:-1px;pointer-events:none}
+.tmem-c3v{font-family:var(--font-mono);font-size:12.5px;font-weight:650;color:var(--ink);white-space:nowrap;text-align:right;min-width:4.4em}
+.tmem-c3v.bad{color:var(--c-oom)}
+.tmem-c3leg{display:flex;flex-wrap:wrap;gap:3px 12px;margin:7px 0 2px;color:var(--ink-2);font-size:11.5px}
+.tmem-c3leg span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.tmem-c3leg .sw{width:12px;height:10px}
+.tmem-gap,.tmem-next{margin:9px 0 0;font-size:13.5px;line-height:1.5}
+.tmem-all{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
+.tmem-all>summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--ink);padding:4px 0}
+.tmem-allb>p{margin:6px 0}
+.tmem-alll{margin:4px 0 6px;padding-left:18px;display:grid;gap:4px;font-size:12.5px;line-height:1.45}
+.tmem-alll li.me{font-weight:650;color:var(--ink)}
+
+/* ---------- the dock (phones) ---------- */
+.tmem-dk{position:relative;display:flex;height:12px;border:1px solid var(--line);border-radius:2px;background:var(--surface);overflow:hidden}
+.tmem-dk i{display:block;height:100%}
+.tmem-dk i.s{background:var(--ink-3)}
+.tmem-dk i.a{background:var(--line)}
+.tmem-dk b{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed var(--ink)}
+
+@media (max-width:760px){
+  .tmem-vis{grid-template-columns:minmax(0,1fr);gap:10px}
+  .tmem-cap{min-height:0}
+  .tmem-four li{grid-template-columns:minmax(0,1fr);gap:0}
+}
+
+/* 知识梳理 (2026-10-12): a formula on its own line; a sum of named items wraps before a “+” (prSum), so nothing scrolls sideways */
+.primer .tmem-fx{margin:2px 0 14px;font-size:1.05em}
+.primer .tmem-prfx{padding:.2em 0}
+.primer .tmem-prsum{display:flex;flex-wrap:wrap;align-items:baseline;row-gap:.35em;padding:.2em 0}
+.primer .tmem-prsum>span{flex:none}
+.primer .tmem-prsum>span+span{margin-left:.3em}

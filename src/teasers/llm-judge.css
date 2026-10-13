@@ -1,0 +1,14 @@
+/* llm-judge teaser: one stacked bar of 100 verdicts in grayscale (R5.6): A wins dark, ties hatched, B wins light; a dotted line at 50% */
+.tz-ljg-vis{display:block;padding:6px 0 0}
+.tz-ljg-bar{position:relative;display:flex;height:30px;border-radius:3px;overflow:hidden;background:var(--surface-2)}
+.tz-ljg-bar i{display:flex;align-items:center;justify-content:center;height:100%;transition:width .3s ease-out;font-style:normal}
+.tz-ljg-bar i span{font-family:var(--font-mono);font-size:11px;position:relative;z-index:2}
+.tz-ljg-a{background:var(--ink-2)}
+.tz-ljg-a span{color:var(--bg)}
+.tz-ljg-t{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,var(--surface) 1.5px 5px)}
+.tz-ljg-t span{color:var(--ink);background:var(--surface);padding:0 2px;border-radius:2px}
+.tz-ljg-b{background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--ink-3)}
+.tz-ljg-b span{color:var(--ink)}
+.tz-ljg-50{position:absolute;left:50%;top:0;bottom:0;width:0;border-left:2px dotted var(--ink);z-index:1}
+.tz-ljg-ax{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-3);margin-top:3px}
+.tz-ljg-sw{display:inline-block;width:12px;height:10px;margin-right:5px;vertical-align:-1px;border-radius:2px;flex:none}

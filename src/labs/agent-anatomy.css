@@ -1,0 +1,218 @@
+/* agent-anatomy: the loop diagram (model, your code, tools) with the active arrow lit and a two-line caption; the replay's player;
+   the conversation as rows coloured by author; the bar chart of tokens each call sends (stacked by author, a dashed mark at the
+   previous call's height); the time line (model lane, tool lane); the challenge's chart of tokens read so far against calls.
+   Colours (R5.6): grayscale, outline and hatching only: the model solid, your code outlined, a tool hatched. Red only for a failed
+   tool (is_error) and a run stopped before it is done; green only for the challenge's goal. Boxes keep their height during the
+   replay (R7.9): captions have fixed lines, the conversation scrolls inside a fixed box. */
+.ana-app [hidden]{display:none!important}
+.ana-stage .stage-head{align-items:center}
+.ana-graph{padding:12px 14px 14px;display:grid;gap:12px;min-width:0}
+.ana-graph>div{min-width:0}
+.ana-phone{display:none}
+.ana-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:18px;height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ana-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin:4px 0 6px;font:11px/16px var(--font-mono);color:var(--ink-2)}
+.ana-leg>span{white-space:nowrap}
+.ana-legn{color:var(--ink-3)}
+
+/* ---------- who wrote a block: the model solid, your code outlined, a tool hatched ---------- */
+.ana-sw{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:6px;box-sizing:border-box;flex:none}
+.ana-sw.w-model,.ana-col .s-model{background:var(--ink-2);border:1.5px solid var(--ink-2)}
+.ana-sw.w-you,.ana-col .s-you{background:var(--surface);border:1.5px solid var(--ink-2)}
+.ana-sw.w-tool,.ana-col .s-tool{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 4px);border:1.5px solid var(--ink-3)}
+.ana-sw-err{background:transparent;border:2px solid var(--c-oom)}
+.ana-sw-prev{width:14px;height:0;border:0;border-top:2px dashed var(--ink);border-radius:0;vertical-align:3px}
+
+/* ---------- the loop: model ⇄ your code ⇄ tools ---------- */
+.ana-loop{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1.25fr) auto minmax(0,1fr);align-items:center;gap:6px}
+.ana-node{position:relative;border:1.5px solid var(--line);border-radius:6px;padding:6px 8px 6px 26px;background:var(--surface);min-width:0;transition:border-color .15s,box-shadow .15s}
+.ana-node::before{content:"";position:absolute;left:8px;top:9px;width:11px;height:11px;border-radius:2px;box-sizing:border-box}
+.ana-node.w-model::before{background:var(--ink-2);border:1.5px solid var(--ink-2)}
+.ana-node.w-you::before{background:var(--surface);border:1.5px solid var(--ink-2)}
+.ana-node.w-tool::before{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 4px);border:1.5px solid var(--ink-3)}
+.ana-node b{display:block;font-size:13px;line-height:17px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ana-node span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;height:30px;font-size:11px;line-height:15px;color:var(--ink-3);overflow:hidden}
+.ana-node.on{border-color:var(--ink);box-shadow:0 0 0 1.5px var(--ink);background:var(--surface-2)}
+@container (max-width:600px){.ana-node span{display:none}}
+.ana-arr{display:grid;gap:2px;font:11px/15px var(--font-mono);color:var(--ink-3);text-align:center}
+.ana-arr span{white-space:nowrap;padding:1px 4px;border-radius:3px}
+.ana-arr em{font-style:normal}
+.ana-arr span.on{color:var(--ink);font-weight:700;background:var(--surface-2)}
+.ana-cap2{margin-top:8px;height:38px;overflow:hidden;font-size:12.5px;line-height:19px}
+.ana-cap2 b,.ana-cap2 span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ana-cap2 b{color:var(--ink)}
+.ana-cap2 span{color:var(--ink-2)}
+
+/* ---------- the player ---------- */
+.ana-player{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+/* H5 (the owner, 2026-10-09): a hairline between the stage’s blocks (the loop, the conversation, the token bars, the timeline); none above the first */
+.ana-graph>[id$="box"]:not([hidden])~[id$="box"]:not([hidden]){border-top:1px solid var(--line);padding-top:12px}
+.ana-player .ctl{display:flex;align-items:center;gap:6px;margin:0}
+.ana-player .ctl>.lbl{font-size:12px}
+.ana-player .seg-ctl button{font-size:12px;padding:3px 9px}
+.ana-play{min-width:96px;justify-content:center}
+.ana-stepb{min-width:32px;justify-content:center;padding-inline:8px}
+.ana-scrub{display:flex;align-items:center;gap:8px;flex:1 1 180px;min-width:0}
+.ana-scrub input{flex:1 1 auto;min-width:0}
+.ana-count{font-size:11.5px;color:var(--ink-2);white-space:nowrap;flex:none;min-width:92px;text-align:right}
+
+/* ---------- the conversation: one row per block ---------- */
+.ana-conv{height:176px;overflow-y:auto;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);padding:4px;display:grid;align-content:start;gap:3px;scroll-behavior:auto}
+.ana-row{display:grid;grid-template-columns:12px minmax(96px,auto) minmax(0,1fr) 56px;align-items:center;gap:8px;height:22px;padding:0 6px;border:1px solid transparent;border-radius:3px;font-size:12px;outline-offset:1px}
+.ana-row .ana-sw{margin:0}
+.ana-rl{font-family:var(--font-mono);font-size:11.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ana-pv{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ana-rt{font-size:11.5px;text-align:right;color:var(--ink);white-space:nowrap}
+.ana-row.sent{background:var(--surface-2)}
+.ana-row.new{border-color:var(--ink-2)}
+.ana-row.new .ana-rl{font-weight:700}
+.ana-row.err{border:1.5px solid var(--c-oom)}
+.ana-stoprow{grid-template-columns:minmax(96px,auto) minmax(0,1fr);border:1.5px dashed var(--ink-2)}
+.ana-stoprow .ana-rl{font-weight:700}
+
+/* ---------- the bars: tokens each call sends, stacked by author ---------- */
+.ana-bars{min-width:0}
+.ana-cols{position:relative;height:128px;margin-top:16px;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:6px;align-items:end;border-bottom:1px solid var(--line)}
+.ana-col{position:relative;height:100%;border-radius:2px;outline-offset:2px}
+.ana-col i{position:absolute;left:14%;right:14%;bottom:0;box-sizing:border-box}
+.ana-col .s-model{border-radius:2px 2px 0 0}
+.ana-col .s-todo{background:transparent;border:1px dashed var(--line);border-bottom:0}
+.ana-col.todo{opacity:.7}
+.ana-col.cur i:not(.s-todo){box-shadow:0 0 0 1px var(--ink)}
+.ana-prevmk{position:absolute;left:4%;right:4%;height:0;border-top:2px dashed var(--ink);z-index:1;pointer-events:none}
+.ana-cv{position:absolute;left:50%;transform:translateX(-50%);padding-bottom:2px;font:10.5px/1.2 var(--font-mono);font-style:normal;color:var(--ink-2);white-space:nowrap;pointer-events:none}
+.ana-col.cur .ana-cv{color:var(--ink);font-weight:700}
+.ana-clabs{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:6px;padding-top:3px}
+.ana-clabs span{text-align:center;font:11px/1.3 var(--font-mono);color:var(--ink-3);min-width:0}
+.ana-clabs span.on{color:var(--ink);font-weight:700}
+.ana-cx{text-align:center;font-size:11px;color:var(--ink-3)}
+.ana-cols[style*="--n:30"],.ana-clabs[style*="--n:30"]{gap:2px}
+
+/* ---------- the time line ---------- */
+.ana-time{display:grid;gap:5px}
+.ana-lane,.ana-tscale{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;align-items:center}
+.ana-ll{font:11px/1.2 var(--font-mono);color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ana-trk{position:relative;height:20px;background:var(--surface-2);border-radius:2px}
+.ana-trk i{position:absolute;top:2px;bottom:2px;box-sizing:border-box;min-width:2px;outline-offset:1px}
+.ana-trk .t-model{background:var(--ink-2);border-radius:2px}
+.ana-trk .t-tool{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 4px);border:1px solid var(--ink-3);border-radius:2px}
+/* tools run at the same time: one thin row each, at least 10 px wide, in a taller lane, with a label under them (R5.10) */
+.ana-tl .ana-trk{height:30px}
+.ana-trk .t-tool.par{top:calc(3px + var(--k) * 24px / var(--m));bottom:auto;height:calc(24px / var(--m) - 1px);min-width:10px}
+.ana-tnt{position:relative;height:16px}
+.ana-tnote{position:absolute;top:0;font:11px/16px var(--font-mono);color:var(--ink);white-space:nowrap}
+.ana-tnote.end{transform:translateX(-100%)}
+.ana-ts{position:relative;height:16px;border-top:1px solid var(--line)}
+.ana-ts span{position:absolute;top:2px;transform:translateX(-50%);font:10.5px/1.2 var(--font-mono);color:var(--ink-3)}
+
+/* ---------- the challenge: tokens read so far against calls ---------- */
+.ana-chart{outline-offset:3px}
+.ana-chart svg{display:block;width:100%;height:auto}
+.ana-chart text{font:11px var(--font-mono);fill:var(--ink-3)}
+.ana-chart text.lab{font-size:11.5px;fill:var(--ink)}
+.ana-chart text.ax{fill:var(--ink-2)}
+.ana-chart .g{stroke:var(--line-2);stroke-width:1}
+.ana-chart .box{fill:var(--ink-3);fill-opacity:.07;stroke:none}
+.ana-chart .lim{stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:5 4}
+.ana-chart path{fill:none;stroke-width:2.2;stroke-linejoin:round}
+.ana-chart path.n{stroke:var(--ink)}
+.ana-chart path.s{stroke:var(--ink-2);stroke-dasharray:6 4}
+.ana-chart path.ghost{opacity:.25}
+.ana-chart .sd{fill:var(--ink-2)}
+.ana-chart .nd{fill:var(--c-oom)}
+.ana-chart .nd.ok{fill:var(--c-ok)}
+.ana-sw-n{width:16px;height:0;border:0;border-top:2.5px solid var(--ink);border-radius:0;vertical-align:3px}
+.ana-sw-s{width:16px;height:0;border:0;border-top:2.5px dashed var(--ink-2);border-radius:0;vertical-align:3px}
+.ana-sw-g{width:16px;height:0;border:0;border-top:2.5px solid var(--ink);opacity:.25;border-radius:0;vertical-align:3px}
+.ana-sw-box{background:var(--surface-2);border:1.5px dashed var(--ink-2)}
+
+/* ---------- metric cards ---------- */
+.ana-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ana-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ana-metrics .metric .sub{min-height:2.7em}
+@container (min-width:560px){.ana-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* ---------- formulas on their own line ---------- */
+.ana-fx{margin:8px 0 10px;overflow-x:auto;font-size:15px;line-height:1.3}
+.ana-fxn{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.6em;row-gap:2px}
+.ana-fx-nm{font-size:14px;color:var(--ink-2)}
+
+/* ---------- rail ---------- */
+.ana-mt{margin-top:12px}
+.ana-ch-res{scroll-margin-top:120px}
+.goal.ana-over b{color:var(--c-oom)}
+.ana-lv{margin-top:6px}
+.ana-app .goal span:last-child{text-align:right}
+.ana-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+.ana-app .inline-ctl .seg-ctl button{white-space:nowrap}
+.ana-asm{margin:6px 0 12px;padding-left:18px;color:var(--ink-2)}
+.ana-asm li{margin-bottom:3px}
+.ana-remlist{margin:0 0 10px;padding-left:18px}
+.ana-remlist li{margin-bottom:8px}
+.ana-rem{margin-left:2px}
+
+/* ---------- settings ---------- */
+.ana-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.ana-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.ana-app .ctl output{white-space:nowrap}
+#ana-w-run .seg-ctl{display:grid;grid-template-columns:minmax(0,1fr)}
+#ana-w-run .seg-ctl button{white-space:normal;line-height:1.3;padding-block:6px}
+
+/* ---------- connect ---------- */
+.ana-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.ana-prod li{margin-bottom:6px}
+.ana-prod code,.ana-app .refs code{word-break:break-word}
+
+/* ---------- dock: the bars, small ---------- */
+.ana-dk{display:flex;align-items:flex-end;gap:2px;height:16px;width:100%;min-width:48px}
+.ana-dk i{flex:1 1 0;min-width:1px;background:var(--ink-2);border-radius:1px 1px 0 0}
+
+@media (max-width:760px){
+  /* phones: the picture first, then the numbers (R7.3) */
+  .ana-stage{display:flex;flex-direction:column}
+  .ana-stage>.stage-head{order:1}
+  .ana-stage>.ana-graph{order:2}
+  .ana-stage>.metrics{order:3}
+  .ana-stage>details.math{order:4}
+  .ana-graph{padding:10px 10px 12px;gap:10px}
+  .ana-phone:not(:empty){display:block}
+  .ana-cap{height:36px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  /* the part's own chart right under its control */
+  .ana-graph[data-v="calls"]>.ana-phone,.ana-graph[data-v="time"]>.ana-phone{order:-2}
+  .ana-graph[data-v="calls"]>.ana-barsbox,.ana-graph[data-v="time"]>.ana-timebox{order:-1}
+  /* that chart now comes first, so the hairline moves to the loop under it (H5) */
+  .ana-graph[data-v="calls"]>[id$="box"]:not([hidden])~.ana-barsbox:not([hidden]),.ana-graph[data-v="time"]>[id$="box"]:not([hidden])~.ana-timebox:not([hidden]){border-top:0;padding-top:0}
+  .ana-graph[data-v="calls"]>.ana-loopbox:not([hidden]),.ana-graph[data-v="time"]>.ana-loopbox:not([hidden]){border-top:1px solid var(--line);padding-top:10px}
+  .ana-loop{gap:4px}
+  .ana-node{padding:5px 6px 5px 22px}
+  .ana-node::before{left:6px;top:8px;width:10px;height:10px}
+  .ana-node b{font-size:12px}
+  .ana-node span{display:none}
+  .ana-arr em{display:none}
+  .ana-arr span{padding:0 2px}
+  .ana-cap2{height:57px}
+  .ana-cap2 span{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .ana-count{min-width:0}
+  .ana-row{grid-template-columns:11px minmax(0,1fr) 44px;gap:5px;padding:0 5px}
+  .ana-rl{font-size:10.5px}
+  .ana-row .ana-pv{display:none}
+  .ana-stoprow{grid-template-columns:auto minmax(0,1fr)}
+  .ana-stoprow .ana-pv{display:block}
+  .ana-cols,.ana-clabs{gap:3px}
+  .ana-cv{display:none}
+  .ana-col.cur .ana-cv{display:block}
+  .ana-lane,.ana-tscale{grid-template-columns:50px minmax(0,1fr);gap:6px}
+}
+@media (prefers-reduced-motion:reduce){.ana-node{transition:none}}
+
+/* Show the math in short blocks (the owner, 2026-10-09): a hairline between blocks; a chain's “=” signs in one column */
+.ana-mb{padding:8px 0 10px}
+.ana-mb+.ana-mb{border-top:1px solid var(--line)}
+.ana-mb>p{margin:0 0 6px}
+.ana-mb>p.ana-mb-res{margin:6px 0 0}
+.ana-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3}
+.ana-eq-l{text-align:right}
+/* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
+@media (max-width:560px){.ana-eqs-nm{grid-template-columns:max-content max-content}.ana-eqs-nm>.ana-eq-l{grid-column:1/-1;text-align:left}.ana-eqs-nm>.ana-eq-l:empty{display:none}}
+
+/* 知识梳理 (2026-10-12): a formula on its own line */
+.primer .ana-prfx{display:block;max-width:100%;overflow-x:auto;padding:.3em 0;margin:0 0 12px;font-size:1.05em}

@@ -1,0 +1,152 @@
+/* ---------- PagedAttention lab (prefix pa-) ---------- */
+.pa-host{display:block}
+.pa-host .stage-head .meter-sub{font-size:14.5px}
+.pa-wl{font-size:12.5px;color:var(--ink-2);margin-top:8px;cursor:pointer}
+/* legend swatches: the same fills as the pool cells and the bars */
+.pa-sw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-2px;margin-right:6px;border:1px solid var(--line)}
+.pa-f-tok{background:var(--c-kv);border-color:transparent}
+.pa-f-resv{background:var(--line)}
+.pa-f-intf{background:repeating-linear-gradient(135deg,var(--surface-2) 0 2px,var(--ink-3) 2px 3px)}
+.pa-f-ext{background:radial-gradient(circle,var(--ink-2) 0 .8px,transparent 1.1px) 0 0/4px 4px,var(--surface)}
+.pa-f-free{background:var(--surface)}
+.pa-sw.pa-f-start{width:4px;height:14px;border:0;border-radius:1px;background:var(--ink);margin:0 9px 0 4px;vertical-align:-3px}
+.pa-legend [data-jump]{cursor:pointer}
+.pa-legend [data-jump][aria-pressed="true"]>span:last-child{text-decoration:underline;text-underline-offset:3px;color:var(--ink);font-weight:600}
+.pa-legend>[hidden]{display:none}
+#pa-lg-start{cursor:help}
+/* the pool */
+.pa-pool{position:relative;margin-top:6px}
+.pa-canvas{display:block;width:100%;height:auto;cursor:help;border-radius:2px;touch-action:manipulation}
+.pa-canvas:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.pa-anchor{position:absolute;pointer-events:none;width:1px;height:1px}
+.pa-lab{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 10px;justify-content:space-between;align-items:baseline}
+.pa-lab b{font-weight:600;color:var(--ink)}
+/* time controls (stage and inline) */
+.pa-time{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:10px}
+.pa-time input[type=range]{flex:1 1 150px;min-width:0;width:auto}
+.pa-time .btn{flex:none}
+.pa-play{min-width:78px;justify-content:center}
+/* playback speed: a small segmented control next to Play */
+.pa-speed{display:inline-flex;align-items:center;gap:6px;flex:none;cursor:help}
+.pa-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
+.pa-host .pa-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;cursor:pointer}
+.pa-tread{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);margin-top:4px}
+.pa-tread b{color:var(--ink);font-weight:600}
+.inline-ctl .pa-time{margin-top:2px}
+.pa-live{font-family:var(--font-mono);font-size:12px;line-height:1.45;color:var(--ink-2);margin:0 0 10px}
+.pa-live:empty{display:none}
+/* stacked share bars under the pool */
+.pa-bars{margin-top:10px;display:grid;gap:6px}
+.pa-brow{display:grid;grid-template-columns:minmax(0,12.5em) minmax(0,1fr);gap:10px;align-items:center}
+.pa-bl{font-family:var(--font-mono);font-size:11px;color:var(--ink-2);cursor:help;line-height:1.3}
+.pa-bar{position:relative;height:18px;border:1px solid var(--line);border-radius:3px;background:var(--surface);overflow:hidden}
+.pa-sg{position:absolute;top:0;bottom:0;display:flex;align-items:center;overflow:hidden;white-space:nowrap;font-family:var(--font-mono);font-size:10.5px;padding-left:5px;transition:left .22s ease-out,width .22s ease-out}
+.pa-sg.pa-f-tok{color:var(--on-kv);font-weight:600}
+.pa-sg.pa-f-resv{color:var(--ink)}
+.pa-ghost{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed var(--ink);opacity:0;pointer-events:none}
+.pa-barwrap{position:relative}
+.pa-gleg{display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:10.5px;line-height:1.35;color:var(--ink-3)}
+.pa-ghostsw{display:inline-block;flex:none;width:0;height:12px;border-left:2px dashed var(--ink);margin:0 5px 0 3px}
+.pa-note{font-size:12.5px;color:var(--ink-2);margin:10px 0 0;line-height:1.45}
+.pa-dkbar{margin-top:0;height:14px}
+/* metrics: five cards, all about the whole run, so they are greyed and titled */
+.pa-mhead{font-family:var(--font-mono);font-size:11px;letter-spacing:.02em;color:var(--ink-3);margin:14px 0 -4px}
+.pa-whole .metric{background:var(--surface-2);border-color:var(--line-2)}
+/* labels now wrap to different heights ("Stores tokens while requests wait"): a subgrid keeps each row (label, value, note, change) aligned across the cards */
+.pa-whole{row-gap:8px}
+.pa-whole .metric{display:grid;grid-row:span 4;grid-template-rows:subgrid;row-gap:0;align-content:start}
+.pa-whole .metric>*{align-self:start}
+.pa-host .metric .v{white-space:nowrap}
+.pa-host .metric .sub b{font-weight:600;color:var(--ink-2)}
+/* rail */
+/* lever results are short sentences here ("24.8% stores tokens while requests wait"): each goes on its own line under the description */
+/* PagedAttention's results are sentences: they go on their own row under the description */
+.pa-host .lever{row-gap:3px}
+.pa-host .levers .lv-r{grid-column:2 / 4;grid-row:3;padding-top:0;text-align:left;white-space:normal;font-size:11.5px;line-height:1.3}
+/* kit round K: levers are a flex row now; keep the result on its own line after the description */
+.pa-host .levers .lv-r{order:4;flex:1 0 100%;margin-left:0;padding-left:24px}
+.pa-host .levers .lv-r:empty{display:none}
+.pa-quote{margin:8px 0 0;padding:6px 0 6px 10px;border-left:2px solid var(--line);font-size:13px;color:var(--ink-2)}
+.pa-goal2{margin-top:10px}
+.pa-host .goal{align-items:baseline}
+.pa-why{font-size:12.5px;color:var(--ink-3);margin:6px 0 10px;line-height:1.45}
+.pa-host #pa-chres{scroll-margin-top:120px}
+.pa-cmpwrap{overflow:hidden}
+/* step 6: tried block sizes keep their results under their buttons */
+.pa-btried{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin-top:2px;text-align:center;font-family:var(--font-mono);font-size:10.5px;line-height:1.3;color:var(--ink-2)}
+.pa-btried span{display:grid;min-width:0;padding:2px 0;border-radius:3px}
+.pa-btried span.on{background:var(--surface-2)}
+.pa-btried b{font-weight:600;color:var(--ink)}
+.pa-btried i{font-style:normal;color:var(--ink-3)}
+.pa-btcap{font-size:11.5px;color:var(--ink-3);margin-top:3px}
+/* controls */
+.pa-host details.adv p{font-size:12.5px;color:var(--ink-2);margin:10px 0 0;line-height:1.45}
+.pa-host .seg-ctl button{padding-inline:3px;min-width:0}
+/* connect */
+
+.pa-host .refs code{font-size:.9em}
+.pa-prod p{font-size:14px}
+.pa-prod ul{margin:0 0 10px;padding-left:18px;font-size:13.5px;color:var(--ink-2)}
+.pa-prod li{margin-bottom:6px}
+.pa-host .drill-a p{margin:3px 0}
+/* teaser: one bar per request, at its final length */
+.tz-pa-cap{font-size:11.5px;line-height:1.35;color:var(--ink-2)}
+.tz-pa-rows{display:grid;gap:4px}
+.tz-pa-row{position:relative;height:9px}
+.tz-pa-row i{position:absolute;top:0;bottom:0;left:0;border-radius:2px}
+.tz-pa-row .tz-pa-held{background:var(--line)}
+.tz-pa-row .tz-pa-used{background:var(--c-kv)}
+.tz-pa-row .tz-pa-wait{border:1px dashed var(--ink-3);box-sizing:border-box}
+.tz-leg .sw.tz-pa-swheld{background:var(--line);border-color:transparent}
+.tz-leg .sw.tz-pa-swwait{background:none;border:1px dashed var(--ink-3)}
+@media (max-width:760px){.pa-time input[type=range]{flex-basis:100%;order:3}}
+@media (prefers-reduced-motion:reduce){.pa-sg{transition:none}}
+.pa-host [data-jump]:not(button){cursor:pointer}
+.pa-host .pa-wl:hover{text-decoration:underline;text-underline-offset:3px}
+/* mini result bar: the reading shrinks with an ellipsis on wide screens and wraps to at most three lines on narrow ones
+   (the met challenge needs three in EN at 390: both numbers) */
+.pa-dk{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:760px){.pa-dk{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;white-space:normal}}
+/* the run ended while part 3's card is off screen: a line under the pool leads back to it */
+.pa-done{display:block;margin:8px 0 0;font-weight:600;text-align:left}
+.pa-done[hidden]{display:none}
+html[lang^="zh"] .pa-host .meter-title{text-transform:none}
+@media (max-width:520px){.pa-brow{grid-template-columns:minmax(0,1fr);gap:3px}.pa-bars{gap:8px}}
+/* the badge can hold a full sentence while part 3 runs: let it wrap instead of overflowing on phones */
+.pa-host #pa-status{white-space:normal;max-width:100%}
+/* the three allocation strategies keep their full names, so they stack as a single-choice list instead of one row */
+.pa-host .seg-ctl[data-key="strat"]{flex-direction:column}
+.pa-host .seg-ctl[data-key="strat"] button{border-right:0;border-bottom:1px solid var(--line);text-align:left;padding:7px 10px;line-height:1.3}
+.pa-host .seg-ctl[data-key="strat"] button:last-child{border-bottom:0}
+/* the scenario result sits right under the list and reads as the result of the click */
+.pa-host .pa-sbnote{margin:8px 0 12px;padding:8px 10px;border-left:2px solid var(--ink-3);background:var(--surface-2);border-radius:3px;line-height:1.45;color:var(--ink)}
+.pa-host .pa-sbnote:empty{display:none}
+/* H1/H2 (the owner, 2026-10-09): Show the math in short blocks with a hairline between them; in each block the name and the typeset
+   formula, then this run's numbers under the terms they replace, the "=" signs lined up; a table wider than its box is set again by fitMath (below), so nothing scrolls sideways */
+.pa-mb{padding:8px 0 10px}
+.pa-mb+.pa-mb{border-top:1px solid var(--line)}
+.pa-mb .pa-mlead{margin:0 0 4px;font-family:var(--font-ui);font-size:13.5px;line-height:1.5}
+
+.pa-mfx{overflow-x:auto;max-width:100%;padding-block:.3em}
+.pa-mt{border-collapse:collapse}
+.pa-mt th,.pa-mt td{padding:1px 3px;text-align:center;white-space:nowrap;vertical-align:baseline;font-weight:400;border:0;background:none}
+.pa-mt th{font-family:var(--font-ui);text-align:right;white-space:nowrap;padding-right:6px;color:var(--ink-2)}
+.pa-mt tr.pa-mname th{color:var(--ink);font-weight:600}
+.pa-mt tr.pa-mname:not(:first-child) th,.pa-mt tr.pa-mname:not(:first-child) td{padding-top:8px}
+.pa-mt td.pa-mres{text-align:left;white-space:normal}
+.pa-mb .pa-mnote{margin:4px 0 0;font-family:var(--font-ui);font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.pa-mb .pa-mnote .muted{color:inherit}
+/* Show the math on a box too narrow for its table (the owner's review of 2026-10-09): fitMath sets the block again, the name on its own
+   line, the formula broken before an operator with the numbers under the terms they replace, nothing scrolling sideways */
+.pa-mtn{border-collapse:collapse}
+.pa-mtn th,.pa-mtn td{padding:1px 0;border:0;background:none;font-weight:400;text-align:left;vertical-align:top}
+.pa-mtn tr.pa-mname th{font-family:var(--font-ui);font-weight:600;color:var(--ink);white-space:normal;padding:0 0 2px}
+.pa-mtn tr.pa-mname:not(:first-child) th{padding-top:8px}
+.pa-mtn .pa-mlbl{font-weight:400;color:var(--ink-2)}
+.pa-mtn td.pa-meq{width:1%;padding-right:3px;white-space:nowrap}
+.pa-mtn td.pa-mres{white-space:normal;padding-left:3px;line-height:1.5}
+.pa-mfl{display:flex;flex-wrap:wrap;align-items:flex-start;row-gap:6px}
+.pa-mu{display:inline-grid;align-items:center;justify-items:center}
+.pa-mc{padding:1px 3px;white-space:normal;line-height:1.5;text-align:center}
+.pa-mc0{display:flex;align-items:center;justify-content:center;height:1.9em;white-space:nowrap}
+.pa-mtall .pa-mc0{height:3.1em}

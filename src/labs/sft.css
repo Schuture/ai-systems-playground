@@ -1,0 +1,155 @@
+/* sft: the conversation as a strip of token chips (prompt part hatched, response part plain, each with its label underneath), the
+   toy model's generation with its player, a bar of the counted tokens, metric cards below (R7.12). Colours (R5.6): grayscale for
+   the picture; red only where the end token lost its label and where the model should have stopped (R5.11); green where it wrote
+   the end token and stopped. */
+.sft-app [hidden]{display:none!important}
+.sft-stage .stage-head{align-items:center}
+.sft-graph{padding:12px 14px 14px;display:grid;gap:16px;min-width:0}
+.sft-graph>div{min-width:0}
+.sft-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:8px}
+.sft-leg{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;font-size:12px;color:var(--ink-2);line-height:1.35}
+.sft-leg>span{display:inline-flex;align-items:center;gap:6px}
+.sft-leg .sw,.sft-bar-l .sw{display:inline-block;width:12px;height:12px;flex:0 0 auto;margin:0;border-radius:2px}
+.sft-sw-p{background:repeating-linear-gradient(135deg,var(--surface) 0 3px,var(--line) 3px 4px);border:1px solid var(--ink-3)!important}
+.sft-sw-r{background:var(--surface);border:1px solid var(--ink-3)!important}
+.sft-sw-bad{background:var(--surface);border:2px solid var(--c-oom)!important}
+.sft-sw-stop{background:var(--surface);border:2px solid var(--c-ok)!important}
+.sft-sw-x{background:var(--surface);border:1px dashed var(--ink-3)!important}
+
+/* ---------- the token strip ---------- */
+.sft-strip{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-start}
+.sft-grp{min-width:0;max-width:100%}
+.sft-grp-t{font-size:11px;font-weight:650;letter-spacing:.02em;color:var(--ink-2);margin-bottom:4px}
+.sft-chips{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+.sft-tk{display:inline-flex;flex-direction:column;align-items:stretch;min-width:0;max-width:100%;border:1px solid var(--ink-3);border-radius:4px;background:var(--surface);cursor:help;overflow:hidden}
+.sft-tk:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.sft-tp{background:repeating-linear-gradient(135deg,var(--surface) 0 4px,var(--line) 4px 5.5px)}
+.sft-tr{background:var(--surface)}
+.sft-tpad{border-style:dashed;background:var(--surface-2)}
+.sft-tt{display:block;padding:3px 6px 2px;font-size:12.5px;line-height:1.3;color:var(--ink);overflow-wrap:anywhere}
+.sft-tt.mono{font-size:11px;font-family:var(--font-mono)}
+.sft-tp .sft-tt{background:transparent;text-shadow:0 0 2px var(--surface),0 0 2px var(--surface)}
+.sft-tx .sft-tt{font-style:italic}
+.sft-lb{display:block;padding:1px 6px 2px;font-size:10.5px;line-height:1.3;text-align:center;border-top:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.sft-lb.ign,.sft-lb.none{color:var(--ink-3)}
+.sft-lb.ok{font-weight:650}
+.sft-bad{border:2px solid var(--c-oom)}
+.sft-bad .sft-lb{color:var(--c-oom);font-weight:650}
+
+/* ---------- the generation and its player ---------- */
+.sft-player{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:10px}
+.sft-player .ctl{display:flex;align-items:center;gap:6px;margin:0}
+.sft-player .ctl>.lbl{font-size:12px}
+.sft-player .seg-ctl button{font-size:12px;padding:3px 9px}
+.sft-player [data-act="play"]{min-width:92px;justify-content:center}
+.sft-scrub{display:flex;align-items:center;gap:8px;flex:1 1 200px;min-width:0}
+.sft-scrub input{flex:1 1 auto;min-width:0}
+.sft-cnt{font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.sft-gen{display:flex;flex-wrap:wrap;gap:6px 4px;align-items:flex-start;min-height:44px}
+.sft-gt{position:relative;display:inline-flex;flex-direction:column;align-items:stretch;min-width:0;max-width:100%;border:1px solid var(--ink-3);border-radius:4px;background:var(--surface);cursor:help}
+.sft-gt .sft-tt{padding:3px 6px 1px}
+.sft-pr{display:block;padding:0 6px 2px;font-size:10.5px;line-height:1.3;color:var(--ink-2);text-align:center}
+.sft-stop{border:2px solid var(--c-ok)}
+.sft-red{border:2px solid var(--c-oom);background:var(--c-oom-soft)}
+.sft-extra{border-style:dashed}
+.sft-redt{display:block;padding:0 6px 2px;font-size:10.5px;font-weight:650;line-height:1.3;color:var(--c-oom);text-align:center;white-space:nowrap}
+.sft-more{align-self:center;padding:0 4px}
+
+/* ---------- the counted tokens ---------- */
+.sft-bar{display:flex;height:16px;border:1px solid var(--ink-3);border-radius:3px;overflow:hidden;background:var(--surface)}
+.sft-bar i{display:block;height:100%;min-width:0}
+.sft-bp{background:repeating-linear-gradient(135deg,var(--surface) 0 4px,var(--line) 4px 6px)}
+.sft-br{background:var(--ink-2)}
+.sft-bar-l{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;color:var(--ink-2)}
+.sft-bar-l>span{display:inline-flex;align-items:center;gap:6px}
+.sft-bar-l .sft-sw-r{background:var(--ink-2)}
+.sft-hide{padding:4px 0}
+
+/* ---------- the batch in part 5: why padding exists (the owner's review of batch 9, item 4) ---------- */
+.sft-batch{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+.sft-batch .sft-cap{margin-bottom:6px}
+.sft-brows{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;align-items:center}
+.sft-brow-t{font-size:11px;color:var(--ink-2);white-space:nowrap}
+.sft-bcells{display:flex;gap:2px;min-width:0}
+.sft-bc{display:block;flex:0 0 auto;width:10px;height:13px;border:1px solid var(--ink-3);border-radius:2px;background:var(--surface)}
+.sft-bc-p,.sft-batch .sft-sw-p{background:repeating-linear-gradient(135deg,var(--surface) 0 2px,var(--line) 2px 3.5px)}
+.sft-bc-e,.sft-sw-e{border:2px solid var(--ink)!important}
+.sft-bc-x,.sft-sw-x2{border:1px dashed var(--ink-3)!important;background:var(--surface-2)}
+.sft-bc-e.sft-bad{border-color:var(--c-oom)!important;background:var(--c-oom-soft)}
+
+/* ---------- the rail and the math ---------- */
+/* overflow-x:auto clips vertically too: the padding keeps a tall fraction's numerator inside the box (the owner's review of
+   batch 9, item 1: the top of 120 over 1,919 was cut off; G5) */
+.sft-math-line{margin:8px 0;padding:.35em 0;overflow-x:auto;max-width:100%}
+.sft-mh{font-size:12px;font-weight:650;color:var(--ink);margin:12px 0 4px}
+/* H2 (the owner, 2026-10-09): a formula with its name in words on the left; a chain breaks at “=” onto lines that line up */
+.sft-eq{display:grid;grid-template-columns:auto auto minmax(0,1fr);column-gap:.45em;align-items:center;margin:8px 0}
+.sft-eq-n{max-width:9em;line-height:1.35}
+.sft-eq .sft-math-line{margin:0}
+/* Show the math: a hairline between its blocks (H5) */
+.mathbody .sft-mh{border-top:1px solid var(--line);padding-top:10px;margin-top:14px}
+.sft-al{margin:6px 0 10px;padding-left:18px}
+.sft-al li{margin:3px 0}
+.sft-rem{padding-left:18px}
+.sft-rem li{margin:6px 0}
+.sft-prod li{margin:6px 0}
+.sft-tbl{border-collapse:collapse;width:100%;margin:8px 0;font-size:12.5px}
+.sft-tbl th,.sft-tbl td{padding:3px 8px 3px 0;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.sft-tbl th:first-child,.sft-tbl td:first-child{text-align:left;white-space:normal}
+.sft-tbl th{font-weight:600;color:var(--ink-2);font-size:11.5px}
+.sft-tbl tfoot td{border-bottom:0;padding-top:5px}
+.sft-tbl tfoot td:first-child{text-align:left}
+.sft-ch-res{min-width:0}
+
+@media (max-width:760px){
+  .sft-graph{padding:10px 10px 12px;gap:14px}
+  .sft-strip{gap:8px 10px}
+  .sft-tt{font-size:12px}
+  .sft-tt.mono{font-size:10.5px}
+  .sft-tbl{font-size:12px}
+}
+/* H5 (the owner, 2026-10-09: “信息过多，需要分割线”): the stage's blocks (the conversation as tokens, what the model writes, the share
+   of the counted tokens) each keep their bold heading and are separated by a hairline in the kit's line colour */
+.sft-graph>.sft-box:not([hidden])~.sft-box:not([hidden]){border-top:1px solid var(--line);padding-top:14px}
+/* H7 (the owner, 2026-10-09: GRPO's 重放 and speed buttons did not line up): in a row with the speed buttons, the play or replay button
+   and the speed buttons share one height and one centre line, and the label 速度 sits beside its buttons */
+#sft-app .ctl:has(>.seg-ctl[data-key$="pd"]),#sft-app .ctl:has(.seg-ctl[data-key$="pd"]){display:flex;align-items:center;gap:6px;margin:0}
+#sft-app .ctl:has(.seg-ctl[data-key$="pd"])>.lbl{margin:0}
+#sft-app .seg-ctl[data-key$="pd"] button{height:30px;padding-top:0;padding-bottom:0}
+#sft-app :has(>.ctl .seg-ctl[data-key$="pd"])>.btn{height:32px;padding-top:0;padding-bottom:0}
+/* part 6 (Codex R11, round 3): the calculation on the stage. The stepper and its buttons share a row; the table never wraps a cell (on a
+   phone it scrolls sideways inside its own box); the current token's row and the cells the current step adds are highlighted */
+.sft-dp-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:2px 0 10px}
+.sft-dp-steps{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.sft-dp-steps>.lbl{font-size:12px;font-weight:650;color:var(--ink-2)}
+.sft-dp-steps .seg-ctl button{white-space:nowrap;font-size:12px;padding:4px 10px}
+.sft-dp-btns{display:flex;gap:8px;flex-wrap:wrap}
+.sft-dp-tw{overflow-x:auto;max-width:100%}
+.sft-dp-tbl{width:auto;min-width:min(100%,420px);margin:0 0 6px;font-size:13px}
+.sft-dp-tbl th,.sft-dp-tbl td,.sft-dp-tbl th:first-child,.sft-dp-tbl td:first-child{white-space:nowrap;padding:4px 14px 4px 6px}
+.sft-dp-tbl tbody tr.sft-dp-cur td{background:var(--surface-2)}
+.sft-dp-tbl tbody tr.sft-dp-cur td:first-child{box-shadow:inset 3px 0 0 var(--ink)}
+.sft-dp-tbl td.sft-dp-new{font-weight:700;color:var(--ink)}
+.sft-dp-rb{font:inherit;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.sft-dp-tbl tbody tr:hover td{background:var(--surface-2)}
+.sft-dp-rb.mono{font-family:var(--font-mono);font-size:11.5px}
+.sft-dp-rb[aria-pressed="true"]{font-weight:700}
+.sft-dp-rb:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.sft-dp-tok{display:inline-block;padding:0 5px;border:1px solid var(--ink-3);border-radius:4px;font-size:.95em;line-height:1.35;white-space:nowrap}
+.sft-dp-tok.mono{font-family:var(--font-mono);font-size:.85em}
+.sft-dp-now{font-size:13.5px;line-height:1.55;max-width:62em}
+.sft-dp-now p{margin:6px 0}
+/* Codex R10A (round 3): which data a box shows, on its own first line (Scenarios and Settings): the counts come from the scenario's
+   example (solid rule), the small model from its fixed 6 conversations (dashed rule) */
+.sft-scope{width:fit-content;max-width:100%;margin:0 0 6px;padding:1px 8px;font-size:11.5px;font-weight:650;line-height:1.4;color:var(--ink-2);border:1px solid var(--ink-3);border-radius:4px;background:var(--surface)}
+.sft-scope-m{border-style:dashed}
+/* a narrow stage (a phone, a 900 px window): the 4 steps in two rows of two */
+@container (max-width:540px){
+  .sft-dp-steps .seg-ctl{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .sft-dp-steps .seg-ctl button:nth-child(2n){border-right:0}
+  .sft-dp-steps .seg-ctl button:nth-child(-n+2){border-bottom:1px solid var(--line)}
+}
+/* 知识梳理: a formula on its own line; its pieces wrap under each other at “=” in a narrow column, so nothing scrolls sideways */
+.primer .sft-prfx{display:flex;flex-wrap:wrap;align-items:center;column-gap:.35em;row-gap:6px;margin:2px 0 14px;padding-left:1em;font-size:1.06em;line-height:1.3;min-width:0}
+.primer .sft-prfx>span{min-width:0;max-width:100%}
+@media (max-width:760px){.primer .sft-prfx{padding-left:.4em}}

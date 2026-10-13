@@ -1,0 +1,8 @@
+/* chunk-rerank home-tile teaser */
+.tz-ckr-q{stroke-width:1.2}
+.tz-ckr-q.ok{fill:var(--c-ok);stroke:var(--c-ok)}
+.tz-ckr-q.cut{fill:var(--c-oom);stroke:var(--c-oom);opacity:.85}
+.tz-ckr-q.low{fill:var(--surface);stroke:var(--ink-3)}
+.sw.tz-ckr-swok{background:var(--c-ok)}
+.sw.tz-ckr-swcut{background:var(--c-oom);opacity:.85}
+.sw.tz-ckr-swlow{background:var(--surface);border:1px solid var(--ink-3)}

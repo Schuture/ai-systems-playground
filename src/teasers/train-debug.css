@@ -1,0 +1,15 @@
+/* train-debug teaser: one loss curve in grayscale (R5.6): thick = the picked run, thin = no bug, dotted = ln 3; red only for NaN */
+.tz-td-vis{display:block;max-width:100%;height:auto}
+.tz-td-vis text{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.tz-td-grid{stroke:var(--line-2);stroke-width:1}
+.tz-td-ln{stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:1.5 3.5;stroke-linecap:round}
+.tz-td-cmp{fill:none;stroke:var(--ink-3);stroke-width:1.1}
+.tz-td-tr{fill:none;stroke:var(--ink);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.tz-td-nan{stroke:var(--c-oom);stroke-width:1.2;stroke-dasharray:3 3}
+.tz-td-vis text.tz-td-nant{fill:var(--c-oom)}
+.tz-td-sw{display:inline-block;width:14px;height:0;margin-right:5px;vertical-align:3px;flex:none}
+.tz-td-sw-tr{border-top:2.6px solid var(--ink)}
+.tz-td-sw-cmp{border-top:1.2px solid var(--ink-3)}
+.tz-td-sw-ln{border-top:2px dotted var(--ink-2)}
+/* the NaN label keeps a halo in the tile's colour, so the curve under it never hides it */
+.tz-td-vis text.tz-td-nant{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}

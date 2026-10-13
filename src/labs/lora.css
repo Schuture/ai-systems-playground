@@ -1,0 +1,178 @@
+/* lora: the memory chart (one main column with its labels beside it, narrow comparison columns, the GPU's dashed line, red hatching
+   above it), the matrix picture (W to scale, B and A beside it), the rail's levers, the "remember" items, the challenge's goal rows.
+   Colours (R5.6): the weights in the site's weights blue (4-bit weights hatched blue); the trained LoRA parameters in ink; the rest
+   grayscale, hatching and dots; red only where memory goes over the GPU (R5.11); green and red only for the challenge's goal rows. */
+.lora-app [hidden]{display:none!important}
+.lora-stage .stage-head{align-items:center}
+.lora-graph{padding:12px 14px 14px;min-width:0}
+.lora-vis{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px;align-items:start;min-width:0}
+.lora-vis>div{min-width:0}
+.lora-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px;min-height:2.7em}
+.lora-mem,.lora-mat{min-width:0;overflow:hidden}
+.lora-memsvg,.lora-matsvg{display:block;max-width:100%;overflow:visible}
+
+/* ---------- the memory chart ---------- */
+.lora-pbg{fill:var(--surface)}
+.lora-pln{stroke:var(--ink-2);stroke-width:1.1}
+.lora-pdot{fill:var(--ink-2)}
+.lora-pq{fill:color-mix(in srgb,var(--c-weights) 22%,var(--surface))}
+.lora-pqln{stroke:var(--c-weights);stroke-width:1.6}
+.lora-poln{stroke:var(--c-oom);stroke-width:1.4}
+.lora-memsvg rect[class^="lora-b-"]{stroke:var(--surface);stroke-width:1;outline:none}
+.lora-memsvg rect[class^="lora-b-"][data-tipx]{cursor:help}
+.lora-memsvg rect[class^="lora-b-"]:focus-visible{stroke:var(--ink);stroke-width:2}
+.lora-b-w,.lora-b-fw{fill:var(--c-weights)}
+.lora-b-fb{fill:var(--c-weights);fill-opacity:.6}
+.lora-b-q4{fill:url(#lora-p-q)}
+.lora-b-g{fill:url(#lora-p-g)}
+.lora-b-c{fill:var(--ink-3)}
+.lora-b-mv{fill:url(#lora-p-m)}
+.lora-b-lr{fill:var(--ink)}
+.lora-b-a{fill:var(--line)}
+.lora-b-l{fill:url(#lora-p-l)}
+.lora-over{fill:url(#lora-p-o);stroke:var(--c-oom);stroke-width:1.5;pointer-events:none}
+.lora-brk{fill:none;stroke:var(--surface);stroke-width:3;stroke-linejoin:round;pointer-events:none}
+.lora-colbox{fill:none;stroke:var(--ink-3);stroke-width:1;outline:none;cursor:help;pointer-events:all}
+.lora-colbox.main{stroke:var(--ink);stroke-width:1.5;pointer-events:stroke}
+.lora-colbox:focus-visible{stroke:var(--ink);stroke-width:2.5}
+.lora-tot{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink)}
+.lora-tot.bad{fill:var(--c-oom)}
+.lora-mid{text-anchor:middle}
+.lora-halo,.lora-capl{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.lora-ax{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.lora-ax.main{fill:var(--ink);font-weight:650}
+.lora-bl{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink)}
+.lora-capline{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:5 3}
+.lora-capl{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink)}
+.lora-oomt{font-family:var(--font-ui);font-size:11px;font-weight:700;fill:var(--c-oom)}
+
+/* legend beside the chart, under it (R5.9) */
+.lora-leg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-family:var(--font-mono);font-size:11px;line-height:1.35;color:var(--ink-2)}
+.lora-leg>span{display:inline-flex;align-items:center;cursor:help}
+.lora-leg .sw{width:12px;height:10px;margin-right:5px;flex:none}
+.lora-sw-w,.lora-sw-fw{background:var(--c-weights);border-color:transparent}
+.lora-sw-fb{background:var(--c-weights);opacity:.6;border-color:transparent}
+.lora-sw-q4{background:repeating-linear-gradient(135deg,var(--c-weights) 0 1.5px,color-mix(in srgb,var(--c-weights) 22%,var(--surface)) 1.5px 4px);border-color:var(--c-weights)}
+.lora-sw-g{background:repeating-linear-gradient(135deg,var(--ink-2) 0 1px,var(--surface) 1px 4px);border-color:var(--ink-3)}
+.lora-sw-c{background:var(--ink-3);border-color:transparent}
+.lora-sw-mv{background:radial-gradient(circle,var(--ink-2) 0 1px,transparent 1.3px) 0 0/4px 4px,var(--surface);border-color:var(--ink-3)}
+.lora-sw-lr{background:var(--ink);border-color:transparent}
+.lora-sw-a{background:var(--line);border-color:var(--ink-3)}
+.lora-sw-l{background:repeating-linear-gradient(90deg,var(--ink-2) 0 1px,var(--surface) 1px 4px);border-color:var(--ink-3)}
+.lora-sw-cap{background:none;border:0;border-top:2px dashed var(--ink);height:0!important;border-radius:0}
+.lora-sw-over{background:repeating-linear-gradient(135deg,var(--c-oom) 0 1.5px,transparent 1.5px 4px);border-color:var(--c-oom)}
+
+/* ---------- the matrix picture ---------- */
+.lora-matp .ctl{margin:0 0 6px}
+.lora-matp .seg-ctl button{padding:5px 2px;font-size:12px}
+.lora-w{fill:color-mix(in srgb,var(--c-weights) 30%,var(--surface));stroke:var(--c-weights);stroke-width:1;cursor:help;outline:none}
+.lora-w.tr{fill:var(--c-weights)}
+.lora-w.q4{fill:url(#lora-p-q)}
+.lora-w:focus-visible,.lora-ba:focus-visible{stroke:var(--ink);stroke-width:2}
+.lora-ba{fill:var(--ink);cursor:help;outline:none}
+.lora-bxa{fill:none;stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:.75;cursor:help}
+.lora-ml{font-family:var(--font-mono);font-size:11px;fill:var(--ink)}
+/* B·A's label under W's: a small dashed square like the outline drawn inside W (the owner's review of 2026-10-08: every block's shape) */
+.lora-ml.lora-mlba{fill:var(--ink-2)}
+.lora-bxs{fill:none;stroke:var(--ink);stroke-width:1;stroke-dasharray:2 2;opacity:.75}
+.lora-matnote{margin:6px 0 0;font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.lora-matnote.lora-nolora{color:var(--ink);font-weight:600}
+
+/* ---------- part 1: the idea, two paths (review codex-b9v3 应修 2): W in the weights blue, A and B in ink like the LoRA block ---------- */
+.lora-ideasvg{display:block;max-width:100%;overflow:visible;margin:2px auto 0}
+.lora-il{font-family:var(--font-ui);font-size:11.5px;fill:var(--ink);pointer-events:none}
+.lora-il.m{font-family:var(--font-mono);font-size:11px}
+.lora-il.b{font-weight:700;font-size:13px}
+.lora-il.s{font-size:11px;fill:var(--ink-2)}
+.lora-il.in{fill:var(--surface);font-weight:700;font-size:12px}
+.lora-iln{fill:none;stroke:var(--ink-3);stroke-width:1.4}
+.lora-arrh{fill:var(--ink-3)}
+.lora-vec{fill:var(--sunken);stroke:var(--ink-3);stroke-width:1;cursor:help;outline:none}
+.lora-plus{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.4;cursor:help;outline:none}
+.lora-vec:focus-visible,.lora-plus:focus-visible{stroke:var(--ink);stroke-width:2}
+
+/* ---------- metric cards ---------- */
+.lora-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.lora-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* ---------- rail ---------- */
+.lora-fx{margin:8px 0;overflow-x:auto;max-width:100%}
+/* H2 (the owner, 2026-10-09): a formula with its name in words on the left; a chain breaks at “=” onto lines that line up */
+.lora-eq{display:grid;grid-template-columns:auto auto minmax(0,1fr);column-gap:.45em;align-items:baseline;margin:8px 0}
+.lora-eq-n{max-width:10em;line-height:1.35}
+.lora-eq .lora-fx{margin:0}
+/* a long line wraps before a top-level “+” or “−” (WRP), each new line under its first term, its “=” on the first line's baseline; on a
+   phone-width stage the name goes on its own line above the chain (the owner's review of 2026-10-09: no row scrolls sideways) */
+.lora-wr{display:flex;flex-wrap:wrap;align-items:baseline;row-gap:.3em}
+.lora-wr>span{flex:none}
+@container (max-width:480px){.lora-eq{grid-template-columns:auto minmax(0,1fr)}.lora-eq-n{grid-column:1 / -1;max-width:none}.lora-eq-n:empty{display:none}}
+/* Show the math: one block per quantity, a hairline between blocks (H5) */
+.lora-mh{font-weight:650;color:var(--ink);margin:14px 0 4px;padding-top:10px;border-top:1px solid var(--line)}
+.lora-mh:first-child{border-top:0;padding-top:0;margin-top:4px}
+.lora-lv{margin:8px 0}
+.lora-verdict{margin-top:0}
+/* each misconception, then the button that puts its case in the chart, under it (the button names the case, so it needs the width) */
+.lora-rem{display:grid;grid-template-columns:minmax(0,1fr);gap:6px 10px;align-items:start;margin:0;padding:10px 0;border-top:1px solid var(--line-2)}
+.lora-rem:first-child{border-top:0;padding-top:2px}
+.lora-rem p{margin:0;font-size:13px;line-height:1.5}
+.lora-remb{white-space:nowrap;justify-self:start}
+.lora-mt{margin-top:10px}
+.lora-goal.lora-miss{border-color:var(--c-oom);background:var(--c-oom-soft)}
+.lora-goal.met{border-color:var(--c-ok);background:var(--c-ok-soft)}
+.lora-ch-res .cmp{margin-top:10px}
+/* the challenge's summary (review codex-b9v3 应修 5): each memory block with the setting that shrinks it, your plan next to the least */
+.lora-sum{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:12.5px;line-height:1.35}
+.lora-sum caption{caption-side:top;text-align:left;font-weight:650;font-size:12.5px;color:var(--ink);padding:0 0 4px}
+.lora-sum th,.lora-sum td{padding:6px 6px 6px 8px;border-top:1px solid var(--line-2);text-align:left;vertical-align:top}
+.lora-sum thead th{border-top:0;font-size:11.5px;font-weight:650;color:var(--ink-2);padding-top:2px;padding-bottom:4px}
+.lora-sum tbody th{font-weight:600;color:var(--ink);width:44%}
+/* two plans side by side in the 246–266 px rail of wider screens: three columns would push the English table past the card, so each
+   block's name takes its own line and the two plans sit under it (grid; the table markup stays) */
+@media (min-width:761px){
+  .lora-sum.two,.lora-sum.two caption,.lora-sum.two thead,.lora-sum.two tbody{display:block}
+  .lora-sum.two tr{display:grid;grid-template-columns:1fr 1fr}
+  .lora-sum.two thead th:first-child{display:none}
+  .lora-sum.two tbody th{grid-column:1/-1;width:auto;padding-bottom:2px}
+  .lora-sum.two tbody td,.lora-sum.two tr.lora-sumtot td{border-top:0;padding-top:2px}
+  .lora-sum.two tr.lora-diff{box-shadow:inset 3px 0 0 var(--ink)}
+  .lora-sum.two tr.lora-diff th{box-shadow:none}
+}
+.lora-sum tbody th span{display:block;font-weight:400;font-size:11.5px;color:var(--ink-3)}
+.lora-sum td b{font-weight:650;font-size:12.5px;white-space:nowrap}
+.lora-sset{display:block;font-size:11.5px;color:var(--ink-2)}
+.lora-sum tr.lora-diff th{box-shadow:inset 3px 0 0 var(--ink)}
+.lora-sum tr.lora-diff .lora-sset{color:var(--ink);font-weight:700}
+.lora-sum tr.lora-sumtot th,.lora-sum tr.lora-sumtot td{border-top:1.5px solid var(--ink-3)}
+.lora-sum td.lora-bad b{color:var(--c-oom)}
+.lora-sumkey{margin:2px 0 6px}
+.lora-allp{margin:10px 0 0;border-top:1px solid var(--line-2);padding-top:6px}
+.lora-allp>summary{cursor:pointer;font-size:13px;font-weight:650;color:var(--ink);padding:4px 0}
+
+/* Settings: the estimation assumptions, closed by default (review codex-b9v3 应修 2) */
+.lora-asm{margin:4px 0 0}
+.lora-asm>summary{cursor:pointer;font-size:12.5px;font-weight:650;color:var(--ink-2);padding:4px 0}
+.lora-asm[open]>summary{margin-bottom:2px}
+
+/* ---------- Connect ---------- */
+.lora-prod{margin:0;padding-left:18px;display:grid;gap:8px;font-size:13px}
+.lora-prod code{word-break:break-all}
+
+/* ---------- the dock (phones) ---------- */
+.lora-dk{position:relative;display:flex;height:12px;border:1px solid var(--line);border-radius:2px;background:var(--surface);overflow:hidden}
+.lora-dk i{display:block;height:100%}
+.lora-dk i.w{background:var(--c-weights)}
+.lora-dk i.s{background:var(--ink)}
+.lora-dk i.a{background:var(--line)}
+.lora-dk b{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed var(--ink)}
+
+@media (max-width:760px){
+  .lora-vis{grid-template-columns:minmax(0,1fr);gap:12px}
+  .lora-cap{min-height:0}
+  .lora-vis.lora-idea .lora-matp{order:-1}
+}
+/* H5 (the owner, 2026-10-09: “信息过多，需要分割线”): the stage's two blocks, the memory chart and one matrix with its B and A, each keep
+   their heading and are separated by a hairline in the kit's line colour: beside each other a vertical one, stacked a horizontal one */
+@media (min-width:761px){.lora-vis>.lora-memp:not([hidden])~.lora-matp:not([hidden]){border-left:1px solid var(--line);padding-left:16px}}
+@media (max-width:760px){
+  .lora-vis:not(.lora-idea)>.lora-memp:not([hidden])~.lora-matp:not([hidden]){border-top:1px solid var(--line);padding-top:12px}
+  .lora-vis.lora-idea>.lora-memp:not([hidden]):has(~.lora-matp:not([hidden])){border-top:1px solid var(--line);padding-top:12px}}

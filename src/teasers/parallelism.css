@@ -1,0 +1,17 @@
+/* parallelism tile: seven bars of model states per GPU under ZeRO-3 (grayscale; the picked count dark), the 80 GB line dashed,
+   red only for what is above it (it does not fit). */
+.tz-zr-vis{display:block;max-width:100%;height:auto;cursor:help}
+.tz-zr-bar{fill:var(--line)}
+.tz-zr-bar.on{fill:var(--ink-2)}
+.tz-zr-over{fill:var(--c-oom);opacity:.8}
+.tz-zr-cap{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 3}
+.tz-zr-base{stroke:var(--line-2);stroke-width:1}
+.tz-zr-n{font:10.5px var(--font-mono);fill:var(--ink-3)}
+.tz-zr-n.on{fill:var(--ink);font-weight:650}
+.tz-zr-v{font:600 10.5px var(--font-mono);fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.tz-zr-sw{background:var(--ink-2);border-color:transparent}
+.tz-zr .seg-ctl button{min-width:0;padding-left:7px;padding-right:7px}
+.tz-zr-rd{display:grid;min-width:0}
+.tz-zr-rd>p{grid-area:1/1;min-width:0}
+.tz-zr-twin{margin:0;font-size:13px;line-height:1.45;visibility:hidden}
+.tz-zr-twin b{font-weight:650}

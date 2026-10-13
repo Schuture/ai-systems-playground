@@ -1,0 +1,115 @@
+/* pass-k: the grid of tries (columns are tasks, rows are tries), its player, and the chart of pass@k and pass^k against k.
+   Colours (R5.6): grayscale only; green and red only for the challenge's goal. */
+.pak-graph{padding:12px 14px 14px;display:grid;gap:16px;min-width:0}
+.pak-gridbox,.pak-chartbox{min-width:0}
+/* H5 (the owner, 2026-10-09): a hairline between the tries grid and the chart; none when the chart stands alone (challenge) */
+.pak-graph>.pak-gridbox:not([hidden])~.pak-chartbox:not([hidden]){border-top:1px solid var(--line);padding-top:14px}
+.pak-cap{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px;font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+/* the legend sits beside what it labels: on the grid's caption line (R5.9) */
+.pak-leg{display:inline-flex;flex-wrap:wrap;gap:4px 12px;font-weight:400;font-size:11.5px;color:var(--ink-2)}
+.pak-leg>span{display:inline-flex;align-items:center;gap:5px;cursor:help;outline-offset:2px}
+.pak-sw{display:inline-block;width:10px;height:10px;border-radius:2px;box-sizing:border-box}
+.pak-sw.pass{background:var(--ink-2)}
+.pak-sw.fail{background:var(--surface);border:1px solid var(--ink-3)}
+
+/* ---------- the grid ---------- */
+.pak-grid,.pak-chart{display:block;max-width:100%;height:auto;overflow:visible}
+.pak-sq{transition:fill .15s}
+.pak-sq.pass{fill:var(--ink-2)}
+.pak-sq.fail{fill:var(--surface);stroke:var(--ink-3);stroke-width:.7}
+.pak-sq.wait{fill:none;stroke:var(--line-2);stroke-width:.7;stroke-dasharray:1.5 1.5}
+.pak-rl{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.pak-gb{cursor:help;outline:none}
+.pak-gb:focus-visible .pak-br{stroke:var(--ink);stroke-width:2}
+.pak-gb:hover .pak-br{stroke:var(--ink)}
+.pak-br{fill:none;stroke:var(--ink-3);stroke-width:1.2}
+.pak-hit{fill:transparent}
+.pak-gl{font-size:11px;fill:var(--ink-2)}
+
+/* ---------- the player: play / pause, three speeds, one try back or forward, a slider ---------- */
+.pak-player{margin-top:10px;display:grid;gap:8px}
+.pak-prow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.pak-play{min-width:104px}
+.pak-spd{display:inline-flex;outline-offset:2px}
+.pak-spd .seg-ctl button{font-size:12px;padding:3px 10px}
+.pak-scrub{display:flex;align-items:center;gap:6px;min-width:0}
+.pak-scrub input[type=range]{flex:1 1 auto;min-width:0;width:auto}
+.pak-scrub output{font-size:11.5px;color:var(--ink-2);white-space:nowrap;min-width:84px;text-align:right}
+
+/* ---------- the chart against k ---------- */
+.pak-gridl{stroke:var(--line-2);stroke-width:1}
+.pak-ax{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.pak-ln{fill:none;stroke-width:2;stroke-linejoin:round}
+.pak-ln.at{stroke:var(--ink)}
+.pak-ln.hat{stroke:var(--ink-2)}
+.pak-ln.ref{stroke:var(--ink-3);stroke-width:1.3;stroke-dasharray:4 3}
+.pak-ln.dim,.pak-dot.dim{opacity:.32}
+.pak-dot{fill:var(--ink)}
+.pak-dot.sq{fill:var(--ink-2)}
+.pak-tau{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}
+.pak-taul{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink)}
+.pak-kl{stroke:var(--ink-3);stroke-width:1.3;stroke-dasharray:1.5 3}
+.pak-goalln{stroke:var(--ink-2);stroke-width:1.4;stroke-dasharray:6 3}
+.pak-vl{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.pak-q{font-size:20px;font-weight:700;fill:var(--ink-2)}
+.pak-wait{font-size:12px;fill:var(--ink-3)}
+.pak-end{font-family:var(--font-mono);font-size:10.5px}
+.pak-end.a{fill:var(--ink);font-weight:650}
+.pak-end.h{fill:var(--ink-2);font-weight:650}
+.pak-end.r,.pak-end.g{fill:var(--ink-3)}
+.pak-chart-note{margin:6px 0 0;line-height:1.5}
+.pak-chart-note>span{cursor:help;border-bottom:1px dotted var(--line-2);outline-offset:2px}
+
+/* ---------- metric cards ---------- */
+.pak-metrics[data-n="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pak-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pak-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.pak-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.metric.pak-wait .v{color:var(--ink-3)}
+
+/* ---------- rail ---------- */
+.pak-fx{margin:8px 0;max-width:100%;overflow-x:auto}
+/* Show the math in short blocks (the owner, 2026-10-09): a hairline between blocks; a chain's “=” signs in one column */
+.pak-mb{padding:8px 0 10px}
+.pak-mb+.pak-mb{border-top:1px solid var(--line)}
+.pak-mb>p{margin:0 0 6px}
+.pak-mb>p.pak-mb-res{margin:6px 0 0}
+.pak-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3}
+.pak-eq-l{text-align:right}
+/* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
+@media (max-width:560px){.pak-eqs-nm{grid-template-columns:max-content max-content}.pak-eqs-nm>.pak-eq-l{grid-column:1/-1;text-align:left}.pak-eqs-nm>.pak-eq-l:empty{display:none}}
+.pak-remlist{margin:0 0 12px;padding-left:18px}
+.pak-remlist li{margin-bottom:8px}
+.pak-rem{font-size:12.5px;white-space:nowrap}
+.pak-rem[aria-pressed="true"]{font-weight:650;text-decoration:none}
+.pak-mt{margin-top:12px}
+.pak-ch-res{scroll-margin-top:120px}
+.pak-app .goal.pak-goal{display:grid;grid-template-columns:minmax(0,1fr);gap:1px}
+.goal.pak-over b{color:var(--c-oom)}
+.pak-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+.pak-app .inline-ctl .seg-ctl button{white-space:nowrap}
+
+/* ---------- settings ---------- */
+.pak-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.pak-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.pak-grp .ctl>.lbl{display:block}
+#pak-ctl-seed .ctl{display:grid;gap:6px;justify-items:start}
+.pak-app .ctl output{white-space:nowrap}
+
+/* ---------- connect ---------- */
+.pak-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.pak-prod li{margin-bottom:6px}
+.pak-prod code{word-break:break-word}
+
+/* ---------- the dock's mini bar ---------- */
+.pak-dk{position:relative;height:12px;width:100%;min-width:48px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.pak-dk i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2)}
+
+@media (max-width:760px){
+  .pak-graph{padding:10px 10px 12px}
+  .pak-play{min-width:92px}
+  .pak-scrub output{min-width:0}
+}
+@media (prefers-reduced-motion:reduce){.pak-sq{transition:none}}
+/* part 6: the answer to the lab's title question, after the three lines */
+.pak-answer{margin:12px 0}

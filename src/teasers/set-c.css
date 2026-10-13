@@ -1,0 +1,92 @@
+/* Set C teasers: rag-failure, agent-reliability, agent-anatomy, prompt-injection, eval-ci, pass-k.
+   Grayscale except red for failure (tokens only, so dark mode follows the theme). */
+.tz-c{min-width:0}
+.tz-c [data-tipx]{cursor:help}
+.tz-c .tz-lab{flex-wrap:wrap;row-gap:0}
+.tz-c .tz-lab span{min-width:0}
+.tz-c .tz-lab output{white-space:nowrap;margin-left:auto}
+.tz-c-svg{display:block;width:100%;height:auto;overflow:visible;border-radius:2px}
+.tz-c-svg:focus-visible,.tz-inj-vis:focus-visible,.tz-inj-vis [tabindex]:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.tz-c-svg text{font-family:var(--font-mono);font-size:9.5px;fill:var(--ink-2)}
+.tz-c-svg .tz-c-cap{fill:var(--ink-2)}
+.tz-c-svg .tz-c-tick{fill:var(--ink-3);font-size:9px}
+.tz-c-svg .tz-c-val{fill:var(--ink-2)}
+.tz-c-svg .tz-c-strong{fill:var(--ink);font-weight:600}
+.tz-c-svg .tz-c-bad{fill:var(--c-oom);font-weight:600}
+.tz-c-svg .tz-c-halo{paint-order:stroke;stroke:var(--surface);stroke-width:3.5px;stroke-linejoin:round}
+.tz-c-grid{stroke:var(--line-2);stroke-width:1}
+.tz-c-mark{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
+.tz-c-curve{fill:none;stroke:var(--ink-3);stroke-width:1.1;stroke-linejoin:round;stroke-linecap:round;opacity:.75}
+.tz-c-curve.on{stroke:var(--ink);stroke-width:2.2;opacity:1}
+.tz-c-badge{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.tz-c-dot{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
+.tz-c-dot.cmp{fill:var(--ink-2)}
+.tz-c .tz-read{border-radius:3px}
+.tz-c .tz-read.tz-c-pulse{animation:tzcPulse .9s ease-out}
+@keyframes tzcPulse{0%,30%{background:var(--surface-2);box-shadow:0 0 0 4px var(--surface-2)}100%{background:transparent;box-shadow:0 0 0 4px transparent}}
+@media (prefers-reduced-motion:reduce){.tz-c .tz-read.tz-c-pulse{animation:none}}
+.tz-c .tz-c-seg button{line-height:1.25}
+.tz-c .tz-leg{margin-top:-3px}
+.tz-c .tz-leg>span[tabindex]{cursor:help}
+/* legend swatches: fills, outlines and line styles exactly as drawn in the visuals */
+.tz-c-sw{display:inline-block;flex:none;width:11px;height:10px;margin-right:5px;box-sizing:border-box;border-radius:1px}
+.tz-c-sw.ans{background:var(--ink)}
+.tz-c-sw.dashbox{border:1.2px dashed var(--ink-3)}
+.tz-c-sw.miss{border:2px solid var(--c-oom);background:color-mix(in srgb,var(--ink) 35%,var(--surface))}
+.tz-c-sw.bad{background:var(--c-oom)}
+.tz-c-sw.strike{border:1px dashed var(--ink-3);background:linear-gradient(transparent 44%,var(--ink-3) 44% 58%,transparent 58%)}
+.tz-c-sw.thick,.tz-c-sw.thin,.tz-c-sw.thickdash{width:16px;height:0;border-radius:0}
+.tz-c-sw.thick{border-top:2.4px solid var(--ink)}
+.tz-c-sw.thin{border-top:1.2px solid var(--ink-3)}
+.tz-c-sw.thickdash{border-top:2.4px dashed var(--ink)}
+.tz-c-sw.vdash,.tz-c-sw.vline{width:0;height:12px;margin:0 8px 0 4px;border-radius:0}
+.tz-c-sw.vdash{border-left:1.3px dashed var(--ink-3)}
+.tz-c-sw.vline{border-left:1.3px solid var(--ink-3)}
+.tz-c-sw.f-tool{background:var(--ink)}
+.tz-c-sw.f-mod{background:var(--ink-3)}
+.tz-c-sw.f-sys{background:var(--line);box-shadow:inset 0 0 0 1px var(--ink-3)}
+/* rag-failure */
+.tz-rag-cell{fill:var(--surface-2);stroke:var(--ink-3);stroke-width:1}
+.tz-rag-cell.out{fill:none;stroke:var(--ink-3);stroke-dasharray:3 2}
+.tz-rag-cell.ans{fill:var(--ink);stroke:var(--ink)}
+.tz-rag-cell.ans.miss{fill:var(--ink);fill-opacity:.35;stroke:var(--c-oom);stroke-width:2;stroke-dasharray:none}
+.tz-c-svg .tz-rag-n{fill:var(--ink-2)}
+.tz-c-svg .tz-rag-n.out{fill:var(--ink-3)}
+.tz-c-svg .tz-rag-n.ans{fill:var(--surface);font-weight:600}
+.tz-c-svg .tz-rag-n.ans.miss{fill:var(--ink)}
+.tz-rag-q{fill:var(--surface);stroke:var(--ink);stroke-width:1.3}
+.tz-c-svg .tz-rag-qt{fill:var(--ink)}
+/* agent-anatomy */
+.tz-anat-tool{fill:var(--ink)}
+.tz-anat-mod{fill:var(--ink-3)}
+.tz-anat-sys{fill:var(--line);stroke:var(--ink-3);stroke-width:.6}
+/* prompt-injection: prompt blocks with their role on the border, then tools and the next action */
+.tz-inj-vis{display:grid;gap:5px;font-size:11px;line-height:1.32;color:var(--ink-2);border-radius:3px;padding-top:5px}
+.tz-inj-blk{position:relative;padding:6px 7px 4px;border-radius:3px;overflow-wrap:anywhere}
+.tz-inj-blk + .tz-inj-blk{margin-top:5px}
+.tz-inj-blk.ins{border:1.3px solid var(--ink-3)}
+.tz-inj-blk.data{border:1.3px dashed var(--ink-3);background:var(--surface-2)}
+.tz-inj-lg{position:absolute;top:-7px;left:5px;padding:0 4px;background:var(--surface);font-family:var(--font-mono);font-size:9.5px;line-height:12px;color:var(--ink-2);white-space:nowrap}
+.tz-inj-k{font-family:var(--font-mono);font-size:9.5px;color:var(--ink-3);white-space:nowrap;font-weight:400}
+.tz-inj-page{color:var(--ink-3)}
+.tz-inj-hid{color:var(--ink);text-decoration:underline dashed var(--ink-3);text-underline-offset:3px;text-decoration-thickness:1px}
+.tz-inj-hid .tz-inj-k{display:inline-block;text-decoration:none}
+.tz-inj-row{min-width:0;overflow-wrap:anywhere}
+.tz-inj-row code{font-size:10px;padding:0 3px}
+.tz-inj-row .tz-inj-tool{display:inline-block;margin:1px 0;line-height:1.35}
+.tz-inj-tool{border:1px solid var(--line);border-radius:3px;background:var(--surface-2);color:var(--ink)}
+.tz-inj-tool.off{color:var(--ink-3);background:none;border-style:dashed;text-decoration:line-through}
+.tz-inj-bad{color:var(--c-oom);font-weight:600}
+.tz-inj-bad code{color:inherit;background:var(--c-oom-soft)}
+.tz-inj-compact{font-size:10.5px;line-height:1.28}
+/* eval-ci */
+.tz-ci-zero{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
+.tz-ci-obs{stroke:var(--ink-3);stroke-width:1.1}
+.tz-ci .seg-ctl button{font-size:11px;padding:5px 2px}
+.tz-ci-axis{stroke:var(--line);stroke-width:1}
+.tz-ci-w{stroke:var(--ink-3);stroke-width:1.2}
+.tz-ci-dot{fill:var(--ink-3)}
+.tz-ci-row.on .tz-ci-w{stroke:var(--ink);stroke-width:2.2}
+.tz-ci-row.on .tz-ci-dot{fill:var(--ink)}
+/* pass-k */
+.tz-pk-hat{stroke-dasharray:5 3}

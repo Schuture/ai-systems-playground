@@ -1,0 +1,109 @@
+/* eval-capstone: a forest plot, one row per category (the plan on the left, the difference with its 95% interval in the middle,
+   the verdict on the right), a total row on top, the true difference as a hollow diamond. Colours (R5.6): grayscale; red for a
+   category that got worse (the loss caught) and for a guardrail alarm, and for the word “wrong”; green only for the challenge's goal. */
+.ecap-stage .stage-head{align-items:center}
+.ecap-graph{padding:12px 14px 14px;display:grid;gap:10px;min-width:0}
+.ecap-phone:empty{display:none}
+@media (min-width:761px){.ecap-phone{display:none}}
+.ecap-leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-2);line-height:1.4;margin:0}
+.ecap-leg span{display:inline-flex;align-items:center;gap:6px}
+.ecap-sw{display:inline-block;position:relative;width:22px;height:10px;flex:none}
+.ecap-sw.pt::before{content:"";position:absolute;left:0;right:0;top:4px;height:2px;background:var(--ink-2)}
+.ecap-sw.pt::after{content:"";position:absolute;left:7px;top:1px;width:8px;height:8px;border-radius:50%;background:var(--ink)}
+.ecap-sw.red::before{content:"";position:absolute;left:0;right:0;top:3px;height:4px;border-radius:2px;background:var(--c-oom)}
+.ecap-sw.mg{width:0;height:14px;border-left:2px dashed var(--ink-3);margin:0 8px}
+.ecap-sw.tru{width:9px;height:9px;transform:rotate(45deg);border:1.5px solid var(--ink);background:var(--surface);margin:0 4px}
+.ecap-wr,.ecap-vd em{font-style:normal;color:var(--c-oom);font-weight:650}
+
+/* ---------- the forest plot ---------- */
+.ecap-fp{display:grid;gap:0;min-width:0}
+.ecap-row{display:grid;grid-template-columns:minmax(112px,25%) minmax(0,1fr) minmax(84px,17%);align-items:center;column-gap:10px;padding:7px 0;border-top:1px solid var(--line);min-width:0}
+.ecap-row:first-child{border-top:0}
+.ecap-row.tot{padding-bottom:9px;border-bottom:1px solid var(--line-2)}
+.ecap-row.tot+.ecap-row{border-top:0}
+.ecap-rn{min-width:0;display:grid;gap:1px;line-height:1.3}
+.ecap-rn b{font-size:13px;font-weight:650;color:var(--ink)}
+.ecap-rn span{font-size:11.5px;color:var(--ink-2)}
+.ecap-tr{position:relative;height:26px;min-width:0}
+.ecap-tr>i{position:absolute;display:block}
+.ecap-zero{top:-7px;bottom:-7px;width:0;border-left:1.5px solid var(--ink-3);transform:translateX(-.75px)}
+.ecap-mg{top:-7px;bottom:-7px;width:0;border-left:1.5px dashed var(--ink-3);transform:translateX(-.75px)}
+.ecap-bar{top:11px;height:4px;border-radius:2px;background:var(--ink-2)}
+.ecap-bar.red{background:var(--c-oom)}
+.ecap-pt{top:8px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 2px var(--surface)}
+.ecap-pt.red{background:var(--c-oom)}
+.ecap-tru{top:6px;width:14px;height:14px;margin-left:-7px;transform:rotate(45deg);border:1.5px solid var(--ink);background:transparent;box-sizing:border-box;z-index:1}
+.ecap-cut{top:8px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent}
+.ecap-cut.l{left:-2px;border-right:7px solid var(--ink-2)}
+.ecap-cut.r{right:-2px;border-left:7px solid var(--ink-2)}
+.ecap-row.wrong .ecap-rn b{color:var(--c-oom)}
+.ecap-vd{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.3;min-width:0;display:grid}
+.ecap-vd.bad{color:var(--c-oom)}
+.ecap-vd small{font-weight:400;font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.ecap-row.ecap-axis{border-top:0;padding:2px 0 0}
+.ecap-axis .ecap-tr{height:16px}
+.ecap-axis .ecap-tr span{position:absolute;top:0;transform:translateX(-50%);font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ecap-axis .ecap-tr span:first-child{transform:none}
+.ecap-axis .ecap-tr span:last-child{transform:translateX(-100%)}
+.ecap-axl{font-size:11.5px;color:var(--ink-2);text-align:center;padding-left:calc(25% + 10px);padding-right:calc(17% + 10px);line-height:1.35}
+
+/* the verdict card says a short phrase (“No verdict yet”); on a phone it may take two lines rather than leave its card */
+.ecap-metrics .metric .v{white-space:normal;line-height:1.2}
+
+/* ---------- rail ---------- */
+.ecap-lv .levers{margin-top:6px}
+.ecap-vl,.ecap-pick{margin:4px 0 8px;padding-left:18px;display:grid;gap:2px}
+.ecap-pick{font-size:13px}
+.ecap-mt{margin-top:10px}
+.ecap-goal{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
+.ecap-goal.ecap-over b{color:var(--c-oom)}
+.ecap-ch-res .cmp{margin-top:10px}
+.ecap-chg{display:grid;gap:0;margin:8px 0 4px;border-top:1px solid var(--line)}
+.ecap-chg>.ecap-cg{border-bottom:1px solid var(--line);padding:4px 0}
+.ecap-cg{display:grid;gap:2px;min-width:0}
+.ecap-al{list-style:none;padding:0;margin:4px 0 0;display:grid;gap:0;border-top:1px solid var(--line)}
+.ecap-al li{display:grid;grid-template-columns:minmax(110px,32%) minmax(0,1fr);gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px;line-height:1.4}
+.ecap-al li span{color:var(--ink-2)}
+
+/* ---------- settings ---------- */
+#ecap-controls .ecap-cg{border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
+.ecap-grp{border-top:1px solid var(--line-2);padding-top:8px;margin-top:8px}
+.ecap-gh{font-size:11.5px;font-weight:650;color:var(--ink-2);margin-bottom:4px}
+.ecap-asm{margin:0;padding-left:16px;display:grid;gap:3px;font-size:12px;line-height:1.4;color:var(--ink-2)}
+.ecap-asm b{color:var(--ink);font-weight:600}
+.ecap-prod{padding-left:18px;display:grid;gap:6px;min-width:0}
+.ecap-prod code,.ecap-prod a{overflow-wrap:anywhere}
+
+/* ---------- Show the math ---------- */
+.ecap-mb{padding:8px 0 10px}
+.ecap-mb+.ecap-mb{border-top:1px solid var(--line)}
+.ecap-mb>p{margin:0 0 6px}
+.ecap-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3;max-width:100%}
+.ecap-eq-l{text-align:right}
+#ecap-mathbody{container-type:inline-size}
+@container (max-width:560px){.ecap-eqs-nm{grid-template-columns:max-content max-content}.ecap-eqs-nm>.ecap-eq-l{grid-column:1/-1;text-align:left}.ecap-eqs-nm>.ecap-eq-l:empty{display:none}}
+@container (max-width:420px){.ecap-eqs{font-size:13px}}
+
+/* ---------- mini result bar ---------- */
+.ecap-dk{position:relative;height:10px;background:var(--surface-2);border-radius:2px;min-width:60px}
+.ecap-dk i{position:absolute;display:block}
+.ecap-dk i.z{top:-3px;bottom:-3px;width:0;border-left:1.5px solid var(--ink-3)}
+.ecap-dk i.b{top:3px;height:4px;border-radius:2px;background:var(--ink-2)}
+.ecap-dk i.b.red{background:var(--c-oom)}
+
+@media (max-width:760px){
+  .ecap-graph{padding:10px 10px 12px}
+  .ecap-row{grid-template-columns:minmax(96px,30%) minmax(0,1fr) minmax(74px,24%);column-gap:7px}
+  .ecap-axl{padding-left:0;padding-right:0}
+  /* on a phone the track is narrow: only the ticks at −10, 0, +10 (online: every 2 points) keep their labels */
+  .ecap-axis .ecap-tr span.mn{display:none}
+  .ecap-al li{grid-template-columns:minmax(0,1fr)}
+}
+
+/* part 4: the line above the three ways to grade writing (R2.5), styled like a control's label */
+.ecap-lvh{margin:12px 0 6px;font-size:13px;font-weight:620;color:var(--ink-2);line-height:1.4}
+/* the full verdict names (R6.4) may take two lines rather than squeeze the option's title */
+.ecap-lv .lever .lv-r{white-space:normal;max-width:8.5em;text-align:right;line-height:1.3}
+/* part 5: the PPI formula on two lines, its name on the first, so it fits the card */
+.ecap-fx2{line-height:1.9}
+.ecap-fx2 math+br+math{margin-left:1.2em}

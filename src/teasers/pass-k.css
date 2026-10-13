@@ -1,0 +1,12 @@
+/* pass-k teaser: grayscale only (R5.6): filled squares are passing tries, empty squares failing ones; two bars for pass@1 and pass@4 */
+.tz-pak-vis{display:block;max-width:100%;height:auto}
+.tz-pak-vis text{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.tz-pak-vis text.tz-pak-bl{fill:var(--ink-2);font-weight:650}
+.tz-pak-vis text.tz-pak-bv{fill:var(--ink);font-weight:650}
+.tz-pak-sq{fill:var(--surface);stroke:var(--ink-3);stroke-width:1}
+.tz-pak-sq.on{fill:var(--ink-2);stroke:var(--ink-2)}
+.tz-pak-trk{fill:var(--surface-2);stroke:var(--line);stroke-width:1}
+.tz-pak-b1{fill:var(--ink-3)}
+.tz-pak-b4{fill:var(--ink)}
+.tz-pak-sw{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px;flex:none;box-sizing:border-box;border:1px solid var(--ink-3);border-radius:2px;background:var(--surface)}
+.tz-pak-sw.on{background:var(--ink-2);border-color:var(--ink-2)}

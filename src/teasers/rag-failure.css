@@ -1,0 +1,7 @@
+/* rag-failure home tile */
+.tz-rgf-q.ok{fill:var(--c-ok);opacity:.7}
+.tz-rgf-q.me{fill:var(--c-oom)}
+.tz-rgf-q.other{fill:var(--ink-3);opacity:.6}
+.sw.tz-rgf-swok{background:var(--c-ok);opacity:.7}
+.sw.tz-rgf-swme{background:var(--c-oom)}
+.sw.tz-rgf-swot{background:var(--ink-3);opacity:.6}

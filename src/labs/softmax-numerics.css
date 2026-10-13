@@ -1,0 +1,212 @@
+/* softmax-numerics: the number line with the format's safe window of exp, the table of e^z and the two columns of chances, the three
+   loss bars, the online softmax's four blocks. Colours (R5.6): grayscale; red only for an overflow, an all-zero underflow and NaN or Inf
+   (failure); green only for the challenge's goal. */
+.sm-app [hidden]{display:none!important}
+.sm-stage .stage-head{align-items:center}
+.sm-graph{padding:12px 14px 14px;display:grid;gap:14px;min-width:0}
+.sm-nl,.sm-tab,.sm-ce,.sm-on{display:grid;gap:6px;min-width:0}
+/* H5 (the owner, 2026-10-09: information runs together without a divider): the table or the loss bars start a block of their own
+   under a hairline below the strip of scores */
+.sm-nl:not([hidden])~.sm-tab:not([hidden]),.sm-nl:not([hidden])~.sm-ce:not([hidden]){border-top:1px solid var(--line);padding-top:10px}
+.sm-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.sm-sum{margin-top:2px;font-size:11.5px;line-height:1.45;color:var(--ink-2);overflow-wrap:anywhere}
+
+/* ---------- the number line: the safe window, the logits as given and minus the max ---------- */
+.sm-line{position:relative;margin-left:96px;padding:16px 0 18px}
+.sm-band{position:absolute;top:15px;bottom:17px;background:var(--surface-2);border-left:1.5px dashed var(--ink-3);border-right:1.5px dashed var(--ink-3);box-sizing:border-box;cursor:help}
+.sm-zero{position:absolute;top:15px;bottom:17px;width:0;border-left:1px dotted var(--ink-3);pointer-events:none}
+.sm-lrow{position:relative;height:30px}
+.sm-lrow[data-r="raw"]{height:36px}
+.sm-rl{position:absolute;right:calc(100% + 10px);bottom:4px;width:88px;text-align:right;font-size:11.5px;line-height:1.15;color:var(--ink-2)}
+.sm-dot{position:absolute;bottom:8px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--ink-2);border:1.5px solid var(--surface);box-sizing:content-box;cursor:help;z-index:1;transition:left .2s ease-out}
+.sm-dot.sm-hol{background:var(--surface);border-color:var(--ink-2)}
+.sm-dot.sm-bad{background:var(--c-oom);border-color:var(--surface)}
+.sm-dot.sm-off{border-radius:2px}
+.sm-mx{position:absolute;top:1px;transform:translateX(-50%);font-style:normal;font-family:var(--font-mono);font-size:10.5px;line-height:1.3;color:var(--ink);background:var(--surface);padding:0 3px;border-radius:2px;white-space:nowrap;z-index:2;pointer-events:none;transition:left .2s ease-out}
+.sm-mx.sm-l{transform:translateX(calc(-100% + 8px))}
+.sm-mx.sm-r{transform:translateX(-8px)}
+.sm-ticks{position:absolute;inset:0;pointer-events:none}
+.sm-ticks span{position:absolute;transform:translateX(-50%);font-family:var(--font-mono);font-size:10.5px;line-height:1.2;color:var(--ink-3);white-space:nowrap}
+.sm-ticks .sm-w{top:0;color:var(--ink-2)}
+.sm-ticks .sm-z,.sm-ticks .sm-e0,.sm-ticks .sm-e1{bottom:0}
+.sm-ticks .sm-e0{left:0!important;transform:none}
+.sm-ticks .sm-e1{left:auto;right:0;transform:none}
+
+/* ---------- the table: one row per token ---------- */
+.sm-tr{display:grid;grid-template-columns:84px 104px minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center;min-width:0}
+.sm-th{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3)}
+.sm-th span:nth-child(2){text-align:right}
+.sm-tk{font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sm-ez{font-size:11.5px;color:var(--ink-2);text-align:right;white-space:nowrap}
+.sm-ez.sm-bad{color:var(--c-oom);font-weight:700}
+.sm-c{position:relative;display:flex;align-items:center;height:20px;background:var(--surface-2);border-radius:2px;cursor:help;min-width:0;overflow:hidden}
+.sm-c i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px;transition:width .25s ease-out}
+.sm-c b{position:relative;margin-left:4px;padding:0 4px;font-size:11px;font-weight:600;line-height:16px;color:var(--ink);background:var(--surface);border-radius:2px;white-space:nowrap}
+.sm-c.sm-nan{background:repeating-linear-gradient(135deg,var(--c-oom-soft) 0 3px,transparent 3px 6px),var(--c-oom-soft);box-shadow:inset 0 0 0 1.5px var(--c-oom)}
+.sm-c.sm-nan i{display:none}
+.sm-c.sm-nan b{color:var(--c-oom);font-weight:700}
+
+/* ---------- the three loss bars ---------- */
+.sm-lr{display:grid;grid-template-columns:200px minmax(0,1fr);gap:8px;align-items:center;min-width:0}
+.sm-ll{font-size:12.5px;color:var(--ink-2);line-height:1.3}
+.sm-lb{position:relative;display:flex;align-items:center;height:24px;background:var(--surface-2);border-radius:2px;cursor:help;min-width:0}
+.sm-lb i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px;transition:width .25s ease-out}
+.sm-lb b{position:relative;z-index:1;margin-left:4px;padding:0 4px;font-size:11.5px;font-weight:600;line-height:17px;color:var(--ink);background:var(--surface);border-radius:2px;white-space:nowrap}
+.sm-lb .sm-lx{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px solid var(--ink);z-index:2;margin-left:-1px}
+.sm-lb.sm-nan{background:repeating-linear-gradient(135deg,var(--c-oom-soft) 0 3px,transparent 3px 6px),var(--c-oom-soft);box-shadow:inset 0 0 0 1.5px var(--c-oom)}
+.sm-lb.sm-nan i{display:none}
+.sm-lb.sm-nan b{color:var(--c-oom);font-weight:700}
+
+/* ---------- online softmax: eight cells in four blocks, the running max and sum, the two results ---------- */
+.sm-cells{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));column-gap:3px;min-width:0}
+.sm-oc{display:grid;justify-items:center;gap:1px;padding:4px 2px;border:1.5px dashed var(--line-2);border-radius:3px;cursor:help;min-width:0}
+.sm-oc.sm-bs:not(:first-child){margin-left:6px}
+.sm-oc em{font-style:normal;font-size:10.5px;color:var(--ink-3);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sm-oc b{font-size:12px;color:var(--ink-3)}
+.sm-oc.sm-rd{border-style:solid;border-color:var(--ink-3);background:var(--surface-2)}
+.sm-oc.sm-rd em{color:var(--ink-2)}
+.sm-oc.sm-rd b{color:var(--ink)}
+.sm-oc.sm-cur{border:2px solid var(--ink)}
+.sm-oc s{display:block;height:12px;font-size:10px;line-height:12px;text-decoration:none;font-family:var(--font-mono);font-weight:700;color:var(--ink)}
+.sm-oc.sm-omx{background:var(--surface);box-shadow:inset 0 -3px 0 var(--ink)}
+/* the running sum s: one piece per score read, drawn to one scale (1.5 = the full bar) */
+.sm-sumbox{display:grid;gap:5px;margin-top:10px;padding:8px 10px;border:1px solid var(--line-2);border-radius:4px}
+.sm-scap{color:var(--ink-2);line-height:1.4}
+.sm-srow{display:grid;grid-template-columns:118px minmax(0,1fr) 74px;gap:8px;align-items:center;min-width:0}
+.sm-sl{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.sm-srow>b{font-size:12px;color:var(--ink);text-align:right;white-space:nowrap}
+.sm-srow-old>b{color:var(--ink-3);font-weight:500}
+.sm-sbar{display:flex;height:22px;background:var(--surface-2);border-radius:2px;overflow:hidden;min-width:0}
+.sm-pc{display:flex;align-items:center;justify-content:center;flex:none;height:100%;box-sizing:border-box;background:var(--surface);border:1.5px solid var(--ink-3);border-left-width:0;cursor:help;overflow:hidden;transition:width .25s ease-out}
+.sm-pc:first-child{border-left-width:1.5px}
+.sm-pc.sm-pn{background:var(--ink-2);border-color:var(--ink-2)}
+.sm-pc em{font-style:normal;font-size:10.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 3px}
+.sm-pc.sm-pn em{color:var(--surface)}
+.sm-sold{background:none;box-shadow:inset 0 0 0 1.5px var(--line-2)}
+.sm-sold .sm-pc{background:none;border:1.5px dashed var(--ink-3)}
+.sm-sold .sm-pc em{color:var(--ink-2)}
+.sm-sres{margin-left:126px;color:var(--ink-2);line-height:1.35}
+.sm-fx{margin:6px 0;overflow-x:auto;overflow-y:hidden}
+.sm-fx math{font-size:1.08em}
+.sm-tr.sm-or{grid-template-columns:84px minmax(0,1fr) minmax(0,1fr)}
+.sm-onwait{margin:2px 0 0}
+.sm-onbtns{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sm-onbtns .btn{min-width:44px}
+.sm-onpos{font-size:12px;color:var(--ink-2)}
+.sm-onctl .lbl{display:block;margin-bottom:6px}
+
+/* ---------- legend swatches ---------- */
+.sw.sm-sw-band{background:var(--surface-2);border:1.5px dashed var(--ink-3)}
+.sw.sm-sw-dot{border-radius:50%;background:var(--ink-2);border-color:transparent}
+.sw.sm-sw-bad{border-radius:50%;background:var(--c-oom);border-color:transparent}
+.sw.sm-sw-hol{border-radius:50%;background:var(--surface);border:1.5px solid var(--ink-2)}
+.sw.sm-sw-bar{background:var(--ink-3);border-color:transparent}
+.sw.sm-sw-nan,.sw.sm-sw-inf{background:repeating-linear-gradient(135deg,var(--c-oom-soft) 0 2px,transparent 2px 4px),var(--c-oom-soft);border:1.5px solid var(--c-oom)}
+.sw.sm-sw-ex{width:0;height:13px;border:0;border-left:2px solid var(--ink);border-radius:0;margin:0 7px 0 3px}
+.sw.sm-sw-cur{background:var(--surface-2);border:2px solid var(--ink)}
+.sw.sm-sw-omx{background:var(--surface);border:1.5px solid var(--ink-3);box-shadow:inset 0 -3px 0 var(--ink)}
+.sw.sm-sw-pn{background:var(--ink-2);border-color:transparent}
+.sw.sm-sw-old{background:none;border:1.5px dashed var(--ink-3)}
+#sm-legend>span{cursor:help}
+
+/* ---------- metric cards ---------- */
+.sm-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.sm-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:760px){.sm-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.sm-metrics .v{overflow-wrap:anywhere;white-space:normal}
+.sm-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
+
+/* ---------- rail ---------- */
+.sm-why{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.pbar .sm-why{margin-top:6px}
+.sm-phone{display:none}
+.sm-remlist{padding-left:18px}
+.sm-remlist li{margin-bottom:8px}
+.sm-rem{font-size:12.5px;white-space:nowrap}
+.sm-rem[aria-pressed="true"]{font-weight:650;text-decoration:none}
+.sm-mt{margin-top:12px}
+.sm-ch-res{scroll-margin-top:120px}
+.sm-lv{margin-top:6px}
+.sm-lv .lever .lv-r:empty{display:none}
+.sm-app .goal.sm-goal{display:grid;grid-template-columns:minmax(0,1fr);gap:1px}
+.sm-app .goal.sm-goal span:last-child{white-space:normal}
+.goal.sm-over b{color:var(--c-oom)}
+.sm-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+.sm-app .inline-ctl .seg-ctl button{white-space:nowrap}
+#sm-controls .seg-ctl{flex-wrap:wrap}
+#sm-controls .seg-ctl button{white-space:nowrap}
+.sm-nw{white-space:nowrap}
+
+/* ---------- settings ---------- */
+.sm-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.sm-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.sm-grp .ctl>.lbl{display:block}
+.sm-app .ctl output{white-space:nowrap}
+#sm-zlist{font-size:12.5px;line-height:1.45}
+.sm-app sup{font-size:.72em;line-height:0}
+
+/* ---------- the challenge chart (A1, A19): labels on one line; a long bar carries its label inside its end; NaN is red hatched ---------- */
+#sm-ch-res .cmp-val{white-space:nowrap}
+#sm-ch-res .cmp-row.sm-cmp-in .cmp-val{transform:translate(calc(-100% - 12px),-50%)}
+#sm-ch-res .cmp-row.sm-cmp-nan .cmp-track i,#sm-ch-res .cmp-leg i.sm-leg-nan{background:repeating-linear-gradient(135deg,var(--c-oom-soft) 0 3px,transparent 3px 6px),var(--c-oom-soft);box-shadow:inset 0 0 0 1.5px var(--c-oom)}
+#sm-ch-res .cmp-row.sm-cmp-nan .cmp-val{color:var(--c-oom);font-weight:700}
+
+/* ---------- connect and the dock ---------- */
+.sm-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.sm-prod li{margin-bottom:6px}
+.sm-dk{position:relative;height:12px;min-width:0;width:100%;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.sm-dk i{position:absolute;top:0;bottom:0;background:var(--ink-3);border-right:1px solid var(--surface);box-sizing:border-box}
+.sm-dk i:nth-child(even){background:var(--ink-2)}
+.sm-dk.sm-nan{background:repeating-linear-gradient(135deg,var(--c-oom-soft) 0 3px,transparent 3px 6px),var(--c-oom-soft);box-shadow:inset 0 0 0 1.5px var(--c-oom)}
+
+@container (max-width:520px){
+  .sm-tr{grid-template-columns:62px 84px minmax(0,1fr) minmax(0,1fr);gap:6px}
+  .sm-tr.sm-or{grid-template-columns:62px minmax(0,1fr) minmax(0,1fr)}
+  .sm-tk{font-size:12px}
+  .sm-ez{font-size:10.5px}
+  .sm-line{margin-left:74px}
+  .sm-rl{width:68px;right:calc(100% + 6px);font-size:11px}
+  .sm-lr{grid-template-columns:minmax(0,1fr);gap:3px}
+  .sm-oc.sm-bs:not(:first-child){margin-left:4px}
+  .sm-oc{padding:4px 0}
+  .sm-cells{column-gap:2px}
+  .sm-oc b{font-size:11px}
+  .sm-srow{grid-template-columns:76px minmax(0,1fr) 62px;gap:6px}
+  .sm-sl{font-size:10.5px}
+  .sm-srow>b{font-size:11px}
+  .sm-sres{margin-left:0}
+  .sm-sumbox{padding:8px}
+}
+@media (max-width:760px){
+  .sm-phone:not(:empty){display:block}
+  .sm-phone .inline-ctl{margin:0}
+}
+@media (prefers-reduced-motion:reduce){.sm-dot,.sm-mx,.sm-c i,.sm-lb i,.sm-pc{transition:none}}
+
+/* R5.9: the bars' keys sit right under (or, for the running sum, right above) the bars they label; the top legend keys the number line */
+.sm-key{display:flex;flex-wrap:wrap;gap:4px 14px;font-family:var(--font-mono);font-size:11px;color:var(--ink-2);margin:6px 0 2px;min-width:0}
+.sm-key>span{cursor:help;display:inline-flex;align-items:center}
+.sm-sumbox .sm-key{margin:0}
+/* Show the math as short blocks (H2, 2026-10-09): a lead line, then the formula's rows in a grid; blocks are split by a hairline */
+.sm-mb{padding:10px 0}
+.sm-mb:first-child{padding-top:2px}
+.sm-mb+.sm-mb{border-top:1px solid var(--line)}
+.mathbody .sm-ml{margin:0 0 6px;font-family:var(--font-ui);font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+.sm-mg{display:grid;grid-template-columns:repeat(var(--n),auto);justify-content:start;justify-items:center;align-items:center;column-gap:.35em;row-gap:.45em;overflow-x:auto;padding-block:.3em;margin-bottom:4px;font-size:13.5px}
+.sm-mg .sm-mn{justify-self:end}
+.sm-mg .sm-mw{justify-self:start}
+/* a cell never shrinks under its text: a formula with Chinese words in it would otherwise be squeezed and run into the next
+   column (H7); a row wider than the panel scrolls instead */
+.sm-mg>span{white-space:nowrap;min-width:max-content}
+.sm-mg .sm-mh{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sans Math',var(--font-ui);font-size:1.08em;white-space:nowrap}
+/* the owner's review of 2026-10-09 (R6.37: a row the reader has to scroll sideways is not read): the reader's numbers (a cell with no
+   formula in it) wrap at their spaces, the next line indented; in the online blocks each block's label goes above its rows when the
+   stage is narrow (a phone, or the 900 px layout) */
+.sm-mg>.sm-mh:not(.sm-mn):not(:has(math)){white-space:normal;min-width:0;padding-left:1.2em;text-indent:-1.2em}
+.sm-mg.sm-nm{align-items:baseline}
+.sm-nm>.sm-mh:not(.sm-mn){justify-self:start}
+@container (max-width:540px){
+  .sm-mg.sm-nm{grid-template-columns:repeat(var(--n1),auto)}
+  .sm-nm>.sm-mn:not(:empty){grid-column:1/-1;justify-self:start}
+  .sm-nm>.sm-mn:empty{display:none}
+}

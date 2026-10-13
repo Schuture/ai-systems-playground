@@ -1,0 +1,247 @@
+/* chunked-prefill: the users' and the prompt's timeline (the prefill-decode lab's picture, two rows on one time axis), the two limits of a
+   step, the replay controls, and the free-chunk deep dive.
+   Colours: tokens only (R5.6). Weights blue, KV cache amber (the memory bars); ticks, chunks, arithmetic, the replay and the deep dive in
+   grayscale; green and red only for the challenge's goal. */
+.ck-stage .stage-head{align-items:center}
+.ck-graph{padding:12px 14px 14px;display:grid;gap:10px}
+.ck-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+/* the part's focus lights up on the chart (R3.14) */
+.ck-graph[data-focus="tl"] .ck-tl,.ck-graph[data-focus="lim"] .ck-lim,.ck-graph[data-focus="free"] .ck-ph[data-ph="s"]{outline:2px dashed var(--ink-3);outline-offset:3px;border-radius:4px}
+
+/* ---------- the timeline: the users' row, then the prompt's row ---------- */
+.ck-tl{display:grid;gap:2px;min-width:0}
+.ck-lh{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:0 10px;font-family:var(--font-mono);font-size:11.5px;line-height:1.35;color:var(--ink-3);margin-top:4px}
+.ck-lh b{color:var(--ink);font-weight:600}
+.ck-brk{position:relative;height:19px}
+.ck-lg,.ck-wt{position:absolute;bottom:1px;height:7px;border:1.5px solid var(--ink);border-bottom:0;border-radius:2px 2px 0 0;min-width:3px}
+.ck-lg em,.ck-wt em{position:absolute;bottom:8px;font-style:normal;font-family:var(--font-mono);font-size:11px;line-height:1.1;white-space:nowrap;color:var(--ink);font-weight:600}
+.ck-lg.ck-bad{border-color:var(--c-oom)}.ck-lg.ck-bad em{color:var(--c-oom)}
+.ck-lg.ck-good{border-color:var(--c-ok)}.ck-lg.ck-good em{color:var(--c-ok)}
+.ck-wt{border-color:var(--ink-2)}.ck-wt em{color:var(--ink-2)}
+.ck-track{position:relative;height:30px;border-bottom:1px solid var(--line);cursor:help;outline-offset:3px}
+.ck-tp{height:24px}
+.ck-mk{position:absolute;inset:0}
+.ck-tick{position:absolute;top:3px;bottom:3px;width:0;border-left:1.5px solid var(--ink);margin-left:-.75px}
+.ck-ptick{position:absolute;top:7px;bottom:7px;width:0;border-left:1.5px solid var(--ink);margin-left:-.75px}
+.ck-seg{position:absolute;top:4px;bottom:4px;background:var(--ink-3);min-width:1px}
+.ck-seg.odd{background:var(--ink-2)}
+.ck-seg[data-tipx]{cursor:help}
+.ck-first{position:absolute;top:-5px;bottom:-5px;width:0;border-left:3px solid var(--ink);margin-left:-1.5px}
+.ck-pin{position:absolute;top:4px;bottom:4px;display:flex;align-items:center;padding-left:6px;font-family:var(--font-mono);font-size:10.5px;color:var(--bg);white-space:nowrap;overflow:hidden;pointer-events:none}
+.ck-wfill,.ck-lfill{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--ink) 10%,transparent);pointer-events:none}
+.ck-limleg{margin-top:0}
+.ck-head{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px solid var(--ink-2);margin-left:-1px;z-index:2;pointer-events:none}
+.ck-tu .ck-head::before{content:'';position:absolute;top:-6px;left:-6px;border:5px solid transparent;border-top:7px solid var(--ink-2)}
+.ck-arr{position:relative;height:15px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-2);margin-top:2px}
+.ck-arr span{position:absolute;top:0;white-space:nowrap;line-height:15px}
+.ck-arr-a{transform:translateX(-4px)}
+.ck-arr-f{transform:translateX(calc(-100% + 4px));font-weight:600;color:var(--ink)}
+.ck-axis{position:relative;height:15px;font-size:10.5px;color:var(--ink-3);margin-top:1px}
+.ck-axis span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+
+/* ---------- replay ---------- */
+.ck-play{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
+.ck-play input[type=range]{flex:1 1 120px;min-width:90px}
+.ck-speed{display:flex;align-items:center;gap:6px;cursor:help}
+.ck-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3)}
+.ck-speed .seg-ctl button{padding:4px 8px;font-size:12px}
+.ck-pbtn{min-width:98px}
+.ck-clock{margin:-2px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.4;min-height:1.4em}
+.ck-prow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* ---------- the two limits of a step ---------- */
+.ck-lim{display:grid;gap:10px;min-width:0}
+.ck-ph{border:1px solid var(--line-2);border-radius:5px;padding:8px 10px 10px;background:var(--surface);min-width:0}
+.ck-ph-h{display:flex;align-items:baseline;gap:2px 10px;flex-wrap:wrap;font-size:13px;margin-bottom:6px}
+.ck-ph-h b{font-weight:700}
+.ck-ph-d{color:var(--ink-3);font-size:12px;flex:1 1 auto;min-width:0}
+.ck-ph-t{font-size:13px;font-weight:650;color:var(--ink);white-space:nowrap}
+.ck-rows{display:grid;gap:6px;position:relative}
+.ck-row{display:grid;grid-template-columns:78px minmax(0,1fr) 72px;align-items:center;gap:8px;cursor:help;border-radius:3px;outline-offset:2px}
+html[lang^="zh"] .ck-row{grid-template-columns:64px minmax(0,1fr) 72px}
+.ck-rl{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.ck-row.ck-set .ck-rl{color:var(--ink);font-weight:650}
+.ck-bar{position:relative;height:20px;background:var(--surface-2);border-radius:2px}
+.ck-bar i{position:absolute;top:0;bottom:0;left:0;min-width:2px;transition:width .25s ease-out,left .25s ease-out}
+.ck-bu{background:var(--ink-2);border-radius:2px 0 0 2px}
+.ck-bch{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--ink-3) 2px 5px)}
+.ck-bw{background:var(--c-weights);border-radius:2px 0 0 2px}
+.ck-bk{background:var(--c-kv)}
+.ck-row.ck-fade .ck-bar i{opacity:.28}
+.ck-row.ck-fade .ck-rv{color:var(--ink-3)}
+.ck-rv{font-size:12px;color:var(--ink);white-space:nowrap;text-align:right}
+.ck-settag{position:absolute;right:4px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--font-mono);font-size:10.5px;line-height:1.5;padding:0 6px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--ink);white-space:nowrap}
+.ck-goal{position:absolute;top:-5px;bottom:-5px;width:0;border-left:1.5px dashed var(--ink);z-index:1}
+
+/* ---------- deep dive: the free chunk ---------- */
+.ck-deep{display:grid;gap:6px;min-width:0}
+.ck-dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px 12px;flex-wrap:wrap}
+.ck-dhead .ck-cap{flex:1 1 260px;min-width:0}
+.ck-fsvg{width:100%;height:auto;display:block;overflow:visible}
+.ck-fg{stroke:var(--line-2);stroke-width:1}
+.ck-ft{font-family:var(--font-mono);font-size:11px;fill:var(--ink-3)}
+.ck-fax{fill:var(--ink-2)}
+.ck-flab{fill:var(--ink-2);font-style:italic}
+.ck-fzone{fill:color-mix(in srgb,var(--ink) 7%,transparent)}
+.ck-fmem{fill:none;stroke:var(--ink-3);stroke-width:1.2}
+.ck-farf{fill:none;stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:3 3}
+.ck-ffirst{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linejoin:round}
+.ck-flast{fill:none;stroke:var(--ink-2);stroke-width:2.6;stroke-dasharray:7 4;stroke-linejoin:round}
+.ck-fpt{cursor:help}
+.ck-fpt circle,.ck-fpt rect{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
+.ck-fpt.on circle,.ck-fpt.on rect{stroke:var(--ink);stroke-width:1;fill:var(--surface)}
+.ck-fleg i{display:inline-block;flex:none;margin-right:5px}
+.ck-sw-ff{width:16px;height:0;border-top:2.6px solid var(--ink)}
+.ck-sw-fl{width:16px;height:0;border-top:2.6px dashed var(--ink-2)}
+.ck-sw-fa{width:16px;height:0;border-top:1.5px dashed var(--ink-2)}
+.ck-sw-fm{width:16px;height:0;border-top:1.2px solid var(--ink-3)}
+.ck-sw-fz{width:12px;height:10px;background:color-mix(in srgb,var(--ink) 12%,transparent)}
+.ck-deepbtn{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 4px}
+.ck-deepbtn .lbl{flex-basis:100%;font-size:12px;font-weight:600;color:var(--ink-3)}
+.ck-deepbtn .btn[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.ck-seen{color:var(--c-ok)}
+
+/* ---------- legend swatches ---------- */
+.sw.ck-sw-tick{width:0;height:11px;border:0;border-left:1.5px solid var(--ink);border-radius:0;margin:0 7px 0 3px}
+.sw.ck-sw-brk{width:14px;height:6px;border:1.5px solid var(--ink);border-bottom:0;border-radius:2px 2px 0 0;background:transparent;vertical-align:1px}
+.sw.ck-sw-seg{width:16px;height:9px;border:0;background:linear-gradient(90deg,var(--ink-3) 0 50%,var(--ink-2) 50% 100%)}
+.sw.ck-sw-first{width:0;height:13px;border:0;border-left:3px solid var(--ink);border-radius:0;margin:0 7px 0 3px;vertical-align:-2px}
+.sw.ck-sw-head{width:0;height:13px;border:0;border-left:2px solid var(--ink-2);border-radius:0;margin:0 8px 0 5px;position:relative;vertical-align:-2px}
+.sw.ck-sw-head::before{content:'';position:absolute;top:-3px;left:-5px;border:4px solid transparent;border-top:5px solid var(--ink-2)}
+.sw.ck-sw-ar{background:var(--ink-2);border-color:transparent}
+.sw.ck-sw-arc{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--ink-3) 2px 5px);border-color:transparent}
+.sw.ck-sw-fade{background:var(--ink-2);opacity:.3;border-color:transparent}
+#ck-legend>span{cursor:help}
+
+/* ---------- metric cards: four in a row on wide stages, two by two on narrow ones ---------- */
+.ck-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.ck-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* the numbers' scope, right above the metric cards (an estimate for one GPU, no queue or network) */
+.ck-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
+
+/* ---------- rail ---------- */
+.ck-ch-res{scroll-margin-top:120px}
+.goal.ck-over b{color:var(--c-oom)}
+.progress.ck-over i{background:var(--c-oom)}
+.goal.ck-ch-ttft{margin:-4px 0 12px}
+/* the value never breaks inside (“1,511 ms”); the label wraps instead */
+#ck-ch-goal>span:last-child,.goal.ck-ch-ttft>span:last-child{white-space:nowrap;flex:none}
+.ck-ic-play .ck-prow .seg-ctl button{padding:4px 7px}
+
+/* ---------- settings ---------- */
+.ck-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.ck-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.ck-grp .ctl>.lbl{display:block}
+.ck-app .ctl-note.warn{color:var(--ink);font-weight:600}
+.ck-app .seg-ctl button{padding-inline:4px}
+
+/* ---------- connect ---------- */
+.ck-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.ck-prod li{margin-bottom:6px}
+.ck-prod code,.refs code{word-break:break-word}
+
+/* ---------- mini result bar ---------- */
+.ck-dk{position:relative;height:14px;width:100%;min-width:48px;border-bottom:1px solid var(--line)}
+.ck-dk i{position:absolute}
+.ck-dk-seg{top:8px;bottom:1px;background:var(--ink-3)}
+.ck-dk-seg.odd{background:var(--ink-2)}
+.ck-dk-tick{top:1px;height:6px;width:0;border-left:1px solid var(--ink)}
+.ck-dk-first{top:0;bottom:-1px;width:0;border-left:2px solid var(--ink);margin-left:-1px}
+
+.ck-app .ctl output{white-space:nowrap}
+@media (max-width:760px){
+  /* phones: the picture first, its legend right under it, then the numbers (R7.3) */
+  .ck-stage{display:flex;flex-direction:column}
+  .ck-stage>.stage-head{order:1}
+  .ck-stage>.ck-graph{order:2}
+  .ck-stage>.legend-row{order:3}
+  .ck-stage>.ck-scope{order:4}
+  .ck-stage>.metrics{order:5}
+  .ck-stage>details.math{order:6}
+  .ck-graph{padding:10px 10px 12px}
+  /* the first screen shows the users' row: the stage head already says what the chart is, and the usual step's time is in its tooltip */
+  .ck-tl>.ck-cap,#ck-lh-u2{display:none}
+  .ck-row{grid-template-columns:70px minmax(0,1fr) 64px;gap:6px}
+  html[lang^="zh"] .ck-row{grid-template-columns:58px minmax(0,1fr) 64px}
+  .ck-speed-l{display:none}
+}
+@media (prefers-reduced-motion:reduce){.ck-bar i{transition:none}}
+/* ticks too close to draw one by one (a long run on a narrow chart): thinner and lighter, so they read as a band */
+.ck-tick.d,.ck-ptick.d{border-left-width:1px;border-left-color:var(--ink-3);margin-left:-.5px}
+/* the challenge chart: a bar past the scale runs to its edge and carries its value inside */
+.ck-ch-res .cmp-row.ck-off .cmp-val{left:auto!important;right:3px;margin-left:0}
+.ck-ch-res .cmp-val{white-space:nowrap}
+.ck-cmpnote{margin:6px 0 0}
+/* desktop: a card in the rail that grows (a verdict in "Can you use it on a new case?", a result) must not make the browser's scroll
+   anchoring move the page by the new height (the kit pauses anchoring for taps on phones only); the lab reveals results itself */
+#ck-rail{overflow-anchor:none}
+
+/* what one step holds, above the timeline, and the dashed box across both rows (Batch 3 review: one pass, not taking turns) */
+.ck-anat{display:flex;flex-wrap:wrap;align-items:center;gap:4px 7px;margin:6px 0 2px;font-size:12px;line-height:1.35;color:var(--ink-2)}
+.ck-an-h{font-weight:650;color:var(--ink);padding:1px 6px;border:1.5px dashed var(--ink-2);border-radius:4px;white-space:nowrap}
+.ck-an-it{display:inline-flex;align-items:center;gap:5px;cursor:help;white-space:nowrap}
+.ck-an-it em{font-style:normal}
+.ck-an-sq{display:inline-grid;grid-template-columns:repeat(8,4px);grid-auto-rows:4px;gap:1px}
+.ck-an-sq i{background:var(--ink);border-radius:1px}
+.ck-an-ch{display:inline-block;width:40px;height:9px;border-radius:1px;background:var(--ink-3)}
+.ck-an-op{font-weight:700;color:var(--ink-3)}
+.ck-an-pass em{font-weight:600;color:var(--ink)}
+.ck-tl{position:relative}
+.ck-band{position:absolute;border:1.5px dashed var(--ink-2);border-radius:3px;background:color-mix(in srgb,var(--ink) 4%,transparent);pointer-events:none;z-index:1}
+.sw.ck-sw-band{width:13px;height:10px;border:1.5px dashed var(--ink-2);border-radius:2px;background:transparent}
+@media (max-width:760px){
+  .ck-anat{font-size:11px;gap:2px 5px;margin:3px 0 0}
+  .ck-an-h{padding:0 4px}
+  .ck-an-sq{grid-template-columns:repeat(8,3px);grid-auto-rows:3px}
+  .ck-an-ch{width:24px;height:7px}
+}
+
+/* chunks too small (product owner, 29 Sep): the run goes past the right edge. The prompt's bars fade out there, and the first-token
+   label sits at the edge, pointing right */
+.ck-tp.ck-offr .ck-mk{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
+.ck-arr-f.off{transform:translateX(-100%)}
+/* part 5's “why” for the trade-off, opened by the learner (R3.10) */
+.obs details.ck-why{margin:8px 0 0;border-top:1px solid var(--line-2);padding-top:8px}
+.obs details.ck-why summary{cursor:pointer;font-weight:650;list-style:none;display:flex;align-items:center;gap:8px;font-size:13.5px;border-radius:3px}
+.obs details.ck-why summary::-webkit-details-marker{display:none}
+.obs details.ck-why summary::before{content:"+";flex:none;font-family:var(--font-mono);width:18px;height:18px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-size:12px}
+.obs details.ck-why[open] summary::before{content:"−"}
+.obs details.ck-why p{margin:8px 0 0}
+/* eight chunk sizes: each button as wide as its label and never broken into a column (R7.8) */
+.ck-app .seg-ctl[data-key="C"] button{flex:1 1 auto;white-space:nowrap;padding-inline:3px}
+/* H1/H2 (the owner, 2026-10-09): Show the math in short blocks with a hairline between them; in each block the name and the typeset
+   formula, then this run's numbers under the terms they replace, the "=" signs lined up; a table wider than its box is set again by fitMath (below), so nothing scrolls sideways */
+.ck-mb{padding:8px 0 10px}
+.ck-mb+.ck-mb{border-top:1px solid var(--line)}
+.ck-mb .ck-mlead{margin:0 0 4px;font-family:var(--font-ui);font-size:13.5px;line-height:1.5}
+
+.ck-mfx{overflow-x:auto;max-width:100%;padding-block:.3em}
+.ck-mt{border-collapse:collapse}
+.ck-mt th,.ck-mt td{padding:1px 3px;text-align:center;white-space:nowrap;vertical-align:baseline;font-weight:400;border:0;background:none}
+.ck-mt th{font-family:var(--font-ui);text-align:right;white-space:nowrap;padding-right:6px;color:var(--ink-2)}
+.ck-mt tr.ck-mname th{color:var(--ink);font-weight:600}
+.ck-mt tr.ck-mname:not(:first-child) th,.ck-mt tr.ck-mname:not(:first-child) td{padding-top:8px}
+.ck-mt td.ck-mres{text-align:left;white-space:normal}
+.ck-mb .ck-mnote{margin:4px 0 0;font-family:var(--font-ui);font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+
+/* phones ≤ 480 px: the first screen keeps the users' row (R7.3). The breadcrumb row's previous and next links take a line of their own
+   on a phone, so in English the row is two lines on a 390 px screen; the stage head and the picture's box sit a little tighter here */
+/* Show the math on a box too narrow for its table (the owner's review of 2026-10-09): fitMath sets the block again, the name on its own
+   line, the formula broken before an operator with the numbers under the terms they replace, nothing scrolling sideways */
+.ck-mtn{border-collapse:collapse}
+.ck-mtn th,.ck-mtn td{padding:1px 0;border:0;background:none;font-weight:400;text-align:left;vertical-align:top}
+.ck-mtn tr.ck-mname th{font-family:var(--font-ui);font-weight:600;color:var(--ink);white-space:normal;padding:0 0 2px}
+.ck-mtn tr.ck-mname:not(:first-child) th{padding-top:8px}
+.ck-mtn .ck-mlbl{font-weight:400;color:var(--ink-2)}
+.ck-mtn td.ck-meq{width:1%;padding-right:3px;white-space:nowrap}
+.ck-mtn td.ck-mres{white-space:normal;padding-left:3px;line-height:1.5}
+.ck-mfl{display:flex;flex-wrap:wrap;align-items:flex-start;row-gap:6px}
+.ck-mu{display:inline-grid;align-items:center;justify-items:center}
+.ck-mc{padding:1px 3px;white-space:normal;line-height:1.5;text-align:center}
+.ck-mc0{display:flex;align-items:center;justify-content:center;height:1.9em;white-space:nowrap}
+.ck-mtall .ck-mc0{height:3.1em}
+@media (max-width:480px){
+  #ck-stage{padding-top:12px}
+  .ck-stage>.stage-head{row-gap:6px}
+  .ck-stage>.ck-graph{margin-top:8px;padding-top:7px}
+}

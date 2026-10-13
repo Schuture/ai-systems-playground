@@ -1,0 +1,28 @@
+/* the MoE tile: one layer's 8 experts (weights, so blue, R5.6; the filled part is read per decode step, on average), then the time of
+   one decode step for three models on one shared scale. A time is not a weight, so the bars are grayscale: Mixtral --ink, the two
+   hypothetical dense models --ink-3. Labels, bars and values share one grid, so the bars start at the same place. */
+.tz-moe-vis{display:grid;gap:4px;min-width:0}
+.tz-moe-cap{font-size:11px;line-height:1.3;color:var(--ink-3)}
+.tz-moe-ex{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;height:20px}
+.tz-moe-ex span{position:relative;border:1.5px solid var(--c-weights);border-radius:3px;overflow:hidden}
+.tz-moe-ex i{position:absolute;left:0;top:0;bottom:0;background:var(--c-weights);transition:width .25s ease-out}
+.tz-moe-tm{display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;align-items:center;gap:3px 7px;min-width:0}
+.tz-moe-n{font-size:11.5px;line-height:1.3;color:var(--ink-2);white-space:nowrap;cursor:help}
+.tz-moe-n.tz-moe-mx{color:var(--ink);font-weight:650}
+.tz-moe-tr{position:relative;height:10px;min-width:0;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.tz-moe-tr i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px;transition:width .25s ease-out}
+.tz-moe-tr.tz-moe-mx i{background:var(--ink)}
+.tz-moe-v{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:11px;line-height:1.3;color:var(--ink-2);text-align:right;white-space:nowrap}
+.tz-moe-v.tz-moe-mx{color:var(--ink);font-weight:600}
+.tz-moe-nw{white-space:nowrap}
+/* the sentence and hidden copies of every setting's share one grid cell, so the cell is as tall as the longest (teasers/moe.js) */
+.tz-moe-rd{display:grid;min-width:0}
+.tz-moe-rd>p{grid-area:1/1;min-width:0}
+.tz-moe-ghost{margin:0;font-size:13px;line-height:1.45;visibility:hidden}
+.tz-moe-ghost b{font-weight:650}
+.tz-moe .tz-leg i{display:inline-block;flex:none;margin-right:5px}
+.tz-moe .tz-leg [data-tipx]{cursor:help}
+.tz-moe .sw.tz-moe-sw-out{background:transparent;border:1.5px solid var(--c-weights)}
+.tz-moe .sw.tz-moe-sw-mx{background:var(--ink);border-color:transparent}
+.tz-moe .sw.tz-moe-sw-dn{background:var(--ink-3);border-color:transparent}
+@media (prefers-reduced-motion:reduce){.tz-moe-ex i,.tz-moe-tr i{transition:none}}

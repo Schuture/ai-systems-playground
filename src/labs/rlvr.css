@@ -1,0 +1,218 @@
+/* rlvr: one problem with its group of 8 answers (way of writing, length, final answer, verdict, advantage), the training run
+   (shares of the four ways, right-in-one-try, length) and pass@k. Colours (R5.6): grayscale for the four ways, the candidates way
+   hatched; red (--c-oom) only where the loose checker is gamed; green only for the challenge's goal. */
+.rlvr-stage .stage-head{align-items:center}
+.rlvr-graph{padding:12px 14px 14px;display:grid;gap:16px;min-width:0}
+.rlvr-graph [hidden]{display:none!important}
+/* once a run is on the stage, its charts come first in the stage's scroll box (parts 4–8, scenarios, challenge); pass@k first in parts 7–8 */
+.rlvr-graph.rlvr-runfirst .rlvr-run{order:-2}
+.rlvr-graph.rlvr-runfirst .rlvr-pk{order:-1}
+.rlvr-graph.rlvr-pkfirst .rlvr-pk{order:-3}
+.rlvr-ct{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+/* H5 (the owner's message of 2026-10-09): each block of the stage (the training run, one group of answers, pass@k) is a framed sub-panel
+   whose heading line says what it shows, set off from the content by a hairline */
+.rlvr-blk{border:1px solid var(--line-2);border-radius:6px;padding:9px 11px 10px;background:var(--surface);min-width:0}
+.rlvr-bh{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;padding-bottom:8px;border-bottom:1px solid var(--line);min-width:0}
+.rlvr-bt{margin:0;font-size:12.5px;font-weight:650;line-height:1.35;color:var(--ink);min-width:0}
+/* H8, R7.9: the stage head holds the sentence of every phase in one grid cell and shows the current one */
+.rlvr-stk{display:grid}
+.rlvr-stk>[data-ph]{grid-area:1/1;visibility:hidden}
+.rlvr-stk>[data-ph].on{visibility:visible}
+
+/* the four ways of writing: swatches, areas, mini bar */
+.rlvr-w0{--rlvr-c:color-mix(in srgb,var(--ink) 22%,var(--surface))}
+.rlvr-w1{--rlvr-c:color-mix(in srgb,var(--ink) 48%,var(--surface))}
+.rlvr-w2{--rlvr-c:color-mix(in srgb,var(--ink) 82%,var(--surface))}
+.rlvr-w3{--rlvr-c:var(--ink-2)}
+.rlvr-sw{display:inline-block;width:10px;height:10px;border-radius:2px;flex:none;background:var(--rlvr-c);vertical-align:-1px;margin-right:5px}
+.rlvr-sw.rlvr-w3,.rlvr-dk i.rlvr-w3{background:repeating-linear-gradient(45deg,var(--ink-2) 0 1.5px,var(--surface) 1.5px 4px);box-shadow:inset 0 0 0 1px var(--ink-2)}
+.rlvr-sw.rlvr-w3.red,.rlvr-endl .red .rlvr-sw.rlvr-w3,.rlvr-dk i.rlvr-w3.red{background:repeating-linear-gradient(45deg,var(--c-oom) 0 1.5px,var(--surface) 1.5px 4px);box-shadow:inset 0 0 0 1px var(--c-oom)}
+.rlvr-a{fill:var(--rlvr-c);stroke:var(--surface);stroke-width:.6}
+.rlvr-a.rlvr-w3{fill:url(#rlvr-hatch)}
+.rlvr-hbg{fill:var(--surface)}
+.rlvr-hl{stroke:var(--ink-2);stroke-width:2}
+.rlvr-a.rlvr-w3.red{stroke:var(--c-oom);stroke-width:1.2}
+
+/* ---------- the group of 8 ---------- */
+.rlvr-grp{display:grid;gap:8px;container:rlvr-grp/inline-size}
+.rlvr-q{font-size:13.5px;color:var(--ink);line-height:1.45;min-width:0;overflow-wrap:anywhere}
+.rlvr-tag{display:inline-block;font-size:10.5px;color:var(--ink-3);border:1px solid var(--line);border-radius:999px;padding:0 7px;margin-right:4px;white-space:nowrap;vertical-align:1px}
+.rlvr-ref{white-space:nowrap;font-size:12px;color:var(--ink-2);margin-left:6px}
+.rlvr-ref b{color:var(--ink)}
+.rlvr-gstat{color:var(--ink-2);line-height:1.4;font-variant-numeric:tabular-nums}
+.rlvr-gfx{display:inline-block;vertical-align:middle;max-width:100%;overflow-x:auto}
+.rlvr-rows{display:grid;gap:3px;min-width:0}
+.rlvr-row{display:grid;grid-template-columns:16px minmax(164px,1.5fr) minmax(40px,1fr) minmax(56px,auto) 74px 82px;gap:8px;align-items:center;
+  width:100%;text-align:left;font:inherit;font-size:12.5px;color:var(--ink-2);background:none;border:1px solid transparent;border-radius:4px;
+  padding:3px 6px;cursor:pointer;min-width:0;transition:opacity .2s}
+.rlvr-row:hover{border-color:var(--line)}
+.rlvr-row.on{border-color:var(--ink-3);background:var(--surface-2);color:var(--ink)}
+.rlvr-row.wait{opacity:.35;cursor:default}
+.rlvr-row:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.rlvr-row.red{border-color:var(--c-oom)}
+.rlvr-n{font-size:11px;color:var(--ink-3);text-align:right}
+.rlvr-way{display:flex;align-items:center;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rlvr-lenb{position:relative;height:10px;background:var(--surface-2);border-radius:2px;min-width:0;margin-right:30px}
+.rlvr-lenb i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px}
+.rlvr-lenb em{position:absolute;left:100%;margin-left:4px;top:-3px;width:26px;font-style:normal;font-size:10px;line-height:16px;color:var(--ink-2)}
+.rlvr-fa{font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rlvr-ok,.rlvr-no{font-size:12px;white-space:nowrap}
+.rlvr-ok{color:var(--ink);font-weight:650}
+.rlvr-no{color:var(--ink-3)}
+.rlvr-row.red .rlvr-ok{color:var(--c-oom)}
+.rlvr-adv{font-size:11.5px;white-space:nowrap;text-align:right;color:var(--ink-3)}
+.rlvr-adv.up{color:var(--ink);font-weight:650}
+.rlvr-adv.dn{color:var(--ink-2)}
+/* the selected answer, under a hairline; all 8 answers share one grid cell and only the selected one shows (R7.9) */
+.rlvr-sel{min-width:0;display:grid;border-top:1px solid var(--line);padding-top:8px}
+.rlvr-sela{grid-area:1/1;display:grid;gap:5px;align-content:start;min-width:0;visibility:hidden}
+.rlvr-sela.on{visibility:visible}
+.rlvr-seltxt{font-size:12.5px;line-height:1.5;color:var(--ink-2);background:var(--surface-2);border-radius:4px;padding:7px 9px;min-width:0;overflow-wrap:anywhere}
+.rlvr-seltxt p{margin:4px 0 0}
+.rlvr-fin{background:color-mix(in srgb,var(--ink) 14%,transparent);color:var(--ink);font-weight:650;border-radius:2px;padding:0 2px}
+.rlvr-why{color:var(--ink-2);line-height:1.45}
+.rlvr-why.red{color:var(--c-oom)}
+
+/* ---------- part 2: one answer read by the strict and the loose checker, side by side (codex-b9v3 #1) ---------- */
+.rlvr-chk{border:1px solid var(--line-2);border-radius:6px;padding:9px 11px 10px;background:var(--surface);display:grid;gap:8px;min-width:0}
+.rlvr-cwho{font-size:13px;color:var(--ink);line-height:1.4}
+.rlvr-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0}
+.rlvr-col{border:1px solid var(--line);border-radius:6px;padding:8px 10px 9px;display:grid;gap:6px;align-content:start;min-width:0}
+.rlvr-col.red{border-color:var(--c-oom);box-shadow:inset 0 0 0 1px var(--c-oom)}
+.rlvr-ckh{font-size:13px;font-weight:650;color:var(--ink);line-height:1.3}
+.rlvr-crule{font-size:12px;color:var(--ink-3);line-height:1.35;margin-top:-4px}
+.rlvr-ctext{margin:0;font-size:13px;line-height:1.8;color:var(--ink);background:var(--surface-2);border-radius:4px;padding:5px 8px;min-width:0;overflow-wrap:anywhere}
+.rlvr-ctext .ln{display:block}
+.rlvr-ctext .fl{font-family:var(--font-mono);font-size:12.5px}
+.rlvr-ctext .skip{color:var(--ink-3)}
+.rlvr-num{border:1px solid var(--ink-3);border-radius:3px;padding:0 3px;margin:0 1px;font-variant-numeric:tabular-nums}
+.rlvr-num.hit{border:2px solid var(--ink);font-weight:700;padding:0 2px}
+.rlvr-num.hit.red{border-color:var(--c-oom);color:var(--c-oom)}
+.rlvr-cres{display:flex;justify-content:space-between;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
+.rlvr-ccmp{font-size:12.5px;color:var(--ink-2)}
+.rlvr-cv{font-size:15px;font-weight:700;white-space:nowrap;color:var(--ink)}
+.rlvr-cv.no{color:var(--ink-3)}
+.rlvr-cv.red{color:var(--c-oom)}
+.rlvr-cnote{margin:0;font-size:12px;line-height:1.4}
+.rlvr-cnote.red{color:var(--c-oom)}
+.rlvr-chk .rlvr-leg{margin:0}
+.rlvr-chk.bump .rlvr-col{animation:rlvr-in .5s ease-out}
+@keyframes rlvr-in{from{opacity:.25}to{opacity:1}}
+
+/* players: play / replay, speed, scrubber. H7: the replay button and the speed buttons share one height and one baseline */
+.rlvr-pl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-width:0}
+.rlvr-pl .seg-ctl{margin:0;height:32px;box-sizing:border-box}
+.rlvr-pl .seg-ctl button{display:inline-flex;align-items:center;justify-content:center;padding:0 9px;font-size:12.5px;line-height:1}
+.rlvr-pl .btn.sm{height:32px;box-sizing:border-box;padding-block:0;line-height:1;font-size:12.5px}
+.rlvr-scrub{flex:1 1 140px;min-width:100px;accent-color:var(--ink)}
+.rlvr-plnote{white-space:nowrap}
+
+/* ---------- the run ---------- */
+.rlvr-run{display:grid;gap:12px;container:rlvr-run/inline-size}
+.rlvr-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;min-width:0;border-top:1px solid var(--line);padding-top:10px}
+.rlvr-ch{min-width:0}
+.rlvr-plot{position:relative;height:150px;margin-right:112px;border-left:1px solid var(--line);border-bottom:1px solid var(--line)}
+.rlvr-plot.small{height:120px;margin-left:36px;margin-right:86px}
+/* the shares chart: a y axis, and the full name of each way at the end of its band (wraps on a narrow stage) */
+.rlvr-plot.rlvr-mixp{margin-left:36px;margin-right:150px}
+.rlvr-mixp .rlvr-endl span{white-space:normal;width:144px;align-items:flex-start;line-height:1.25}
+.rlvr-mixp .rlvr-endl b{font-weight:inherit;min-width:0;word-break:keep-all}
+.rlvr-mixp .rlvr-endl .rlvr-sw{margin-top:2px}
+.rlvr-svg{display:block;width:100%;height:100%;overflow:visible}
+.rlvr-ln{fill:none;stroke:var(--ink);stroke-width:2;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.rlvr-ln.dash{stroke:var(--ink-2);stroke-dasharray:5 4;stroke-width:1.6}
+.rlvr-ln.red{stroke:var(--c-oom);stroke-width:2.4}
+.rlvr-ln.other{stroke:var(--ink-3);stroke-width:1.2}
+/* step-10 marks (part 6): a dot on each line with its value beside it */
+.rlvr-mk{position:absolute;width:0;height:0;cursor:help}
+.rlvr-mk i{position:absolute;left:-3.5px;top:-3.5px;width:7px;height:7px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 1.5px var(--surface)}
+.rlvr-mk.other i{background:var(--ink-3)}
+.rlvr-mk em{position:absolute;left:7px;top:-8px;font-style:normal;font-size:10.5px;line-height:16px;white-space:nowrap;color:var(--ink);background:color-mix(in srgb,var(--surface) 85%,transparent);padding:0 2px;border-radius:2px}
+.rlvr-mk.other em{color:var(--ink-2)}
+.rlvr-base{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 3;vector-effect:non-scaling-stroke}
+.rlvr-endl{position:absolute;left:100%;top:0;bottom:0;width:0}
+.rlvr-endl span{position:absolute;left:6px;transform:translateY(-50%);white-space:nowrap;font-size:11.5px;line-height:1.2;color:var(--ink-2);display:flex;align-items:center;cursor:help}
+.rlvr-endl span.red{color:var(--c-oom);font-weight:650}
+.rlvr-yax{position:absolute;right:100%;top:0;bottom:0;width:36px;display:flex;flex-direction:column;justify-content:space-between;font-size:10.5px;color:var(--ink-3);text-align:right;padding-right:4px;box-sizing:border-box}
+.rlvr-yax span{line-height:1;transform:translateY(-1px)}
+.rlvr-yax span:last-child{transform:translateY(1px)}
+.rlvr-xax{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-3);margin:3px 112px 0 0}
+.rlvr-plot.small+.rlvr-xax,.rlvr-pk .rlvr-xax{margin:3px 86px 0 36px}
+.rlvr-mixp+.rlvr-xax{margin:3px 150px 0 36px}
+.rlvr-leg{margin:4px 0 0;line-height:1.4}
+/* H6: legend items, each with a sample of its mark */
+.rlvr-legs{display:flex;flex-wrap:wrap;gap:2px 12px}
+.rlvr-li{display:inline-flex;align-items:center;gap:5px;min-width:0}
+.rlvr-lsw{width:18px;height:10px;flex:none;overflow:visible}
+.rlvr-ldot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ink);flex:none}
+/* R7.9: an item or a note that only applies later in the run keeps its place, hidden, so the legend does not grow while the run plays */
+.rlvr-li.off,.rlvr-lnote.off{visibility:hidden}
+.rlvr-pk{max-width:560px}
+@container rlvr-run (max-width:520px){
+  .rlvr-plot.rlvr-mixp{margin-right:116px}
+  .rlvr-mixp .rlvr-endl span{width:110px}
+  .rlvr-mixp+.rlvr-xax{margin-right:116px}
+}
+.rlvr-scope{margin:2px 14px 8px}
+
+/* ---------- rail ---------- */
+.rlvr-lv{margin:8px 0}
+.rlvr-rem{padding-left:20px;display:grid;gap:6px;margin:6px 0}
+.rlvr-def{padding-left:18px;display:grid;gap:4px;margin:6px 0}
+.rlvr-jl{text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer;color:var(--ink)}
+.rlvr-goal{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
+.rlvr-goal.met b{color:var(--c-ok)}
+.rlvr-ch-res .cmp{margin-top:10px}
+.rlvr-app .fx{margin:6px 0;overflow-x:auto}
+
+/* ---------- Settings, Connect ---------- */
+/* codex-b9v3 #2: the assumed values sit in a closed block (kit's details.adv) */
+.rlvr-asmd summary{font-size:13px;line-height:1.35;align-items:flex-start}
+.rlvr-asmd summary::before{flex:none}
+.rlvr-gh{font-size:12px;color:var(--ink-3)}
+.rlvr-asm{display:grid;gap:8px;font-size:12px;line-height:1.4;color:var(--ink-2);min-width:0;margin-top:8px}
+.rlvr-asm p{margin:0}
+.rlvr-at{border-collapse:collapse;width:100%;font-size:11.5px;line-height:1.3}
+.rlvr-at caption{text-align:left;font-weight:600;color:var(--ink);padding-bottom:3px}
+.rlvr-at th,.rlvr-at td{padding:2px 4px;border-bottom:1px solid var(--line-2);text-align:right;white-space:nowrap}
+.rlvr-at th[scope=row],.rlvr-at tr:first-of-type th:first-child{text-align:left;white-space:normal;font-weight:500;color:var(--ink)}
+.rlvr-at th[scope=col]{font-weight:500;color:var(--ink-3);font-size:11px}
+.rlvr-at td{color:var(--ink-2)}
+.rlvr-prod{padding-left:18px;display:grid;gap:6px;min-width:0}
+.rlvr-prod code,.rlvr-prod a{overflow-wrap:anywhere}
+
+/* ---------- the dock's mini bar: shares of the four ways ---------- */
+.rlvr-dk{display:flex;height:10px;border-radius:2px;overflow:hidden;min-width:60px;background:var(--surface-2)}
+.rlvr-dk i{display:block;height:100%;background:var(--rlvr-c)}
+
+/* the owner's review of 2026-10-09: on a stage narrower than one row needs (761–930 px wide windows), “优势” ran past the panel's right
+   edge. The row now follows the width of its own panel: two lines whenever the panel is narrower than the one-line row (about 490 px). */
+@container rlvr-grp (max-width:500px){
+  .rlvr-row{grid-template-columns:16px minmax(0,1fr) auto auto;grid-template-areas:"n way way adv" ". len fa vd";gap:2px 8px;padding:4px 5px}
+  .rlvr-n{grid-area:n}.rlvr-way{grid-area:way}.rlvr-lenb{grid-area:len}.rlvr-fa{grid-area:fa}.rlvr-ok,.rlvr-no{grid-area:vd}.rlvr-adv{grid-area:adv}
+}
+@media (max-width:760px){
+  .rlvr-graph{padding:10px 10px 12px}
+  .rlvr-two{grid-template-columns:minmax(0,1fr)}
+  .rlvr-endl span{font-size:11px}
+  .rlvr-ref{display:block;margin:2px 0 0}
+  .rlvr-chk{padding:8px 8px 9px}
+  .rlvr-cols{gap:7px}
+  .rlvr-col{padding:7px 7px 8px}
+  .rlvr-ctext{padding:4px 6px}
+}
+
+/* ---------- Show the math (H2, the owner's message of 2026-10-09): short blocks under small headings, a hairline between blocks, the
+   formula with its name in words on the left, the substituted lines in a two-column grid (words, formula) ---------- */
+.rlvr-mb{padding:10px 0 4px;border-top:1px solid var(--line);min-width:0}
+.rlvr-mh{margin:0 0 4px;font-size:13px;font-weight:650;line-height:1.35;color:var(--ink)}
+.rlvr-mb p{margin:4px 0}
+.rlvr-app .rlvr-mf{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;margin:4px 0}
+.rlvr-mn{font-size:12px;color:var(--ink-3);min-width:5em}
+.rlvr-ms{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:2px 12px;align-items:center;margin:2px 0 6px;min-width:0}
+.rlvr-msw{font-size:12px;line-height:1.35;color:var(--ink-2)}
+.rlvr-app .rlvr-ms .fx{margin:0}
+@media (max-width:760px){
+  .rlvr-ms{grid-template-columns:minmax(0,1fr);gap:0}
+  .rlvr-msw{margin-top:4px}
+}

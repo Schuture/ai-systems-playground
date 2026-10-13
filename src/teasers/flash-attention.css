@@ -1,0 +1,18 @@
+/* the FlashAttention tile: the bytes one head reads from and writes to HBM, standard against FlashAttention, on one shared log axis
+   (R5.6: grayscale; the two bars differ by fill and by their labels) */
+.tz-fa-vis{display:grid;gap:5px;min-width:0;cursor:help}
+.tz-fa-cap{font-size:11.5px;color:var(--ink-2);line-height:1.35}
+.tz-fa-row{display:grid;gap:2px;min-width:0}
+.tz-fa-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}
+.tz-fa-l{font-size:11.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tz-fa-v{font-size:11.5px;color:var(--ink);white-space:nowrap}
+.tz-fa-trk{display:flex;height:14px;background:var(--surface-2);border-radius:2px;overflow:hidden;min-width:0}
+.tz-fa-trk i{display:block;height:100%;flex:none;transition:width .25s ease-out;box-sizing:border-box}
+.tz-fa-row[data-k="std"] .tz-fa-trk i{background:var(--ink-2)}
+.tz-fa-row[data-k="fa"] .tz-fa-trk i{background:repeating-linear-gradient(135deg,var(--ink-2) 0 1.5px,var(--surface) 1.5px 4.5px);box-shadow:inset 0 0 0 1.5px var(--ink-2)}
+.tz-fa-ax{position:relative;height:14px;margin-top:1px}
+.tz-fa-ax span{position:absolute;top:0;transform:translateX(-50%);font-family:var(--font-mono);font-size:10px;color:var(--ink-3);white-space:nowrap}
+.tz-fa-ax span.tz-fa-t0{transform:translateX(-30%)}
+.tz-fa-ax span.tz-fa-tn{transform:translateX(-100%)}
+.tz-fa-axn{font-size:10.5px;color:var(--ink-3);line-height:1.3}
+@media (prefers-reduced-motion:reduce){.tz-fa-trk i{transition:none}}

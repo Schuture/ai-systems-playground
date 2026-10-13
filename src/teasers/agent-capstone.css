@@ -1,0 +1,26 @@
+/* agent-capstone teaser: grayscale; red only for a run with an unsafe action (R5.6). Both harnesses fill the same cells, so the tile
+   keeps its height. */
+.tz-acp-seg{margin-bottom:8px}
+.tz-acp-vis{display:grid;gap:8px;padding:2px 0;cursor:help;outline-offset:3px}
+.tz-acp-grid{display:grid;gap:3px}
+.tz-acp-r{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) 3px repeat(5,minmax(0,1fr)) 3px repeat(3,minmax(0,1fr));gap:2px;height:13px}
+.tz-acp-c{display:block;border-radius:1px}
+.tz-acp-c.o{background:var(--ink-2)}
+.tz-acp-c.f{background:var(--surface);box-shadow:inset 0 0 0 1px var(--ink-3)}
+.tz-acp-c.u{background:var(--c-oom)}
+.tz-acp-strip{display:grid;gap:3px}
+.tz-acp-sr,.tz-acp-ax{display:grid;grid-template-columns:2.6em minmax(0,1fr) 3.6em;align-items:center;gap:6px}
+.tz-acp-sr{height:14px;font-size:11px;color:var(--ink-3)}
+.tz-acp-sr.on{color:var(--ink);font-weight:650}
+.tz-acp-st{position:relative;height:10px;background:var(--surface-2);border-radius:2px}
+.tz-acp-st i{position:absolute;display:block}
+.tz-acp-st i.ci{top:3px;height:4px;background:var(--ink-3)}
+.tz-acp-st i.pt{top:0;width:3px;height:10px;margin-left:-1.5px;background:var(--ink-3)}
+.tz-acp-sr.on .tz-acp-st i.ci,.tz-acp-sr.on .tz-acp-st i.pt{background:var(--ink)}
+.tz-acp-sv{text-align:right;font-size:11px}
+.tz-acp-ax{font-size:9.5px;color:var(--ink-3)}
+.tz-acp-axs{display:flex;justify-content:space-between}
+.tz-acp-sw-o{background:var(--ink-2);border-color:transparent}
+.tz-acp-sw-f{background:var(--surface);border:1px solid var(--ink-3)}
+.tz-acp-sw-u{background:var(--c-oom);border-color:transparent}
+.tz-acp-sw-i{height:4px;background:var(--ink);border:0;border-radius:0}

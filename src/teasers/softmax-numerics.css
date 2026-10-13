@@ -1,0 +1,15 @@
+/* softmax-numerics teaser: 100% bars in grayscale (R5.6); red hatching only for NaN (failure). The second bar keeps its space while
+   hidden, so the tile does not jump when the naive softmax fails. */
+.tz-sm-vis{display:grid;gap:8px;padding:2px 0}
+.tz-sm-row{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:center;min-width:0}
+.tz-sm-row.tz-sm-off{visibility:hidden}
+.tz-sm-lab{font-family:var(--font-mono);font-size:11px;color:var(--ink-2);white-space:nowrap}
+.tz-sm-bar{position:relative;height:26px;background:var(--surface-2);border-radius:3px;overflow:hidden;min-width:0}
+.tz-sm-seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;background:var(--ink-3);border-right:1.5px solid var(--surface);box-sizing:border-box;overflow:hidden}
+.tz-sm-seg:nth-child(even){background:var(--ink-2)}
+.tz-sm-seg span{font-family:var(--font-mono);font-size:10.5px;color:var(--bg);white-space:nowrap;padding:0 5px}
+.tz-sm-bar.tz-sm-bad{background:repeating-linear-gradient(135deg,var(--c-oom-soft) 0 3px,transparent 3px 6px),var(--c-oom-soft);box-shadow:inset 0 0 0 1.5px var(--c-oom);display:flex;align-items:center}
+.tz-sm-nan{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--c-oom);padding:0 7px}
+.tz-sm-sw{background:var(--ink-3);border-color:transparent}
+.tz-sm-sw.tz-sm-bad{background:repeating-linear-gradient(135deg,var(--c-oom-soft) 0 2px,transparent 2px 4px),var(--c-oom-soft);border:1.5px solid var(--c-oom)}
+.tz-sm sup{font-size:.72em;line-height:0}

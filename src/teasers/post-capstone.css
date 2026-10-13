@@ -1,0 +1,18 @@
+/* post-capstone teaser: one gray bar per method that can run (R5.6: GPU hours are neither weights nor a success), and a red
+   swatch for a method the data does not allow (a failure). Every row keeps its height for every choice. */
+.tz-pcap-ctl .seg-ctl{flex-wrap:wrap}
+/* a wrapped row keeps the line between the rows (item 5, the owner, 2026-10-09): the gap shows the group's line-coloured background */
+.tz-pcap-ctl .seg-ctl{gap:1px;background:var(--line)}
+.tz-pcap-ctl .seg-ctl button,.tz-pcap-ctl .seg-ctl button:last-child{border-right:0}
+/* “最后答案 + 判分程序” breaks between words on a phone, never inside 判分程序 */
+.tz-pcap-ctl .seg-ctl button{word-break:keep-all}
+.tz-pcap-vis{padding:2px 0;min-width:0}
+.tz-pcap-rows{display:grid;gap:5px;min-width:0}
+.tz-pcap-row{display:grid;grid-template-columns:86px minmax(0,1fr) 44px;gap:8px;align-items:center;min-width:0;min-height:18px}
+.tz-pcap-lab{font-size:11px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tz-pcap-trk{position:relative;height:14px;min-width:0;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.tz-pcap-b{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2);transition:width .2s ease}
+.tz-pcap-v{font:600 11.5px/1 var(--font-mono);color:var(--ink);text-align:right;white-space:nowrap}
+.tz-pcap-no{grid-column:2 / span 2;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--c-oom);min-width:0}
+.tz-pcap-sw{background:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){.tz-pcap-b{transition:none}}

@@ -1,0 +1,245 @@
+/* model-parallel: the pipeline Gantt chart (one row per GPU, outlined forwards, solid backwards, hatched idle time; red outline while
+   the bubble is the point), its player; the layer view (the MLP's two weight matrices in blue, cut by columns and rows, the partial
+   results and the all-reduce) with the layer's timeline; the cluster grid and the memory bar per GPU.
+   Colours (R5.6): grayscale; blue only for weights; red only for waiting that is the failure (bubble in parts 1–3, all-reduces over
+   InfiniBand, memory over 80 GB); green only for the challenge's goal. */
+.mp-app [hidden]{display:none!important}
+.mp-stage .stage-head{align-items:center}
+.mp-graph{padding:12px 14px 14px;display:grid;gap:14px;min-width:0}
+.mp-graph>div{min-width:0}
+/* H5 (the owner, 2026-10-09: “需要分割线之类”): the stage's blocks (the cluster, the pipeline picture, one layer) and the parts inside
+   them (the layout and the memory bar; the MLP block and its timeline) are set off by hairlines in the kit's line colour */
+.mp-graph>.mp-clbox:not([hidden])~.mp-gbox:not([hidden]),.mp-graph>.mp-clbox:not([hidden])~.mp-lbox:not([hidden]),.mp-graph>.mp-gbox:not([hidden])~.mp-lbox:not([hidden]){border-top:1px solid var(--line);padding-top:14px}
+#mp-lt-cap{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+.mp-phone{display:none}
+.mp-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+
+/* ---------- the Gantt chart: a 96 px label column, then the track ---------- */
+.mp-gantt{--mp-lab:96px;position:relative;min-width:0;cursor:help;outline-offset:3px}
+.mp-grows{position:relative;display:grid;gap:4px}
+.mp-grow{display:grid;grid-template-columns:var(--mp-lab) minmax(0,1fr);align-items:center;min-height:30px}
+.mp-glab{font:600 12px/1.15 var(--font-ui);color:var(--ink);padding-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-glab small{display:block;font:11px/1.2 var(--font-mono);font-weight:400;color:var(--ink-3)}
+.mp-gtrk{position:relative;height:22px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.mp-gtrk i{position:absolute;top:0;bottom:0;box-sizing:border-box;font:600 10.5px/20px var(--font-mono);font-style:normal;text-align:center;overflow:hidden;white-space:nowrap}
+.mp-cf{background:var(--surface);border:1.5px solid var(--ink-2);color:var(--ink-2);border-radius:2px}
+.mp-cb{background:var(--ink-2);border:1.5px solid var(--ink-2);color:var(--surface);border-radius:2px}
+.mp-ci{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line) 3px 4px)}
+.mp-ci.red{border:1.5px solid var(--c-oom);background:repeating-linear-gradient(135deg,var(--c-oom-soft) 0 3px,transparent 3px 5px);border-radius:2px}
+/* owner b8 (2), (4): a block of 1F1B's alternation (forwards and backwards in turn) is half outlined, half solid; outlines shrink
+   with the block (o1: 1 px, o0: none) so that thin blocks do not turn into one dark bar */
+.mp-cm{background:linear-gradient(to bottom,var(--surface) 0 50%,var(--ink-2) 50% 100%);border:1.5px solid var(--ink-2);border-radius:2px}
+.mp-gtrk i.o1{border-width:1px;line-height:20px}
+.mp-gtrk i.o0{border-width:0;border-radius:1px}
+.mp-gtrk i.mp-cf.o0{background:var(--ink-3)}
+.sw.mp-sw-m{background:linear-gradient(to bottom,var(--surface) 0 50%,var(--ink-2) 50% 100%);border:1.5px solid var(--ink-2)}
+.mp-gleg .mp-gn{font-weight:650;color:var(--ink)}
+.mp-grows.dense{gap:2px}
+.mp-grows.dense .mp-grow{min-height:14px}
+.mp-grows.dense .mp-gtrk{height:12px}
+.mp-grows.dense .mp-glab{font-size:10.5px}
+.mp-grows.dense .mp-gtrk i{font-size:0}
+/* the playhead: the mask hides what has not happened yet */
+.mp-mask{position:absolute;top:0;bottom:0;right:0;background:var(--surface);opacity:.88;pointer-events:none}
+.mp-head{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px solid var(--ink);pointer-events:none}
+.mp-gleg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--ink-2);margin-bottom:8px}
+.mp-gleg span{cursor:help;white-space:nowrap}
+.mp-ltleg span,.mp-mleg span{white-space:nowrap}
+.sw.mp-sw-f{background:var(--surface);border:1.5px solid var(--ink-2)}
+.sw.mp-sw-b{background:var(--ink-2);border-color:var(--ink-2)}
+.sw.mp-sw-i{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line) 3px 4px)}
+.sw.mp-sw-i.red{border:1.5px solid var(--c-oom);background:repeating-linear-gradient(135deg,var(--c-oom-soft) 0 3px,transparent 3px 5px)}
+.sw.mp-sw-cmp{background:var(--ink-3);border-color:var(--ink-3)}
+.sw.mp-sw-ar{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--surface) 2px 4px);border-color:var(--ink-2)}
+.sw.mp-sw-ar.red{background:var(--c-oom);border-color:var(--c-oom)}
+.sw.mp-sw-ref{background:transparent;border:1.5px dashed var(--ink-3)}
+.sw.mp-sw-w{background:var(--c-weights);border-color:transparent}
+.sw.mp-sw-o{background:var(--ink-3);border-color:transparent}
+.sw.mp-sw-a{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--surface-2) 2px 4px);border-color:var(--ink-3)}
+
+/* ---------- the player ---------- */
+.mp-player{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:10px}
+.mp-player .ctl{display:flex;align-items:center;gap:6px;margin:0}
+.mp-player .ctl>.lbl{font-size:12px}
+.mp-player .seg-ctl button{font-size:12px;padding:3px 9px}
+/* H7 (the owner, 2026-10-09, on GRPO's player: “重放按钮和速度按钮没有对齐”): Replay, the step buttons and the speed buttons share one
+   height and one centre line */
+.mp-player .btn.sm,.mp-player .seg-ctl{height:30px;box-sizing:border-box}
+.mp-player .btn.sm{padding-top:0;padding-bottom:0}
+.mp-player .seg-ctl button{padding-top:0;padding-bottom:0}
+.mp-play{min-width:92px;justify-content:center}
+.mp-scrub{display:flex;align-items:center;gap:8px;flex:1 1 180px;min-width:0}
+.mp-scrub input{flex:1 1 auto;min-width:0}
+.mp-count{font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+
+/* ---------- parts 4–5: the MLP block cut across t GPUs ---------- */
+.mp-tp{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 8px;padding:4px 0 2px;margin-bottom:16px}
+.mp-blk{display:inline-flex;flex-direction:column;align-items:center;gap:5px;cursor:help;outline-offset:3px;border-radius:3px}
+.mp-bl{font-size:11.5px;line-height:1.25;color:var(--ink-2);text-align:center;max-width:150px}
+.mp-op{align-self:center;font:600 16px/1 var(--font-mono);color:var(--ink-3);padding-bottom:4px}
+.mp-act{display:block;width:34px;height:64px;background:var(--surface-2);border:1.5px solid var(--ink-3);border-radius:2px}
+.mp-mat{display:grid;gap:2px;width:112px;height:64px}
+.mp-mat.cols{grid-template-columns:repeat(var(--n),minmax(0,1fr))}
+.mp-mat.rows{width:64px;height:112px;grid-template-rows:repeat(var(--n),minmax(0,1fr))}
+.mp-st{display:grid;place-items:center;background:var(--c-weights);border-radius:2px;min-width:0;min-height:0;font-style:normal}
+.mp-st b{font:600 10.5px/1 var(--font-mono);color:var(--on-weights)}
+.mp-parts{position:relative;display:block;width:44px;height:64px;margin:22px 22px 0 0}
+.mp-parts i{position:absolute;inset:0;box-sizing:border-box;background:var(--surface);border:1.5px solid var(--ink-2);border-radius:2px}
+.mp-parts i:nth-child(2){transform:translate(3px,-3px)}
+.mp-parts i:nth-child(3){transform:translate(6px,-6px)}
+.mp-parts i:nth-child(4){transform:translate(9px,-9px)}
+.mp-parts i:nth-child(5){transform:translate(12px,-12px)}
+.mp-parts i:nth-child(6){transform:translate(15px,-15px)}
+.mp-parts i:nth-child(7){transform:translate(18px,-18px)}
+.mp-parts i:nth-child(8){transform:translate(21px,-21px)}
+.mp-sum{display:grid;place-items:center;width:44px;height:44px;border:1.5px solid var(--ink-2);border-radius:50%;font:600 20px/1 var(--font-mono);color:var(--ink)}
+.mp-blk.ar.red .mp-sum{border-color:var(--c-oom);color:var(--c-oom);background:var(--c-oom-soft)}
+.mp-blk.ar.red .mp-bl{color:var(--c-oom);font-weight:650}
+
+/* the layer's timeline, to one scale; the dashed outline is the layer on one GPU */
+.mp-lt{margin-top:2px}
+.mp-ltbar{position:relative;height:30px}
+.mp-ltref{position:absolute;left:0;top:0;bottom:0;box-sizing:border-box;border:1.5px dashed var(--ink-3);border-radius:3px;cursor:help}
+.mp-ltsegs{position:absolute;left:0;right:0;top:5px;bottom:5px;display:flex;pointer-events:none}
+.mp-ltsegs i{display:block;height:100%;min-width:1px;pointer-events:auto;cursor:help;box-sizing:border-box}
+.mp-cmp{background:var(--ink-3)}
+.mp-cmp.b{background:var(--ink-2)}
+.mp-ar{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--surface) 2px 4px);border-top:1px solid var(--ink-2);border-bottom:1px solid var(--ink-2)}
+.mp-ar.red{background:var(--c-oom);border-color:var(--c-oom)}
+.mp-ltax{display:flex;justify-content:space-between;font:10.5px/1.4 var(--font-mono);color:var(--ink-3);border-top:1px solid var(--line);margin-top:3px}
+/* S13: the per-GPU layer zoomed to its own length; kept (invisible) at one GPU so that the box does not change height */
+.mp-ltz{margin-top:10px}
+.mp-ltz[aria-hidden="true"]{visibility:hidden}
+.mp-ltzc{font-size:12px;line-height:1.45;color:var(--ink-2);margin-bottom:3px;min-height:1.45em}
+.mp-ltbar.z{height:26px}
+.mp-ltbar.z .mp-ltsegs{top:3px;bottom:3px}
+@media (max-width:760px){.mp-ltzc{min-height:2.9em}}
+.mp-ltleg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--ink-2);margin-top:8px}
+
+/* ---------- part 6, Scenarios, challenge: the cluster and the memory bar ---------- */
+.mp-clg{display:grid;grid-template-columns:repeat(var(--c),minmax(0,1fr));gap:4px}
+.mp-cell{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding:4px 2px;border:1px solid var(--line);border-radius:3px;background:var(--surface);cursor:help;outline-offset:2px}
+.mp-cell small{font:10px/1.2 var(--font-mono);color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+/* R7.4: the short form of the machine label (only its number) when “machine 3” does not fit; none when even that does not fit */
+.mp-cell small .s,.mp-clg.short .mp-cell small .l,.mp-clg.none .mp-cell small{display:none}
+.mp-clg.short .mp-cell small .s{display:inline}
+.mp-gp{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;width:100%;max-width:56px}
+.mp-gp i{display:block;width:calc(25% - 2px);min-width:3px;aspect-ratio:1;background:var(--ink-2);border-radius:1px}
+.mp-more{margin:6px 0 0}
+.mp-mem{margin-top:12px}
+.mp-mem:not(:empty){border-top:1px solid var(--line);padding-top:12px}
+.mp-mcap{font-size:12px;color:var(--ink-2);margin-bottom:5px}
+.mp-mbar{position:relative;display:flex;height:18px;background:var(--surface-2);border-radius:2px;margin-bottom:20px}
+.mp-mbar i{display:block;height:100%;cursor:help;min-width:0}
+.mp-mbar.over{box-shadow:0 0 0 1.5px var(--c-oom)}
+.mp-mw{background:var(--c-weights)}
+.mp-mo{background:var(--ink-3)}
+.mp-ma{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--surface-2) 2px 4px)}
+.mp-mlim{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px solid var(--ink);pointer-events:none}
+.mp-mlim em{position:absolute;top:100%;left:0;transform:translateX(-50%);margin-top:2px;font:10.5px/1.2 var(--font-mono);font-style:normal;color:var(--ink-2);white-space:nowrap}
+.mp-mleg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--ink-2)}
+.mp-mtot{font-family:var(--font-mono);color:var(--ink);font-weight:650}
+.mp-mtot.bad{color:var(--c-oom)}
+
+/* ---------- metric cards ---------- */
+.mp-metrics[data-n="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mp-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.mp-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.mp-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* ---------- formulas on their own line ---------- */
+.mp-fx{margin:8px 0 10px;overflow-x:auto;font-size:15px;line-height:1.3}
+
+/* ---------- rail ---------- */
+.mp-mt{margin-top:12px}
+.mp-ch-res{scroll-margin-top:120px}
+.goal.mp-over b{color:var(--c-oom)}
+.mp-lv{margin-top:6px}
+.mp-app .goal span:last-child{text-align:right}
+.mp-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+.mp-app .inline-ctl .seg-ctl button{white-space:nowrap}
+.mp-app .seg-ctl button:disabled{opacity:.38;cursor:not-allowed}
+.mp-asm{margin:6px 0 12px;padding-left:18px;color:var(--ink-2)}
+.mp-asm li{margin-bottom:3px}
+.mp-ul{margin:0 0 10px;padding-left:18px}
+.mp-ul li{margin-bottom:6px}
+.mp-remlist{margin:0 0 10px;padding-left:18px}
+.mp-remlist li{margin-bottom:8px}
+
+/* ---------- settings ---------- */
+.mp-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
+.mp-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.mp-grp .ctl>label{display:flex}
+.mp-app .ctl output{white-space:nowrap}
+
+/* ---------- connect ---------- */
+.mp-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.mp-prod li{margin-bottom:6px}
+.mp-prod code,.mp-app .refs code{word-break:break-word}
+
+/* ---------- dock: a tiny bar ---------- */
+.mp-dk{position:relative;height:12px;width:100%;min-width:48px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.mp-dk i{position:absolute;left:0;top:3px;height:6px;background:var(--ink-2);border-radius:1px}
+.mp-dk.bad i{background:var(--c-oom)}
+
+@media (max-width:760px){
+  /* phones: the picture first, then the numbers (R7.3) */
+  .mp-stage{display:flex;flex-direction:column}
+  .mp-stage>.stage-head{order:1}
+  .mp-stage>.mp-graph{order:2}
+  .mp-stage>.metrics{order:3}
+  .mp-stage>details.math{order:4}
+  .mp-graph{padding:10px 10px 12px}
+  .mp-phone:not(:empty){display:block}
+  /* the label column keeps 96 px: “layers 111–126” must fit (R7.8) */
+  .mp-glab{font-size:11px;padding-right:6px}
+  .mp-glab small{font-size:10px}
+  .mp-mat{width:84px;height:52px}
+  .mp-mat.rows{width:52px;height:84px}
+  .mp-act{width:26px;height:52px}
+  .mp-parts{width:36px;height:52px;margin:22px 22px 0 0}
+  .mp-sum{width:38px;height:38px;font-size:17px}
+  .mp-bl{max-width:110px;font-size:11px}
+  .mp-tp{gap:8px 6px}
+  .mp-clg{gap:3px}
+  .mp-cell{padding:3px 1px}
+}
+@media (prefers-reduced-motion:reduce){.mp-head,.mp-mask{transition:none}}
+
+/* owner b8 (5): part 2's worked examples of the bubble formula, one row per m tried */
+.mp-wx{border-collapse:collapse;margin:4px 0 10px;font-size:12.5px;width:100%}
+.mp-wx th{font-weight:600;text-align:left;color:var(--ink-2);border-bottom:1px solid var(--line);padding:3px 8px 3px 0}
+.mp-wx td{font-family:var(--font-mono);font-size:12px;padding:3px 8px 3px 0;color:var(--ink-2);border-bottom:1px solid var(--line-2)}
+.mp-wx td:first-child{white-space:nowrap}
+.mp-wx tr.cur td{color:var(--ink);font-weight:650}
+
+/* R1 (owner b8): the challenge's summary: your layout next to the fastest, a bar of the step split by where the time goes */
+.mp-chsum{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.mp-c3cap{font-size:12.5px;font-weight:650;color:var(--ink);margin-bottom:4px}
+.mp-same{margin:0 0 8px;color:var(--ink-2);line-height:1.45}
+.mp-c3{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.mp-c3r{display:grid;gap:4px;min-width:0}
+.mp-c3h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:12.5px}
+.mp-c3t{font-weight:650;color:var(--ink);margin-right:2px}
+.mp-chip{font:11.5px/1.35 var(--font-mono);padding:0 6px;border:1px solid var(--line);border-radius:9px;color:var(--ink-2);white-space:nowrap}
+.mp-chip.on{border-color:var(--ink);color:var(--ink);font-weight:650}
+.mp-c3b{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
+.mp-c3trk{position:relative;height:14px;background:var(--surface-2);border-radius:2px;overflow:hidden;min-width:0}
+.mp-c3fill{display:flex;height:100%}
+.mp-c3fill i{display:block;height:100%;cursor:help;box-sizing:border-box}
+.mp-c3d{font-size:12.5px;white-space:nowrap}
+.mp-c3s{font-size:12px;color:var(--ink-2)}
+.mp-c3x{font-size:12.5px;font-weight:650;color:var(--c-oom)}
+.mp-c3d.bad,.mp-c3m.bad{color:var(--c-oom)}
+.mp-sg.u,.mp-sw3.u{background:var(--ink-3)}
+.mp-sg.tp,.mp-sw3.tp{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--surface) 2px 4px)}
+.mp-sg.bb,.mp-sw3.bb{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--ink-3) 3px 4px);box-shadow:inset 0 0 0 1px var(--line)}
+.mp-sg.dp,.mp-sw3.dp{background:var(--line)}
+.mp-sw3{display:inline-block;width:12px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;border:1px solid var(--line)}
+.mp-c3leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;color:var(--ink-2)}
+.mp-gap,.mp-next{margin:10px 0 0;font-size:13.5px}
+.mp-all{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
+.mp-all>summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--ink);padding:4px 0}
+.mp-allb{padding-top:4px}
+.mp-pass{margin:4px 0 8px;padding-left:18px;font-size:13px}
+.mp-pass li{margin-bottom:4px}

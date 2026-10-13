@@ -1,0 +1,17 @@
+/* training-memory teaser: two horizontal bars on one axis (inference, training's model states) with a dashed 80 GB line across both;
+   weights in the site's weights blue, the rest grayscale with a thin gap between the 4-byte parts, red hatching beyond the GPU (R5.6,
+   R5.11). The rows keep their height at every position of the slider. */
+.tz-tmem-vis{padding:2px 0;min-width:0}
+.tz-tmem-grid{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 8px;align-items:center;min-width:0;padding-top:16px}
+.tz-tmem-lab{font-family:var(--font-mono);font-size:10.5px;color:var(--ink);white-space:nowrap}
+.tz-tmem-trk{position:relative;height:18px;min-width:0;background:var(--surface-2);border-radius:2px}
+.tz-tmem-seg{position:absolute;top:0;bottom:0;box-sizing:border-box;transition:left .2s ease-out,width .2s ease-out}
+.tz-tmem-seg.w{background:var(--c-weights)}
+.tz-tmem-seg.s{background:var(--ink-3);border-left:1px solid var(--surface)}
+.tz-tmem-ov{position:absolute;top:-2px;bottom:-2px;box-sizing:border-box;background:repeating-linear-gradient(135deg,var(--c-oom) 0 2px,transparent 2px 5px);border:1.5px solid var(--c-oom);opacity:.85;transition:left .2s ease-out,width .2s ease-out}
+.tz-tmem-capbox{position:absolute;top:0;bottom:-3px;left:0;right:0;grid-column:2;pointer-events:none}
+.tz-tmem-cap{position:absolute;top:12px;bottom:0;width:0;border-left:2px dashed var(--ink);margin-left:-1px;z-index:2}
+.tz-tmem-capl{position:absolute;top:0;font-family:var(--font-mono);font-size:10px;font-style:normal;color:var(--ink);white-space:nowrap;transform:translateX(-4px)}
+.tz-tmem-capl.r{transform:translateX(calc(-100% + 4px))}
+.tz-tmem-sws{background:var(--ink-3);border-color:transparent}
+@media (prefers-reduced-motion:reduce){.tz-tmem-seg,.tz-tmem-ov{transition:none}}

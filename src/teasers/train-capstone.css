@@ -1,0 +1,13 @@
+/* train-capstone teaser: two gray bars on fixed scales (R5.6: nothing here is weights, KV, a failure or a success).
+   Every row keeps its height at every position of the slider. */
+.tz-tcap-vis{padding:2px 0;min-width:0}
+.tz-tcap-rows{display:grid;gap:6px;min-width:0}
+.tz-tcap-row{display:grid;grid-template-columns:64px minmax(0,1fr) 52px;gap:8px;align-items:center;min-width:0}
+.tz-tcap-lab{font-size:11px;color:var(--ink-2);white-space:nowrap}
+.tz-tcap-trk{position:relative;height:16px;min-width:0;background:var(--surface-2);border-radius:2px;overflow:hidden}
+.tz-tcap-trk i{position:absolute;left:0;top:0;bottom:0;transition:width .2s ease}
+.tz-tcap-d{background:var(--ink-2)}
+.tz-tcap-h{background:var(--ink-3)}
+.tz-tcap-v{font:600 11.5px/1 var(--font-mono);color:var(--ink);text-align:right;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.tz-tcap-trk i{transition:none}}
+

@@ -1,0 +1,13 @@
+/* rlvr teaser: two stacked bars (before / after 60 steps) of the four ways of writing, grayscale (R5.6); the candidates way hatched,
+   red only when the loose checker is gamed. */
+.tz-rlvr-vis{display:grid;gap:8px;padding:6px 0 0}
+.tz-rlvr-row{display:grid;grid-template-columns:minmax(64px,auto) minmax(0,1fr);gap:8px;align-items:center}
+.tz-rlvr-lb{font-size:11px;color:var(--ink-2);white-space:nowrap}
+.tz-rlvr-bar{display:flex;height:22px;border-radius:3px;overflow:hidden;background:var(--surface-2)}
+.tz-rlvr-bar i{display:block;height:100%;transition:width .3s ease-out}
+.tz-rlvr-w0{background:color-mix(in srgb,var(--ink) 22%,var(--surface))}
+.tz-rlvr-w1{background:color-mix(in srgb,var(--ink) 48%,var(--surface))}
+.tz-rlvr-w2{background:color-mix(in srgb,var(--ink) 82%,var(--surface))}
+.tz-rlvr-w3{background:repeating-linear-gradient(45deg,var(--ink-2) 0 1.5px,var(--surface) 1.5px 4px);box-shadow:inset 0 0 0 1px var(--ink-2)}
+.tz-rlvr-w3.red{background:repeating-linear-gradient(45deg,var(--c-oom) 0 1.5px,var(--surface) 1.5px 4px);box-shadow:inset 0 0 0 1.5px var(--c-oom)}
+.tz-rlvr-sw{display:inline-block;width:12px;height:10px;margin-right:5px;vertical-align:-1px;border-radius:2px;flex:none}

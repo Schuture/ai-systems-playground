@@ -1,0 +1,18 @@
+/* lora teaser: one horizontal stacked bar on a fixed 0–180 GB axis with a dashed 80 GB line; weights in the site's weights blue
+   (hatched where stored in 4 bits), the rest grayscale, red hatching beyond the GPU (R5.6, R5.11). */
+.tz-lora-vis{padding:2px 0;min-width:0}
+.tz-lora-grid{position:relative;display:grid;grid-template-columns:minmax(0,1fr);gap:4px;min-width:0;padding-top:16px}
+.tz-lora-lab{font-family:var(--font-mono);font-size:10.5px;color:var(--ink);white-space:nowrap}
+.tz-lora-trk{position:relative;height:20px;min-width:0;background:var(--surface-2);border-radius:2px}
+.tz-lora-seg{position:absolute;top:0;bottom:0;box-sizing:border-box;transition:left .2s ease-out,width .2s ease-out}
+.tz-lora-seg.w{background:var(--c-weights)}
+.tz-lora-seg.q{background:repeating-linear-gradient(135deg,var(--c-weights) 0 1.5px,color-mix(in srgb,var(--c-weights) 22%,var(--surface)) 1.5px 4px)}
+.tz-lora-seg.s{background:var(--ink-3);border-left:1px solid var(--surface)}
+.tz-lora-seg.a{background:repeating-linear-gradient(90deg,var(--ink-3) 0 1px,var(--line) 1px 4px);border-left:1px solid var(--surface)}
+.tz-lora-ov{position:absolute;top:-2px;bottom:-2px;box-sizing:border-box;background:repeating-linear-gradient(135deg,var(--c-oom) 0 2px,transparent 2px 5px);border:1.5px solid var(--c-oom);opacity:.85;transition:left .2s ease-out,width .2s ease-out}
+.tz-lora-cap{position:absolute;top:-6px;bottom:-3px;width:0;border-left:2px dashed var(--ink);margin-left:-1px;z-index:2}
+.tz-lora-capl{position:absolute;top:0;font-family:var(--font-mono);font-size:10px;font-style:normal;color:var(--ink);white-space:nowrap;transform:translateX(-4px)}
+.tz-lora-swq{background:repeating-linear-gradient(135deg,var(--c-weights) 0 1.5px,color-mix(in srgb,var(--c-weights) 22%,var(--surface)) 1.5px 4px);border-color:var(--c-weights)}
+.tz-lora-sws{background:var(--ink-3);border-color:transparent}
+.tz-lora-swa{background:repeating-linear-gradient(90deg,var(--ink-3) 0 1px,var(--line) 1px 4px);border-color:var(--ink-3)}
+@media (prefers-reduced-motion:reduce){.tz-lora-seg,.tz-lora-ov{transition:none}}

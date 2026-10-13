@@ -1,0 +1,191 @@
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top" data-i18n-aria="brandAria" aria-label="AI Systems Playground, home">
+      <svg viewBox="0 0 30 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="20" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="15" cy="3.5" r="1.9" fill="currentColor"/><circle cx="15" cy="16.5" r="1.9" fill="currentColor"/></svg>
+      <span>AI Systems Playground</span>
+    </a>
+    <nav class="nav" data-i18n-aria="navAria" aria-label="Primary">
+      <a href="#map" class="hide-xs" data-i18n="navMap">Tree</a>
+      <div class="langsw" role="group" data-i18n-aria="langAria" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="zh" lang="zh-CN" aria-pressed="false">中文</button></div>
+      <button class="icon-btn" id="themeBtn" type="button" data-i18n-aria="themeAria" aria-label="Switch between light and dark">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.7a6.3 6.3 0 0 1 0 12.6z" fill="currentColor"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section id="view-home">
+  <div class="wrap hero" id="top">
+    <div>
+      <div class="hero-h"><h1 data-i18n="heroTitle">Learn AI systems by operating them.</h1>
+      <p class="hero-sub" data-i18n="heroSub">Start with the first lesson: follow one sentence and see how a large language model writes its next word. No AI background needed.</p></div>
+      <div class="cta-row">
+        <a class="btn resume" id="heroResume" href="#top" hidden></a>
+        <a class="btn" href="#kv-cache" id="heroCta" data-i18n-html="heroCta">Why does a 70B model run out of memory? <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+    <div class="hero-side">
+    <div class="panel hero-lab graph" id="heroLab" hidden></div>
+    <div class="panel meter graph" id="heroKV" aria-labelledby="hmTitle">
+      <div class="meter-head">
+        <div>
+          <div class="meter-title" id="hmTitle">HBM · 8 × H100 80GB</div>
+          <div class="meter-sub" data-i18n="hmSub">Llama-3.1-70B · 100 concurrent users</div>
+        </div>
+        <span class="status ok" id="hmStatus">Fits</span>
+      </div>
+      <label class="ctl-label" for="hmCtx"><span data-i18n="ctxLabel">Context per user</span> <output id="hmCtxOut" for="hmCtx">8K tokens</output></label>
+      <input type="range" id="hmCtx" min="0" max="6" step="1" value="1" aria-describedby="hmHint">
+      <div class="ticks" aria-hidden="true"><span>4K</span><span>8K</span><span>12K</span><span>16K</span><span>32K</span><span>64K</span><span>128K</span></div>
+      <div class="bar" id="hmBar"></div>
+      <div class="axis" id="hmAxis"></div>
+      <div class="legend-row hm-legend" aria-hidden="true"><span data-tip="tipLgW"><i class="sw w"></i><span data-i18n="lgW">weights</span></span><span data-tip="tipLgOH"><i class="sw oh"></i><span data-i18n="lgOH">runtime overhead</span></span><span data-tip="tipLgKV"><i class="sw kv"></i><span data-i18n="lgKV">KV cache</span></span><span data-tip="tipLgFree"><i class="sw free"></i><span data-i18n="lgFree">free</span></span><span data-tip="tipLgRes"><i class="sw res"></i><span data-i18n="lgRes">held back</span></span><span data-tip="tipLgOver"><i class="sw over"></i><span data-i18n="lgOver">over capacity</span></span></div>
+      <p class="meter-read" id="hmRead"></p>
+      <p class="hint" id="hmHint"></p>
+    </div>
+    </div>
+  </div>
+
+  <section class="wrap section" id="map" aria-labelledby="mapH">
+    <h2 id="mapH" data-i18n="mapTitle">Pick a learning path, or a branch of the knowledge tree</h2>
+    <div class="paths" id="pathList" role="group" data-i18n-aria="pathsAria" aria-label="Learning paths"></div>
+    <div class="map-bar" id="mapBar">
+      <span class="mb-now" id="mapNow"></span>
+      <button class="pathchip pc-all" type="button" data-path="" aria-pressed="true"><span data-i18n="chipAll">No path, by branch</span></button>
+      <button class="linkbtn path-hint" type="button" id="pathHint" hidden></button>
+    </div>
+    <div class="domgrid" id="domGrid"></div>
+    <div class="panel map-canvas graph">
+      <div class="map-scroll"><svg id="mapSvg" class="tree" viewBox="0 0 1200 870" role="group" aria-label="Knowledge tree"></svg></div>
+      <div class="map-legend" id="mapLegend" aria-hidden="true"></div>
+    </div>
+    <div class="domstrip" id="domStrip"></div>
+    <div class="tiles-head" id="tilesHead" aria-live="polite"></div>
+    <div class="tiles" id="tiles"></div>
+  </section>
+</section>
+
+<section id="view-lab" class="m2" hidden>
+  <div class="wrap labhead">
+    <div class="crumbs"><a href="#map" data-i18n="crumbMap" data-tipfn="crumbTree">← Tree</a><span>/</span><a href="#map~models" id="kvCrumbWorld" data-i18n="crumbWorld">How LLMs work</a><span>/</span><span data-i18n="crumbKV">KV cache memory</span><span class="crumb-pn" id="kvCrumbNav"></span></div>
+    <h1 class="labtitle" data-i18n="labTitle">Why does a 70B model run out of memory at long context?</h1>
+    <p class="lab-outcome" data-i18n-html="kvOutcome"></p>
+    <div class="labmeta">
+      <span class="tag" data-i18n="tagMin">15 min</span>
+    </div>
+  </div>
+
+  <div class="wrap bench flowed">
+    <nav class="flow modes" id="kvFlow" data-flow-nav data-lab="kv-cache" data-i18n-aria="flowAria" aria-label="The steps of this lab"></nav>
+    <aside class="rail" id="rail" data-i18n-aria="railAria" aria-label="Lab steps"></aside>
+
+    <div class="panel stage" id="stage">
+      <div class="stage-head">
+        <div><div class="meter-title" id="stTitle"></div><div class="meter-sub" id="stSub"></div></div>
+        <div class="stage-actions"><span class="status" id="stStatus" tabindex="0" data-tip="tipStatus"></span><button class="btn ghost sm" type="button" id="pinBtn" data-tip="tipPin">Pin as A</button></div>
+      </div>
+      <div class="legend-row" aria-hidden="true"><span data-tip="tipLgW"><i class="sw w"></i><span data-i18n="lgW">weights</span></span><span data-tip="tipLgKV"><i class="sw kv"></i><span data-i18n="lgKV">KV cache</span></span><span data-tip="tipLgOH" data-jump="oh"><i class="sw oh"></i><span data-i18n="lgOH">runtime overhead</span></span><span data-tip="tipLgFree"><i class="sw free"></i><span data-i18n="lgFree">free</span></span><span data-tip="tipLgRes" data-jump="util"><i class="sw res"></i><span data-i18n="lgRes">held back</span></span><span data-tip="tipLgOver"><i class="sw over"></i><span data-i18n="lgOver">over capacity</span></span><span data-tip="tipLgWas"><i class="sw was"></i><span data-i18n="lgWas">dashed outline: before the change</span></span></div>
+      <div class="stage-graph graph" id="stageGraph">
+        <div class="bar-label" id="pgLabel"></div>
+        <div class="bar" id="pgBar"></div>
+        <div class="axis" id="pgAxis"></div>
+        <div id="pinWrap" hidden>
+          <div class="bar-label"><span id="pinLabel"></span><button class="linkbtn" type="button" id="unpinBtn" data-i18n="unpin">Unpin</button></div>
+          <div class="bar thin" id="pinBar"></div>
+        </div>
+        <div class="bar-label" id="aggLabel"></div>
+        <div class="bar thin" id="aggBar"></div>
+        <p class="stage-note" id="stNote"></p>
+      </div>
+      <div class="metrics" id="metrics"></div>
+      <details class="math" id="math"><summary data-i18n="showMath">Show the math</summary><div class="mathbody" id="mathBody"></div></details>
+    </div>
+
+    <aside class="panel controls" id="controls" data-i18n-aria="ctrlAria" aria-label="Settings">
+      <div class="eyebrow" data-i18n="ctrlEyebrow">Settings</div>
+      <p class="ctl-lock" id="lockNote" hidden></p>
+      <div class="ctl lockable" id="ctl-model"><label for="model" data-i18n="cModel">Model</label><select id="model"></select><div class="ctl-note" id="modelNote"></div></div>
+      <div class="ctl lockable" id="ctl-gpu"><label for="gpu" data-i18n="cGpu">GPU</label><select id="gpu"></select></div>
+      <div class="ctl lockable" id="ctl-n"><span class="lbl" id="nLbl" data-i18n="cN">GPUs, tensor parallel</span><div class="seg-ctl" role="group" aria-labelledby="nLbl" data-key="n"><button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="4">4</button><button type="button" data-v="8">8</button></div></div>
+      <div class="ctl lockable" id="ctl-ctx"><label for="ctx"><span data-i18n="ctxLabel">Context per user</span> <output id="ctxOut" for="ctx"></output></label><input type="range" id="ctx" min="0" max="14" step="1"><div class="ctl-note warn" id="ctxWarn" hidden></div></div>
+      <div class="ctl lockable" id="ctl-users"><label for="users"><span data-i18n="cUsers">Concurrent users</span> <output id="usersOut" for="users"></output></label><input type="range" id="users" min="0" max="16" step="1"></div>
+      <div class="ctl" id="ctl-wp"><span class="lbl" id="wpLbl" data-i18n="cWp">Weight precision</span><div class="seg-ctl" role="group" aria-labelledby="wpLbl" data-key="wp"><button type="button" data-v="bf16">BF16</button><button type="button" data-v="fp8">FP8</button><button type="button" data-v="fp4">FP4</button></div></div>
+      <div class="ctl" id="ctl-kp"><span class="lbl" id="kpLbl" data-i18n="cKp">KV cache precision</span><div class="seg-ctl" role="group" aria-labelledby="kpLbl" data-key="kp"><button type="button" data-v="bf16">BF16</button><button type="button" data-v="fp8">FP8</button></div></div>
+      <div class="ctl lockable" id="ctl-attn"><span class="lbl" id="attnLbl" data-i18n="cAttn">Attention</span><div class="seg-ctl" role="group" aria-labelledby="attnLbl" data-key="attn"><button type="button" data-v="gqa" data-i18n="attnNative">GQA</button><button type="button" data-v="mha" data-i18n="attnMha">MHA</button></div><div class="ctl-note" id="attnNote"></div></div>
+      <details class="adv lockable" id="adv"><summary data-i18n="adv">Memory utilization and overhead</summary>
+        <div class="ctl" id="ctl-util"><label for="util"><span data-i18n="cUtil">Memory utilization</span> <output id="utilOut" for="util"></output></label><input type="range" id="util" min="80" max="95" step="1"><div class="ctl-note" data-i18n="utilNote"></div></div>
+        <div class="ctl" id="ctl-oh"><label for="oh"><span data-i18n="cOh">Runtime overhead per GPU</span> <output id="ohOut" for="oh"></output></label><input type="range" id="oh" min="0" max="16" step="1"><div class="ctl-note" data-i18n="ohNote"></div></div>
+      </details>
+      <div><button class="btn ghost sm" type="button" id="resetBtn" data-i18n="reset">Reset</button></div>
+    </aside>
+  </div>
+
+  <section class="wrap connect" aria-labelledby="connH">
+    <div class="eyebrow" data-i18n="connEyebrow">Connect</div>
+    <h2 id="connH" data-i18n="connTitle">Take it further</h2>
+    <div class="connect-grid">
+      <article class="panel c-card">
+        <h3 data-i18n="cMin">Minimal implementation</h3>
+        <pre class="code" id="codeBlock">from dataclasses import dataclass
+
+GiB = 1024 ** 3
+
+@dataclass
+class Config:
+    layers: int
+    kv_heads: int
+    head_dim: int
+
+def kv_cache_bytes(cfg, tokens, users, bytes_per_elem=2):
+    # K and V, for every layer, KV head, token and user
+    return (2 * cfg.layers * cfg.kv_heads * cfg.head_dim
+            * bytes_per_elem * tokens * users)
+
+llama_70b = Config(layers=80, kv_heads=8, head_dim=128)
+print(kv_cache_bytes(llama_70b, 131072, 100) / GiB)  # 4000.0</pre>
+        <button class="btn ghost sm" type="button" id="copyCode" data-i18n="copyCode">Copy code</button>
+      </article>
+      <article class="panel c-card">
+        <h3 data-i18n="cProd">In production</h3>
+        <p data-i18n-html="cProd1"></p>
+        <p data-i18n-html="cProd2"></p>
+      </article>
+      <article class="panel c-card">
+        <h3 data-i18n="cPapers">Papers</h3>
+        <ul class="refs">
+          <li><a href="https://arxiv.org/abs/2305.13245" target="_blank" rel="noopener">GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints</a><span data-i18n="paperBy1">Ainslie et al., 2023</span></li>
+          <li><a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener">Efficient Memory Management for Large Language Model Serving with PagedAttention</a><span data-i18n="paperBy2">Kwon et al., SOSP 2023</span></li>
+          <li><a href="https://arxiv.org/abs/2405.04434" target="_blank" rel="noopener" data-i18n="paper3">DeepSeek-V2, which introduces multi-head latent attention (MLA)</a><span data-i18n="paperBy3">DeepSeek-AI, 2024</span></li>
+        </ul>
+      </article>
+      <article class="panel c-card">
+        <h3 data-i18n="cDrill">Interview drill (optional)</h3>
+        <p id="drillQ"></p>
+        <div class="cta-row"><button class="btn sm" type="button" id="drillReveal" data-i18n="drillReveal">Reveal answer</button><button class="btn ghost sm" type="button" id="drillNew" data-i18n="drillNew">New question</button></div>
+        <div class="drill-a" id="drillA" hidden></div>
+      </article>
+    </div>
+  </section>
+  <section class="wrap endnotes" id="fidPop" data-endnotes aria-labelledby="kv-enH"></section>
+</section>
+
+<section id="view-dyn" hidden></section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p data-i18n-html="foot2"></p>
+  </div>
+</footer>
+
+<div class="dock" id="dock" hidden aria-hidden="true">
+  <div class="wrap dock-in">
+    <span class="status" id="dkStatus"></span>
+    <div class="dk-bar" id="dkVis"><div class="bar thin" id="dkBar"></div></div>
+    <span class="dk-read mono" id="dkRead"></span>
+    <span class="dk-go" data-i18n="dockGo">Back to the chart ↑</span>
+  </div>
+</div>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<div class="sr-only" id="live" aria-live="polite"></div>

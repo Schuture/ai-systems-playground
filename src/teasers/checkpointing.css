@@ -1,0 +1,12 @@
+/* checkpointing teaser: one wasted-share curve on fixed axes (5 minutes to 4 hours, 0–30%), grayscale (R5.6); the chosen interval is a
+   filled dot, the lowest point a dashed drop line. The picture keeps its height at every position of the slider. */
+.tz-ckp-vis{min-width:0;padding:2px 0}
+.tz-ckp-vis svg{display:block;width:100%;height:120px}
+.tz-ckp-gl{stroke:var(--line-2);stroke-width:1}
+.tz-ckp-tk{font-family:var(--font-mono);font-size:9.5px;fill:var(--ink-3)}
+.tz-ckp-cur{fill:none;stroke:var(--ink);stroke-width:2.2}
+.tz-ckp-dot{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
+.tz-ckp-drop{stroke:var(--ink-2);stroke-width:1.2;stroke-dasharray:3 3}
+.tz-ckp-swc{height:0!important;border:0!important;border-top:2.2px solid var(--ink)!important;border-radius:0!important;align-self:center}
+.tz-ckp-swd{width:10px!important;height:10px!important;border:0!important;border-radius:50%!important;background:var(--ink)!important}
+.tz-ckp-swl{width:0!important;height:12px!important;border:0!important;border-left:1.5px dashed var(--ink-2)!important;border-radius:0!important;margin:0 7px 0 4px}

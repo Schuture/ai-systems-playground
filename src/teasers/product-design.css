@@ -1,0 +1,11 @@
+/* Product capstone home-tile teaser */
+.tz-pdz-l{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-2)}
+.tz-pdz-v{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink);font-weight:650}
+.tz-pdz-v.bad{fill:var(--c-oom)}
+.tz-pdz-tr{fill:var(--sunken)}
+.tz-pdz-b{fill:var(--ink-2)}
+.tz-pdz-b.bad{fill:var(--c-oom)}
+.tz-pdz-g{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:3 2}
+.sw.tz-pdz-swb{background:var(--ink-2)}
+.sw.tz-pdz-swbad{background:var(--c-oom)}
+.sw.tz-pdz-swg{background:transparent;border-left:2px dashed var(--ink);width:0;height:10px}

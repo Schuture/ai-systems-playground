@@ -1,0 +1,29 @@
+/* eval-ci teaser: two scores with their 95% error bars on a fixed axis (58–84%), grayscale (R5.6); a hatched band where the bars
+   overlap, centred on the overlap and at least 8 px wide (R5.10); under them B − A on its own axis (−2 to 6 points) with 0 marked.
+   The rows keep their height at every position of the slider. */
+.tz-evc-vis{padding:2px 0;min-width:0}
+.tz-evc-rows{position:relative;display:grid;gap:6px;min-width:0}
+.tz-evc-row,.tz-evc-scale{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;align-items:center;min-width:0}
+.tz-evc-lab{font-family:var(--font-mono);font-size:10.5px;color:var(--ink);white-space:nowrap}
+.tz-evc-trk{position:relative;height:24px;min-width:0}
+.tz-evc-trk::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px solid var(--line-2)}
+.tz-evc-bar{position:absolute;top:6px;height:12px;box-sizing:border-box;border-left:2px solid var(--ink-2);border-right:2px solid var(--ink-2);
+  background:linear-gradient(var(--ink-2),var(--ink-2)) center/100% 2px no-repeat;transition:left .2s ease-out,width .2s ease-out}
+.tz-evc-dot{position:absolute;top:7px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 2px var(--surface)}
+.tz-evc-band{position:absolute;top:0;bottom:0;left:96px;right:0;pointer-events:none}
+.tz-evc-ov{position:absolute;top:0;bottom:0;min-width:8px;transform:translateX(-50%);background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 5px);opacity:.55;border-left:1px dashed var(--ink-3);border-right:1px dashed var(--ink-3);box-sizing:border-box}
+.tz-evc-sc{position:relative;height:14px;border-top:1px solid var(--line)}
+.tz-evc-sc span{position:absolute;top:2px;transform:translateX(-50%);font-family:var(--font-mono);font-size:10px;color:var(--ink-3)}
+.tz-evc-swbar{background:linear-gradient(var(--ink-2),var(--ink-2)) center/100% 2px no-repeat;border:0;border-left:2px solid var(--ink-2);border-right:2px solid var(--ink-2);border-radius:0}
+.tz-evc-swov{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 4px);border-color:var(--ink-3)}
+.tz-evc-drow{margin-top:4px}
+.tz-evc-drow .tz-evc-lab{line-height:12px;white-space:nowrap}
+.tz-evc-zero{position:absolute;top:1px;bottom:1px;width:0;border-left:2px solid var(--ink);margin-left:-1px;z-index:1}
+.tz-evc-bar.cl{border-left:0}
+.tz-evc-bar.cr{border-right:0}
+.tz-evc-bar.cl::before,.tz-evc-bar.cr::after{content:"";position:absolute;top:50%;margin-top:-5px;border:5px solid transparent}
+.tz-evc-bar.cl::before{left:-2px;border-left:0;border-right:7px solid var(--ink-2)}
+.tz-evc-bar.cr::after{right:-2px;border-right:0;border-left:7px solid var(--ink-2)}
+.tz-evc-dsc{border-top:0;height:13px}
+.tz-evc-dsc span{top:0}
+@media (prefers-reduced-motion:reduce){.tz-evc-bar{transition:none}}

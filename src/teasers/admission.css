@@ -1,0 +1,10 @@
+.tz-adm-vis{max-height:130px}
+.tz-adm-svg{display:block;width:100%;height:auto;max-height:120px}
+.tz-adm-svg text{font-family:var(--font-mono);font-size:9.5px;fill:var(--ink-3)}
+.tz-adm-pa{fill:var(--c-weights);background:var(--c-weights)}
+.tz-adm-fr{fill:var(--c-kv);background:var(--c-kv)}
+.tz-adm-sc{fill:var(--c-overhead);background:var(--c-overhead)}
+.tz-adm-ov{fill:var(--c-oom);background:var(--c-oom);opacity:.85}
+.tz-adm-cap{stroke:var(--ink);stroke-width:1.3;stroke-dasharray:5 3}
+.tz-adm-sw{display:inline-block;width:12px;height:8px;border-radius:2px}
+.tz-adm-sw.tz-adm-cl{height:0;border-top:2px dashed var(--ink);border-radius:0}

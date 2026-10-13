@@ -1,0 +1,1016 @@
+:root{
+  --bg:#F2F4F7; --surface:#FFFFFF; --surface-2:#E9EDF2; --sunken:#E3E8EE;
+  --ink:#0D141E; --ink-2:#3C4858; --ink-3:#687485; --line:#CBD3DD; --line-2:#DDE3EA;
+  --grid:rgba(13,20,30,.05);
+  --c-weights:#2855C5; --c-kv:#D38700; --c-overhead:#7153E6; --c-oom:#CF2F2A; --c-ok:#0F7F59;
+  --tr-wood:#8E7358; --tr-bark:#D8C6AC; --tr-trunk:#6A5341; --tr-build:#B03F74; --tr-eval:#3D4A5C; --tr-use:#0D7A86; --tr-on:#FFFFFF;
+  --c-oom-soft:rgba(207,47,42,.10); --c-ok-soft:rgba(15,127,89,.10);
+  --on-weights:#FFFFFF; --on-kv:#1A1200; --kv-tick:rgba(26,18,0,.32);
+  --shadow:0 1px 0 rgba(13,20,30,.04),0 10px 28px -14px rgba(13,20,30,.22);
+  --font-ui:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono","PingFang SC","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC",monospace;
+  --r:4px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0A0F15; --surface:#10171F; --surface-2:#18212B; --sunken:#0C1218;
+    --ink:#E6EBF1; --ink-2:#AAB5C3; --ink-3:#778496; --line:#2A3544; --line-2:#1D2732;
+    --grid:rgba(230,235,241,.045);
+    --c-weights:#5A8AFF; --c-kv:#EFAE36; --c-overhead:#9B85FF; --c-oom:#FF5D52; --c-ok:#2EC38C;
+    --tr-wood:#A88E72; --tr-bark:#3E342B; --tr-trunk:#D2BA9E; --tr-build:#E6819F; --tr-eval:#B3BECC; --tr-use:#4CC4CB; --tr-on:#0A0F15;
+    --c-oom-soft:rgba(255,93,82,.14); --c-ok-soft:rgba(46,195,140,.13);
+    --on-weights:#06101F; --on-kv:#1A1200; --kv-tick:rgba(26,18,0,.34);
+    --shadow:0 1px 0 rgba(0,0,0,.35),0 12px 30px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0A0F15; --surface:#10171F; --surface-2:#18212B; --sunken:#0C1218;
+  --ink:#E6EBF1; --ink-2:#AAB5C3; --ink-3:#778496; --line:#2A3544; --line-2:#1D2732;
+  --grid:rgba(230,235,241,.045);
+  --c-weights:#5A8AFF; --c-kv:#EFAE36; --c-overhead:#9B85FF; --c-oom:#FF5D52; --c-ok:#2EC38C;
+  --tr-wood:#A88E72; --tr-bark:#3E342B; --tr-trunk:#D2BA9E; --tr-build:#E6819F; --tr-eval:#B3BECC; --tr-use:#4CC4CB; --tr-on:#0A0F15;
+  --c-oom-soft:rgba(255,93,82,.14); --c-ok-soft:rgba(46,195,140,.13);
+  --on-weights:#06101F; --on-kv:#1A1200; --kv-tick:rgba(26,18,0,.34);
+  --shadow:0 1px 0 rgba(0,0,0,.35),0 12px 30px -14px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:15px;line-height:1.55}
+a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.wrap{max-width:1320px;margin-inline:auto;padding-inline:clamp(16px,3.5vw,40px)}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.muted{color:var(--ink-3)}
+.small{font-size:13px}
+h1,h2,h3{text-wrap:balance}
+h2{font-size:clamp(26px,3.2vw,36px);font-stretch:112%;font-weight:720;line-height:1.08;letter-spacing:-.01em;margin:8px 0 10px}
+
+/* top bar */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);border-bottom:1px solid var(--line-2)}
+@supports (backdrop-filter:blur(8px)){.topbar{background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(10px)}}
+.topbar .wrap{display:flex;align-items:center;gap:16px;height:58px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:720;font-stretch:112%;white-space:nowrap;font-size:16px;min-width:0}
+.brand span{overflow:hidden;text-overflow:ellipsis}
+.brand svg{width:30px;height:20px;flex:none}
+.nav{display:flex;gap:2px;margin-left:auto;align-items:center;flex:none}
+.nav a{padding:6px 10px;border-radius:var(--r);text-decoration:none;color:var(--ink-2);font-size:14px;white-space:nowrap}
+.nav a:hover{background:var(--surface-2);color:var(--ink)}
+.icon-btn{width:34px;height:34px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:5px;background:var(--surface);cursor:pointer;margin-left:6px;flex:none}
+@media (max-width:680px){.nav a.hide-sm{display:none}.brand span{font-size:15px}}
+@media (max-width:440px){.nav a.hide-xs{display:none}.brand span{font-size:14px}}
+.langsw{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden;margin-left:6px;flex:none}
+.langsw button{border:0;background:var(--surface);padding:5px 9px;font-size:12.5px;font-weight:620;color:var(--ink-2);cursor:pointer;line-height:1.2}
+.langsw button+button{border-left:1px solid var(--line)}
+.langsw button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+html[lang^="zh"] .hero h1{line-height:1.12;letter-spacing:0}
+html[lang^="zh"] h2,html[lang^="zh"] .labtitle{line-height:1.2;letter-spacing:0}
+html[lang^="zh"] .eyebrow,html[lang^="zh"] .metric .k,html[lang^="zh"] .meter-title{letter-spacing:.04em}
+html[lang^="zh"] .eyebrow,html[lang^="zh"] .metric .k{text-transform:none}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:5px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);font-weight:650;font-size:14.5px;text-decoration:none;cursor:pointer;line-height:1.2}
+.btn:hover{background:var(--ink-2);border-color:var(--ink-2)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--ink);background:var(--surface)}
+.btn.sm{padding:7px 11px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.linkbtn{background:none;border:0;padding:0;color:var(--ink-2);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:13px}
+.cta-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.graph{background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:14px 14px;background-position:-1px -1px}
+.status{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11.5px;font-weight:600;letter-spacing:.02em;padding:5px 9px;border-radius:3px;border:1px solid currentColor;white-space:nowrap}
+.status.ok{color:var(--c-ok);background:var(--c-ok-soft)}
+.status.bad{color:var(--c-oom);background:var(--c-oom-soft)}
+
+/* sliders: fader caps */
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;margin:0;cursor:pointer}
+input[type=range]:disabled{cursor:not-allowed;opacity:.45}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--ink) 0 var(--fill,0%),var(--line) var(--fill,0%) 100%)}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--ink)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:24px;margin-top:-10px;border-radius:3px;background-color:var(--ink);background-image:linear-gradient(transparent 44%,var(--surface) 44% 56%,transparent 56%);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--ink)}
+input[type=range]::-moz-range-thumb{width:10px;height:20px;border-radius:3px;background-color:var(--ink);background-image:linear-gradient(transparent 44%,var(--surface) 44% 56%,transparent 56%);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--ink)}
+input[type=range]:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:2px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:center;padding-block:clamp(32px,5vw,64px) clamp(24px,3vw,40px)}
+@media (max-width:920px){.hero{grid-template-columns:minmax(0,1fr)}}
+.hero>*,.map-wrap>*,.why-grid>*,.bench>*,.connect-grid>*{min-width:0}
+.hero h1{font-size:clamp(38px,5.4vw,66px);line-height:.98;font-weight:780;font-stretch:118%;letter-spacing:-.018em;margin:14px 0 18px}
+.lede{font-size:clamp(16px,1.45vw,18px);color:var(--ink-2);max-width:32em;margin:0 0 26px}
+.meter{padding:18px 18px 16px}
+.meter-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.meter-title{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.03em;color:var(--ink-3)}
+.meter-sub{font-weight:650;margin-top:2px;font-size:15px}
+.ctl-label{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.ctl-label output,.ctl output{font-family:var(--font-mono);font-weight:500;color:var(--ink);font-size:13px}
+.ticks{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);margin:-2px 3px 0}
+.meter-read{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-2);margin:12px 0 0;line-height:1.6}
+.hint{font-size:13px;color:var(--ink-3);margin:6px 0 0}
+
+/* resource bars */
+.bar{position:relative;height:46px;margin-top:22px}
+.bar.thin{height:16px;margin-top:8px}
+.bar .cap{position:absolute;top:0;bottom:0;left:0;background:var(--surface);border:1px solid var(--line);border-radius:3px}
+.seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;overflow:hidden;white-space:nowrap;font-family:var(--font-mono);font-size:11px;padding-left:6px;transition:left .22s ease-out,width .22s ease-out}
+.seg.w{background:var(--c-weights);color:var(--on-weights);border-radius:3px 0 0 3px}
+.seg.oh{background:var(--c-overhead);padding:0}
+.seg.kv{background-color:var(--c-kv);color:var(--on-kv)}
+.seg.free{background:repeating-linear-gradient(135deg,transparent 0 5px,var(--line) 5px 6px);padding:0}
+.seg.res{background:repeating-linear-gradient(135deg,var(--surface-2) 0 3px,var(--line) 3px 4px);padding:0;border-radius:0 3px 3px 0}
+.seg.over{background:repeating-linear-gradient(135deg,var(--c-oom) 0 5px,var(--c-oom-soft) 5px 9px);border:1.5px solid var(--c-oom);color:var(--c-oom);font-weight:600;justify-content:flex-end;padding:0 6px 0 0;border-radius:0 3px 3px 0}
+.seg.over span{background:var(--surface);padding:1px 5px;border-radius:2px;white-space:pre-line;text-align:center;line-height:1.25}
+.seg.over.clipped{border-right-style:dashed}
+.bar.thin .seg{font-size:0}
+.usable{position:absolute;top:-17px;bottom:-5px;width:0;border-left:1.5px dashed var(--ink-2);transition:left .22s ease-out}
+.usable span{position:absolute;top:0;left:5px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-2);white-space:nowrap}
+.bar.thin .usable{top:-3px;bottom:-3px}
+.bar.thin .usable span{display:none}
+.bar-ghost{position:absolute;top:-3px;bottom:-3px;left:0;border:1.5px dashed var(--ink);border-radius:3px;opacity:0;pointer-events:none}
+.axis{position:relative;height:16px;margin-top:6px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3)}
+.axis span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.axis span:first-child{transform:none}
+.legend-row{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--font-mono);font-size:11px;color:var(--ink-2);margin-top:12px}
+.sw{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:6px;border:1px solid var(--line)}
+.sw.w{background:var(--c-weights);border-color:transparent}.sw.kv{background:var(--c-kv);border-color:transparent}.sw.oh{background:var(--c-overhead);border-color:transparent}
+.sw.free{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line) 3px 4px)}
+.sw.res{background:repeating-linear-gradient(135deg,var(--surface-2) 0 2px,var(--line) 2px 3px)}
+.sw.over{background:repeating-linear-gradient(135deg,var(--c-oom) 0 3px,var(--c-oom-soft) 3px 5px);border-color:var(--c-oom)}
+/* the dashed outline of the last state, and the dashed usable-limit line, as legend marks */
+.sw.was{background:transparent;border:1.5px dashed var(--ink)}
+.sw.lim{width:0;height:12px;border:0;border-left:1.5px dashed var(--ink-2);border-radius:0;margin:0 7px 0 4px}
+
+/* sections */
+.section{padding-block:clamp(40px,6vw,76px) 0;scroll-margin-top:70px}
+.sec-lede{color:var(--ink-2);max-width:42em;margin:0}
+
+/* map */
+.pathchip{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink-2)}
+.pathchip:hover{border-color:var(--ink)}
+.pathchip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+/* the six learning paths above the tree (owner round 3 #1). Wide screens: one row per path under column headings, so the paths compare
+   side by side; narrower: cards, two or one to a row, each field named on the card */
+#map.section{padding-top:clamp(24px,3vw,40px)}   /* right under the hero: the paths start on the first screen */
+.paths{margin-top:14px}
+.pl-lead{margin:0 0 12px;font-size:14px;color:var(--ink-2);max-width:62em}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.pentry{position:relative;display:grid;gap:6px 16px;padding:11px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0}
+.pentry.sel{border-color:var(--ink);box-shadow:inset 3px 0 0 var(--ink)}
+/* the whole entry is one button (it shows the path on the tree); the start link and the progress note sit above it */
+.pathchip.pe-hit,.pathchip.pe-hit[aria-pressed="true"]{position:absolute;inset:0;z-index:1;margin:0;padding:0;border:0;border-radius:8px;background:transparent;cursor:pointer}
+.pentry:has(.pe-hit:hover){border-color:var(--ink-2)}
+.pentry.sel:has(.pe-hit:hover){border-color:var(--ink)}
+.pe-hit:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.pe-go .btn,.pe-prog{position:relative;z-index:2}
+.pentry>*{min-width:0}
+.pe-head{display:flex;flex-direction:column;gap:2px}
+.pe-name{margin:0;font-size:16px;font-weight:700;font-stretch:104%;line-height:1.25}
+.pe-size{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3)}
+.pe-prog{font-size:12.5px;font-weight:600;color:var(--c-ok)}
+.pe-f{margin:0;font-size:13.5px;line-height:1.45;color:var(--ink-2)}
+.pe-k{font-weight:650;color:var(--ink)}
+.pe-go{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.pe-go .btn{white-space:nowrap}
+.pl-cols{display:none}
+.pl-rec{margin:10px 0 0;font-size:13px;color:var(--ink-3)}
+@media (min-width:1180px){
+  .pl-cols,.pentry{grid-template-columns:10.5rem minmax(0,.9fr) minmax(0,1.15fr) minmax(0,.85fr) 15rem;column-gap:16px}
+  .pl-cols{display:grid;padding:0 15px 4px;font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3)}
+  .pentry .pe-k{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+}
+@media (max-width:1179px){
+  .plist{grid-template-columns:repeat(auto-fill,minmax(min(380px,100%),1fr))}
+  .pentry{display:flex;flex-direction:column}
+  .pe-head{flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+  .pe-go{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:auto;padding-top:4px}
+}
+/* the line right above the tree: what the tree shows now, and the way back to no path */
+.map-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:18px}
+.mb-now{font-size:13.5px;color:var(--ink-2)}
+.map-wrap{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px;margin-top:14px;align-items:start}
+@media (max-width:1000px){.map-wrap{grid-template-columns:minmax(0,1fr)}}
+.map-canvas{padding:8px 8px 10px;position:relative}
+.map-scroll{overflow-x:auto}
+#mapSvg{display:block;width:100%;min-width:660px;height:auto}
+.map-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-family:var(--font-mono);font-size:11px;color:var(--ink-2);padding:4px 8px 0}
+.map-legend span{display:inline-flex;align-items:center;gap:6px}
+.map-panel{padding:16px 16px 18px;min-height:200px}
+.ph{font-size:20px;font-stretch:108%;font-weight:700;line-height:1.2;margin:6px 0 6px}
+.pd{color:var(--ink-2);font-size:14px;margin:0 0 10px}
+.lablist{list-style:none;padding:0;margin:10px 0 14px;display:grid;gap:6px}
+.lablist li{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line-2);border-radius:4px;background:var(--surface)}
+.lablist li.live{border-color:var(--ink)}
+.lrow{display:grid;grid-template-columns:14px minmax(0,1fr);gap:9px;padding:8px 10px;text-decoration:none;flex:1;min-width:0}
+a.lrow:hover .lq{text-decoration:underline}
+.lnum{font-size:11.5px;color:var(--ink-2);padding:9px 0 0 10px;width:20px;flex:none}
+.lq{font-weight:600;font-size:14px;line-height:1.35;display:block}
+.lm{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);display:block;margin-top:2px}
+.glyph{width:12px;height:12px;border-radius:50%;border:1.6px solid var(--ink);margin-top:4px;display:inline-block;flex:none}
+.glyph.live{background:var(--ink)}
+.glyph.wip{background:linear-gradient(90deg,transparent 50%,var(--ink) 50%)}
+.glyph.next{border-width:3px}
+.glyph.planned{border-color:var(--ink-3)}
+.sep{height:1px;background:var(--line-2);margin:12px 0}
+/* svg map */
+.loop{fill:none;stroke:var(--line);stroke-width:1.5}
+.flow{fill:none;stroke:var(--ink-3);stroke-width:2;stroke-dasharray:1.5 14;stroke-linecap:round;animation:flow 3.2s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-31}}
+.chev{fill:none;stroke:var(--ink-2);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.cap-big{font-family:var(--font-ui);font-stretch:125%;font-weight:800;font-size:30px;letter-spacing:.16em;fill:var(--ink);opacity:.10}
+.cap-sub{font-family:var(--font-mono);font-size:12px;fill:var(--ink-3)}
+.world{cursor:pointer}
+.world:focus{outline:none}
+.world .hit,.bead .hit{fill:transparent}
+.world .wnode{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.world .wdot{fill:var(--ink)}
+.world.sel .wnode{fill:var(--ink)}
+.world.sel .wdot{fill:var(--surface)}
+.world:hover .wnode,.world:focus-visible .wnode{stroke-width:3.5}
+.wname{font-family:var(--font-ui);font-weight:680;font-size:15px;fill:var(--ink)}
+.wsub{font-family:var(--font-mono);font-size:11px;fill:var(--ink-3)}
+.halo{paint-order:stroke;stroke:var(--surface);stroke-width:5px;stroke-linejoin:round}
+.bead{cursor:pointer}
+.bead:focus{outline:none}
+.bead .b{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}
+.bead.live .b{fill:var(--ink)}
+.bead .half{fill:var(--ink)}
+.bead.next .b{stroke-width:3}
+.bead.planned .b{stroke:var(--ink-3)}
+.bead:hover .b,.bead:focus-visible .b{stroke-width:3.2}
+.dim{opacity:.2}
+.route{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-dasharray:5 5}
+.bnum-bg{fill:var(--surface);stroke:var(--ink);stroke-width:1.2}
+.bnum{font-family:var(--font-mono);font-size:10.5px;font-weight:600;fill:var(--ink)}
+.way{fill:var(--ink-3)}
+.wayt{font-family:var(--font-mono);font-size:11px;fill:var(--ink-3);font-style:italic}
+.tip{position:fixed;z-index:60;max-width:280px;background:var(--ink);color:var(--bg);padding:9px 11px;border-radius:5px;font-size:13px;line-height:1.4;pointer-events:none;transform:translate(-50%,calc(-100% - 12px));box-shadow:var(--shadow)}
+.tip .m{font-family:var(--font-mono);font-size:11px;opacity:.75;margin-top:4px}
+
+/* approach */
+.why-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px}
+@media (max-width:920px){.why-grid{grid-template-columns:minmax(0,1fr)}}
+.why{padding:18px}
+.why h3{font-size:18px;font-stretch:108%;margin:0 0 6px}
+.why p{color:var(--ink-2);margin:0;font-size:14.5px}
+.mini{background:var(--sunken);border:1px solid var(--line-2);border-radius:4px;padding:10px 12px;font-family:var(--font-mono);font-size:12.5px;margin:12px 0 0;white-space:pre;overflow-x:auto;line-height:1.55}
+.fid-list{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:7px;font-size:13.5px;color:var(--ink-2)}
+.fid{display:inline-block;min-width:96px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border:1px solid var(--line);border-radius:3px;margin-right:8px;color:var(--ink);background:var(--surface)}
+
+/* lab */
+.labhead{padding-block:18px 14px}
+.crumbs{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-family:var(--font-mono);font-size:12px;color:var(--ink-3)}
+.crumbs a{color:var(--ink-2);text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px}
+.crumbs a:hover{text-decoration-color:currentColor}
+.crumbs>.crumb-next{margin-left:auto}
+/* the previous and the next lab at the right end of the row (the owner, 2026-10-09): “← Previous lab: X   Next lab: Y →”. When the row
+   is too long the pair wraps as one piece to a line of its own, still at the right */
+.crumbs .crumb-pn{margin-left:auto;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px 22px;min-width:0;max-width:100%}
+.crumbs .crumb-pn:empty{display:none}
+.crumbs .crumb-pn>a{min-width:0;overflow-wrap:anywhere}
+/* touch widths: each link is a tap target at least 32 px tall that takes no room (padding inside negative margins; it reaches down
+   into the title's top margin, not up into the crumbs) */
+@media (max-width:760px){.crumbs .crumb-pn>a{padding:4px 0 12px;margin:-4px 0 -12px}}
+/* phones (≤ 480 px): the row is no taller than before the previous link (v6; R7.3, the first screen): short labels on one line,
+   “← 上一个  下一个 →”; the lab's name and its stop are in the hover, and in the link's text for screen readers (kept at font-size 0) */
+@media (max-width:480px){
+  .crumbs .crumb-pn{flex-wrap:nowrap;gap:0 16px}
+  .crumbs .crumb-pn>a{font-size:0;white-space:nowrap;overflow-wrap:normal}
+  .crumbs .crumb-pn>a>span,.crumbs .crumb-pn>a::before,.crumbs .crumb-pn>a::after{font-size:12px}
+  .crumbs .crumb-pn>.crumb-prev::after{content:'Prev';content:'Prev'/'';margin-left:.6em}
+  .crumbs .crumb-pn>.crumb-next::before{content:'Next';content:'Next'/'';margin-right:.6em}
+  html[lang^="zh"] .crumbs .crumb-pn>.crumb-prev::after{content:'上一个';content:'上一个'/''}
+  html[lang^="zh"] .crumbs .crumb-pn>.crumb-next::before{content:'下一个';content:'下一个'/''}
+}
+/* the next lab, below the rail card in every mode (R3.11) */
+.next-lab{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:var(--surface);display:flex;flex-direction:column;gap:4px}
+.next-lab .nl-k,.next-lab .nl-last{font-family:var(--font-mono);font-size:12px;color:var(--ink-3)}
+.next-lab .nl-go{font-weight:600;color:var(--ink);text-decoration:none;line-height:1.35}
+.next-lab .nl-done{font-family:var(--font-mono);font-size:12px;color:var(--ink)}
+.next-lab .nl-skip,.next-lab .nl-note{font-size:12px;color:var(--ink-3);line-height:1.4}
+/* at a branch's end: the button that joins the path of the suggested next step (round 3, item 4) */
+.next-lab .nl-join{align-self:flex-start;margin-top:4px}
+.next-lab .nl-go:hover,.next-lab .nl-go:focus-visible{text-decoration:underline;text-underline-offset:3px}
+/* a term defined on hover (R2.8): dotted underline and a question-mark cursor, a click does nothing (R1.3) */
+.def{border-bottom:1px dotted var(--ink-3);cursor:help}
+.next-lab-end{display:none}
+/* on phones the rail's footer moves after the bench; it shows only where the rail shows one (not before the last guided part, R3.11) */
+@media (max-width:760px){.rail .next-lab{display:none}.bench:has(.rail .next-lab)+.next-lab-end{display:block;margin-top:14px}.next-lab-end .next-lab{margin-top:0}}
+.labtitle{font-size:clamp(26px,3.3vw,40px);font-stretch:112%;font-weight:740;line-height:1.06;letter-spacing:-.01em;margin:10px 0 12px;max-width:26em}
+.labmeta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.labmeta .spacer{flex:1 1 0}
+.tag{font-family:var(--font-mono);font-size:12px;padding:5px 9px;border:1px solid var(--line);border-radius:3px;color:var(--ink-2);background:var(--surface);line-height:1.3}
+button.tag{cursor:pointer}
+button.tag:hover{border-color:var(--ink);color:var(--ink)}
+.modes{display:inline-flex;border:1px solid var(--line);border-radius:5px;padding:3px;background:var(--surface);gap:2px}
+.modes button{border:0;background:transparent;padding:6px 12px;border-radius:3px;cursor:pointer;font-weight:620;font-size:13.5px;color:var(--ink-2)}
+.modes button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.pop{margin-top:12px;padding:16px 18px}
+.pop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.pop ul{margin:6px 0 0;padding-left:18px;font-size:13.5px;color:var(--ink-2)}
+.pop p{margin:0 0 8px;font-size:14px;color:var(--ink-2);max-width:62em}
+.sharebox{margin-top:10px;display:grid;gap:6px;max-width:640px}
+.sharebox input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface);font-family:var(--font-mono);font-size:12px}
+.bench{display:grid;grid-template-columns:300px minmax(0,1fr) 290px;gap:16px;padding-block:6px 30px;align-items:start}
+@media (max-width:1180px){.bench{grid-template-columns:280px minmax(0,1fr)}.rail{grid-column:1;grid-row:1}.controls{grid-column:1;grid-row:2}.stage{grid-column:2;grid-row:1 / span 2}}
+@media (max-width:760px){.bench{grid-template-columns:minmax(0,1fr)}.rail,.stage,.controls{grid-column:auto;grid-row:auto}.rail{order:1}.stage{order:2}.controls{order:3}}
+@media (min-width:761px) and (min-height:600px){.stage{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);max-height:calc(100vh - 86px);overflow-y:auto}}
+.stage{padding:16px;container-type:inline-size}
+.stage-head{display:flex;justify-content:space-between;gap:10px 14px;align-items:flex-start;flex-wrap:wrap}
+.stage-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stage-graph{margin-top:14px;padding:12px 14px 12px;border:1px solid var(--line-2);border-radius:4px}
+.bar-label{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);margin:12px 0 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.bar-label:first-child{margin-top:0}
+.stage-note{font-size:13px;color:var(--ink-2);margin:12px 0 0}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+@container (min-width:560px){.metrics{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.metric{border:1px solid var(--line-2);border-radius:4px;padding:9px 9px;background:var(--surface);min-width:0}
+.metric .k{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.02em;color:var(--ink-3)}
+.metric .v{font-size:clamp(15px,4cqi,18px);font-weight:500;margin-top:1px;white-space:nowrap}
+.metric .sub{font-size:12px;color:var(--ink-3);line-height:1.35}
+.metric .d{font-size:11px;color:var(--ink-2);height:15px;opacity:0;transition:opacity .35s}
+.metric .d.on{opacity:1}
+details.math{margin-top:12px;border-top:1px solid var(--line-2);padding-top:10px}
+details.math summary,details.adv summary{cursor:pointer;font-weight:650;list-style:none;display:flex;align-items:center;gap:8px;font-size:14px}
+details.math summary::-webkit-details-marker,details.adv summary::-webkit-details-marker{display:none}
+details.math summary::before,details.adv summary::before{content:"+";font-family:var(--font-mono);width:18px;height:18px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-size:12px}
+details.math[open] summary::before,details.adv[open] summary::before{content:"−"}
+.mathbody{font-family:var(--font-mono);font-size:12.5px;line-height:1.7;overflow-x:auto}
+/* the owner's review of batch 9 (2026-10-08): in SFT's Show the math the top of a tall fraction (120 over 1919) was cut off. A box
+   with overflow-x:auto clips vertically too, so every formula box gets room above and below; a lab's own padding wins (:where
+   has zero specificity). LAB_UX_GUIDE R6.33 */
+:where(.mathbody,.fx,[class$="-fx"],[class*="-fx "],[class*="math-line"]){padding-block:.3em}
+.mathbody p{margin:6px 0}
+/* the KV lab's summary formula (batch 9, H1): pieces that wrap before an operator, a hanging indent for the lines after the first */
+.kv-fx{margin:6px 0;padding-left:1.4em;text-indent:-1.4em;line-height:1.8;overflow-x:auto}
+.kv-fx>math{text-indent:0}
+.t{border-bottom:1px dotted var(--ink-3);cursor:pointer;border-radius:2px}
+.t:hover,.t:focus{background:var(--surface-2);border-bottom:1px solid var(--ink);outline:none}
+.okc{color:var(--c-ok)}.badc{color:var(--c-oom)}
+.controls{padding:14px 16px 16px;display:grid;gap:15px}
+.controls .eyebrow{margin-bottom:-6px}
+.ctl{display:grid;gap:6px;border-radius:4px}
+.ctl > label,.ctl > .lbl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;font-weight:620;color:var(--ink-2)}
+select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface);font-size:14px;cursor:pointer}
+select:disabled{opacity:.5;cursor:not-allowed}
+.seg-ctl{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg-ctl button{flex:1;padding:7px 6px;border:0;border-right:1px solid var(--line);background:var(--surface);cursor:pointer;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-2)}
+.seg-ctl button:last-child{border-right:0}
+.seg-ctl button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg-ctl button:disabled{opacity:.4;cursor:not-allowed}
+.ctl-note{font-size:12px;color:var(--ink-3);line-height:1.4}
+.ctl-note.warn{color:var(--c-oom)}
+details.adv{border-top:1px solid var(--line-2);padding-top:10px}
+details.adv .ctl{margin-top:12px}
+.cue{outline:2px dashed var(--ink);outline-offset:5px;animation:cue 1.5s ease-in-out 3}
+@keyframes cue{50%{outline-color:transparent}}
+.linked{outline:2px solid var(--ink);outline-offset:5px}
+/* rail */
+.rail-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.step{border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.step.current{border-color:var(--ink);box-shadow:var(--shadow)}
+.step-h{display:flex;gap:10px;align-items:center;width:100%;padding:9px 12px;background:none;border:0;text-align:left;cursor:pointer;font-weight:640;font-size:14px}
+.step .num{display:inline-grid;place-items:center;width:22px;height:22px;border:1px solid var(--line);border-radius:50%;font-family:var(--font-mono);font-size:11px;flex:none}
+.step.done .num{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.step.current .num{border-color:var(--ink);border-width:2px}
+.step.todo .step-h{color:var(--ink-3)}
+/* round 3, R08: a part left behind without its answer keeps its number in a dashed ring, with "skipped" at the row's end */
+.step.skipped .num{border-style:dashed;border-color:var(--ink-3);color:var(--ink-2)}
+.step-h .sk-tag{margin-left:auto;flex:none;font:500 11.5px/1.2 var(--font-mono);color:var(--ink-3)}
+.step-b{padding:0 14px 14px;font-size:14.5px}
+.step-b p{margin:0 0 10px}
+.step-b ul{margin:0 0 10px;padding-left:18px}
+.step-b li{margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.obs{margin:10px 0 0;padding:10px 12px;background:var(--surface-2);border-radius:4px;font-size:14px}
+.obs p{margin:4px 0 8px}
+.obs p:last-child{margin-bottom:0}
+.obs .eyebrow{font-size:10.5px}
+.eyebrow.keepcase{text-transform:none;letter-spacing:.02em}
+.choices{display:grid;gap:6px;margin:8px 0}
+.choice{text-align:left;padding:9px 12px;border:1px solid var(--line);border-radius:4px;background:var(--surface);cursor:pointer;font-size:14px}
+.choice:hover{border-color:var(--ink)}
+.choice[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.stepnav{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.tries{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
+.okline{color:var(--c-ok)}
+.badline{color:var(--c-oom)}
+.railcard{padding:16px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.rh{font-size:18px;font-stretch:108%;margin:6px 0 8px;line-height:1.25}
+.railcard p{font-size:14px;margin:0 0 10px}
+.goal{font-size:13px;display:flex;justify-content:space-between;gap:8px;margin-top:6px}
+.progress{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin:6px 0 12px}
+.progress i{display:block;height:100%;width:0;background:var(--ink);transition:width .3s}
+.presets{display:grid;gap:6px;margin:0 0 12px}
+.preset{display:grid;gap:2px;text-align:left;padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:var(--surface);cursor:pointer}
+.preset:hover{border-color:var(--ink)}
+.preset b{font-size:14px}
+.preset span{font-size:11.5px;color:var(--ink-3)}
+/* tooltips and term jumps */
+.tip.below{transform:translate(-50%,12px)}
+.tip .act{font-size:12px;opacity:.78;margin-top:5px}
+[data-tip]:not(button){cursor:help}
+.flash{animation:flash 1.6s ease-out}
+@keyframes flash{0%,35%{outline:2px solid var(--ink);outline-offset:4px;background-color:var(--surface-2)}100%{outline:2px solid transparent;outline-offset:4px}}
+/* mode description */
+.mode-desc{margin:10px 0 0;font-size:14px;color:var(--ink-2);max-width:62em}
+.mode-desc b{color:var(--ink);font-weight:650}
+/* controls: hint and challenge lock */
+.ctl-hint{margin:0;font-size:12.5px;line-height:1.45;color:var(--ink-3)}
+.ctl-lock{margin:0;padding:9px 11px;border-radius:4px;background:var(--surface-2);font-size:13px;line-height:1.45;color:var(--ink-2)}
+.controls.locked .lockable{display:none}
+/* the control a step asks for, inside the step card */
+.inline-ctl{display:grid;gap:6px;margin:2px 0 12px;padding:10px 12px 11px;border:1px dashed var(--ink-3);border-radius:5px;background:var(--surface)}
+.inline-ctl>label,.inline-ctl>.lbl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;font-weight:620;color:var(--ink-2)}
+.inline-ctl output{font-family:var(--font-mono);font-weight:500;color:var(--ink);font-size:13px}
+/* mini chart under the top bar */
+.stage-graph{scroll-margin-top:80px}
+.dock{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 59px);z-index:29;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 10px 24px -18px rgba(13,20,30,.5);cursor:pointer;animation:dockin .18s ease-out}
+@keyframes dockin{from{opacity:0;transform:translateY(-6px)}}
+.dock-in{display:flex;align-items:center;gap:12px;min-height:48px}
+.dk-bar{flex:1 1 auto;min-width:64px}
+.dk-bar .bar{margin-top:0}
+.dk-read{font-size:12px;color:var(--ink-2);white-space:nowrap}
+.dk-go{font-size:12.5px;font-weight:650;white-space:nowrap}
+.dock:hover .dk-go{text-decoration:underline;text-underline-offset:3px}
+.dock.pulse .dock-in{animation:dockp .8s ease-out}
+@keyframes dockp{from{background:var(--surface-2)}}
+@media (max-width:560px){.dk-go,.dk-mem{display:none}}
+/* challenge progress and comparison bars */
+.goal.met b{color:var(--c-ok)}
+.progress.met i{background:var(--c-ok)}
+.cmp{margin:14px 0 6px}
+.cmp-title{font-size:13px;font-weight:650;margin:0 0 2px}
+.cmp-row{margin-top:9px}
+.cmp-lab{display:flex;flex-wrap:wrap;align-items:center;gap:3px 6px;font-size:12.5px;line-height:1.3;color:var(--ink-2)}
+.cmp-row.me .cmp-lab{color:var(--ink);font-weight:650}
+.cmp-track{position:relative;height:14px;margin:4px 28px 0 0;background:var(--surface-2);border-radius:2px}
+.cmp-track i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px}
+.cmp-row.ok .cmp-track i{background:var(--ink)}
+.cmp-row.me .cmp-track{box-shadow:0 0 0 1.5px var(--ink)}
+.cmp-track .g{position:absolute;top:-3px;bottom:-3px;width:0;border-left:1.5px dashed var(--ink-2)}
+.cmp-val{position:absolute;top:50%;transform:translateY(-50%);margin-left:6px;font-size:11.5px;line-height:1;color:var(--ink)}
+.cmp-tag,.cmp-you{font-family:var(--font-mono);font-size:10.5px;line-height:1.5;border-radius:999px;padding:0 6px;font-weight:500}
+.cmp-tag{border:1px solid var(--line);color:var(--ink-3)}
+.cmp-you{background:var(--ink);color:var(--bg)}
+.cmp-axis{position:relative;height:16px;margin:5px 28px 0 0;font-family:var(--font-mono);font-size:11px;color:var(--ink-2)}
+.cmp-axis span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+#chRes{scroll-margin-top:120px;scroll-margin-bottom:12px}
+/* single-choice options: a radio dot, a filled pressed state, and each tried option's result on the right */
+.levers{display:grid;gap:6px;margin:8px 0 4px}
+/* an option: the dot, the title with its result on the same row (the tried results line up on the right, R3.6),
+   and the description below at full width, so a narrow rail does not squeeze it into a thin column */
+.lever{display:grid;grid-template-columns:14px minmax(0,1fr) auto;column-gap:10px;row-gap:1px;align-items:start}
+.lever::before{content:"";grid-column:1;grid-row:1;margin-top:2px;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink-3);box-sizing:border-box}
+.lever[aria-pressed="true"]::before{border-color:currentColor;background:radial-gradient(circle,currentColor 0 3px,transparent 3.5px)}
+.lever .lv-t{display:contents}
+.lever .lv-t b{grid-column:2;grid-row:1;font-weight:650;min-width:0}
+.lever .lv-d{grid-column:2 / 4;grid-row:2;font-size:12px;line-height:1.35;color:var(--ink-3)}
+.lever[aria-pressed="true"] .lv-d{color:inherit;opacity:.78}
+.lever .lv-r{grid-column:3;grid-row:1;padding-top:1px;font-size:12px;white-space:nowrap;color:var(--ink-2)}
+.lever[aria-pressed="true"] .lv-r{color:inherit}
+.obs.bump{animation:bump 1s ease-out}
+@keyframes bump{0%,35%{box-shadow:0 0 0 2px var(--ink)}100%{box-shadow:0 0 0 2px transparent}}
+.legend-row [data-jump]{cursor:pointer}
+.legend-row [data-jump]:hover>span{text-decoration:underline;text-underline-offset:3px}
+.preset{grid-template-columns:14px minmax(0,1fr);column-gap:10px;align-items:center}
+.preset::before{content:"";grid-row:1 / span 2;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink-3);box-sizing:border-box}
+.preset>*{grid-column:2}
+.preset[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.preset[aria-pressed="true"]::before{border-color:currentColor;background:radial-gradient(circle,currentColor 0 3px,transparent 3.5px)}
+.preset[aria-pressed="true"] span{color:inherit;opacity:.78}
+.step-b .linkbtn,.railcard .linkbtn,.pop .linkbtn{font-size:inherit}
+/* connect */
+.connect{padding-block:10px 20px}
+.connect-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}   /* two per row: code blocks fit without dragging (R7.6, review 8) */
+@media (max-width:760px){.connect-grid{grid-template-columns:minmax(0,1fr)}}
+/* 761–1279 px (the Claude side panel is 720–960): two columns leave a code block under 74 characters, so the minimal implementation
+   takes a whole row, and so does the last card when it would sit alone (R7.6, R7.3); code lines stay within 74 characters */
+@media (min-width:761px) and (max-width:1279px){.connect-grid>.c-card:has(pre.code),.connect-grid:has(>.c-card:first-child pre.code)>.c-card:last-child:nth-child(even){grid-column:1/-1}}
+.hero-side{min-width:0}
+/* a wide hero (HERO.wide): title and buttons in one row, the card full width below */
+.hero.hero-wide{grid-template-columns:minmax(0,1fr);gap:18px;padding-block:clamp(20px,3vw,36px) clamp(16px,2vw,28px)}
+.hero.hero-wide>div:first-child{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 28px}
+.hero.hero-wide h1{font-size:clamp(32px,4.2vw,54px);margin:0}
+.hero.hero-wide .cta-row{margin:0}
+.hero-lab{padding:18px 18px 16px}
+/* the hero lab's button, bottom right of its card, under the animation: the dashed loop back to the start runs along the animation's bottom edge (the owner, 2026-10-11 and 10-12) */
+.hero-lab{position:relative}
+.hero-foot{display:flex;justify-content:flex-end;margin-top:10px}
+.hero-foot .btn{padding:7px 12px;font-size:13.5px}
+.c-card{padding:16px}
+.c-card h3{font-size:16px;margin:0 0 8px;font-stretch:106%}
+.c-card p{font-size:14px;color:var(--ink-2);margin:0 0 10px}
+.code{background:var(--sunken);border:1px solid var(--line-2);border-radius:4px;padding:12px;font-family:var(--font-mono);font-size:12px;line-height:1.55;overflow-x:auto;margin:0 0 10px;white-space:pre}
+.refs{list-style:none;padding:0;margin:0;display:grid;gap:10px;font-size:14px}
+.refs span{display:block;font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3)}
+.drill-a{margin-top:12px;font-family:var(--font-mono);font-size:12.5px;background:var(--surface-2);border-radius:4px;padding:10px 12px}
+.drill-a p{margin:3px 0}
+code{font-family:var(--font-mono);font-size:.92em;background:var(--surface-2);padding:1px 4px;border-radius:3px}
+.foot{margin-top:56px;border-top:1px solid var(--line-2);padding-block:22px 40px;color:var(--ink-2);font-size:13.5px}
+.foot .wrap{display:grid;gap:6px}
+.foot p{margin:0}
+@media (prefers-reduced-motion:reduce){
+  .flow{animation:none}
+  .seg,.usable,.progress i{transition:none}
+  .cue{animation:none}
+  .flash{animation:none;outline:2px solid var(--ink);outline-offset:4px}
+  .dock,.dock.pulse .dock-in{animation:none}
+  .obs.bump{animation:none}
+  *{scroll-behavior:auto}
+}
+
+/* ---------- home: map with domain icons, then the chosen domain's lab tiles ---------- */
+.map-canvas{margin-top:14px;padding:8px 8px 10px}
+#mapSvg{min-width:620px}
+.world .wnode{fill:var(--surface);stroke:var(--ink);stroke-width:1.8}
+.world .wico{color:var(--ink)}
+.world.sel .wnode{fill:var(--ink)}
+.world.sel .wico{color:var(--surface)}
+.world:hover .wnode,.world:focus-visible .wnode{stroke-width:3.2}
+.tiles-head{display:flex;gap:14px;align-items:flex-start;margin:28px 0 14px;scroll-margin-top:72px}
+.th-icon{width:50px;height:50px;border-radius:50%;border:1.8px solid var(--ink);display:grid;place-items:center;flex:none;background:var(--surface);color:var(--ink)}
+.th-text{min-width:0}
+.th-name{font-size:22px;font-stretch:108%;font-weight:720;line-height:1.2;margin:2px 0 3px}
+.th-desc{margin:0;color:var(--ink-2);font-size:14.5px;max-width:48em}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:14px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:8px;min-width:0;scroll-margin-top:80px}
+.tile-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-2);background:var(--surface)}
+.tile-at{font-size:12px;color:var(--ink-2)}
+/* what this browser remembers of the lab */
+.chip.tm{border-color:var(--ink-3);color:var(--ink)}
+.chip.tm-passed{border-color:var(--c-ok);color:var(--c-ok);background:var(--c-ok-soft)}
+/* the hero's "Continue": the lab's name, and under it where the learner was */
+.btn.resume{flex-direction:column;align-items:flex-start;gap:1px;padding:6px 14px;line-height:1.3}
+.btn.resume .rs-at{font-size:12px;font-weight:500;opacity:.8}
+.tile-num{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--ink);display:inline-grid;place-items:center;font-size:11px;font-weight:600}
+.tile-q{font-size:16px;line-height:1.32;margin:0;font-stretch:104%;font-weight:680}
+.tile-q a{text-decoration:none;color:inherit}   /* the title is part of the tile's one button, not a link of its own */
+.tile-tz{min-height:150px;border-top:1px solid var(--line-2);padding-top:10px}
+.tile-tz.tz-none{min-height:0}
+.tile-soon{color:var(--ink-3);font-size:12.5px}
+/* teaser building blocks, shared by all labs */
+.tz{display:grid;gap:8px;min-width:0}
+.tz-lab{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12.5px;font-weight:620;color:var(--ink-2)}
+.tz-lab output{font-family:var(--font-mono);font-weight:500;color:var(--ink);font-size:12.5px}
+.tz .seg-ctl button{padding:5px 4px;font-size:12px}
+.tz-vis{display:block;width:100%;height:auto;overflow:visible}
+.tz-vis text{font-family:var(--font-mono);font-size:10px;fill:var(--ink-2)}
+.tz-read{margin:0;font-size:13px;line-height:1.45;color:var(--ink-2)}
+.tz-read b{color:var(--ink);font-weight:650}
+.tz-note{margin:0;font-size:11.5px;line-height:1.4;color:var(--ink-3)}
+.tz .bar.thin{margin-top:2px}
+@media (max-width:440px){.th-name{font-size:19px}.tiles-head{gap:10px}.th-icon{width:42px;height:42px}}
+.cmp-val{background:var(--surface);padding:0 3px;border-radius:2px}
+.status.neutral{color:var(--ink-2);background:var(--surface-2)}
+.dyn-root{display:block}
+
+/* ---------- round 5: kit fixes shared by every lab ---------- */
+/* single-choice prediction buttons show a radio dot, like levers and presets */
+.choices .choice{display:flex;align-items:center;gap:10px}
+.choices .choice::before{content:"";flex:none;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink-3);box-sizing:border-box}
+.choices .choice[aria-pressed="true"]::before{border-color:currentColor;background:radial-gradient(circle,currentColor 0 3px,transparent 3.5px)}
+/* comparison charts: green meets the goal, gray does not, and a legend says so */
+.cmp-row.ok .cmp-track i{background:var(--c-ok)}
+.cmp-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-family:var(--font-mono);font-size:11px;color:var(--ink-2)}
+.cmp-leg span{display:inline-flex;align-items:center;gap:6px}
+.cmp-leg i{display:inline-block;width:14px;height:9px;border-radius:2px;background:var(--ink-3)}
+.cmp-leg i.ok{background:var(--c-ok)}
+.cmp-leg i.g{width:0;height:12px;border-radius:0;background:none;border-left:1.5px dashed var(--ink-2)}
+.metric .d{height:auto;min-height:15px;line-height:1.35}
+.tip p{margin:0}
+/* formulas (A.ui.math): real maths, not TeX source */
+math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sans Math',serif;font-size:1.12em}
+.tip math.tex{font-size:1.18em}
+.tip .fx{margin:6px 0 2px;padding:6px 8px;border-radius:4px;background:color-mix(in srgb,var(--bg) 12%,transparent);overflow-x:auto}
+.tip p+p{margin-top:6px}
+
+/* ---------- round 5: home ---------- */
+.hm-legend{margin-top:10px}
+.hm-legend>span{cursor:help}
+#map h2{margin-bottom:0}
+.path-hint{font-size:12.5px;align-self:center;margin-left:4px}
+.map-legend .lg-lead{color:var(--ink-3)}
+/* phones and tablets: the branches as a list grouped by part of the tree, instead of the drawn tree. The tree needs 900 px of panel,
+   which a window up to 1004 px wide (a 15 px scroll bar included) does not give it (R11.10; re-review: at 720 px a third was cut off) */
+.domgrid{display:none}
+@media (max-width:1004px){
+  .map-canvas{display:none}
+  .domgrid{display:grid;gap:12px;margin-top:16px}
+  .dg-h{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin:0 0 6px}
+  .dg-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr));gap:8px}
+  .dg-btn{display:flex;align-items:center;gap:10px;min-width:0;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);text-align:left;cursor:pointer}
+  .dg-btn[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+  .dg-ico{width:38px;height:38px;flex:none;border-radius:50%;border:1.6px solid var(--ink);display:grid;place-items:center;background:var(--surface)}
+  .dg-btn[aria-pressed="true"] .dg-ico{background:var(--ink);color:var(--surface)}
+  .dg-t{display:grid;min-width:0}
+  .dg-t b{font-size:14px;font-weight:680;line-height:1.25}
+  .dg-t span{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);line-height:1.35}
+}
+/* the domain strip above the tiles sticks under the top bar */
+.domstrip{position:sticky;top:calc(env(safe-area-inset-top,0px) + 58px);z-index:20;display:flex;align-items:center;gap:8px 14px;margin:22px 0 0;padding:8px 0;background:var(--bg);border-bottom:1px solid var(--line-2)}
+.ds-worlds{display:flex;gap:4px;min-width:0;flex:1 1 auto;overflow-x:auto;scrollbar-width:none}
+.ds-worlds::-webkit-scrollbar{display:none}
+.ds-btn{display:inline-flex;align-items:center;gap:6px;flex:none;padding:6px 10px 6px 7px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink-2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.ds-btn:hover{border-color:var(--ink);color:var(--ink)}
+.ds-btn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.ds-path{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:12.5px;color:var(--ink-3)}
+.ds-path select{max-width:190px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px}
+/* when the branches' names do not all fit in one row (measured by fitStrip), icons with tooltips; the chosen branch keeps its name (H4) */
+.domstrip.ds-icons .ds-btn span{display:none}.domstrip.ds-icons .ds-btn{padding:6px}
+.domstrip.ds-icons .ds-btn[aria-pressed="true"] span{display:inline}.domstrip.ds-icons .ds-btn[aria-pressed="true"]{padding:6px 10px 6px 7px}
+@media (max-width:600px){.ds-path{display:none}.domstrip{margin-top:18px}}
+.tiles-head{margin-top:16px;scroll-margin-top:120px}
+.th-meta{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3)}
+/* tiles: one sentence on the tile; the teaser's own notes stay on the lab page (owner 2026-10-13: no 假设和来源 on tiles) */
+.tile .tz-note{display:none}
+.chip.tz-kind{cursor:help}
+.tz-leg{display:flex;flex-wrap:wrap;gap:3px 12px;font-family:var(--font-mono);font-size:11px;line-height:1.35;color:var(--ink-2)}
+.tz-leg>span{display:inline-flex;align-items:center}
+.tz-leg>span[hidden]{display:none}
+.tz-leg .sw{width:10px;height:10px;margin-right:5px}
+.tz-leg .sw.lim{width:0;height:11px;margin:0 6px 0 3px}
+/* tooltips size to their text, never wider than the screen; the tile notes get a wider one */
+.tip{width:max-content;max-width:min(280px,calc(100vw - 16px))}
+.tip.wide{max-width:min(380px,calc(100vw - 16px))}
+/* mini result bar: a long reading shrinks with an ellipsis instead of pushing "Back to the chart" off screen */
+.dock-in>*{flex:none}
+.dock-in .dk-bar{flex:1 1 auto}
+.dk-read{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.meter-sub{text-wrap:balance}
+@media (max-width:600px){
+  .path-hint{margin:0}
+}
+#mapSvg{max-height:min(640px,calc(100vh - 210px))}
+
+.ds-path span{white-space:nowrap}
+.dock-in .dk-bar{flex:1 1 48px;min-width:48px}
+@media (max-width:760px){.dk-read{white-space:normal;line-height:1.3;overflow:visible}}
+.dg-btn.dim,.ds-btn.dim{opacity:.42}
+.chip[data-tipx]{cursor:help}
+@media (max-width:400px){.brand span{font-size:13px;letter-spacing:-.005em}.topbar .wrap{gap:10px}}
+
+/* ---------- Batch 1 (Codex review 1): the phone template for labs with class m2, a two-column bench, the home page's paths ---------- */
+.pbar{display:none}
+.pb-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pb-dots{display:flex;flex-wrap:wrap;gap:4px}
+.pb-dot{width:26px;height:26px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink-3);font:600 11.5px/1 var(--font-mono);display:grid;place-items:center;cursor:pointer}
+.pb-dot.done{color:var(--ink-2);border-color:var(--ink-3)}
+.pb-dot.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pb-nav{display:flex;gap:6px;flex:0 0 auto}
+.pb-t{margin-top:8px;font-size:14px;line-height:1.4}
+.pb-t b{font-weight:650;margin-right:6px}
+.pb-lead{color:var(--ink-2)}
+.pb-dot.skip{border-style:dashed;border-color:var(--ink-3);color:var(--ink-2)}
+.pb-go{display:inline-block;margin-left:4px;vertical-align:middle}
+.pb-go .btn.sm{padding:3px 9px;font-size:12.5px;white-space:nowrap}
+@media (max-width:760px){
+  .m2 .bench{display:flex;flex-direction:column;align-items:stretch;gap:12px}
+  .m2 .bench>.stage,.m2 .bench>.controls,.m2 .bench>.rail>*{width:100%;min-width:0}
+  .m2 .bench>.rail{display:contents}
+  .m2 .bench>.rail>*{order:3}
+  .m2 .bench>.rail>.pbar{order:1;display:block;padding:10px 12px;border:1px solid var(--ink);border-radius:6px;background:var(--surface);box-shadow:var(--shadow)}
+  .m2 .bench>.rail>.rail-top{display:none}
+  .m2 .bench>.stage{order:2}
+  .m2 .bench>.controls{order:4}
+  .m2 .rail .steps .step:not(.current){display:none}
+  .m2 .rail .steps .step.current>.step-h{display:none}
+  .m2 .rail .steps .step.current>.step-b{padding-top:14px}
+  .m2 .labhead:has(.modes button[data-mode="guided"][aria-pressed="true"]) .mode-desc{display:none}
+  .m2 .controls:not(.open)>:not(.eyebrow){display:none}
+  .m2 .controls>.eyebrow{display:flex;justify-content:space-between;align-items:center;margin:0;cursor:pointer;font-size:12.5px}
+  .m2 .controls>.eyebrow::after{content:'▾';font-size:13px}
+  .m2 .controls.open>.eyebrow{margin-bottom:4px}
+  .m2 .controls.open>.eyebrow::after{content:'▴'}
+}
+.bench.no-ctl{grid-template-columns:300px minmax(0,1fr)}
+@media (max-width:1180px){.bench.no-ctl{grid-template-columns:280px minmax(0,1fr)}.bench.no-ctl>.stage{grid-row:1}}
+/* home: the paths that can be walked, first (R0.3) */
+
+/* ---------- Batch 2 (Codex review 1 #5): what you can do after the lab; three ways to show it transfers ---------- */
+.lab-outcome{margin:-4px 0 12px;font-size:14.5px;color:var(--ink-2);max-width:62em;line-height:1.45}
+.lab-outcome b{color:var(--ink);font-weight:650}
+.exits{margin-top:12px}
+.exits .ex-tabs{margin:4px 0 12px;flex-wrap:wrap}
+.exits .ex-tabs button{flex:1 1 auto}
+.ex-body p{margin:0 0 8px}
+.ex-qs{display:flex;gap:4px;margin:0 0 8px}
+.ex-opts{display:grid;gap:6px;margin:0 0 8px}
+.ex-opts .choice{align-items:flex-start;line-height:1.45}
+.ex-opts .choice::before{margin-top:2px}
+.ex-opts .choice.right{box-shadow:inset 0 0 0 2px var(--c-ok)}
+.ex-opts .choice.wrong{box-shadow:inset 0 0 0 2px var(--c-oom)}
+.ex-res{padding:10px 12px;border-radius:6px;background:var(--surface-2);margin:0 0 8px}
+.ex-res.ok{border-left:3px solid var(--c-ok)}
+.ex-res.no{border-left:3px solid var(--c-oom)}
+.ex-res p{font-size:14px;line-height:1.45}
+.ex-links{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:10px}
+.ex-links li{display:grid;gap:2px}
+.ex-links a{font-weight:600;color:var(--ink)}
+.ex-links span{font-size:13.5px;color:var(--ink-2);line-height:1.45}
+.ex-body .ex-drill{margin-top:14px}
+/* round 3, R07: the card is optional practice; once the challenge is passed it opens with that and the next lab */
+.exits .ex-opt{margin:2px 0 10px}
+.ex-passed{display:grid;gap:8px;justify-items:start;padding:10px 12px;margin:0 0 12px;border-radius:6px;border-left:3px solid var(--c-ok);background:var(--surface-2)}
+.ex-passed p{margin:0;font-size:14px;line-height:1.45}
+
+/* ---------- home: the knowledge tree (batch 5; replaces the two loops). Roots and trunk in wood, each limb in its own hue (R11.10) ---------- */
+/* at 1440 x 900 the top bar, the two rows of path chips, the whole tree and its legend fit on one screen (H1, R11.10) */
+#mapSvg.tree{min-width:900px;max-height:min(720px,calc(100vh - 210px))}
+@media (min-width:601px){#map .map-canvas{margin-top:10px}}
+.tr-limbs .lf{stroke:none;opacity:.55}
+.tr-limbs .lf.build{fill:var(--tr-build)}.tr-limbs .lf.use{fill:var(--tr-use)}.tr-limbs .lf.eval{fill:var(--tr-eval)}
+/* the tree grows once when the page opens: roots, trunk, limbs, then the labs (reduced motion: drawn at once) */
+@media (prefers-reduced-motion:no-preference){
+  .tree.grow .tr-roots path,.tree.grow .tr-limbs path:not(.lf){stroke-dasharray:1;stroke-dashoffset:1;animation:trGrow .9s ease-out forwards}
+  .tree.grow .tr-limbs .lb{animation-delay:.35s}.tree.grow .tr-limbs .st{animation-delay:.75s}
+  .tree.grow .tr-trunk{transform-origin:600px 592px;transform:scaleY(0);animation:trTrunk .5s ease-out .1s forwards}
+  .tree.grow .tnode,.tree.grow .tw,.tree.grow .lf,.tree.grow .tr-twigs{opacity:0;animation:trFade .45s ease-out forwards;animation-delay:calc(.25s + var(--d,0s))}
+  .tree.grow:not(.go) *{animation-play-state:paused!important}
+}
+@keyframes trGrow{to{stroke-dashoffset:0}}
+@keyframes trTrunk{to{transform:scaleY(1)}}
+@keyframes trFade{to{opacity:1}}
+.tree [data-limb="root"]{--h:var(--tr-wood)}
+.tree [data-limb="trunk"]{--h:var(--tr-trunk)}
+.tree [data-limb="build"]{--h:var(--tr-build)}
+.tree [data-limb="eval"]{--h:var(--tr-eval)}
+.tree [data-limb="use"]{--h:var(--tr-use)}
+.tr-axis line{stroke:var(--line);stroke-width:1.2}
+.tr-axis .tk{stroke:var(--ink-3)}
+.tr-axis text{font-family:var(--font-mono);font-size:11px;fill:var(--ink-3)}
+.tr-ground{stroke:var(--tr-wood);stroke-width:1.2;stroke-dasharray:3 5;opacity:.7}
+.tr-roots path{fill:none;stroke:var(--tr-wood);stroke-width:2.6;stroke-linecap:round;opacity:.8}
+.tr-trunk{fill:var(--tr-bark);stroke:var(--tr-wood);stroke-width:1.4}
+.tr-twigs line{stroke:var(--tr-wood);stroke-width:2;stroke-linecap:round}
+.tr-limbs path{fill:none;stroke-linecap:round}
+.tr-limbs .lb{stroke-width:7;opacity:.45}
+.tr-limbs .lb.main{stroke-width:11}
+.tr-limbs .st{stroke-width:3.5;opacity:.45}
+.tr-limbs .build{stroke:var(--tr-build)}.tr-limbs .use{stroke:var(--tr-use)}.tr-limbs .eval{stroke:var(--tr-eval)}
+.tr-cap{opacity:.32}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tr-cap{opacity:.42}}
+:root[data-theme="dark"] .tr-cap{opacity:.42}
+.tr-cap.build{fill:var(--tr-build)}.tr-cap.use{fill:var(--tr-use)}
+.tree .tw{cursor:pointer}
+.tree .tw:focus{outline:none}
+.tree .tw-bg{fill:transparent;stroke:none}
+.tree .tw .wname{font-family:var(--font-ui);font-size:13.5px;font-weight:720;fill:var(--h)}
+.tree .tw .wsub{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-3)}
+.tree .tw:hover .tw-bg,.tree .tw:focus-visible .tw-bg{fill:var(--surface);stroke:var(--h);stroke-width:1.2}
+.tree .tw.sel .tw-bg{fill:var(--h)}
+.tree .tw.sel .wname,.tree .tw.sel .wsub{fill:var(--tr-on)}
+.tree .tw.dim{opacity:.3}
+.tnode{cursor:pointer}
+.tnode:focus{outline:none}
+.tnode .tbx{fill:var(--surface);stroke:var(--h);stroke-width:1.5}
+.tnode .tlb{font-family:var(--font-ui);font-size:11px;font-weight:620;fill:var(--h)}
+.tnode.live .tbx{fill:var(--h)}
+.tnode.live .tlb{fill:var(--tr-on)}
+.tnode.wip .tbx{fill:color-mix(in srgb,var(--h) 35%,var(--surface))}
+.tnode.next .tbx{stroke-dasharray:4 3;stroke-width:2}
+.tnode:hover .tbx,.tnode:focus-visible .tbx{stroke-width:2.8}
+/* hover changes colour, never size: a bigger box would run into the path numbers next to it (map_geometry) */
+.tnode.live:hover .tbx,.tnode.live:focus-visible .tbx{stroke:var(--ink);fill:color-mix(in srgb,var(--h) 82%,var(--ink))}
+/* labs off the chosen path: the box stays opaque (no line shows through its name); only its outline and its name fade (H3) */
+.tnode.dim{opacity:1}
+.tnode.dim .tbx{fill:var(--surface);stroke:color-mix(in srgb,var(--h) 30%,var(--surface))}
+.tnode.dim.live .tbx{fill:color-mix(in srgb,var(--h) 20%,var(--surface))}
+.tnode.dim.wip .tbx{fill:color-mix(in srgb,var(--h) 9%,var(--surface))}
+.tnode.dim .tlb,.tnode.dim.live .tlb{fill:color-mix(in srgb,var(--h) 50%,var(--surface))}
+.tnum .bnum-bg{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
+.tnum .bnum{fill:var(--surface)}
+.tr-bars .tb-t{font-family:var(--font-mono);font-size:11px;font-weight:600;fill:var(--ink-2)}
+.tr-bars .tb-n,.tr-bars .tb-c{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.tr-bars .tb-bar{fill:var(--h)}
+/* the legend's swatches: small boxes like the tree's */
+.tsw{display:inline-block;width:16px;height:10px;border-radius:3px;border:1.5px solid var(--ink-3);background:var(--surface)}
+/* the legend: what a box's colour means (H5) */
+.map-legend{display:grid;gap:3px}
+.map-legend .lg-row{display:flex;flex-wrap:wrap;align-items:center;gap:3px 16px}
+.tsw.c{width:14px;border:0}
+.tsw.c.trunk{background:linear-gradient(90deg,var(--tr-wood) 0 50%,var(--tr-trunk) 50% 100%)}
+.tsw.c.build{background:var(--tr-build)}.tsw.c.use{background:var(--tr-use)}.tsw.c.eval{background:var(--tr-eval)}
+/* a path's tiles: who it is for, and its start */
+.th-who{margin:0 0 3px;color:var(--ink-3);font-size:13.5px;max-width:52em}
+.th-go{margin:8px 0 0}
+.nw{white-space:nowrap}
+/* the list runs from the top of the tree to its roots, a wood line on the left for the trunk */
+@media (max-width:1004px){
+  .domgrid{position:relative;padding-left:14px}
+  .domgrid::before{content:'';position:absolute;left:3px;top:6px;bottom:6px;width:4px;border-radius:2px;background:var(--tr-bark);border:1px solid var(--tr-wood)}
+  .dg-group .dg-h{color:var(--h);font-weight:600}
+  .dg-group[data-limb="root"],.dg-btn[data-limb="root"]{--h:var(--tr-wood)}
+  .dg-group[data-limb="trunk"],.dg-btn[data-limb="trunk"]{--h:var(--tr-trunk)}
+  .dg-group[data-limb="build"],.dg-btn[data-limb="build"]{--h:var(--tr-build)}
+  .dg-group[data-limb="eval"],.dg-btn[data-limb="eval"]{--h:var(--tr-eval)}
+  .dg-group[data-limb="use"],.dg-btn[data-limb="use"]{--h:var(--tr-use)}
+  .dg-btn .dg-ico{border-color:var(--h);color:var(--h)}
+  .dg-btn[aria-pressed="true"]{border-color:var(--h);box-shadow:inset 0 0 0 1px var(--h)}
+  .dg-btn[aria-pressed="true"] .dg-ico{background:var(--h);color:var(--tr-on)}
+}
+/* ---------- KV cache memory lab, home tile: one GPU's memory against each user's context (app.js, TEASERS['kv-cache']) ---------- */
+.tz-kvc-vis text{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+/* the axis caption is HTML over the chart's top margin (where the SVG text used to be), so its GiB can carry the definition */
+.tz-kvc-box{position:relative;min-width:0}
+.tz-kvc-cap{position:absolute;left:0;top:0;font-family:var(--font-mono);font-size:10px;line-height:11px;color:var(--ink-2);white-space:nowrap}
+.tz-kvc-vis .tz-kvc-ylim{fill:var(--ink-2);font-weight:600}
+.tz-kvc-vis .tz-kvc-tag{fill:var(--on-kv);font-weight:600}
+.tz-kvc-w{fill:var(--c-weights)}
+.tz-kvc-oh{fill:var(--c-overhead)}
+.tz-kvc-kv{fill:var(--c-kv)}
+.tz-kvc-ov{fill:url(#tz-kvc-hatch)}
+.tz-kvc-hs{fill:var(--c-oom)}
+.tz-kvc-ovl{stroke:var(--c-oom);stroke-width:1.5}
+.tz-kvc-grid{stroke:var(--line-2);stroke-width:1}
+.tz-kvc-tick{stroke:var(--line);stroke-width:1}
+.tz-kvc-lim{stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:4 3}
+.tz-kvc-mkh{stroke:var(--surface);stroke-width:4}
+.tz-kvc-mk{stroke:var(--ink);stroke-width:1.5}
+.tz-kvc-dot{fill:var(--ink);stroke:var(--surface);stroke-width:2}
+/* legend: the KV cache's amber with the chart's red stripes; the marker as a line with a dot on top */
+.tz-leg .sw.tz-kvc-swov{background:repeating-linear-gradient(135deg,var(--c-oom) 0 2px,var(--c-kv) 2px 5px);border-color:var(--c-oom)}
+.tz-leg .tz-kvc-swmk{position:relative;display:inline-block;width:0;height:11px;margin:0 6px 0 3px;border-left:1.5px solid var(--ink)}
+.tz-leg .tz-kvc-swmk::before{content:'';position:absolute;left:-3.75px;top:-1px;width:6px;height:6px;border-radius:50%;background:var(--ink)}
+
+/* ---------- kit fixes, round K (five gaps found by the batch-6 reviews; CONTRACT §14) ---------- */
+/* 1a. comparison chart: a passing row is marked on its track (a green ring on a light green track), so it shows at any value, 0% too;
+   the legend's swatch shows the same ring */
+.cmp-row.ok .cmp-track{background:var(--c-ok-soft);box-shadow:inset 0 0 0 2px var(--c-ok)}
+.cmp-row.ok.me .cmp-track{box-shadow:inset 0 0 0 2px var(--c-ok),0 0 0 1.5px var(--ink)}
+.cmp-leg i.ok{background:linear-gradient(90deg,var(--c-ok) 0 55%,var(--c-ok-soft) 55%);box-shadow:inset 0 0 0 1.5px var(--c-ok)}
+/* 1d. the brief comparison chart (the owner's review of batch 8, 2026-10-07): the note on the rows it leaves out, and the closed list of
+   every setting that meets the goal */
+.cmp-note{margin:4px 0 0}
+.cmp-more{margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+.cmp-more>summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--ink);padding:4px 0}
+.cmp-more>.cmp{margin-top:2px}
+/* 1b. the goal label: centred on the goal line, and kept inside the chart near either end (100cqw = the axis width, 100% = the label's) */
+.cmp-axis.cmp-gx{container-type:inline-size}
+.cmp-gx>span{transform:translateX(clamp(calc(var(--g) * -1cqw),-50%,calc((100 - var(--g)) * 1cqw - 100%)))}
+/* 1c. a value label never wraps: right of its bar when the chart has room for it (the track's 28 px margin included), else inside the
+   bar's end; never past the track's left edge. A label a lab has moved itself (an inline left, right or margin) is left where it is */
+.cmp-val{white-space:nowrap}
+.cmp-track.cmp-cq{container-type:inline-size}
+.cmp-fit[style^="left:"]{transform:translateY(-50%) translateX(max(calc(var(--v) * -1cqw - 6px),clamp(calc(-100% - 12px),calc(((100 - var(--v)) * 1cqw + 20px - 100%) * 1000),0px)))}
+/* 2. options: the title and the result share the first row while the title fits on one line beside the result (R3.6, R3.10); otherwise
+   the result drops under the title, still on the right, and the title keeps the row's whole width; the description fills the next row */
+.lever{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:10px;row-gap:1px}
+.lever::before{flex:none}
+.lever .lv-t b{flex:1 1 auto;min-width:0;max-width:calc(100% - 24px)}
+.lever .lv-r{order:2;margin-left:auto;max-width:100%;text-align:right}
+.lever .lv-r:empty{display:none}
+.lever .lv-d{order:3;flex:1 0 100%;padding-left:24px}
+/* 3. why Next is disabled (steps({nextWhy})): under the card's buttons and the part bar's; blank but keeping its height once Next is on */
+.nx-why{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.pbar>.nx-why{margin:6px 0 0;text-align:right}
+.step-b:has(>.stepnav [data-nav="next"]:not(:disabled))>.nx-why,.pbar:has(>.pb-row [data-nav="next"]:not(:disabled))>.nx-why{visibility:hidden}
+/* 4. the phone part bar: the dots and Back / Next stay on one row up to 8 parts at 360 px and wider; every tap target at least 24 px.
+   6 or more parts: 24 px dots, 2 px apart (1 px for 8) and smaller buttons; under 390 px, 7 or 8 parts: tighter buttons, and 8 parts drop
+   the arrow after "Next" (the button keeps its word) */
+.pb-dots{flex:0 1 auto;min-width:0}
+.pb-dot{flex:none}
+.pb-nav [data-nav="back"]{min-width:30px;justify-content:center}
+@media (max-width:480px){
+  .pb-row{gap:6px}
+  .pb-nav{gap:4px}
+  .pb-dots:has(>.pb-dot:nth-child(6)){gap:2px}
+  .pb-dots:has(>.pb-dot:nth-child(8)){gap:1px}
+  .pb-dots:has(>.pb-dot:nth-child(6))>.pb-dot{width:24px;height:24px;font-size:11px}
+  .pb-row:has(.pb-dot:nth-child(6)) .pb-nav .btn.sm{padding:6px 8px;font-size:12.5px}
+  .pb-row:has(.pb-dot:nth-child(6)) .pb-nav [data-nav="back"]{min-width:28px}
+}
+@media (max-width:389px){
+  .pb-row{gap:4px}
+  .pb-row:has(.pb-dot:nth-child(7)) .pb-nav .btn.sm{padding:6px}
+  .pb-row:has(.pb-dot:nth-child(7)) .pb-nav [data-nav="back"]{min-width:26px}
+  .pb-row:has(.pb-dot:nth-child(8)) .pb-arr{display:none}
+}
+
+/* ---------- the owner's real-reader round (2026-10-11) ---------- */
+/* the hero: the title, one line on where to start, one main button (in the animation card) */
+.hero-sub{margin:10px 0 0;font-size:clamp(16px,1.6vw,19px);color:var(--ink-2);max-width:46em;line-height:1.5}
+.hero-foot .btn{padding:10px 16px;font-size:15px}
+/* phones: where the tree went */
+.dg-lead{font-size:14px;color:var(--ink-2);margin:0 0 4px;line-height:1.55}
+@media (min-width:1005px){.dg-lead{display:none}}
+/* large screens: the tree gets more of the window, so its labels are bigger (the reader: “字看不清”) */
+@media (min-width:1360px){#map .map-canvas{width:min(1680px,calc(100vw - 64px));margin-left:calc(50% - min(840px,50vw - 32px))}}
+/* “#top” (the brand link, the lesson's “← Home”) lands with the title clear of the sticky top bar */
+#top{scroll-margin-top:60px}
+
+/* ---------- the lab's flow (owner's decision 2026-10-11 19:28 UTC): the steps listed on the left, the stage or the primer on the right;
+   the settings panel is the step 自由调参; the fidelity notes close the page ---------- */
+.flow.modes{display:block;border:0;padding:0;background:none;border-radius:0;gap:0}
+.flow .fl-list{list-style:none;margin:0;padding:6px;display:grid;gap:2px;border:1px solid var(--line);border-radius:6px;background:var(--surface);box-shadow:var(--shadow)}
+.flow .fl-i{margin:0}
+.flow .fl-i>button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 10px;border:0;border-radius:4px;background:transparent;font:inherit;font-weight:620;font-size:14.5px;line-height:1.3;color:var(--ink-2);cursor:pointer}
+.flow .fl-i>button:hover{background:var(--surface-2);color:var(--ink)}
+.flow .fl-i>button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.flow .fl-n{font-family:var(--font-mono);font-size:11.5px;font-weight:500;width:21px;height:21px;border-radius:50%;border:1px solid currentColor;display:inline-grid;place-items:center;flex:0 0 auto}
+.flow .fl-m{margin-left:auto;font-family:var(--font-mono);font-size:11.5px;font-weight:400;opacity:.8;white-space:nowrap}
+.flow .fl-sub{list-style:none;margin:4px 0 6px 20px;padding:0;display:none}
+.bench[data-flow="primer"]>.flow .fl-sub{display:grid}
+.flow .fl-sub a{display:block;padding:5px 8px 5px 12px;font-size:13px;line-height:1.4;color:var(--ink-2);text-decoration:none;border-left:2px solid var(--line-2)}
+.flow .fl-sub a:hover{color:var(--ink)}
+.flow .fl-sub a.on{color:var(--ink);border-left-color:var(--ink);font-weight:620}
+.flow .fl-see{margin:8px 4px 0;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+.flow .fl-see a{color:var(--ink);font-weight:620;text-underline-offset:2px}
+:is(#view-dyn,#view-lab) .bench.flowed,:is(#view-dyn,#view-lab) .bench.flowed.no-ctl{grid-template-columns:300px minmax(0,1fr)}
+:is(#view-dyn,#view-lab) .bench.flowed>[data-flow-nav]{grid-column:1;grid-row:1}
+:is(#view-dyn,#view-lab) .bench.flowed>.rail,:is(#view-dyn,#view-lab) .bench.flowed>.controls{grid-column:1;grid-row:2}
+:is(#view-dyn,#view-lab) .bench.flowed:is(.peek,.compat):not([data-flow="free"])>.controls{grid-row:3}
+:is(#view-dyn,#view-lab) .bench.flowed>.stage,:is(#view-dyn,#view-lab) .bench.flowed>.primer{grid-column:2;grid-row:1 / span 3}
+:is(#view-dyn,#view-lab) .bench.flowed:not([data-flow="free"]):not(.peek):not(.compat)>.controls{display:none}
+:is(#view-dyn,#view-lab) .bench.flowed[data-flow="free"]>.rail{display:none}
+:is(#view-dyn,#view-lab) .bench.flowed:not([data-flow="primer"])>.primer{display:none}
+:is(#view-dyn,#view-lab) .bench.flowed[data-flow="primer"]>:not([data-flow-nav]):not(.primer){display:none}
+:is(#view-dyn,#view-lab) .bench.flowed[data-flow="primer"]~.connect,:is(#view-dyn,#view-lab) .bench.flowed[data-flow="primer"]~.next-lab-end{display:none}
+@media (min-width:761px){:is(#view-dyn,#view-lab) .bench.flowed[data-flow="primer"]>[data-flow-nav]{grid-row:1 / span 3;align-self:start;position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px)}}
+@media (max-width:1180px){:is(#view-dyn,#view-lab) .bench.flowed,:is(#view-dyn,#view-lab) .bench.flowed.no-ctl{grid-template-columns:280px minmax(0,1fr)}:is(#view-dyn,#view-lab) .bench.flowed>.stage{grid-row:1 / span 3}}
+@media (max-width:760px){
+  :is(#view-dyn,#view-lab) .bench.flowed,:is(#view-dyn,#view-lab) .m2 .bench.flowed{display:flex;flex-direction:column;align-items:stretch;gap:12px}
+  :is(#view-dyn,#view-lab) .bench.flowed>[data-flow-nav]{order:0;width:100%}
+  :is(#view-dyn,#view-lab) .bench.flowed>.primer{order:2}
+  .flow .fl-list{display:flex;overflow-x:auto;padding:4px;gap:4px;scrollbar-width:none}
+  .flow .fl-i>button{white-space:nowrap;padding:7px 10px;font-size:13.5px;gap:7px}
+  .flow .fl-m,.bench[data-flow="primer"]>.flow .fl-sub{display:none}
+}
+/* the primer: read top to bottom; its pictures are the lab's own, shown as a display (inert), each picture's frames in turn */
+.primer{min-width:0;max-width:880px}
+.pr-sec{padding:2px 0 30px;margin-bottom:28px;border-bottom:1px solid var(--line-2);scroll-margin-top:84px}
+.pr-k{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-3)}
+.pr-h{font-size:clamp(21px,2.1vw,26px);line-height:1.3;margin:4px 0 12px;font-weight:700;letter-spacing:0}
+.pr-text{font-size:17px;line-height:1.75;max-width:740px}
+.pr-text p{margin:0 0 12px}
+.pr-text ul{margin:0 0 12px;padding-left:22px}
+.pr-fig{margin:14px 0 20px;padding:16px 18px 14px;border:1px solid var(--line);border-radius:6px;background:var(--surface);box-shadow:var(--shadow)}
+.pr-frames{display:grid}
+.pr-fr{grid-area:1 / 1;visibility:hidden;min-width:0}
+.pr-fr.on{visibility:visible}
+.pr-frames button,.pr-frames input,.pr-frames select,.pr-frames a{pointer-events:none}
+.pr-multi{touch-action:pan-y}
+.pr-cap{margin-top:10px;font-size:14.5px;color:var(--ink-2);line-height:1.55}
+.pr-nav{display:flex;align-items:center;gap:12px;margin-top:10px}
+.pr-prev,.pr-next{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
+.pr-prev:hover:not(:disabled),.pr-next:hover:not(:disabled){border-color:var(--ink)}
+.pr-prev:disabled,.pr-next:disabled{opacity:.35;cursor:default}
+.pr-num{font-family:var(--font-mono);font-size:12px;color:var(--ink-3)}
+.pr-dots{display:flex;gap:6px}
+.pr-dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.pr-dots i.on{background:var(--ink)}
+@media (prefers-reduced-motion:reduce){.pr-fr{grid-area:auto;visibility:visible}.pr-frames{gap:18px}.pr-nav{display:none}}
+.pr-end{padding:0 0 24px}
+@media (max-width:760px){.pr-text{font-size:16px}.pr-fig{padding:12px}}
+/* the fidelity notes, at the page's end like a paper's references */
+.endnotes{padding-block:22px 40px;margin-top:8px;border-top:1px solid var(--line)}
+.endnotes h2{font-size:18px;margin:0 0 12px}
+.en-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px 28px;font-size:13.5px;line-height:1.6;color:var(--ink-2)}
+.en-block h3{font-size:14px;margin:0 0 6px;color:var(--ink)}
+.en-block ul{margin:0;padding-left:18px}
+.en-block p{margin:0 0 8px}
+.en-block>.eyebrow{margin-top:4px}
+@media (max-width:760px){.flow .fl-n{display:none}.flow .fl-i>button{padding:7px 9px}}
+/* phones: a lab with 知识梳理 and 自由调参 has five steps; they fit the strip at 390 px instead of scrolling sideways (R7.8) */
+@media (max-width:760px){.flow .fl-list:has(>.fl-i:nth-child(5)){gap:2px}.flow .fl-list:has(>.fl-i:nth-child(5))>.fl-i>button{padding:7px 6px;gap:5px}}
+
+/* ---------- the knowledge tree's size (the owner, 2026-10-13) ----------
+   wide windows: “on a MacBook the tree is only about 60% of the window wide and its labels are small; it should be about 80%”. The tree
+   was held to the window's height (whole tree on one screen); now it fills the panel, which is at least 80% of the window wide */
+@media (min-width:1005px){
+  #map .map-canvas{width:max(100%,80vw);margin-left:min(0px,calc(50% - 40vw))}
+  #mapSvg.tree{max-height:none}
+}
+/* narrow windows and phones: “the tree is simplified; show only part of it and let me drag to see the rest, like a maps app”. The whole
+   tree at full size (its labels at 11 px) in a box that scrolls both ways; the branch list it replaces is no longer shown */
+@media (max-width:1004px){
+  #map .map-canvas{display:block;padding:6px;min-width:0;max-width:100%}
+  #map .domgrid{display:none}
+  #map .map-scroll{overflow:auto;max-width:100%;height:min(716px,calc(100vh - 150px));height:min(716px,calc(100svh - 150px));-webkit-overflow-scrolling:touch;cursor:grab;user-select:none;-webkit-user-select:none}
+  #map .map-scroll.dragging{cursor:grabbing}
+  #mapSvg.tree{width:1224px;min-width:1224px;max-width:none;max-height:none}
+}
+/* a lab with a primer: a small open book on its tree box and on its tile */
+.tnode .tbk{fill:none;stroke:var(--h);stroke-width:1.3;stroke-linejoin:round}
+.tnode.live .tbk{stroke:var(--tr-on)}
+.tnode.dim .tbk,.tnode.dim.live .tbk{stroke:color-mix(in srgb,var(--h) 50%,var(--surface))}
+.tile-pr{display:inline-flex;align-items:center;color:var(--ink-2);cursor:help}
+.bk-ico{display:block}
+.map-legend .lg-bk{gap:5px}
+
+/* a card that is one button looks like something you press: a light shadow, and on hover a darker edge, a deeper shadow and a 1 px lift
+   (second reader, 2026-10-13: nobody saw the path cards could be clicked; the owner: the lab tiles work the same way) */
+.pentry{box-shadow:0 1px 2px rgba(13,20,30,.07);transition:border-color .15s,box-shadow .15s,transform .15s}
+.pentry:has(.pe-hit:hover){border-color:var(--ink);box-shadow:var(--shadow);transform:translateY(-1px)}
+.tile.is-live{border-color:var(--line);cursor:pointer;box-shadow:0 1px 2px rgba(13,20,30,.07);transition:border-color .15s,box-shadow .15s,transform .15s}
+.tile.is-live:hover:not(:has(:is(button,input,select,label,.seg-ctl,[role=slider],[tabindex="0"][data-tipx]):hover)){border-color:var(--ink);box-shadow:var(--shadow);transform:translateY(-1px)}
+.tile.is-live:has(.tile-q a:focus-visible){outline:2px solid var(--ink);outline-offset:2px}
+.tile-q a:focus-visible{outline:none}
+@media (prefers-reduced-motion:reduce){.pentry,.tile.is-live{transition:none}.pentry:has(.pe-hit:hover),.tile.is-live:hover{transform:none!important}}

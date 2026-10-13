@@ -1,0 +1,138 @@
+/* train-debug: the loss curve (thick training line, dashed validation line, dotted ln C, thin healthy run), each line named
+   beside its end; the decision regions (plain, grey, hatched, dotted; points by shape) with their key right under the map;
+   the check cards and the signature table.
+   Colours (R5.6): grayscale only; red marks a failed check or a run that blows up, green a passed check. */
+.td-stage .stage-head{align-items:center}
+.td-graph{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0}
+@container (min-width:540px){.td-graph{grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);align-items:start}}
+.td-pane{min-width:0}
+.td-pane[hidden],.td-tblhost[hidden]{display:none}
+.td-tblhost{grid-column:1/-1;min-width:0}
+.td-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:4px}
+.td-svg{display:block;width:100%;height:auto;overflow:visible}
+.td-regsvg{max-width:250px;margin:0 auto;border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
+
+/* ---------- the loss curve ---------- */
+.td-grid{stroke:var(--line-2);stroke-width:1}
+.td-ax{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-3)}
+.td-ln{stroke:var(--ink-2);stroke-width:1.6;stroke-dasharray:1.5 4;stroke-linecap:round}
+.td-lnl{font-family:var(--font-mono);font-size:11px;fill:var(--ink-2)}
+.td-cmp{fill:none;stroke:var(--ink-3);stroke-width:1.1;stroke-linejoin:round}
+.td-va{fill:none;stroke:var(--ink-2);stroke-width:1.7;stroke-dasharray:6 4;stroke-linejoin:round}
+.td-tr{fill:none;stroke:var(--ink);stroke-width:2.8;stroke-linejoin:round;stroke-linecap:round}
+.td-mk{font-family:var(--font-mono);font-size:11px;fill:var(--c-oom)}
+.td-nan{stroke:var(--c-oom);stroke-width:1.4;stroke-dasharray:3 3}
+.td-now{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 2}
+
+/* ---------- the decision regions ---------- */
+.td-regbg{fill:var(--surface)}
+.td-rc1{fill:var(--line)}
+.td-rc2{fill:url(#td-hatch)}
+.td-rc3{fill:url(#td-dots)}
+.td-hl1{stroke:var(--ink-3);stroke-width:1.2}
+.td-dot{fill:var(--ink-2)}
+.td-pt{fill:var(--surface);stroke:var(--ink);stroke-width:.9}
+.td-nanbg{fill:var(--surface);stroke:var(--c-oom);stroke-width:1}
+.td-nant{font-family:var(--font-mono);font-size:10px;fill:var(--c-oom)}
+
+/* ---------- names beside the lines, and the key under the region map (review 2026-10-03: no legend above the chart) ---------- */
+.td-cl{font-family:var(--font-mono);font-size:11px;fill:var(--ink-2);cursor:help}
+.td-cl-tr{fill:var(--ink);font-weight:650}
+.td-cl-cmp{fill:var(--ink-3)}
+.td-lnl{cursor:help}
+.td-regkey{max-width:250px;margin:6px auto 0;font-size:12px;line-height:1.35;color:var(--ink-2)}
+.td-regkey p{margin:0 0 4px}
+.td-rks{display:flex;flex-wrap:wrap;gap:4px 12px}
+.td-rk{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.td-rksv{display:block;flex:none;width:16px;height:16px;border:1px solid var(--line);border-radius:2px;background:var(--surface);overflow:hidden}
+
+/* ---------- under the chart ---------- */
+.td-scope{margin:10px 0 0;cursor:help;width:fit-content;max-width:100%}
+.td-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+.td-metrics[hidden]{display:none}
+.td-metrics[data-n="5"] .metric:last-child{grid-column:1/-1}
+@container (min-width:560px){.td-metrics[data-n="5"]{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr)}.td-metrics[data-n="5"] .metric:last-child{grid-column:auto}.td-metrics[data-n="5"] [data-k="c2"] .v{white-space:nowrap}}
+.td-metrics .metric{cursor:help}
+.td-chk .v{white-space:normal;font-size:15px;line-height:1.25}
+.td-chk.td-ok .v{color:var(--c-ok)}
+.td-chk.td-bad .v{color:var(--c-oom)}
+.td-closed{border-style:dashed;cursor:default}
+.td-closed .v .btn{font-size:12px;padding:3px 9px;margin-top:3px}
+.td-sp{margin-top:4px}
+.td-sp:empty{display:none}
+.td-spark{display:block;width:100%;height:22px}
+.td-spark path{fill:none;stroke:var(--ink-2);stroke-width:1.5;vector-effect:non-scaling-stroke}
+
+/* ---------- the signature table (part 6 and the challenge's answer) ---------- */
+.td-tblwrap{min-width:0;margin-top:2px}
+.td-tbl{width:100%;border-collapse:collapse;font-size:12.5px;line-height:1.35}
+.td-tbl caption{caption-side:top;text-align:left;font-size:12.5px;font-weight:650;color:var(--ink);margin-bottom:6px}
+.td-tbl th,.td-tbl td{padding:6px 8px;border-bottom:1px solid var(--line-2);text-align:left;vertical-align:top}
+.td-tbl thead th{font-family:var(--font-mono);font-size:10.5px;font-weight:500;color:var(--ink-3)}
+.td-tbl tbody th{font-weight:650}
+.td-tbl .td-hl{background:var(--surface-2);box-shadow:inset 2px 0 0 var(--ink),inset -2px 0 0 var(--ink);padding-left:10px;padding-right:10px}
+.td-tbl thead .td-hl{box-shadow:inset 2px 0 0 var(--ink),inset -2px 0 0 var(--ink),inset 0 2px 0 var(--ink)}
+.td-tbl tbody tr:last-child .td-hl{box-shadow:inset 2px 0 0 var(--ink),inset -2px 0 0 var(--ink),inset 0 -2px 0 var(--ink)}
+.td-capk{display:block;font-size:12px;font-weight:400;color:var(--ink-2);margin-top:2px}
+.td-tbl tr.td-me{background:var(--surface-2)}
+@container (max-width:560px){
+  .td-tbl thead{display:none}
+  .td-tbl caption{display:block}
+  .td-tbl,.td-tbl tbody,.td-tbl tr{display:block;width:100%}
+  .td-tbl tr{border:1px solid var(--line-2);border-radius:4px;padding:6px 8px;margin-bottom:8px}
+  .td-tbl th,.td-tbl td{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:8px;border:0;padding:3px 0}
+  .td-tbl tbody th{display:block}
+  .td-tbl td::before{content:attr(data-label);font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3)}
+  .td-tbl .td-hl,.td-tbl tbody tr:last-child .td-hl{box-shadow:inset 0 0 0 1.5px var(--ink);border-radius:3px;padding:5px 8px;margin:2px 0}
+}
+
+/* ---------- the card ---------- */
+.td-why{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.pbar .td-why{margin-top:6px}
+.td-remlist{margin:0 0 12px;padding-left:18px}
+.td-remlist li{margin:0 0 8px}
+.td-cks{display:grid;gap:6px;margin:10px 0 4px}
+.td-ckbtn{text-align:left;justify-content:flex-start;white-space:normal;line-height:1.3}
+.td-ckbtn[disabled]{opacity:1;cursor:default}
+.td-ch-res:empty{display:none}
+.td-cands ul{margin:4px 0 0;padding-left:18px}
+.td-cands li{margin:0 0 4px}
+.td-cands li.td-me{background:var(--surface-2);border-radius:3px}
+/* a detail the reader can open; closed, it keeps the observation to one idea (R6.28) */
+.td-more{margin:8px 0 0}
+.td-more summary{cursor:pointer;color:var(--ink-2);font-size:12.5px}
+.td-more p,.td-more ul{margin:6px 0 0}
+.td-more ul{padding-left:18px}
+.td-more li{margin:0 0 4px}
+.td-mt{margin-top:10px}
+.td-grp{border-top:1px solid var(--line-2);padding-top:10px}
+.td-gh{font-weight:650;font-size:13px;margin-bottom:4px}
+.td-prod{margin:0;padding-left:18px}
+.td-prod li{margin:0 0 8px;overflow-wrap:anywhere}
+.td-dk{width:100%;min-width:60px}
+.td-dk .td-spark{height:26px}
+/* Settings: the four bugs as a 2 × 2 block, so “no zero_grad()” never overflows the panel */
+#td-controls .seg-ctl[data-key="bug"]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+#td-controls .seg-ctl[data-key="bug"] button{border-bottom:1px solid var(--line)}
+#td-controls .seg-ctl[data-key="bug"] button:nth-child(2n){border-right:0}
+#td-controls .seg-ctl[data-key="bug"] button:nth-child(n+3){border-bottom:0}
+/* chart notes and the ln C label keep a halo in the panel's colour, so a curve passing under them never hides them (R7.8) */
+.td-mk,.td-lnl,.td-cl{paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+/* the mini result bar's sparkline keeps clear of the text next to it */
+.td-dk{padding-right:6px;box-sizing:border-box}
+/* a model that gives no class more than half anywhere: its regions are faded and a line says they are noise (A19) */
+.td-faint{opacity:.38}
+.td-regnote{margin:6px auto 0;max-width:250px;font-size:12px;line-height:1.35;color:var(--ink-2)}
+
+/* v6 fixes: terms whose hover holds a formula (kit .t with an HTML tip) keep the definition look: help cursor, no click action */
+.t.td-dfx{cursor:help}
+/* Show the math as short blocks (H2, the owner's decision of 2026-10-09): a lead line in words, each formula on its own line with its
+   name on the left, a hairline between blocks */
+.td-mblk{padding:8px 0 6px;border-top:1px solid var(--line-2)}
+.td-mblk:first-child{border-top:0;padding-top:0}
+.td-mlead,.td-msym,.td-mblk>p{font-family:var(--font-ui);font-size:13px;line-height:1.55}
+.td-mfx{display:flex;flex-wrap:wrap;align-items:center;gap:.2em .6em;overflow-x:auto;max-width:100%;margin:4px 0}
+.td-mname{font-family:var(--font-ui);font-size:13px}
+/* H5 (the owner's decision of 2026-10-09): a hairline between the loss curve and the pane beside it (under it on a phone) */
+.td-pane+.td-pane{border-top:1px solid var(--line);padding-top:10px}
+@container (min-width:540px){.td-pane+.td-pane{border-top:0;padding-top:0;border-left:1px solid var(--line);padding-left:12px}}

@@ -1,0 +1,17 @@
+/* agent-anatomy teaser: one row per model call, the tokens it sends stacked by who wrote them; grayscale (R5.6): your code
+   outlined, tool results hatched, the model solid; calls not made yet are dashed outlines. Rows keep their height at every step. */
+.tz-ana-vis{padding:2px 0;min-width:0}
+.tz-ana-rows{display:grid;gap:5px;min-width:0}
+.tz-ana-row{display:grid;grid-template-columns:52px minmax(0,1fr) 44px;gap:8px;align-items:center;min-width:0}
+.tz-ana-lab{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-2);white-space:nowrap}
+.tz-ana-row.on .tz-ana-lab,.tz-ana-row.on .tz-ana-v{color:var(--ink);font-weight:700}
+.tz-ana-trk{display:flex;height:14px;min-width:0}
+.tz-ana-trk i{display:block;height:100%;box-sizing:border-box;flex:none}
+.tz-ana-you,.tz-ana-swyou{background:var(--surface);border:1.5px solid var(--ink-2)}
+.tz-ana-tool,.tz-ana-swtool{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 4px);border:1.5px solid var(--ink-3)}
+.tz-ana-model,.tz-ana-swmodel{background:var(--ink-2);border:1.5px solid var(--ink-2)}
+.tz-ana-trk .tz-ana-tool{border-left:0}
+.tz-ana-trk .tz-ana-model{min-width:2px}
+.tz-ana-todo{border:1px dashed var(--line);background:transparent}
+.tz-ana-row.on .tz-ana-trk{outline:1.5px solid var(--ink);outline-offset:2px;border-radius:1px}
+.tz-ana-v{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-2);text-align:right;white-space:nowrap}

@@ -1,0 +1,398 @@
+/* ---------- Architecture overview v2 (prefix ar-): a data-flow picture (specs/architecture-v2.md). Parameters blue (R5.6), K and V amber,
+   Q magenta, attention weights teal, one soft tint per token lane, the next token ink. ---------- */
+:root{--ar-q:#C8367E;--ar-v:#9A5B00;--ar-att:#0E8C8C;--ar-t0:#9A86E6;--ar-t1:#EE8F7A;--ar-t2:#D9B63C;--ar-t3:#8DB84A;--ar-t4:#55AFD6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ar-q:#F06BAA;--ar-v:#C98A1E;--ar-att:#34C3C3;--ar-t0:#AE9CF5;--ar-t1:#F4A08C;--ar-t2:#E5C454;--ar-t3:#A0CB5E;--ar-t4:#6CC2E8}}
+:root[data-theme="dark"]{--ar-q:#F06BAA;--ar-v:#C98A1E;--ar-att:#34C3C3;--ar-t0:#AE9CF5;--ar-t1:#F4A08C;--ar-t2:#E5C454;--ar-t3:#A0CB5E;--ar-t4:#6CC2E8}
+.ar-app{overflow-anchor:none}
+
+/* ---------- home hero: six stages left to right on one canvas; the stage names are the buttons over it ---------- */
+.ar-hero2{position:relative}
+.ar-hbar{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;margin:0 0 4px}
+.ar-hcap{margin:0;font-size:15px;color:var(--ink-2)}
+.ar-hcap b{color:var(--ink)}
+.ar-hdesc{flex:1 1 0;min-width:0}   /* basis 0: a long description wraps inside its box instead of dropping to its own row (no jump between stages) */
+.ar-hnext{margin-left:auto;min-width:40px}
+.ar-hstage{position:relative;height:306px}
+.ar-hcv{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.ar-hbtns{position:absolute;inset:0}
+.ar-hb{position:absolute;display:flex;align-items:flex-start;justify-content:center;padding:9px 6px 0;border:0;border-radius:10px;background:transparent;color:var(--ink-2);
+  font:600 12px/1.2 var(--font-ui);text-align:center;cursor:default;overflow:hidden}
+.ar-hb span{white-space:normal}
+.ar-hb:not(.on){padding:9px 3px 0;font-size:11.5px;line-height:1.15}
+.ar-hb.on{justify-content:flex-start;padding-left:16px;font-size:13.5px;color:var(--ink)}
+.ar-hero2.narrow .ar-hstage{height:auto}
+.ar-hero2.narrow .ar-hcv{position:relative;height:250px}
+.ar-hero2.narrow .ar-hbtns{position:static;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
+/* narrow card: the stage names form a grid of plain labels, the current one underlined; no box, so they do not read as buttons (2026-10-11) */
+.ar-hero2.narrow .ar-hb{position:static;justify-content:center;padding:7px 4px 5px;border:0;border-bottom:2px solid var(--line);border-radius:0;background:transparent;color:var(--ink-3);font-size:12px}
+.ar-hero2.narrow .ar-hb.on{color:var(--ink);border-bottom-color:var(--ink)}
+@media (max-width:760px){.ar-hcap{font-size:13.5px}.ar-hdesc{order:3;flex-basis:100%}}
+/* the stage's sentence keeps two lines' room wherever it can wrap, so the picture and the page below do not jump when a longer
+   sentence (self-attention, MLP) comes round (review A #3, R7.9) */
+@media (max-width:1100px){.ar-hdesc{min-height:2.9em;min-height:2lh}}
+/* the hero's one caption: whose shapes, and that its numbers are set by hand (review B-01, B-02; R2.9) */
+.ar-hnote{margin:6px 0 0;font-family:var(--font-mono);font-size:11px;line-height:1.4;color:var(--ink-3)}
+
+/* ---------- the lab's overview: one canvas, a transparent button over each component ---------- */
+.ar-ov{position:relative;width:100%}
+.ar-ovcv{display:block;width:100%;height:650px}
+.ar-hots{position:absolute;inset:0;pointer-events:none}
+.ar-hot{position:absolute;pointer-events:auto;border-radius:10px;cursor:pointer;outline:none}
+/* the kit's .t underline and hover background would draw an empty box over the canvas: the canvas highlights the component instead */
+.ar-hot.t,.ar-hot.t:hover,.ar-hot.t:focus{border:0;background:transparent}
+/* hover and focus light up the component itself on the canvas (ovPaint), so no box is drawn here */
+.ar-hint{margin:6px 0 0}
+.ar-legend .sw{margin-right:5px}
+.sw.ar-sw-lane{width:18px;background:linear-gradient(90deg,var(--ar-t0) 0 20%,var(--ar-t1) 0 40%,var(--ar-t2) 0 60%,var(--ar-t3) 0 80%,var(--ar-t4) 0);border-color:transparent}
+.sw.ar-sw-w{background:var(--c-weights);border-color:transparent}
+.sw.ar-sw-att{background:var(--ar-att);border-color:transparent}
+.sw.ar-sw-plus{display:none}
+.ar-dk{display:flex;gap:3px;height:12px}
+.ar-dk i{flex:1 1 0;border-radius:2px}
+
+/* tooltips: definition, formula, where it is used */
+#tip .ar-tn{font-weight:700;margin-bottom:2px}
+#tip .ar-tf{margin:5px 0 3px;padding:3px 6px;border-radius:4px;background:rgba(127,127,127,.16);font-size:12px;white-space:normal}
+#tip .ar-tu{font-size:12.5px;opacity:.85}
+.ar-term{border-bottom:1px dotted currentColor;cursor:help}
+.ar-info{display:inline-grid;place-items:center;width:20px;height:20px;border:1.5px solid var(--ink-3);border-bottom-width:1.5px;border-radius:50%;font:700 12px var(--font-mono);color:var(--ink-2)}
+
+/* ---------- rail ---------- */
+.ar-pred{display:grid;gap:6px;margin:8px 0}
+.ar-fb{margin-top:8px}
+.ar-fb.ok{border-left:3px solid var(--c-ok)}
+.ar-fb.no{border-left:3px solid var(--ink-3)}
+.ar-open{display:flex;align-items:center;gap:10px;margin:8px 0 4px}
+.ar-seen{font-size:12px;color:var(--ink-3)}
+.ar-sum{margin:2px 0 8px;padding-left:18px}
+.ar-sum li{margin-bottom:3px}
+.ar-presets{display:grid;gap:6px;margin:10px 0}
+.ar-presets .choice{display:grid;gap:2px;text-align:left}
+.ar-presets .choice span{font-size:12.5px;color:var(--ink-2)}
+.ar-presets .choice[aria-pressed="true"] span{color:inherit;opacity:.82}
+.ar-ch h3{margin:4px 0 10px;font-size:17px}
+.ar-chq{margin:0 0 14px}
+.ar-chq p{margin:0 0 6px}
+.ar-cho{display:grid;gap:5px}
+.ar-cho .choice{text-align:left;font-size:13px}
+.ar-cho .choice.right{box-shadow:inset 0 0 0 2px var(--c-ok)}
+.ar-cho .choice.wrong{box-shadow:inset 0 0 0 2px var(--c-oom)}
+.ar-chr{margin-top:6px;padding:6px 8px;border-radius:6px;background:var(--surface-2)}
+.ar-chr.ok{border-left:3px solid var(--c-ok)}
+.ar-chr.no{border-left:3px solid var(--c-oom)}
+.ar-chr p{margin:0 0 6px;font-size:13px}
+.ar-chs{font-size:12px;color:var(--ink-2)}
+.ar-prod{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-2)}
+.ar-prod li{margin-bottom:8px}
+
+/* ---------- pop-ups: a large modal with a stepper; the kit tooltip (z-index 60) stays above it ---------- */
+.ar-modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:24px}
+.ar-backdrop{position:absolute;inset:0;background:rgba(6,10,15,.58)}
+.ar-dialog{position:relative;display:flex;flex-direction:column;width:min(1100px,100%);max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);outline:none}
+.ar-dlg-head{display:flex;align-items:center;gap:12px;padding:14px 18px 8px}
+.ar-dlg-head h2{font-size:20px;line-height:1.2;margin:0;outline:none;flex:1 1 auto;min-width:0}
+.ar-stepper{display:flex;align-items:center;gap:6px}
+.ar-sn{font-size:12px;color:var(--ink-2);min-width:42px;text-align:center}
+.ar-pcap{margin:0;padding:0 18px 10px;font-size:15px;color:var(--ink);border-bottom:1px solid var(--line-2);min-height:1.5em}
+.ar-dlg-body{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:12px 18px 18px;font-size:14px;min-width:0}
+.ar-dlg-body p{margin:0 0 8px}
+.ar-pctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 8px}
+.ar-pctl .lbl{font-size:12px;font-weight:600;color:var(--ink-2)}
+.ar-pctl .seg-ctl{margin:0}
+.ar-pctl .inline-ctl{margin:0;min-width:260px}
+.ar-tag{font-family:var(--font-mono);font-size:11.5px;padding:2px 8px;border-radius:10px;background:var(--surface-2);color:var(--ink-2)}
+.ar-illus{font-family:var(--font-mono);font-size:11px;color:var(--ink-3)}
+.ar-pscroll{overflow-x:auto;overscroll-behavior-x:contain}
+.ar-psvg{display:block;width:100%;height:auto;min-width:640px}
+.ar-psvg.fit{min-width:0;max-width:760px}
+.ar-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;align-items:start}
+.ar-two .ar-psvg{min-width:0}
+@media (max-width:760px){.ar-modal{padding:0}.ar-dialog{width:100%;height:100%;max-height:none;border:0;border-radius:0}.ar-dlg-body{flex:1 1 auto;padding:10px 14px 20px}
+  .ar-dlg-head{padding:12px 14px 8px;flex-wrap:wrap}.ar-pcap{padding:0 14px 8px;font-size:14px}.ar-two{grid-template-columns:minmax(0,1fr)}.ar-two .ar-psvg{min-width:0}}
+/* svg text and shapes */
+.ar-sv{font-family:var(--font-ui);font-size:13px;fill:var(--ink-2)}
+.ar-sv.big{font-size:20px;fill:var(--ink)}
+.ar-sv.huge{font-size:34px;font-weight:700;fill:var(--ink)}
+.ar-sv.small{font-size:12px}
+.ar-sv.b{font-weight:700;fill:var(--ink)}
+.ar-sv.w{fill:var(--c-weights);font-weight:700}
+.ar-sv.muted,.ar-sv tspan.muted{fill:var(--ink-3)}
+.ar-sv.mono{font-family:var(--font-mono);font-size:12px}
+.ar-sv.inv{fill:#fff}
+.ar-sv.huge.mono{font-size:34px;font-weight:700;fill:var(--ink)}
+.ar-sv.tokt{font-size:14px;fill:#10151c;font-weight:600}
+.ar-sv.tokl{font-family:var(--font-mono);font-size:12.5px;fill:var(--ink)}
+.ar-sl{stroke:var(--ink-3);stroke-width:1.3;fill:none}
+.ar-sl.id{stroke-dasharray:3 3}
+.ar-wt{fill:color-mix(in srgb,var(--c-weights) 16%,transparent);stroke:var(--c-weights);stroke-width:1.4}
+.ar-wl{stroke:var(--c-weights);stroke-opacity:.18;stroke-width:1}
+.ar-wlit{fill:var(--c-weights);fill-opacity:.6}
+.ar-chd{fill:var(--surface-2);stroke:var(--line)}
+.ar-hbox{fill:none;stroke:var(--ink-3);stroke-dasharray:4 3;stroke-width:1.2}
+.ar-note{fill:var(--surface-2);stroke:var(--line)}
+.ar-note.hot{stroke:var(--ink);stroke-width:1.5}
+.ar-sg{outline:none;cursor:help}
+.ar-sg:focus-visible>*:first-child{stroke:var(--ink);stroke-width:2}
+.ar-sc{fill:var(--ink-3)}
+.ar-aw{fill:var(--ar-att)}
+.ar-hbg{fill:var(--surface-2)}
+.ar-hl{stroke:var(--ink-3);stroke-width:1.2;stroke-opacity:.6}
+.ar-cell{cursor:crosshair}
+.ar-cell.hl rect{stroke:var(--ink);stroke-width:1.5}
+.ar-cell.sel rect{stroke:var(--ar-q);stroke-width:2}
+.ar-sum{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.6}
+.ar-flow{fill:none;stroke:var(--ar-v);stroke-opacity:.75;stroke-linecap:round;stroke-dasharray:600;stroke-dashoffset:0;animation:arDraw 1s ease both}
+.ar-plot{fill:var(--surface-2);stroke:var(--line)}
+.ar-ax{stroke:var(--line);stroke-width:1}
+.ar-curve{fill:none;stroke:var(--ar-att);stroke-width:2.2}
+.ar-probe{fill:var(--ar-q);stroke:var(--surface);stroke-width:2}
+.ar-ring{fill:none;stroke:var(--ink-2);stroke-width:2}
+.ar-rope{fill:none;stroke:var(--ink-3);stroke-width:1.2}
+.ar-ropea{fill:none;stroke:var(--ar-q);stroke-width:2}
+.ar-trk{fill:var(--surface-2)}
+.ar-road{fill:color-mix(in srgb,var(--ar-t4) 40%,transparent);stroke:var(--ar-t4)}
+.ar-gap{fill:var(--surface)}
+.ar-br{fill:none;stroke:var(--ar-t4);stroke-width:3;stroke-opacity:.8}
+.ar-ringb{fill:var(--surface);stroke:var(--ink-2);stroke-width:2.2}
+.ar-ringb.off{stroke:var(--line);stroke-dasharray:3 2}
+.ar-x{stroke:var(--c-oom);stroke-width:2.2}
+.ar-attb{fill:color-mix(in srgb,var(--ar-att) 12%,var(--surface));stroke:var(--ar-att);stroke-width:1.4}
+.ar-mlpb{fill:color-mix(in srgb,var(--c-weights) 10%,var(--surface));stroke:var(--c-weights);stroke-width:1.4}
+.ar-ghost{fill:none;stroke:var(--ink-3);stroke-opacity:.35;stroke-width:1.2;stroke-dasharray:3 3}
+.ar-live{fill:none;stroke:var(--ar-q);stroke-width:2.6}
+.ar-live2{fill:none;stroke:var(--ar-att);stroke-width:2.6}
+/* motion: what a step adds comes in; nothing moves with reduced motion */
+.ar-new{animation:arIn .55s ease both}
+.ar-grow{transform-box:fill-box;transform-origin:left center;animation:arGrow .7s ease both}
+.ar-slide{animation:arSlide .8s cubic-bezier(.2,.8,.2,1) both}
+.ar-fadein{animation:arIn .6s ease both}
+.ar-cell{animation:arIn .4s ease both}
+@keyframes arIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes arGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes arSlide{from{opacity:0;transform:translateX(-80px)}to{opacity:1;transform:none}}
+@keyframes arDraw{from{stroke-dashoffset:600}to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.ar-new,.ar-grow,.ar-slide,.ar-fadein,.ar-cell,.ar-flow,.ar-ofly.on{animation:none!important}}
+/* R3.20: a re-render that shows nothing new (pause, end of play, the same option, a language switch) draws the step finished; a new draw animates only the token */
+.ar-dlg-body.ar-still :is(.ar-new,.ar-grow,.ar-slide,.ar-fadein,.ar-cell,.ar-flow){animation:none!important}
+.ar-dlg-body.ar-still-fly :is(.ar-ofly.on,.ar-mark){animation:none!important}
+
+/* output pop-up: the logits drag, live softmax, temperature, greedy or sampled, the loop */
+.ar-out{display:grid;gap:10px}
+.ar-oprompt{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:var(--surface-2);font-size:15px}
+.ar-ofly{display:inline-block;padding:2px 10px;border-radius:12px;background:var(--ink);color:var(--surface);font-weight:600;opacity:0}
+.ar-ofly.on{opacity:1;animation:arFly 1s cubic-bezier(.2,.8,.2,1) both}
+@keyframes arFly{from{opacity:0;transform:translate(260px,180px) scale(.8)}60%{opacity:1}to{opacity:1;transform:none}}
+.ar-ohead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ar-lmh{display:inline-block;padding:4px 12px;border-radius:6px;border:1.5px solid var(--c-weights);background:color-mix(in srgb,var(--c-weights) 14%,transparent);color:var(--c-weights);font:600 12px var(--font-mono)}
+.ar-cands{display:grid;gap:6px}
+.ar-cand{display:grid;grid-template-columns:90px minmax(120px,1fr) minmax(140px,1.2fr);align-items:center;gap:12px;padding:4px 8px;border-radius:6px}
+.ar-cand.pick{background:var(--surface-2)}
+.ar-cand.smp{box-shadow:inset 0 0 0 2px var(--ar-q)}
+.ar-ct{font-size:13px}
+.ar-cr{display:flex;align-items:center;gap:8px}
+.ar-cr input{flex:1 1 auto;min-width:0}
+.ar-cr output{font-size:12px;min-width:30px}
+.ar-cp{position:relative;display:block;height:16px;border-radius:4px;background:var(--surface-2)}
+.ar-cp i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--ink-3);transition:width .25s ease}
+.ar-cand.pick .ar-cp i{background:var(--ink)}
+.ar-cp b{position:absolute;right:6px;top:0;font-size:11.5px;line-height:16px;font-weight:600}
+.ar-greedy{font-size:14px}
+@media (max-width:760px){.ar-cand{grid-template-columns:70px minmax(0,1fr);}.ar-cp{grid-column:1 / -1}}
+
+/* ---------- home tile ---------- */
+.sw.ar-sw-emb{background:repeating-linear-gradient(0deg,var(--c-weights) 0 1px,transparent 1px 3px);border-color:var(--c-weights)}
+.sw.ar-sw-head{background:repeating-linear-gradient(90deg,var(--c-weights) 0 1px,transparent 1px 3px);border-color:var(--c-weights)}
+.sw.ar-sw-tied{background:transparent;border:1.5px dashed var(--c-weights)}
+.sw.ar-sw-layer{width:10px;background:radial-gradient(circle,var(--c-weights) 0 1.1px,transparent 1.4px) 0 0/3.5px 3.5px;box-shadow:inset 0 0 0 1px var(--c-weights);border-color:transparent;border-radius:1px}
+.ar-tz rect.emb,.ar-tz rect.head{fill:var(--surface);stroke:var(--c-weights);stroke-width:1.5}
+.ar-tz rect.tied{fill:none;stroke:var(--c-weights);stroke-width:1.5;stroke-dasharray:3 2}
+.ar-tz rect.lay{fill:url(#ar-tzdots);stroke:var(--c-weights);stroke-width:.6}
+.ar-tz .dot{fill:var(--c-weights)}
+.ar-tz line.row{stroke:var(--c-weights);stroke-width:1}
+.ar-tz text{font-family:var(--font-mono);font-size:10px;fill:var(--ink-2)}
+.ar-tzw .tz-leg .sw{margin-right:5px}
+/* home tile v2: the hero's flow in small, the whole picture is the one control */
+.ar-tzbtn{position:relative;display:block;width:100%;padding:0;border:0;border-radius:8px;background:none;cursor:pointer}
+/* the picture is a button: say so right under it, not only in the caption (second reader, 2026-10-13); below the picture, so it covers
+   no part of it (the owner: the hero button once covered the dashed loop back to the input) */
+.ar-tz-next{display:block;width:max-content;margin:4px 0 0 auto;padding:2px 9px;border:1px solid var(--ink);border-radius:999px;background:var(--surface);color:var(--ink);font-size:12px;font-weight:650;line-height:1.5}
+.ar-tzbtn:hover .ar-tz-next,.ar-tzbtn:focus-visible .ar-tz-next{background:var(--ink);color:var(--bg)}
+.ar-tzbtn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.ar-tzcv{display:block;width:100%;height:124px}
+
+/* QA v2: segmented buttons never break inside a label (the group wraps instead); phone pop-ups as tall as their content */
+.ar-pctl .seg-ctl{flex-wrap:wrap;max-width:100%}
+.ar-pctl .seg-ctl button{white-space:nowrap;flex:0 1 auto}
+@media (max-width:760px){.ar-modal{align-items:flex-start}.ar-dialog{height:auto;max-height:100%;max-height:100dvh}}
+.ar-vcard{fill:var(--surface-2);stroke:var(--line)}
+.ar-vpill{fill:var(--surface);stroke:var(--line)}
+/* the model's shape, under the settings */
+.ar-shp{display:grid;gap:2px;margin:8px 0 6px;font-size:13px}
+.ar-shp div{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dotted var(--line-2)}
+.ar-shp dt{color:var(--ink-2)}
+.ar-shp dd{margin:0;color:var(--ink);text-align:right;white-space:nowrap}
+.ar-shp-svg{display:block;width:100%;max-width:230px;height:auto;margin:10px 0 2px}
+.ar-shp-svg rect{fill:none;stroke:var(--ink-3);stroke-width:1.2}
+.ar-shp-svg rect.on{fill:color-mix(in srgb,var(--c-weights) 22%,transparent);stroke:var(--c-weights)}
+.ar-shp-svg text{font:500 11px var(--font-mono);fill:var(--ink-3)}
+.ar-shp-svg text.on{fill:var(--ink);font-weight:600}
+.ar-shp-note{margin:4px 0 0}
+@media (min-width:1181px) and (min-height:600px){#ar-controls{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px)}}
+
+/* round 17: the output pop-up's LM head step and the read-only probabilities of the pick step */
+.ar-zbar{fill:var(--ink-3);fill-opacity:.55}.ar-zbar.top{fill:var(--ink);fill-opacity:1}.ar-zbar.faint{fill-opacity:.18}
+.ar-sl.dot{stroke-dasharray:2 4}
+.ar-cands.ro .ar-cand{grid-template-columns:90px minmax(140px,1fr)}
+@media (max-width:760px){.ar-cands.ro .ar-cand{grid-template-columns:70px minmax(0,1fr)}.ar-cands.ro .ar-cp{grid-column:auto}}
+.ar-lmh.ar-sm{border-color:var(--ink-3);background:var(--surface-2);color:var(--ink-2)}
+.ar-onote{margin:0}
+
+/* review 12: formulas in diagrams (MathML in a foreignObject) */
+.ar-fxo{font-size:13px;line-height:1.15;color:var(--ink);white-space:nowrap}
+.ar-fxo.sm{font-size:12px;color:var(--ink-2)}
+.ar-fxo math{color:var(--ink)}
+/* position: the pair that keeps its score; the RoPE dials */
+.ar-sc.hot{stroke:var(--ar-q);stroke-width:2.2}
+.ar-dial{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.ar-dial.dim{opacity:.55}
+.ar-arc{fill:none;stroke:var(--ink-2);stroke-width:1.4}
+.ar-qar{stroke:var(--ar-q);stroke-width:2.4;stroke-linecap:round}
+.ar-kar{stroke:var(--c-kv);stroke-width:2.4;stroke-linecap:round}
+.ar-gar{stroke:var(--ink-3);stroke-width:1.8;stroke-linecap:round}
+.ar-qar.hd{fill:var(--ar-q);stroke:none}.ar-kar.hd{fill:var(--c-kv);stroke:none}.ar-gar.hd{fill:var(--ink-3);stroke:none}
+.ar-qdot{fill:var(--ar-q)}.ar-kdot{fill:var(--c-kv)}
+/* the MLP as a network */
+.ar-fc{stroke:var(--ink-3);stroke-opacity:.16;stroke-width:.8}
+.ar-fc.g{stroke:var(--ar-att);stroke-opacity:.16}
+.ar-fc.up,.ar-fc.gp{fill:none;stroke-opacity:.5;stroke-width:1}
+.ar-fc.res{fill:none;stroke-opacity:.55;stroke-width:1.1}
+.ar-nn{stroke:var(--ink-2);stroke-width:1}
+.ar-nn.in,.ar-nn.out,.ar-nn.prod{fill:var(--ar-t4)}
+.ar-nn.hid{fill:var(--ink-3)}
+.ar-nn.up{fill:var(--ar-v)}
+.ar-nn.gate{fill:var(--ar-att)}
+.ar-nn.gate.probe{stroke:var(--ar-q);stroke-width:2.6}
+/* the next-token draw: the probabilities end to end, where the random number landed, the last draws, the counts */
+.ar-cum{margin:12px 0 4px}
+.ar-cumw{position:relative;padding:7px 0 5px}
+.ar-cumbar{display:flex;height:26px;border-radius:5px;overflow:hidden;background:var(--surface-2)}
+.ar-seg{display:flex;align-items:center;justify-content:center;min-width:0;font:600 11.5px var(--font-mono);white-space:nowrap;overflow:hidden;color:var(--ink);border-right:1px solid var(--surface)}
+.ar-seg.s0{background:var(--ink);color:var(--bg)}
+.ar-seg.s1{background:color-mix(in srgb,var(--ink-3) 58%,transparent)}
+.ar-seg.s2{background:color-mix(in srgb,var(--ink-3) 44%,transparent)}
+.ar-seg.s3{background:color-mix(in srgb,var(--ink-3) 32%,transparent)}
+.ar-seg.s4{background:color-mix(in srgb,var(--ink-3) 22%,transparent);border-right:0}
+.ar-seg.hit{box-shadow:inset 0 0 0 2px var(--ar-q)}
+.ar-mark{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--ar-q);border-radius:1px;animation:ar-drop .35s ease}
+.ar-mark::before{content:'';position:absolute;left:-5px;top:-5px;border:6px solid transparent;border-top-color:var(--ar-q)}
+@keyframes ar-drop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.ar-cumax{position:relative;display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);height:32px}
+.ar-ulab{position:absolute;top:15px;transform:translateX(-50%);color:var(--ar-q);font-weight:600;white-space:nowrap}
+.ar-ulab.al{transform:translateX(-2px)}.ar-ulab.ar{transform:translateX(calc(-100% + 2px))}
+.ar-hist{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:8px 0}
+.ar-hp{font:600 11.5px var(--font-mono);padding:2px 8px;border-radius:10px;background:var(--surface-2);color:var(--ink);white-space:nowrap}
+.ar-hp.s0{background:var(--ink);color:var(--bg)}
+.ar-hp.new{box-shadow:0 0 0 2px var(--ar-q)}
+.ar-cp em{position:absolute;left:0;bottom:-5px;height:3px;border-radius:2px;background:var(--ar-q)}
+.ar-cn{font-size:11.5px;color:var(--ink-2);text-align:right;white-space:nowrap}
+.ar-cands.ro.cnt .ar-cand{grid-template-columns:90px minmax(140px,1fr) 64px}
+@media (max-width:760px){.ar-cands.ro.cnt .ar-cand{grid-template-columns:70px minmax(0,1fr) 56px}.ar-cands.ro.cnt .ar-cp{grid-column:auto}}
+@media (prefers-reduced-motion:reduce){.ar-mark{animation:none}}
+/* the dialog's stepper keeps its buttons on one line; a long title wraps instead */
+.ar-stepper{flex:0 0 auto}
+.ar-stepper .btn,.ar-close{white-space:nowrap}
+/* Batch 0 (Codex review 1): the link from the RoPE step to self-attention, under the figure */
+.ar-pctl.ar-pgo{margin:10px 0 0;justify-content:flex-end}
+.ar-fchip{white-space:normal;line-height:1.35}
+/* Batch 1 (Codex review 1): model switch on the stage, deep dives, one challenge question at a time */
+.ar-shead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
+.ar-mseg{margin:0}
+.ar-mseg button{min-width:44px}
+.ar-deep{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 4px}
+.ar-deep .lbl{flex-basis:100%;font-size:12px;font-weight:600;color:var(--ink-3)}
+.ar-deep .ar-seen{font-size:inherit;color:var(--c-ok)}
+.ar-deepchip{display:inline-block;margin-right:8px;padding:0 7px;border:1px solid var(--line);border-radius:999px;font:600 11px/1.7 var(--font-mono);color:var(--ink-3);vertical-align:4px}
+.ar-chdots{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}
+.ar-chg{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.ar-chdots .lbl{min-width:3.2em;font-size:11.5px;color:var(--ink-3);margin-right:4px}
+@media (max-width:760px){.ar-fchip{font-size:10.5px;padding:1px 7px}}
+.pb-dot.ok{border-color:var(--c-ok);color:var(--c-ok)}
+.pb-dot.no{border-color:var(--c-oom);color:var(--c-oom)}
+.pb-dot.on.ok,.pb-dot.on.no{color:var(--bg)}
+.ar-chk{margin:0 0 6px;font-size:12px;color:var(--ink-3)}
+.ar-ch .ar-chs{display:block;margin:10px 0 0;font-size:12px;color:var(--ink-3)}
+.ar-shape{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+/* ---------- the causal switch (guided part 5): the stage swaps the overview for one SVG; teal = attention, hatched = hidden by the mask,
+   red = the leak (R5.6: red only for failure), everything else grayscale and the token tints ---------- */
+.ar-stage.ar-mkon .ar-mseg,.ar-stage.ar-mkon .ar-hint{display:none}
+.ar-mk[hidden],.ar-ov[hidden]{display:none!important}
+.ar-mksvg{display:block;width:100%;height:auto;overflow:visible}
+.ar-mk-lane{fill:none;stroke-width:2.5;stroke-opacity:.8}
+.ar-mk-lane.dim{stroke-opacity:.28}
+.ar-mk-lane.empty{stroke:var(--ink-3);stroke-width:1.5;stroke-dasharray:3 3}
+.ar-mk-hd{fill:var(--ink-3)}
+.ar-mk-att{fill:none;stroke:var(--ar-att)}
+.ar-mk-leak path{fill:none;stroke:var(--c-oom);stroke-linecap:round}
+.ar-mk-leak path.ar-mk-lhd{fill:var(--c-oom);stroke:none}
+.ar-mk-leak path.dash{stroke-dasharray:4 4}
+.ar-mk-tgt{fill:var(--surface);stroke-width:1.5}
+.ar-mk-p{fill:var(--ink)}
+.ar-mk-lk{fill:var(--c-oom)}
+.ar-mkc rect{stroke:var(--surface);stroke-width:.5}
+.ar-mk-loss{fill:none;stroke:var(--ink);stroke-width:2.2;stroke-linecap:round}
+.ar-mk-loss.off{stroke:var(--c-oom)}
+.ar-sv.ar-mk-red{fill:var(--c-oom)}
+.ar-sv.ar-mk-invt{fill:var(--surface)}
+.ar-mk-br{fill:none;stroke:var(--ink-3);stroke-width:1.2}
+.ar-mk-c{fill:var(--ink-3);fill-opacity:.55}
+.ar-mk-c.top{fill:var(--ink);fill-opacity:1}
+.ar-mk-c.bad{fill:var(--c-oom);fill-opacity:1}
+.ar-mk-q{fill:var(--surface);stroke:var(--ink-3);stroke-width:1.4;stroke-dasharray:3 3}
+.ar-mk-q.off{stroke:var(--c-oom)}
+.ar-mk-bar,.ar-mk-lv{outline:none}
+.ar-mk-bar:focus-visible .ar-trk,.ar-mk-lv:focus-visible text{stroke:var(--ink);stroke-width:1}
+.ar-mkdraw{stroke-dasharray:600;animation:arDraw .8s ease both}
+.sw.ar-sw-hatch{background:repeating-linear-gradient(45deg,var(--ink-3) 0 1px,var(--surface-2) 1px 4px);border-color:var(--ink-3)}
+.sw.ar-sw-leak{background:var(--c-oom);border-color:transparent}
+.ar-mkobs.on{border-left:3px solid var(--c-ok)}
+.ar-mkobs.off{border-left:3px solid var(--c-oom)}
+@media (prefers-reduced-motion:reduce){.ar-mkdraw{animation:none!important;stroke-dasharray:none}}
+#ar-mk.ar-still :is(.ar-mkdraw,.ar-mk-late,.ar-grow){animation:none!important}
+#ar-mk.ar-still .ar-mkdraw{stroke-dasharray:none}
+/* round 1 (review tree-causal-A, L1–L11): hovers on the stage's numbers show a help cursor (R1.1, R1.3); "training loss" is defined on
+   hover; numbers appear once their bars have grown; the reason Next waits; the mini result bar's chance of " Paris" */
+.ar-mk-tip{cursor:help;outline:none}
+.ar-mk-tip:focus-visible rect,.ar-mk-tip:focus-visible text{stroke:var(--ink);stroke-width:.8}
+.ar-mkc{cursor:help}
+.ar-mk-dtxt{text-decoration:underline dotted;text-underline-offset:2px}
+.ar-mk-late{animation:arIn .35s ease .55s both}
+.ar-mk-end{fill:var(--ink)}
+.ar-mk-end.off{fill:var(--c-oom)}
+.ar-mkwait{margin:6px 0 0;color:var(--ink-2)}
+.ar-mkwait-l{color:var(--ink-2)}
+.ar-dkp{position:relative;width:64px;height:10px;border-radius:3px;background:var(--surface-2);overflow:hidden;cursor:help}
+.ar-dkp i{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
+.ar-dkp.bad i{background:var(--c-oom)}
+@media (prefers-reduced-motion:reduce){.ar-mk-late{animation:none!important}}
+/* R07 (round 3): the last guided part: the scenarios are the next step; the other labs and the next lab are quiet text links there */
+.ar-nextstep{margin:12px 0 6px}
+.ar-nextstep+.stepnav{margin-top:0}
+.ar-later{margin:12px 0 0}
+.next-lab.ar-nlq{padding:0;border:0;background:none;margin-top:14px;flex-direction:row;flex-wrap:wrap;gap:2px 8px;align-items:baseline}
+.next-lab.ar-nlq .nl-go{font-weight:500;color:var(--ink-2);text-decoration:underline;text-underline-offset:3px;font-size:14px}
+/* the challenge: the summary once the core three are right */
+.ar-ch .ex-passed{margin:10px 0 4px}
+
+/* 知识梳理 (2026-10-11): the deep-dive steps as a display in the primer, without their controls and notes */
+.pr-fr.pr-ar{overflow:visible;padding:0;font-size:14px}
+.primer .pr-ar :is(.ar-pctl,.ar-illus,.ar-onote,.ar-cr,.ar-hist,.ar-cn){display:none!important}
+.primer .pr-ar .ar-out>p.small{display:none}
+.primer .pr-ovbox{position:relative}
+.primer .pr-ovbox canvas{display:block;width:100%}
+.pr-fx{display:block;overflow-x:auto;padding:.3em 0;font-size:1.05em}
+/* the home hero plays on its own (2026-10-11 19:28 UTC): the stage names are labels, not buttons */
+.ar-hb{cursor:default;pointer-events:none}
+.ar-hb:hover:not(.on){color:var(--ink-2)}
+.ar-seg.ar-segr{background:transparent;color:var(--ink-3);font-family:var(--font-ui,inherit)}
+.ar-crest .ar-ct{font-size:12.5px;color:var(--ink-3);line-height:1.25}
+.ar-crest .ar-cp i{background:color-mix(in srgb,var(--ink-3) 35%,transparent)}

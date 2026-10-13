@@ -1,0 +1,12 @@
+/* contamination teaser: 200 questions as squares (R5.6): leak caught = ink, leak missed = red (a failure), false alarm = mid gray, clean = light */
+.tz-ctm-vis{display:block;padding:6px 0 0}
+.tz-ctm-grid{display:block;width:100%;max-width:330px;height:auto;max-height:100px}
+rect.tz-ctm-q{fill:var(--sunken);stroke:var(--line-2);stroke-width:.6}
+rect.tz-ctm-q.hit{fill:var(--ink);stroke:var(--ink)}
+rect.tz-ctm-q.miss{fill:var(--c-oom);stroke:var(--c-oom)}
+rect.tz-ctm-q.fa{fill:var(--ink-3);opacity:.55;stroke:var(--ink-3)}
+.tz-ctm-sw{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px;border-radius:2px;flex:none}
+.tz-ctm-sw.hit{background:var(--ink)}
+.tz-ctm-sw.miss{background:var(--c-oom)}
+.tz-ctm-sw.fa{background:var(--ink-3);opacity:.6}
+.tz-ctm-sw.ok{background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line-2)}
