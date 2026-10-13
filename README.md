@@ -2,7 +2,7 @@
 
 An interactive, in-browser course on how modern AI systems work: 60 hands-on labs covering tensors and training, Transformers and attention, KV cache and serving, post-training (SFT, LoRA, PPO, DPO, GRPO), evaluation, RAG and agents. Everything runs in the browser; there is no server. Available in Chinese and English.
 
-**Open the site:** https://YOUR-GITHUB-NAME.github.io/ai-systems-playground/
+**Open the site:** https://Schuture.github.io/ai-systems-playground/
 
 ## How the site is built
 
