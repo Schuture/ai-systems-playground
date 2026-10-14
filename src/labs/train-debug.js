@@ -472,7 +472,7 @@ const SRC={
  clr:'https://arxiv.org/abs/1506.01186'
 };
 const FIDPOP=()=>tx(
- `<p><b>Toy run:</b> a small classifier really trains in the page, so every curve, region and check is computed, not drawn by hand.</p><div class="pop-grid"><div><div class="eyebrow">Modeled</div><ul>`+
+ `<p><b>Toy run:</b> a small classifier really trains in the page, so every curve, region and check is computed.</p><div class="pop-grid"><div><div class="eyebrow">Modeled</div><ul>`+
  `<li>Data: 3 groups of 2-D points (4 in the challenge) around a circle, 100 per group for training and 50 for validation, standardized with the training split’s mean and spread.</li>`+
  `<li>Model: 2 inputs, 16 ReLU units, one logit per class. Training: plain gradient descent on the whole training set, ${STEPS} steps, cross-entropy loss.</li>`+
  `<li>The bugs are switches in the training step. Shuffled labels draw a fresh permutation of the labels every step. The missing zero_grad() adds each gradient to the stored one. With softmax twice, the loss gets chances instead of logits.</li>`+
@@ -485,7 +485,7 @@ const FIDPOP=()=>tx(
  `<li>Learning-rate range test: Smith, ${cite(SRC.clr,'Cyclical Learning Rates for Training Neural Networks')} (WACV 2017).</li>`+
  `<li>PyTorch: ${cite(SRC.optim,'<code>torch/optim/optimizer.py</code>')} (zero_grad), ${cite(SRC.clip,'<code>torch/nn/utils/clip_grad.py</code>')} (the total gradient norm), ${cite(SRC.anom,'<code>torch/autograd/anomaly_mode.py</code>')} (detect_anomaly).</li></ul>`+
  `<p class="mono small muted" style="margin-top:8px">Last verified 2026-10-01. Prototype, not yet expert-reviewed.</p></div></div>`,
- `<p><b>玩具实跑：</b>一个小分类器在页面里真实训练，所以每条曲线、每个区域、每个检查都是算出来的，不是手画的。</p><div class="pop-grid"><div><div class="eyebrow">建模了什么</div><ul>`+
+ `<p><b>玩具实跑：</b>一个小分类器在页面里真实训练，所以每条曲线、每个区域、每个检查都是算出来的。</p><div class="pop-grid"><div><div class="eyebrow">建模了什么</div><ul>`+
  `<li>数据：绕着一个圆的 3 组二维点（挑战题是 4 组），每组 100 个用来训练，50 个用来验证；用训练集的均值和标准差做标准化。</li>`+
  `<li>模型：2 个输入，16 个 ReLU 单元，每个类别一个 logit。训练：在整个训练集上做普通的梯度下降，${STEPS} 步，loss 是 cross-entropy。</li>`+
  `<li>每个 bug 是训练步里的一个开关。打乱标签：每一步都重新抽一个标签的排列。漏了 zero_grad()：每个梯度都加到已存的梯度上。softmax 用两次：loss 拿到的是概率，而不是 logit。</li>`+

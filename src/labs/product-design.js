@@ -371,7 +371,7 @@ const FIDPOP=()=>tx(
  `<li>The fleet is sized for the peak hour and kept all day; scaling down at night would cost less.</li>`+
  `<li>Each output check costs 1 ms of one H100 and takes ${LAT.chk} ms: assumptions for a small classifier whose calls are batched.</li>`+
  `<li>Answer quality is not simulated: the lab assumes 70% of messages are easy enough for the small model.</li>`+
- `<li>Prices: $3 per GPU hour, an assumption, not a provider’s price list.</li></ul></div></div>`+
+ `<li>Prices: this lab assumes $3 per GPU hour.</li></ul></div></div>`+
  `<div class="eyebrow">Sources</div><ul class="refs">`+
  `<li>${cite(SRC.aev,'anthropic-sdk-python raw_message_stream_event.py')}: the six message stream event types the SDK defines.</li><li>${cite(SRC.ostr,'openai-python _streaming.py')}: a stream ends with <code>data: [DONE]</code>.</li>`+
  `<li>${cite(SRC.lg,'Llama Guard 3-8B model card')}: 14 hazard categories, prompts and responses.</li><li>${cite(SRC.pg,'Llama Prompt Guard 2 model card')}: 86M and 22M classifiers for prompt attacks.</li>`+
@@ -386,7 +386,7 @@ const FIDPOP=()=>tx(
  `<li>卡按高峰那个小时配，全天都开着；夜里缩容会更便宜。</li>`+
  `<li>每次输出检查占一张 H100 1 ms、耗时 ${LAT.chk} ms：这是对一个小分类器、调用会合批处理的假设。</li>`+
  `<li>没有模拟回答质量：假设 70% 的消息小模型就能答好。</li>`+
- `<li>价格：每 GPU 小时 3 美元，是假设，不是哪家云的报价。</li></ul></div></div>`+
+ `<li>价格：本 Lab 假设每 GPU 每小时 3 美元。</li></ul></div></div>`+
  `<div class="eyebrow">来源</div><ul class="refs">`+
  `<li>${cite(SRC.aev,'anthropic-sdk-python raw_message_stream_event.py')}：SDK 定义的 6 种流式消息事件。</li><li>${cite(SRC.ostr,'openai-python _streaming.py')}：流以 <code>data: [DONE]</code> 结束。</li>`+
  `<li>${cite(SRC.lg,'Llama Guard 3-8B 模型卡')}：14 类风险，可以查 prompt，也可以查回答。</li><li>${cite(SRC.pg,'Llama Prompt Guard 2 模型卡')}：86M 和 22M 两个识别 prompt 攻击的分类器。</li>`+
@@ -606,7 +606,7 @@ function controlsHTML(){const di=Math.max(0,DAUS.indexOf(S.dau));
    A.ui.seg({id:'pdz-ctl-ret',key:'ret',label:tx('Retrieval','检索'),options:[['0',tx('Off','关')],['1',tx('On','开')]],value:String(S.ret),note:tx(`Adds ${LAT.ret} ms (embedding, vector search, rerank; assumed) and 3 passages of 512 tokens to each prompt.`,`多 ${LAT.ret} ms（embedding、向量检索、rerank；假设），每个 prompt 多 3 段、每段 512 个 token。`)})+
    A.ui.seg({id:'pdz-ctl-share',key:'share',label:tx('Messages routed to the small model','交给小模型的消息'),options:segOpts(SHARES,v=>pc(v)),value:String(S.share),note:tx(`Small model: ${MODELS.s.name} on one H100. Large: ${MODELS.l.name} on 4. The lab assumes ${pc(EASY)} of messages are easy enough for the small model.`,`小模型：${MODELS.s.name}，1 张 H100。大模型：${MODELS.l.name}，4 张。这个 Lab 假设 ${pc(EASY)} 的消息小模型能答好。`)})+
    A.ui.seg({id:'pdz-ctl-filt',key:'filt',label:FILT_L(),options:FILTS.map(v=>[String(v),filtShort(v)]),value:String(S.filt),note:tx(`“After all is sent” checks once when the answer has been streamed, so the user reads it before it is checked; “check all, then send” holds the answer until it is checked; “every N tokens” checks each piece of N tokens before sending it. Each check: ${LAT.chk} ms and 1 ms of one H100, assumed for a small classifier; an 8B classifier costs more.`,`“全部发完再查”在回答流式发完以后查一次，用户先看到、后检查；“整段先查再发”扣住整段回答，查完再发；“每 N 个 token”是回答每写出 N 个 token，先查这一段再发。每次检查耗时 ${LAT.chk} ms，占一张 H100 1 ms，这是按小分类器的假设；用 8B 的分类器会更贵。`)})+
-   A.ui.range({id:'pdz-ctl-price',key:'price',label:tx('Price per GPU hour','每 GPU 小时的价格'),min:1,max:8,step:0.5,value:S.price,out:usd(S.price),note:tx('An H100 rented by the hour; the lab’s assumption, not a provider’s price list.','按小时租一张 H100 的价格；这是这个 Lab 的假设，不是哪家云的报价。')})+
+   A.ui.range({id:'pdz-ctl-price',key:'price',label:tx('Price per GPU hour','每 GPU 小时的价格'),min:1,max:8,step:0.5,value:S.price,out:usd(S.price),note:tx('An H100 rented by the hour; this lab assumes $3 per GPU hour.','按小时租一张 H100 的价格；本 Lab 假设每 GPU 每小时 3 美元。')})+
    `</div><div id="pdz-reset-wrap"><button type="button" class="btn ghost sm" data-act="reset">${A.t('reset')}</button></div></aside>`;}
 const CODE=`async def stream_reply(conv, msg, send):
     """One chat turn, streamed as server-sent events."""

@@ -508,7 +508,7 @@ const ASSUME=()=>[
  [tx('Content reading error','内容读数的误差'),tx('standard deviation 1 point: the small reward model reads content imperfectly, like a real one','标准差 1 分：小奖励模型读内容会读错，真实的也一样')],
  [tx('Length and quality','长度和质量'),tx('each standard deviation of quality makes answers 42% longer in the default data (0.35 in the log), 82% in the challenge’s','默认数据里，质量每高一个标准差，回答长 42%（对数里加 0.35）；挑战题的数据里长 82%')],
  [tx('Padded responses','加了废话的回答'),tx('8% of the chat model’s 2,000 responses; 3 times as long, same content, true quality 2.5 lower','聊天模型的 2,000 个回答里占 8%，长度是 3 倍，内容一样，真实质量低 2.5 分')],
- [tx('Training','训练'),tx(`full-batch gradient descent, learning rate 0.15, ${T} steps; set so a run settles, not taken from a real model`,`全批量梯度下降，学习率 0.15，${T} 步。这样设是为了让一次训练能收敛，不是从真实模型来的`)]];
+ [tx('Training','训练'),tx(`full-batch gradient descent, learning rate 0.15, ${T} steps; set so a run settles`,`全批量梯度下降，学习率 0.15，${T} 步。这样设是为了让一次训练能收敛`)]];
 function controlsHTML(){
   return `<aside class="panel controls" id="rm-controls" aria-label="${esc(A.t('ctrlAria'))}"><div class="eyebrow">${A.t('ctrlEyebrow')}</div>`+
    `<p class="ctl-lock" id="rm-lock" hidden></p>`+
@@ -517,7 +517,7 @@ function controlsHTML(){
    `<div class="lockable" id="rm-ctl-N-wrap">`+A.ui.seg({id:'rm-ctl-N',key:'N',label:tx('Preference pairs','偏好对'),options:[['50','50'],['1000','1,000']],value:String(S.N)})+`</div>`+
    `<div class="lockable" id="rm-ctl-bal-wrap">`+A.ui.seg({id:'rm-ctl-bal',key:'bal',label:tx('Length-balanced pairs added','另加长短平衡的偏好对'),options:[0,25,50,100,200].map(v=>[String(v),String(v)]),value:String(S.bal)})+`</div>`+
    `<div class="lockable" id="rm-ctl-n-wrap">`+A.ui.range({id:'rm-ctl-n',key:'ni',label:tx('Best-of-n: n','best-of-n 的 n'),min:0,max:NS.length-1,step:1,value:S.ni,out:String(NS[S.ni])})+`</div>`+
-   `<div class="rm-grp" id="rm-ctl-z"><div class="rm-gh">${tx('Assumed values (set for this lab, not measured)','假设值（都是这个 Lab 设定的，不是测出来的）')}</div><ul class="rm-asm">${ASSUME().map(([k,v])=>`<li><b>${esc(k)}</b> ${esc(v)}</li>`).join('')}</ul></div>`+
+   `<div class="rm-grp" id="rm-ctl-z"><div class="rm-gh">${tx('Values this lab assumes','本 Lab 假设的值')}</div><ul class="rm-asm">${ASSUME().map(([k,v])=>`<li><b>${esc(k)}</b> ${esc(v)}</li>`).join('')}</ul></div>`+
    `<div class="lockable" id="rm-ctl-reset-wrap"><button type="button" class="btn ghost sm" data-act="reset">${A.t('reset')}</button></div></aside>`;
 }
 const CODE=`import numpy as np

@@ -217,8 +217,8 @@ const STEPS=[
  {id:'serve',title:{en:'Past the optimum, on purpose',zh:'故意训过头'},view:'tot',expect:()=>tSeen.has(1e14),showMe:()=>setT(1e14),label:{en:'Result',zh:'结果'},
   lead:()=>tx('A model is trained once and used many times: a smaller one is cheaper every time.','模型训一次、用很多次：小模型每次推理都更便宜。'),
   enter:()=>{tSeen=new Set([0]); return {...BASE,C:6*LLAMA8*TOK15,N:LLAMA8,T:0};},
-  body:()=>tx(`<p>Meta trained Llama 3’s 8B model on over 15T tokens, close to 1,900 per parameter, far past 20. Why train it so long? Below, the serving compute is counted too.</p><p>A trained model then serves users. Each token it generates takes one multiply-add per parameter, about 2N FLOPs, so a smaller model is cheaper every time it runs. Training plus serving takes:</p>`+M(TOTX())+`<p>Every point in the chart reaches the same loss as Llama 3 8B: ${fL(L5)} in this lab’s formula. Llama 3 8B is far outside the runs the fit was made from, so this loss is only a yardstick for comparing choices, not Llama 3’s real loss. The dashed curve counts training only; the solid one adds serving. Pick how many tokens the model will serve and see where the lowest point of the solid curve moves.</p>`,
-              `<p>Meta 用超过 15T 个 token 训练了 Llama 3 的 8B 模型，每个参数将近 1,900 个，远远超过 20。为什么要训这么久？下面把服务的算力也算进来。</p><p>模型训完还要服务用户。每生成一个 token，每个参数要做一次乘加，约 2N 个 FLOP。所以模型越小，每次推理越便宜。训练加服务，一共要花的算力是：</p>`+M(TOTX())+`<p>图里每一点都做到同一个 loss，和 Llama 3 8B 一样，按这个 Lab 的公式是 ${fL(L5)}。Llama 3 8B 远远超出了拟合用到的数据，所以这个 loss 只能当一把尺子，用来比较不同的选择，不是 Llama 3 真实的 loss。虚线只算训练，实线再加上服务。选一个服务量，看看实线的最低点往哪边移。</p>`)+tSeg('sl-ic-T',true),
+  body:()=>tx(`<p>Meta trained Llama 3’s 8B model on over 15T tokens, close to 1,900 per parameter, far past 20. Why train it so long? Below, the serving compute is counted too.</p><p>A trained model then serves users. Each token it generates takes one multiply-add per parameter, about 2N FLOPs, so a smaller model is cheaper every time it runs. Training plus serving takes:</p>`+M(TOTX())+`<p>Every point in the chart reaches the same loss as Llama 3 8B: ${fL(L5)} in this lab’s formula. Llama 3 8B is far outside the runs the fit was made from, so this loss is only a yardstick for comparing choices. The dashed curve counts training only; the solid one adds serving. Pick how many tokens the model will serve and see where the lowest point of the solid curve moves.</p>`,
+              `<p>Meta 用超过 15T 个 token 训练了 Llama 3 的 8B 模型，每个参数将近 1,900 个，远远超过 20。为什么要训这么久？下面把服务的算力也算进来。</p><p>模型训完还要服务用户。每生成一个 token，每个参数要做一次乘加，约 2N 个 FLOP。所以模型越小，每次推理越便宜。训练加服务，一共要花的算力是：</p>`+M(TOTX())+`<p>图里每一点都做到同一个 loss，和 Llama 3 8B 一样，按这个 Lab 的公式是 ${fL(L5)}。Llama 3 8B 远远超出了拟合用到的数据，所以这个 loss 只能当一把尺子，用来比较不同的选择。虚线只算训练，实线再加上服务。选一个服务量，看看实线的最低点往哪边移。</p>`)+tSeg('sl-ic-T',true),
   obs:()=>obsServe()},
  {id:'remember',title:{en:'What to remember',zh:'要记住的'},view:()=>({nd:'nd',iso:'iso',tot:'tot'}[remView]||'nd'),
   lead:()=>tx('Training costs about 6ND. As the budget grows, grow parameters and tokens together. For heavy use, train smaller and longer.','训练算力约是 6ND。预算变大，参数和 token 一起长。要大量服务的模型，训得小一点、久一点。'),
@@ -425,7 +425,7 @@ const FIDPOP=()=>tx(
  `<div><div class="eyebrow">Assumed</div><ul>`+
  `<li>The fit describes one family of runs, on Chinchilla’s data and tokenizer. The page uses it only to compare choices; its loss is not any other model’s reported loss.</li><li>The runs the fit was made from go up to ${fP(FITR.N)} parameters, ${fF(FITR.C)} FLOPs, ${fTok(FITR.D)} training tokens and ${Math.round(FITR.r)} tokens per parameter. This page draws budgets up to 10²⁵ FLOPs and sizes up to 1T parameters, and Llama 3 8B has ${fint(TOK15/LLAMA8)} tokens per parameter: all of that is extrapolation.</li>`+
  `<li>Every token is read once (no repeated data).</li>`+
- `<li>The three plans with the same compute (280B, 70B and 17.5B parameters) are this lab’s own example, not published models.</li>`+
+ `<li>The three plans with the same compute (280B, 70B and 17.5B parameters) are this lab’s own example.</li>`+
  `<li>The MFU is ${fPct(BASE.u)}: on average, training gets ${fPct(BASE.u)} of the H100’s peak. The peak is 989.5 TFLOP/s dense BF16, the same as in the lab ${labLink('roofline')}.</li>`+
  `<li>How many tokens a model will serve is a guess about its future; the page picks 1T to 100T.</li></ul></div>`+
  `<div><div class="eyebrow">Sources</div><ul>`+
@@ -442,7 +442,7 @@ const FIDPOP=()=>tx(
  `<div><div class="eyebrow">假设</div><ul>`+
  `<li>这个拟合描述的是一组训练，用的是 Chinchilla 的数据和 tokenizer。页面只用它比较不同的选择，它算出的 loss 不是别的模型公布的 loss。</li><li>拟合用到的训练里，模型最大 ${fP(FITR.N)} 个参数，算力最多 ${fF(FITR.C)} FLOP，训练 token 最多 ${fTok(FITR.D)} 个，每个参数最多 ${Math.round(FITR.r)} 个 token。这一页的预算画到 10²⁵ FLOP，模型画到 1T 个参数，Llama 3 8B 每个参数有 ${fint(TOK15/LLAMA8)} 个 token。这些都超出了拟合的范围，是外推。</li>`+
  `<li>每个 token 只读一次（不重复使用数据）。</li>`+
- `<li>算力相同的三种方案（280B、70B 和 17.5B 个参数）是这个 Lab 自己举的例子，不是公开的模型。</li>`+
+ `<li>算力相同的三种方案（280B、70B 和 17.5B 个参数）是本 Lab 自己举的例子。</li>`+
  `<li>MFU 取 ${fPct(BASE.u)}，也就是训练平均用上 H100 峰值算力的 ${fPct(BASE.u)}。峰值是 BF16 稠密 989.5 TFLOP/s，和 ${labLink('roofline')} 那个 Lab 用的一样。</li>`+
  `<li>模型将来要服务多少 token 只是估计，页面取 1T 到 100T。</li></ul></div>`+
  `<div><div class="eyebrow">来源</div><ul>`+

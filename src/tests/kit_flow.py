@@ -42,7 +42,7 @@ with sync_playwright() as p:
     # the primers: opt in (automated browsers otherwise open a lab on its own mode)
     PRIMER_LABS = {'architecture': 10, 'backprop': 4, 'roofline': 4, 'prefill-decode': 4, 'eval-ci': 4,
                    'training-memory': 4, 'parallelism': 4, 'sft': 4, 'reward-model': 4, 'ppo': 3, 'embeddings': 4, 'agent-anatomy': 3,
-                   'number-formats': 4, 'dpo': 4}   # lab → its sections
+                   'number-formats': 4, 'dpo': 4, 'spec-decoding': 4}   # lab → its sections
     pg2 = b.new_page(viewport={'width': 1440, 'height': 900}); pg2.add_init_script('window.__aspPrimer=true'); e2 = []; pg2.on('pageerror', lambda e: e2.append(str(e)))
     pg2.goto('file://' + str(PAGE)); pg2.wait_for_timeout(500); pg2.click('.langsw button[data-lang=zh]')
     for lab, n in PRIMER_LABS.items():

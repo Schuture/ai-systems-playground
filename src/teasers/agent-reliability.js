@@ -20,7 +20,7 @@ function readHTML(k){const s=succ(k), fail=100-Math.round(s*100);
 function notes(){
   return [tx('Formula: the task succeeds only if every step is right, so each extra step multiplies the success by one more 0.9. The lab shows the formula.',
              '公式：每一步都做对，任务才成功，所以每多一步，成功率就多乘一个 0.9。公式在 Lab 里。'),
-          tx('The 90% per step is an assumed rate, not a measurement of a real agent.','每步 90% 是假设的数，不是对真实 agent 的测量。')];}
+          tx('Here each step is assumed to be right 90% of the time.','这里假设每步做对的把握是 90%。')];}
 function visHTML(k){
   const cells=Array.from({length:NMAX},(_,i)=>`<i class="tz-arl-c${i<k?' on':''}"></i>`).join('');
   return `<div class="tz-arl-row" aria-hidden="true">${cells}</div>`+

@@ -489,7 +489,7 @@ function fidPop(){const dW=mhaExtraParams(), mhX=mhaBig();
    `Memory utilization ${UTIL}, ${OH} GiB of runtime overhead per GPU and a BF16 KV cache are fixed here (${J('fixed','see why under Settings')}).`,
    'Plain tensor parallelism only: every layer is split across the GPUs, attention by head. Serving stacks such as SGLang can run attention data-parallel instead, which this lab does not model.',
    fp8E,
-   'Quality is not modeled. The quality scores in this lab are the GQA paper’s results for T5-XXL, not for Llama.'])}</ul></div>`+
+   'Quality is not modeled. The quality scores in this lab are the GQA paper’s results for T5-XXL.'])}</ul></div>`+
    `<div><div class="eyebrow">Sources</div><ul>${li([
    'Model shapes: config.json on Hugging Face (the Llama-3.1 repos are gated, so through public mirrors; DeepSeek-V3; Falcon-7B). Llama 3 paper, Table 3: 8 KV heads in all three sizes.',
    '<a href="https://arxiv.org/abs/1911.02150" target="_blank" rel="noopener">Shazeer, 2019</a>: MQA, and why loading keys and values slows decoding. <a href="https://arxiv.org/abs/2305.13245" target="_blank" rel="noopener">Ainslie et al., 2023</a>: GQA, Table 1 (T5-XXL scores and times), §2.2 (copies under sharding). Pope et al., 2022, §3.3: multi-query keys and values are copied to every chip.',
@@ -507,7 +507,7 @@ function fidPop(){const dW=mhaExtraParams(), mhX=mhaBig();
    `显存利用率 ${UTIL}、每张 GPU ${OH} GiB 运行时开销和 BF16 的 KV cache 在这里是固定的（${J('fixed','原因见“自由调参”')}）。`,
    '只算纯张量并行：每一层都拆到各张 GPU 上，attention 按 head 拆。SGLang 等框架可以改让 attention 做数据并行，这个 Lab 没有建模这种做法。',
    fp8Z,
-   '不建模质量。这个 Lab 里的质量分数是 GQA 论文里 T5-XXL 的结果，不是 Llama 的。'])}</ul></div>`+
+   '不建模质量。这个 Lab 里的质量分数取自 GQA 论文里 T5-XXL 的结果。'])}</ul></div>`+
    `<div><div class="eyebrow">来源</div><ul>${li([
    '模型结构：Hugging Face 上的 config.json（Llama-3.1 的仓库需要授权，用的是公开镜像；DeepSeek-V3；Falcon-7B）。Llama 3 论文表 3：三个尺寸都是 8 个 KV head。',
    '<a href="https://arxiv.org/abs/1911.02150" target="_blank" rel="noopener">Shazeer，2019</a>：MQA，以及为什么读 key 和 value 会拖慢解码。<a href="https://arxiv.org/abs/2305.13245" target="_blank" rel="noopener">Ainslie 等，2023</a>：GQA，表 1（T5-XXL 的分数和用时），§2.2（切分时的副本）。Pope 等，2022，§3.3：multi-query 的 key 和 value 会复制到每块芯片上。',
@@ -533,8 +533,8 @@ function controlsHTML(){
     `<div class="lockable">${A.ui.seg({id:'gm-ctl-wp',key:'wp',label:tx('Weight precision','权重精度'),options:[['bf16','BF16'],['fp8','FP8']],value:S.wp,note:tx('Weights take the parameter count times 2 bytes in BF16, 1 byte in FP8.','权重占的显存是参数量乘以每个参数的字节数：BF16 是 2，FP8 是 1。')})}</div>`+
     `<div class="lockable">${A.ui.range({id:'gm-ctl-ctx',key:'ctx',label:tx('Context per user','每个用户的上下文'),min:0,max:CTXS.length-1,step:1,value:CTXS.indexOf(S.ctx),out:''})}</div>`+
     `<details class="adv lockable" id="gm-fixed"><summary>${tx('Fixed in this lab: memory utilization, runtime overhead and KV cache precision','这个 Lab 里固定的：显存利用率、运行时开销和 KV cache 精度')}</summary>`+
-      `<div class="ctl-note gm-fx" id="gm-fx-util">${tx(`<b>Memory utilization: ${UTIL}.</b> The server uses at most this share of each GPU’s memory and keeps the rest as a safety margin, so memory the engine does not account for cannot push the GPU out of memory. It is set by hand, not computed: vLLM used 0.9 by default up to v0.19 and 0.92 since v0.20.0. The ${A.shell.labLink('kv-cache')} lab lets you change it.`,
-        `<b>显存利用率：${UTIL}。</b>服务端最多只用每张卡显存的这个比例，剩下的留作安全余量，免得引擎没算到的占用把显存撑爆。它是人为设定的，不是算出来的。vLLM 在 v0.19 及以前默认 0.9，v0.20.0 起默认 0.92。“${A.shell.labLink('kv-cache')}”Lab 里可以改它。`)}</div>`+
+      `<div class="ctl-note gm-fx" id="gm-fx-util">${tx(`<b>Memory utilization: ${UTIL}.</b> The server uses at most this share of each GPU’s memory and keeps the rest as a safety margin, so memory the engine does not account for cannot push the GPU out of memory. It is set by hand: vLLM used 0.9 by default up to v0.19 and 0.92 since v0.20.0. The ${A.shell.labLink('kv-cache')} lab lets you change it.`,
+        `<b>显存利用率：${UTIL}。</b>服务端最多只用每张卡显存的这个比例，剩下的留作安全余量，免得引擎没算到的占用把显存撑爆。它是人为设定的。vLLM 在 v0.19 及以前默认 0.9，v0.20.0 起默认 0.92。“${A.shell.labLink('kv-cache')}”Lab 里可以改它。`)}</div>`+
       `<div class="ctl-note gm-fx" id="gm-fx-oh">${tx(`<b>Runtime overhead: ${OH} GiB per GPU.</b> This is memory the serving engine needs besides the weights and the KV cache, such as one step’s temporary activations and CUDA graphs. It is an estimate: engines such as vLLM measure it at startup, and it grows with the tokens one step may process. It is usually a GiB or two, because inference frees each layer’s activations right away.`,
         `<b>运行时开销：每张 GPU ${OH} GiB。</b>这是推理引擎在权重和 KV cache 之外要占的显存，比如一步前向的临时激活和 CUDA graph。它是估计值：vLLM 这类引擎在启动时实测它，一步最多处理的 token 越多，它就越大。它通常只有一两个 GiB，因为推理时每层的激活用完就释放。`)}</div>`+
       `<div class="ctl-note gm-fx" id="gm-fx-kvb">${tx(`<b>KV cache precision: BF16, ${KVB} bytes per number.</b> It is fixed so that only the attention design changes the KV cache here. Serving engines can also keep the KV cache in FP8, 1 byte per number, which halves every size in this lab at some risk to quality; the ${A.shell.labLink('kv-cache')} lab shows its effect.`,

@@ -8,7 +8,7 @@ Every mode and every guided part at 1440×900 and 390×844, in EN and ZH (plus o
 - part 2: the replay auto-plays on entering (R3.9), pause stops it, Fast finishes within 5 s, Next waits for the end; the boxes of the
   stage keep their height during the replay (R7.9); then the result: 8 replies, 7 tool calls run by your code;
 - part 3: Next waits for call 8; call 4 shows 9,441 sent, 5,650 already sent; at call 8 the total 73,011, 6.1 times, the verdict
-  and the formula on its own line; the resending happens between calls, inside one call the KV cache is read and the input billed once,
+  and the formula on its own line; the resending happens between calls, inside one call the input is computed once (the KV cache),
   the bill (73,011 input, 242 output; the owner, 2026-10-14), and Show the math sums the tokens written; the dock at 390;
 - part 4: three ways, single choice, results on the options; stop on error ends after call 5 (red status, the stop row); “exit
   code 1” fixes at call 10 with 18,109 more tokens; Next waits for both;
@@ -286,11 +286,13 @@ def run_guided(b, w, h, lang, dark=False):
     check(f'{tag} part 3: the test file first goes out with call 2, 7 times in all', Z(lang, 'from call 2 on, 7 times in all', '从第 2 次调用起每次都发，一共发了 7 遍') in o, o[-400:])
     # the owner (2026-10-14): resending between calls against reading the KV cache inside one call, and what the bill counts
     kv = pg.evaluate("()=>{const d=[...document.querySelectorAll('#ana-rail [data-obs] .def')].find(e=>/KV cache/.test(e.textContent)); return d?d.getAttribute('data-tipx'):''}")
-    check(f'{tag} part 3: the resending happens between calls; inside one call the input is sent and billed once and the KV cache (with its tooltip) is read; the bill: 73,011 input, 242 output',
-          Z(lang, 'The resending happens between calls', '重发发生在两次调用之间') in o and Z(lang, 'the input is sent once and billed once', '输入只发一次、计一次费') in o
-          and Z(lang, '73,011 input tokens and 242 output tokens', '输入一共 73,011 个 token，输出 242 个') in o and 'key' in kv and 'prompt caching' in kv, (o[-500:], kv))
+    check(f'{tag} part 3: the resending happens between calls; inside one call the input is computed once and its KV cache (with its tooltip) reused, at no extra charge; each call is charged per input and output token: 73,011 and 242',
+          Z(lang, 'The resending happens between calls', '重发发生在两次调用之间') in o and Z(lang, 'the input is computed only once', '输入只算一遍') in o
+          and Z(lang, 'charges for the input tokens and the output tokens, each at its own price', '按输入 token 和输出 token 各自的单价收费') in o
+          and Z(lang, '73,011 input tokens and 242 output tokens', '输入共 73,011 个，输出 242 个') in o and 'key' in kv and 'prompt caching' in kv, (o[-500:], kv))
     mt = pg.evaluate("()=>{const d=document.querySelector('#ana-app details.math'); return d?d.textContent.replace(/\\s+/g,' '):''}")
-    check(f'{tag} part 3: Show the math adds the tokens written (242), the bill and the input about 300 times the output', Z(lang, 'Tokens written, and the bill.', '写出的 token 和账单。') in mt and '242' in mt and Z(lang, 'about 300 times the output', '约是输出的 300 倍') in mt, mt[-600:])
+    check(f'{tag} part 3: Show the math adds the tokens written (242), the bill and why the input is about 300 times the output (short replies, growing inputs)', Z(lang, 'Tokens written, and the bill.', '写出的 token 和账单。') in mt and '242' in mt
+          and Z(lang, 'about 300 times the output: the model writes a reply of only a few dozen tokens each time', '约是输出的 300 倍：模型每次只写几十个 token 的回复') in mt, mt[-600:])
     check(f'{tag} part 3: the chart: 8 bars, the total in its caption', pg.evaluate("()=>document.querySelectorAll('#ana-bars .ana-col:not(.todo)').length") == 8 and '73,011' in text(pg, '#ana-bars-cap'), text(pg, '#ana-bars-cap'))
     if phone:
         check(f'{tag} part 3: the phone’s slider sits next to the chart', vis(pg, '#ana-ph-call'))

@@ -2,7 +2,7 @@
 
 python3 tests/spec-decoding_copy_deck.py [tag]  ->  out/spd/copy/<tag>-zh.md and out/spd/copy/<tag>-en.md (default tag: now)
 
-Order: lab header with the mode descriptions, each guided part (card before and after its actions, the card with its folds open, the stage,
+Order: lab header with the mode descriptions, the 知识梳理 (primer), each guided part (card before and after its actions, the card with its folds open, the stage,
 the tooltips in view that were not shown before; "Show the math" of parts 2 and 3; part 3's round frame by frame), "Show the math", the scenarios card for every preset, the settings panel, the
 challenge before and after submitting (every feedback tier and the chart), the capability layer and the connect section. The home tile
 stays in teasers/set-a.js (not this lab's file), so it is not dumped here. A tooltip is printed the first time it appears with a given text.
@@ -58,6 +58,10 @@ with sync_playwright() as p:
         pg.evaluate("()=>{location.hash='spec-decoding'}"); pg.wait_for_timeout(600)
         L += ['# Header', txt(pg, '#spd-app .lab-head') or txt(pg, '#spd-app header')]
         L += ['## Mode descriptions'] + [f'- {x}' for x in pg.evaluate("()=>[...document.querySelectorAll('#spd-app .modes [data-mode]')].map(b=>b.innerText+': '+(b.dataset.tipx||''))")]
+        # the 知识梳理 (primer): opened from the list of steps, dumped, then back to the guided parts
+        click(pg, '#spd-app [data-flow-nav] button[data-flow="primer"]', 500)
+        L += ['# 知识梳理 (primer)', txt(pg, '#spd-app .primer[data-primer="spec-decoding"]')]
+        click(pg, '#spd-app [data-flow-nav] button[data-flow="guided"]', 400)
         acts = {1: ["#spd-rail [data-lever='5']", "#spd-rail [data-lever='80']", "#spd-rail [data-lever='640']"], 3: ["#spd-rail [data-pred='a34']"],
                 4: ["#spd-rail [data-lever='2']", "#spd-rail [data-lever='8']"], 5: ["#spd-rail [data-lever='greedy']", "#spd-rail [data-lever='sample']", "#spd-rail [data-lever='nocheck']"],
                 6: ["#spd-rail [data-lever='128']", "#spd-rail [data-lever='32']"]}

@@ -391,7 +391,7 @@ const FIDPOP=()=>tx(
  `<li>The loss ${VAL(25)} from (−9, 1.5). A run reaches the bottom at the first step with a loss below 0.001, diverges once the loss passes 100M, and stops at 200 steps.</li>`+
  `<li>Part 7: one weight of 1.0 whose gradient flips sign every step, ±${WD.big} or ±${WD.small}, so only weight decay moves it on average; lr ${fLR(WD.lr)}, weight decay ${WD.wd}. The bars give the share removed per step once m and v have settled (Show the math has the formula).</li></ul></div>`+
  `<div><div class="eyebrow">Simplified</div><ul><li>Two parameters instead of billions, and exact gradients instead of noisy ones from a batch of data. Noise is a main reason real training uses momentum and Adam, so the step counts here only compare the optimizers on this valley.</li>`+
- `<li>The learning rates suit this valley (it spans about 9 units), not a real network: Llama 2 7B used a peak of 0.0003.</li><li>Weight decay pulls every parameter toward 0, where this valley’s bottom also is, so here it does not move the bottom.</li></ul></div>`+
+ `<li>The learning rates suit this valley (it spans about 9 units); Llama 2 7B, a real network, used a peak of 0.0003.</li><li>Weight decay pulls every parameter toward 0, where this valley’s bottom also is, so here it does not move the bottom.</li></ul></div>`+
  `<div><div class="eyebrow">Sources</div><ul><li>Adam: ${cite(SRC.adam,'Kingma and Ba, ICLR 2015')}. AdamW: ${cite(SRC.lh,'Loshchilov and Hutter, ICLR 2019')}. Momentum: ${cite(SRC.sut,'Sutskever et al., ICML 2013')}.</li>`+
  `<li>Code: PyTorch ${cite(SRC.tsgd,'<code>torch/optim/sgd.py</code>')}, ${cite(SRC.tadam,'<code>adam.py</code>')}, ${cite(SRC.tadamw,'<code>adamw.py</code>')}. Settings in Scenarios: ${cite(SRC.llama2,'Llama 2')}, ${cite(SRC.resnet,'ResNet')}.</li></ul>`+
  `<p class="mono small muted" style="margin-top:8px">Last verified 2026-10-01. Prototype, not yet expert-reviewed.</p></div></div>`,
@@ -400,7 +400,7 @@ const FIDPOP=()=>tx(
  `<li>loss 是 ${VAL(25)}，从 (−9, 1.5) 出发。loss 第一次低于 0.001 的那一步算到达谷底；loss 超过 100M 算发散；最多跑 200 步。</li>`+
  `<li>第 7 部分：一个大小为 1.0 的权重，梯度每一步都变号（±${WD.big} 或 ±${WD.small}），所以平均下来只有 weight decay 在动它；lr ${fLR(WD.lr)}，weight decay ${WD.wd}。横条是 m 和 v 稳定之后每一步缩小的比例（公式在“展开公式”里）。</li></ul></div>`+
  `<div><div class="eyebrow">简化和假设</div><ul><li>只有两个参数，而真实模型的参数量以 B 计；梯度是精确的，而不是从一批数据算出、带噪声的。噪声正是真实训练要用 momentum 和 Adam 的主要原因之一，所以这里的步数只用来比较优化器在这条山谷上的表现。</li>`+
- `<li>学习率是按这条山谷（长约 9 个单位）取的，不是真实网络的：Llama 2 7B 的峰值是 0.0003。</li><li>weight decay 把每个参数往 0 拉，这条山谷的谷底也在 0，所以这里它不会挪动谷底。</li></ul></div>`+
+ `<li>学习率是按这条山谷（长约 9 个单位）取的；真实网络 Llama 2 7B 的峰值是 0.0003。</li><li>weight decay 把每个参数往 0 拉，这条山谷的谷底也在 0，所以这里它不会挪动谷底。</li></ul></div>`+
  `<div><div class="eyebrow">来源</div><ul><li>Adam：${cite(SRC.adam,'Kingma 和 Ba，ICLR 2015')}。AdamW：${cite(SRC.lh,'Loshchilov 和 Hutter，ICLR 2019')}。momentum：${cite(SRC.sut,'Sutskever 等，ICML 2013')}。</li>`+
  `<li>代码：PyTorch 的 ${cite(SRC.tsgd,'<code>torch/optim/sgd.py</code>')}、${cite(SRC.tadam,'<code>adam.py</code>')}、${cite(SRC.tadamw,'<code>adamw.py</code>')}。应用场景里的设置：${cite(SRC.llama2,'Llama 2')}、${cite(SRC.resnet,'ResNet')}。</li></ul>`+
  `<p class="mono small muted" style="margin-top:8px">最近核验 2026-10-01。原型，尚未经专家审阅。</p></div></div>`);

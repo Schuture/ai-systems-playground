@@ -913,7 +913,7 @@ const JOBS=()=>[
  {id:'inference-engine',t:tx('Completing a Small LLM Inference Engine (coding)','补全一个小型 LLM 推理引擎（编程题）'),
   d:tx('Do Level 2 (a budget-constrained decode loop) and Level 4 (prefix caching). The skill: the scheduling rules used here (decode first, first come first served, cap and budget, stop at the first request that does not fit) and shared blocks with reference counts, kept when idle and evicted when needed. One difference: that problem admits a whole prompt or nothing, while this lab, like vLLM, splits a prompt to fit the budget.',
        '做“Level 2 —— 带预算约束的解码循环”和“Level 4 —— 前缀缓存”。练的是这里用的调度规则（先 decode、先来先服务、上限和预算、遇到第一个放不下的请求就停），以及带引用计数的共享 block（空闲时留着，需要时淘汰）。有一处不同：那道题的 prompt 要么整个接纳、要么不接纳；这个 Lab 和 vLLM 一样，把 prompt 切开来放进预算。')}];
-const jobsHTML=()=>`<div class="sc-jobs"><div class="sc-chh">${tx('Where this goes in an interview','面试里会用到哪儿')}</div><p class="small muted">${tx('Examples of frontier-lab interview questions, reconstructed from second-hand accounts (unofficial):','Frontier lab 真题示例（据面经整理，非官方原题）：')}</p><ul>`+
+const jobsHTML=()=>`<div class="sc-jobs"><div class="sc-chh">${tx('Where this goes in an interview','面试里会用到哪儿')}</div><p class="small muted">${tx('Examples of frontier-lab interview questions, reconstructed from second-hand accounts:','Frontier lab 真题示例（据面经整理）：')}</p><ul>`+
   JOBS().map(j=>`<li><a href="${pURL(j.id)}" target="_blank" rel="noopener">${esc(j.t)} <span aria-hidden="true">↗</span></a><span>${esc(j.d)}</span></li>`).join('')+`</ul></div>`;
 
 /* =====================================================================
@@ -1011,14 +1011,14 @@ const SIMPL=()=>((en,zh)=>A.lang()==='zh'?zh.map(zfix):en)(
   'Prefix caching covers the apps’ system prompts and the documents in whole 16-token blocks. When two requests compute the same block in the same step, this model keeps one copy; vLLM V1 keeps both until the requests end (its block tables only grow), and SGLang’s radix cache frees the duplicate. Here that changes the peak memory by a fraction of a GiB and no result. Real engines also cache conversation histories.',
   'The cache budget stands for the free KV memory that idle prefixes may use.',
   'One GPU, no tensor parallelism. Answer lengths are fixed by the load; the scheduler does not know them.',
-  'Numbers are teaching estimates, not H100 measurements. TTFT here always includes queueing, unlike the single-request labs.'],
+  'Numbers are teaching estimates. TTFT here always includes queueing, unlike the single-request labs.'],
  [`每一步的耗时来自共用的耗时模型：计算按 ${GPUN} 稠密 BF16 峰值的 50%，读写显存按带宽的 60%，取较长的那个；不计启动 kernel、调度、tokenizer 和网络的时间。所有事件都发生在一步结束时。`,
   '调度按先来先服务，所以文档的 chunk 先占用每一步的预算，vLLM 默认的调度器也是这样。',
   '接纳请求时给整个回答预留空间，所以不会有请求被抢占。vLLM 会接纳更多请求，显存不够时再抢占其中一个。',
   '前缀缓存只缓存各应用的 system prompt 和长文档，按整个 16 个 token 的 block 缓存。两个请求在同一步里算出同一个 block 时，这里只留一份；vLLM V1 会两份都留着，直到请求结束（它的 block 表只追加），SGLang 的 radix cache 会释放重复的那份。在这里，这只让峰值显存差不到 1 GiB，不改变任何结果。真实引擎还会缓存对话历史。',
   '缓存预算代表空闲前缀能用的空闲 KV 显存。',
   '只有一张 GPU，没有张量并行。回答长度由负载固定，调度器事先不知道。',
-  '这些数是教学用的估算，不是 H100 上的实测。这里的 TTFT 总是包含排队，和只看单个请求的那些 Lab 不同。']);
+  '这些数是教学用的估算。这里的 TTFT 总是包含排队，和只看单个请求的那些 Lab 不同。']);
 function FIDPOP(){
   return tx(
  `<p><b>Toy run:</b> your browser runs a whole serving scheduler step by step on fixed, seeded requests, and prices every step with the step model of ${labLink('prefill-decode')}. ${J('math','“Show the math”')} redoes the key numbers.</p><div class="pop-grid"><div><div class="eyebrow">Modeled</div><ul>`+
@@ -1094,8 +1094,8 @@ function controlsHTML(){
    segCtl('cache',tx('Prefix caching','前缀缓存'),[['false',tx('off','关')],['true',tx('on','开')]],!!S.cache,tx('When caching is on, a shared prefix (an app’s system prompt or a document) is computed once, kept in shared blocks and reused by later requests.','打开后，共享的前缀（应用的 system prompt 或文档）只算一次，存在共享的 block 里，后来的请求直接复用。'))+
    `<div id="sc-cbwrap">`+segCtl('cb',tx('Cache budget for idle prompts','空闲 prompt 的缓存预算'),CBS.map(v=>[String(v),v==null?tx('no limit','不设上限'):fCB(v)]),S.cb,tx('How much KV memory idle cached prompts may keep; beyond it the least recently used is evicted. Real engines use whatever memory is free.','空闲的缓存 prompt 最多能占多少 KV 显存；超出就淘汰最久没用的。真实引擎用的是所有空闲显存。'))+`</div>`+
    `</div><div class="sc-grp" id="sc-ctl-eff"><div class="sc-gh">${tx('Assumed values','假设值')}</div>`+
-    `<div class="ctl"><span class="lbl">${tx('Arithmetic: 50% of the peak FLOP/s','计算：峰值 FLOP/s 的 50%')}</span><div class="ctl-note">${tx(`This is an estimate, not a measurement: the share of the ${GPUN}’s dense BF16 peak (989.5 TFLOP/s) a step reaches, ${fixd(C.FS/1e12,2)} TFLOP/s. It is assumed because the lab does not simulate kernels. It sets how long a prefill takes, and so how long a stall lasts.`,`这是估计值，不是实测：一步能用到 ${GPUN} 稠密 BF16 峰值（989.5 TFLOP/s）的多少，即 ${fixd(C.FS/1e12,2)} TFLOP/s。它是假设的，因为这个 Lab 不模拟 kernel。它决定 prefill 要多久，也就决定卡顿有多长。`)}</div></div>`+
-    `<div class="ctl"><span class="lbl">${tx('Memory: 60% of the peak bandwidth','读写显存：峰值带宽的 60%')}</span><div class="ctl-note">${tx(`This is an estimate, not a measurement: the share of the 3.35 TB/s peak a step reaches, ${fixd(C.BS/1e12,2)} TB/s. Databricks (2023) measured 60% at batch size 1 on 2 × H100-80GB, serving MPT-7B. This ${fixd(C.BS/1e12,2)} TB/s sets a decode step’s time: the weights are read once per step.`,`这是估计值，不是实测：一步能用到 3.35 TB/s 峰值带宽的多少，即 ${fixd(C.BS/1e12,2)} TB/s。Databricks（2023）在 2 × H100-80GB 上跑 MPT-7B 实测，batch 大小为 1 时是 60%。这个 ${fixd(C.BS/1e12,2)} TB/s 决定一个 decode 步的耗时：每一步都要把权重读一遍。`)}</div></div>`+
+    `<div class="ctl"><span class="lbl">${tx('Arithmetic: 50% of the peak FLOP/s','计算：峰值 FLOP/s 的 50%')}</span><div class="ctl-note">${tx(`This lab assumes a step reaches 50% of the ${GPUN}’s dense BF16 peak (989.5 TFLOP/s), that is ${fixd(C.FS/1e12,2)} TFLOP/s. It sets how long a prefill takes, and so how long a stall lasts.`,`本 Lab 假设一步能用到 ${GPUN} 稠密 BF16 峰值（989.5 TFLOP/s）的 50%，即 ${fixd(C.FS/1e12,2)} TFLOP/s。它决定 prefill 要多久，也就决定卡顿有多长。`)}</div></div>`+
+    `<div class="ctl"><span class="lbl">${tx('Memory: 60% of the peak bandwidth','读写显存：峰值带宽的 60%')}</span><div class="ctl-note">${tx(`This lab assumes a step reaches 60% of the 3.35 TB/s peak, that is ${fixd(C.BS/1e12,2)} TB/s. Databricks (2023) measured 60% at batch size 1 on 2 × H100-80GB, serving MPT-7B. This ${fixd(C.BS/1e12,2)} TB/s sets a decode step’s time: the weights are read once per step.`,`本 Lab 假设一步能用到 3.35 TB/s 峰值带宽的 60%，即 ${fixd(C.BS/1e12,2)} TB/s。Databricks（2023）在 2 × H100-80GB 上跑 MPT-7B 实测，batch 大小为 1 时是 60%。这个 ${fixd(C.BS/1e12,2)} TB/s 决定一个 decode 步的耗时：每一步都要把权重读一遍。`)}</div></div>`+
     `<div class="ctl"><span class="lbl">${tx(`KV pool: ${fint(C.POOL_T)} tokens`,`KV 显存池：${fint(C.POOL_T)} 个 token`)}</span><div class="ctl-note">${tx(`What is left of 90% of the 80 GB (read as GiB) after the weights and 2 GiB of runtime overhead, as in the lab ${labLink('kv-cache')}: ${fG(POOL_GIB)}, ${fint(C.KV_TOK/1024)} KiB per token. The 90% is vLLM’s gpu_memory_utilization; its default is now 0.92, a pool of ${fint(POOL92)} tokens (${fG((POOL92-C.POOL_T)*C.KV_TOK/C.GiB)} more). A request waits for memory only in the four-document scenario with caching off and a budget of 8,192 or none; everywhere else a larger pool would change no result.`,`80 GB（按 GiB 计）的 90% 减去权重和 2 GiB 运行时开销后剩下的，和 ${labLink('kv-cache')}这个 Lab 一样：${fG(POOL_GIB)}，每个 token ${fint(C.KV_TOK/1024)} KiB。90% 是 vLLM 的 gpu_memory_utilization；它现在的默认值是 0.92，那样显存池有 ${fint(POOL92)} 个 token（多 ${fG((POOL92-C.POOL_T)*C.KV_TOK/C.GiB)}）。只有在四份文档的场景里、关闭缓存并且预算是 8,192 或不设时，才会有请求等显存；其余情况下，更大的显存池不会改变任何结果。`)}</div></div></div>`+
    `<div id="sc-resetw"><button type="button" class="btn ghost sm" data-act="reset">${A.t('reset')}</button></div></aside>`;
 }
@@ -1835,7 +1835,7 @@ function render(){
   drawHead(o); frame(); drawMetrics(o);
   const ml=$('#sc-mleg',app), mh=memLegend(o); if(ml._h!==mh){ml.innerHTML=mh; ml._h=mh;}
   $('#sc-tlcap',app).textContent=tx(`Every request, in arrival order: from arriving to its last token`,`每个请求按到达顺序排列：从到达到最后一个 token`);
-  const sc=$('#sc-scope',app); sc.textContent=tx(`One ${GPUN}: estimates from the step model, queueing included; not measurements.`,`一张 ${GPUN}：用耗时模型估算，含排队；不是实测。`);
+  const sc=$('#sc-scope',app); sc.textContent=tx(`One ${GPUN}: estimates from the step model, queueing included.`,`一张 ${GPUN}：用耗时模型估算，含排队。`);
   sc.dataset.tipx=tx('Every time here comes from one event/time model: the scheduler above and the step model (arithmetic at 50% of the peak FLOP/s, memory traffic at 60% of the peak bandwidth, whichever is longer). The single-request labs leave out queueing; here every first token includes it.','这里的每个时间都来自同一个事件/时间模型：上面的调度器和耗时模型（计算按峰值 FLOP/s 的 50%，读写显存按峰值带宽的 60%，取较长的）。只看单个请求的那些 Lab 不含排队；这里每个首 token 都包含排队。');
   const mb=$('#sc-mathbody',app), mhh=mathHTML(o); if(mb._h!==mhh){mb.innerHTML=mhh; mb._h=mhh;} fitMath(mb);
   const gr=$('#sc-graph',app); gr.dataset.focus=mode==='guided'?(STEPS[step].focus||''):'';

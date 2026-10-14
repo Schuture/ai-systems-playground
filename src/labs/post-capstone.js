@@ -386,11 +386,11 @@ const STEPS=[
   expect:()=>plan({card:'fmt',meth:'sft',mode:'lora',x:lv5}).hits,
   body:()=>{const r=plan({card:'fmt',meth:'sft',mode:'lora',x:3});
    return tx(`<p>The support task is done when at least 95% of 200 sampled answers pass the format check. How many ${DEF('passes',TIP.pass())} over the 3,000 conversations does SFT need?</p>`+
-    `<p>In this lab the pass rate climbs toward a ceiling, and each half pass closes half of the remaining gap (this lab’s rule, not a measurement):</p>`+MX('m(x) = m_\\infty - (m_\\infty - m_0) \\times 2^{-x/h}')+
+    `<p>In this lab the pass rate climbs toward a ceiling, and each half pass closes half of the remaining gap (this lab’s rule):</p>`+MX('m(x) = m_\\infty - (m_\\infty - m_0) \\times 2^{-x/h}')+
     `<p class="small muted">${M('m_0')} = 40% is the rate before training, ${M('m_\\infty')} = 98% the ceiling, h = half a pass, and x the passes.</p>`+LEAD.lv5()+
     levers('pcap-ic-lv5',tx('Passes over the data','训练几遍'),lv5,LV5,tried5,lv5Res),
     `<p>客服任务的验收标准：随机抽 200 个回答，至少 95% 格式合格。SFT 要把 3,000 段对话${DEF('训练几遍',TIP.pass())}才够？</p>`+
-    `<p>在这个 Lab 里，合格率朝一个上限爬，每多训半遍，就补上剩下差距的一半（这是这个 Lab 的规则，不是实测）：</p>`+MX('m(x) = m_\\infty - (m_\\infty - m_0) \\times 2^{-x/h}')+
+    `<p>在这个 Lab 里，合格率朝一个上限爬，每多训半遍，就补上剩下差距的一半（这是本 Lab 的规则）：</p>`+MX('m(x) = m_\\infty - (m_\\infty - m_0) \\times 2^{-x/h}')+
     `<p class="small muted">训练前的合格率 ${M('m_0')} = 40%，上限 ${M('m_\\infty')} = 98%，h = 半遍，x 是训练的遍数。</p>`+LEAD.lv5()+
     levers('pcap-ic-lv5',tx('Passes over the data','训练几遍'),lv5,LV5,tried5,lv5Res));},
   obs:()=>{const r=plan({card:'fmt',meth:'sft',mode:'lora',x:lv5}), c5=CARDS.fmt;
@@ -490,7 +490,7 @@ const FIDPOP=()=>{const g=plan({card:'math',meth:'grpo',mode:'full',x:1}), g0=pl
  `<li>Generating answers (rollouts): ${GEN_B} answers per GPU at once. Each step reads the 16.1 GB of BF16 weights from memory and adds a token to each answer. At 3.35 TB/s, one step of the 8B takes about ${fixd(stepMs('8b'),1)} ms.</li>`+
  `<li>GRPO generates 8 answers per problem and trains on each batch of answers once (TRL’s defaults num_generations = 8, num_iterations = 1, ${cite(SRC.trlGrpoCfg,'grpo_config.py')}). PPO generates one answer per prompt and trains 4 times on each batch (TRL’s num_ppo_epochs). The reward model is trained once over the pairs first.</li>`+
  `<li>TRL’s GRPO uses β = 0 by default (since v0.19.0) and then loads no reference model. On the math task the models would then take ${GB(g0.modelBytes)} instead of ${GB(g.modelBytes)}, and the reference model would no longer read the answers. verl, DeepSeek‑R1 and Tülu 3 keep a small KL term, and this lab keeps the reference model.</li></ul></div>`+
- `<div><div class="eyebrow">This lab’s rule, not measured</div><ul><li>The metric after x passes, with ${M('m_0')}, ${M('m_\\infty')} and h set per task and method:${rule}</li>`+
+ `<div><div class="eyebrow">This lab’s rule</div><ul><li>The metric after x passes, with ${M('m_0')}, ${M('m_\\infty')} and h set per task and method:${rule}</li>`+
  `<li>Only two numbers of the math task are measured: Llama‑3.1‑8B’s 39.7% before training, and the 79.2% SimpleRL-Zoo reached after its RL training (${cite(SRC.simple,'README')}). This lab assumes GRPO reaches at most 79.2%.</li>`+
  `<li>LoRA and QLoRA reach what full fine-tuning reaches.</li>`+
  `<li>SFT learns to write what its answers contain. The math card’s worked solutions show the working. Final answers alone show none, so in this lab SFT on them leaves the accuracy where it was. On the task “Answers users prefer”, SFT trains on the chosen answers only and never sees what users turned down, so in this lab it leaves the win rate where it was too. No source this lab could check gives a number for either case, so the lab takes the most conservative setting: the ceiling ${M('m_\\infty')} equals ${M('m_0')}, the value before training, and training leaves the metric where it was.</li>`+
@@ -512,7 +512,7 @@ const FIDPOP=()=>{const g=plan({card:'math',meth:'grpo',mode:'full',x:1}), g0=pl
  `<li>生成回答（rollout）：每张卡同时生成 ${GEN_B} 个回答。每一步把 16.1 GB 的 BF16 权重从显存读一遍，给每个回答添一个 token。显存带宽是 3.35 TB/s，所以 8B 一步约 ${fixd(stepMs('8b'),1)} ms。</li>`+
  `<li>GRPO 每道题生成 8 个回答，每批回答只训练一遍（TRL 的默认值 num_generations = 8、num_iterations = 1，${cite(SRC.trlGrpoCfg,'grpo_config.py')}）。PPO 每个提问生成 1 个回答，每批训练 4 遍（TRL 的 num_ppo_epochs）。奖励模型先在偏好对上训练一遍。</li>`+
  `<li>TRL 的 GRPO 从 v0.19.0 起默认 β = 0，这时不加载参考模型。数学任务上，所有模型占的显存会从 ${GB(g.modelBytes)} 降到 ${GB(g0.modelBytes)}，参考模型也不用再读回答。verl、DeepSeek‑R1 和 Tülu 3 都保留一个小的 KL 项，这个 Lab 也保留参考模型。</li></ul></div>`+
- `<div><div class="eyebrow">这个 Lab 的规则，不是实测</div><ul><li>训练 x 遍以后的指标按下面的式子算，${M('m_0')}、${M('m_\\infty')}、h 按任务和方法设定。${rule}</li>`+
+ `<div><div class="eyebrow">本 Lab 的规则</div><ul><li>训练 x 遍以后的指标按下面的式子算，${M('m_0')}、${M('m_\\infty')}、h 按任务和方法设定。${rule}</li>`+
  `<li>只有数学任务的两个数来自实测：Llama‑3.1‑8B 训练前的 39.7%，和 SimpleRL-Zoo 用 RL 训练后的 79.2%（${cite(SRC.simple,'README')}）。这个 Lab 假设 GRPO 最多到 79.2%。</li>`+
  `<li>LoRA 和 QLoRA 的效果和全量微调一样。</li>`+
  `<li>回答里写了什么，SFT 就学着写什么。数学团队的解题过程里有一步步的推理。只有最后答案时，回答里没有推理，所以在这个 Lab 里，这样的 SFT 不提高答对率。在“回答更合用户口味”这个任务上，SFT 只学选中的回答，看不到用户没选的那个，所以在这个 Lab 里它也不提高胜率。这两种情况都找不到能核对、又给出具体数字的来源，所以这个 Lab 取最保守的设定：上限 ${M('m_\\infty')} 就等于训练前的 ${M('m_0')}，训练后和训练前一样。</li>`+
@@ -570,7 +570,7 @@ function stageHTML(){
     `<div class="pcap-blk pcap-box" id="pcap-membox"><div class="pcap-bl">${tx('Memory','显存')}</div><div class="pcap-cap" id="pcap-mem-cap"></div><div class="pcap-hbar" id="pcap-mem"></div><ul class="pcap-list" id="pcap-mem-list"></ul></div>`+
     `<div class="pcap-blk pcap-box" id="pcap-costbox"><div class="pcap-bl">${tx('GPU hours and budget','GPU 小时和预算')}</div><div class="pcap-cap" id="pcap-cost-cap"></div><div id="pcap-cost"></div><ul class="pcap-list pcap-leg" id="pcap-cost-list"></ul><div class="pcap-hw" id="pcap-cost-hw"><div class="pcap-hh">${tx('How the GPU hours are counted','GPU 小时是怎么算出来的')}</div><dl class="pcap-how" id="pcap-cost-how"></dl></div></div>`+
     `<div class="pcap-blk pcap-box" id="pcap-metbox"><div class="pcap-bl">${tx('Result','结果')}</div><div class="pcap-cap" id="pcap-met-cap"></div><div class="pcap-met" id="pcap-met"></div><ul class="pcap-list pcap-leg" id="pcap-met-list"></ul></div>`+
-    `<p class="pcap-blk pcap-tags small" id="pcap-tags"><span class="pcap-tag" tabindex="0" data-tipx="${esc(tx('Memory and GPU hours come from the formulas in “Show the math”.','显存和 GPU 小时由“展开公式”里的公式算出。'))}">${tx('Memory and GPU hours: formulas','显存和 GPU 小时：公式计算')}</span><span class="pcap-tag" tabindex="0" data-tipx="${esc(tx('How far a method moves a metric is this lab’s own rule, not a measurement; see the notes at the end of the page.','方法能把指标提多高，是这个 Lab 自己的规则，不是实测；见页末的“简化、假设和来源”。'))}">${tx('Metric: this lab’s rule','指标：这个 Lab 的规则')}</span></p>`+
+    `<p class="pcap-blk pcap-tags small" id="pcap-tags"><span class="pcap-tag" tabindex="0" data-tipx="${esc(tx('Memory and GPU hours come from the formulas in “Show the math”.','显存和 GPU 小时由“展开公式”里的公式算出。'))}">${tx('Memory and GPU hours: formulas','显存和 GPU 小时：公式计算')}</span><span class="pcap-tag" tabindex="0" data-tipx="${esc(tx('How far a method moves a metric is this lab’s own rule; see the notes at the end of the page.','方法能把指标提多高，是本 Lab 自己的规则；见页末的“简化、假设和来源”。'))}">${tx('Metric: this lab’s rule','指标：这个 Lab 的规则')}</span></p>`+
    `</div>`+
    `<div class="metrics pcap-metrics" id="pcap-metrics"></div>`+
    `<details class="math" id="pcap-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="pcap-mathbody"></div></details></div>`;
@@ -581,7 +581,7 @@ const NOTE={
    return tx(`An assumed value. Each GPU generates ${GEN_B} answers at once. Each step reads all the BF16 weights from GPU memory once and adds one token to each answer, so for the 8B a step takes about ${ms} ms and each GPU generates about ${r} tokens per second. How many answers fit at once is decided by the memory left for their KV cache after the weights. These answers are short: the KV cache of ${GEN_B} of them takes only about ${kv} GB, so a real engine can generate far more at once. The more it generates together, the cheaper each token, until the GPU’s compute is used up. Each step also reads that KV cache, which this lab leaves out, so the time spent generating is on the low side here.`,
      `这是假设值。每张卡同时生成 ${GEN_B} 个回答。每一步把全部 BF16 权重从显存读一遍，给每个回答添一个 token，所以 8B 每一步约 ${ms} ms，每张卡每秒约生成 ${r} 个 token。能同时生成多少个回答，由放完权重以后显存里还剩多少地方放 KV cache 决定。这里的回答很短，${GEN_B} 个回答的 KV cache 只占约 ${kv} GB，所以真实的引擎能同时生成的远不止 ${GEN_B} 个。同时生成的越多，每个 token 越便宜，直到算力用满。每一步还要读这些 KV cache，这个 Lab 没有算，所以这里生成回答的时间偏少。`);},
  tok:()=>tx('Assumed sizes for the examples on the task cards: a support conversation 512 tokens; a prompt 128 tokens and an answer 256 tokens. A final answer alone (“#### 18” and the end token) is 8 tokens. Longer examples cost proportionally more.','任务卡上数据的大小是假设值。一段客服对话 512 个 token，一个提问 128 个 token，一个回答 256 个 token。只有最后答案时（“#### 18” 加上结束的 token），回答算 8 个 token。数据越长，花费按比例增加。'),
- rule:()=>tx('How far each method moves each metric is this lab’s own rule, not a measurement. By this rule the metric climbs toward a ceiling, more slowly the closer it gets. “Show the math” puts in the numbers of the current setup. The rule does not say one method is better in general.','每个方法能把指标提多高，是这个 Lab 自己定的规则，不是实测。按这个规则，指标朝一个上限爬，越接近上限涨得越慢。现在这套设置代进去的数，写在“展开公式”里。这个规则也不说明哪个方法在一般情况下更好。')
+ rule:()=>tx('How far each method moves each metric is this lab’s own rule. By this rule the metric climbs toward a ceiling, more slowly the closer it gets. “Show the math” puts in the numbers of the current setup. The rule does not say one method is better in general.','每个方法能把指标提多高，是本 Lab 自己定的规则。按这个规则，指标朝一个上限爬，越接近上限涨得越慢。现在这套设置代进去的数，写在“展开公式”里。这个规则也不说明哪个方法在一般情况下更好。')
 };
 const segRow=(id,key,label,opts,val,note)=>`<div class="lockable" id="${id}-wrap">${A.ui.seg({id,key,label,options:opts,value:String(val),note})}</div>`;
 function controlsHTML(){
@@ -1000,7 +1000,7 @@ function mathHTML(){
     const showMet=mode!=='guided'||v.met||isP('wrong');
     if(r.rule&&showMet){
       const p=r.metric/100;
-      rows.push(`<div class="pcap-mblk"><p class="pcap-ml">${tx('The metric after x passes, by this lab’s rule (not a measurement). It climbs from where it started toward a ceiling, and each h passes close half of the gap that is left.','训练 x 遍以后的指标，按这个 Lab 的规则算（不是实测）。它从训练前的值朝一个上限爬，每训练 h 遍，就补上剩下差距的一半。')}</p>`+
+      rows.push(`<div class="pcap-mblk"><p class="pcap-ml">${tx('The metric after x passes, by this lab’s rule. It climbs from where it started toward a ceiling, and each h passes close half of the gap that is left.','训练 x 遍以后的指标，按本 Lab 的规则算。它从训练前的值朝一个上限爬，每训练 h 遍，就补上剩下差距的一半。')}</p>`+
         EQ('m(x)',['m_\\infty - (m_\\infty - m_0) \\times 2^{-x/h}',`${r.rule.mi} - (${r.rule.mi} - ${c.m0}) \\times 2^{-${r.x}/${r.rule.h}}`],pc(r.metric))+
         `<p class="small muted">${tx(`${M('m_0')} is the value before training, ${M('m_\\infty')} the ceiling, and x the passes.`,`${M('m_0')} 是训练前的值，${M('m_\\infty')} 是上限，x 是训练的遍数。`)}</p></div>`);
       rows.push(`<div class="pcap-mblk"><p class="pcap-ml">${tx('The error bar. The check uses only a few hundred examples, so the measured score could land elsewhere in this interval 95% of the time.','误差线。验收只用几百个样本，量出的分数有 95% 的机会落在这个区间里。')}</p>`+

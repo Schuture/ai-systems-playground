@@ -158,8 +158,8 @@ const TIP={
              '抽一个词：程序取一个 0 到 1 之间的随机数，把各个词的概率首尾相接排成 0 到 1；随机数落在哪个词的那一段，就选哪个词。这里的随机数来自固定的种子（seed），所以页面每次都给出同样的几次运行。'),
  run:()=>tx('A run is one answer to the prompt: the app draws the first word, adds it to the prompt, and the model scores the next word again.',
             '一次运行就是对 prompt 的一次回答：程序先抽出第一个词，把它接到 prompt 后面，模型再给下一个词打分。'),
- illus:()=>tx('The scores are made up for this lab, not taken from a real model. Every chance, cut and draw on the page is computed from them exactly. A real model scores its whole vocabulary, often more than 100,000 tokens (Llama 3 has 128,256), and a word may take several tokens.',
-              '这些分数是为这个 Lab 编的，不是从真实模型里取的。页面上的每个概率、每次截断和每次抽取都由它们精确算出。真实模型给整个词表打分（常常超过 100,000 个 token，Llama 3 有 128,256 个），一个词也可能要好几个 token。'),
+ illus:()=>tx('The scores are made up for this lab. Every chance, cut and draw on the page is computed from them exactly. A real model scores its whole vocabulary, often more than 100,000 tokens (Llama 3 has 128,256), and a word may take several tokens.',
+              '这些分数是为这个 Lab 编的。页面上的每个概率、每次截断和每次抽取都由它们精确算出。真实模型给整个词表打分（常常超过 100,000 个 token，Llama 3 有 128,256 个），一个词也可能要好几个 token。'),
  scaled:()=>tx('Each logit divided by the temperature. Softmax turns these numbers, not the logits, into the chances: the bigger the gaps between them, the more lopsided the chances.',
                '每个 logit 除以 temperature 之后的数。softmax 把这些数（而不是原来的 logit）变成概率：它们之间差得越多，概率就越悬殊。')
 };
@@ -320,12 +320,12 @@ function scenHTML(i){
   const left=tx(`On the lunch prompt, that leaves ${n===1?'only 1 word':`${n} words`} that can be picked.`,`在午饭这个 prompt 上，这样${n===1?'只剩 1 个词':`还剩 ${n} 个词`}可能被抽中。`);
   if(p.id==='extract') return tx(`<p><b>Apps that pull fields out of an invoice usually use temperature 0 (greedy). ${left}</b></p><p>At temperature 0 the engine always takes the top word, so the same invoice gives the same fields on every run, which the program reading them needs. OpenAI’s ${cite(SRC.oai,'prompt-engineering guide')} says temperature 0 is best “for most factual use cases such as data extraction”. A real server can still differ slightly between runs; ${J('fid','Fidelity')} says why.</p>`,
                                  `<p><b>从发票里提取字段的应用，通常用 temperature 0（贪心）。${left}</b></p><p>temperature 为 0 时，引擎总是取最高的那个词，同一张发票每次都给出同样的字段，读取它们的程序正需要这一点。OpenAI 的${cite(SRC.oai,'提示词指南')}说，对数据提取这类大多数事实性用途，temperature 0 最好。真实的服务在不同运行之间仍可能有细微差别，原因见${J('fid','页末的“简化、假设和来源”')}。</p>`);
-  if(p.id==='code') return tx(`<p><b>Code completion often uses a low temperature with top-p, for example temperature 0.2 and top-p 0.95. ${left}</b></p><p>A low temperature keeps the draws close to the likeliest code: here “${top}” gets about ${fR(r.d1.fin[0])}. ${cite(SRC.codex,'Chen et al. (2021)')} found temperature 0.2 best for pass@1 (one try must pass the tests) and 0.8 best for pass@100, with a 679M-parameter Codex model on HumanEval, sampling with top-p 0.95. This is a common choice, not a documented default.</p>`,
-                              `<p><b>代码补全常用较低的 temperature 加 top-p，比如 temperature 0.2、top-p 0.95。${left}</b></p><p>低 temperature 让抽取贴近最可能的代码：这里“${top}”约占 ${fR(r.d1.fin[0])}。${cite(SRC.codex,'Chen 等（2021）')}用 679M 参数的 Codex 模型在 HumanEval 上测试，发现 pass@1（只试一次就要通过测试）时 temperature 0.2 最好，pass@100 时 0.8 最好，采样都用 top-p 0.95。这是常见的选择，不是哪家文档写明的默认值。</p>`);
+  if(p.id==='code') return tx(`<p><b>Code completion often uses a low temperature with top-p, for example temperature 0.2 and top-p 0.95. ${left}</b></p><p>A low temperature keeps the draws close to the likeliest code: here “${top}” gets about ${fR(r.d1.fin[0])}. ${cite(SRC.codex,'Chen et al. (2021)')} found temperature 0.2 best for pass@1 (one try must pass the tests) and 0.8 best for pass@100, with a 679M-parameter Codex model on HumanEval, sampling with top-p 0.95. This is a common choice.</p>`,
+                              `<p><b>代码补全常用较低的 temperature 加 top-p，比如 temperature 0.2、top-p 0.95。${left}</b></p><p>低 temperature 让抽取贴近最可能的代码：这里“${top}”约占 ${fR(r.d1.fin[0])}。${cite(SRC.codex,'Chen 等（2021）')}用 679M 参数的 Codex 模型在 HumanEval 上测试，发现 pass@1（只试一次就要通过测试）时 temperature 0.2 最好，pass@100 时 0.8 最好，采样都用 top-p 0.95。这是常见的选择。</p>`);
   if(p.id==='chat') return tx(`<p><b>Chat assistants often use a moderate temperature with top-p: Meta ships Llama 3.1 8B Instruct with temperature 0.6 and top-p 0.9. ${left}</b></p><p>A moderate temperature keeps some variety, and top-p drops the unlikely words at the bottom of the list. The defaults are in the model’s ${cite(SRC.llamaMeta,'generation_config.json')} (${cite(SRC.llama,'readable copy')}).</p>`,
                               `<p><b>聊天助手常用适中的 temperature 加 top-p：Meta 发布的 Llama 3.1 8B Instruct 默认用 temperature 0.6、top-p 0.9。${left}</b></p><p>适中的 temperature 保留一些变化，top-p 去掉列表末尾那些不太可能的词。这组默认值写在模型的 ${cite(SRC.llamaMeta,'generation_config.json')} 里（${cite(SRC.llama,'可直接查看的副本')}）。</p>`);
-  return tx(`<p><b>Brainstorming often uses a higher temperature, for example 1.2 with top-p 0.95. ${left}</b></p><p>Variety matters more than the single best answer, so a higher temperature spreads the chance, and “${top}” falls to about ${fR(r.d1.fin[0])}. Top-p 0.95 still cuts the least likely word. This is a common choice, not a documented default.</p>`,
-            `<p><b>头脑风暴常用较高的 temperature，比如 1.2 加 top-p 0.95。${left}</b></p><p>这里多样性比单个最好的回答更重要，所以较高的 temperature 把概率摊开，“${top}”降到约 ${fR(r.d1.fin[0])}。top-p 0.95 仍然去掉最不可能的那个词。这是常见的选择，不是哪家文档写明的默认值。</p>`);
+  return tx(`<p><b>Brainstorming often uses a higher temperature, for example 1.2 with top-p 0.95. ${left}</b></p><p>Variety matters more than the single best answer, so a higher temperature spreads the chance, and “${top}” falls to about ${fR(r.d1.fin[0])}. Top-p 0.95 still cuts the least likely word. This is a common choice.</p>`,
+            `<p><b>头脑风暴常用较高的 temperature，比如 1.2 加 top-p 0.95。${left}</b></p><p>这里多样性比单个最好的回答更重要，所以较高的 temperature 把概率摊开，“${top}”降到约 ${fR(r.d1.fin[0])}。top-p 0.95 仍然去掉最不可能的那个词。这是常见的选择。</p>`);
 }
 
 /* =====================================================================
@@ -386,7 +386,7 @@ const FIDPOP=()=>tx(
  `<li>Top-p keeps the smallest set of likeliest words whose chances add up to at least p; top-k keeps the k likeliest.</li>`+
  `<li>A run draws three random numbers and picks, at each step, the word whose stretch of the cumulative chances each one lands in. The random numbers come from mulberry32 seeded with ${A.ui.math('\\text{seed} \\times 7919 + 17')}; each run takes the next three numbers. The 20 runs use seed 1 until you ask for new draws.</li></ul></div>`+
  `<div><div class="eyebrow">Simplified</div><ul>`+
- `<li>The scores are made up, not a real model’s logits, and each list has 2 to 7 words, not a whole vocabulary, which often has more than 100,000 tokens (Llama 3 has 128,256). A word or phrase such as “hot pot” counts as one step here; a real tokenizer may split it.</li>`+
+ `<li>The scores are made up for this lab, and each list has 2 to 7 words, not a whole vocabulary, which often has more than 100,000 tokens (Llama 3 has 128,256). A word or phrase such as “hot pot” counts as one step here; a real tokenizer may split it.</li>`+
  `<li id="sp-fid-nd">The model gives the same logits on every run. On a real server, two runs with the same settings and the same random numbers can still differ: the batch a request shares with others changes the order of floating-point sums in the kernels (${cite(SRC.tm,'Thinking Machines, 2025')}). That changes the logits, not the sampling rules shown here.</li>`+
  `<li>Engines draw in other ways. vLLM hands top-k and top-p to FlashInfer’s sampler on NVIDIA GPUs where it is available; otherwise, or when a request sets its own seed, it divides the chances by random exponential noise and takes the largest. Each word is still picked with exactly the same chance as with the method on this page.</li></ul></div>`+
  `<div><div class="eyebrow">Sources</div><ul>`+
@@ -399,7 +399,7 @@ const FIDPOP=()=>tx(
  `<li>top-p 留下概率加起来至少为 p 的最少几个最可能的词；top-k 留下最可能的 k 个词。</li>`+
  `<li>一次运行抽三个随机数；每一步，随机数落在累计概率的哪一段，就选那个词。随机数来自 mulberry32 生成器，初始值为 ${A.ui.math('\\text{种子} \\times 7919 + 17')}；每次运行依次取接下来的三个随机数。20 次运行用种子 1，直到你要求重新抽。</li></ul></div>`+
  `<div><div class="eyebrow">简化和假设</div><ul>`+
- `<li>分数是编的，不是真实模型的 logit；每个列表只有 2 到 7 个词，而不是整个词表（常常超过 100,000 个 token，Llama 3 有 128,256 个）。“火锅”这样的词在这里算一步；真实的 tokenizer 可能把它切开。</li>`+
+ `<li>分数是本 Lab 编的；每个列表只有 2 到 7 个词，而不是整个词表（常常超过 100,000 个 token，Llama 3 有 128,256 个）。“火锅”这样的词在这里算一步；真实的 tokenizer 可能把它切开。</li>`+
  `<li id="sp-fid-nd">模型每次运行给出的 logit 都一样。真实的服务上，设置相同、随机数也相同的两次运行仍可能不同：一个请求和别的请求拼在同一个 batch 里，会改变 kernel 里浮点数相加的顺序（${cite(SRC.tm,'Thinking Machines，2025')}）。变的是 logit，不是这里讲的采样规则。</li>`+
  `<li>引擎抽取的方法各不相同。在支持 FlashInfer 采样器的 NVIDIA GPU 上，vLLM 把 top-k 和 top-p 交给它做；否则，或者请求自带种子时，它把概率除以随机的指数噪声，再取最大的那个。换一种抽法，每个词被抽中的概率和这页的方法完全一样。</li></ul></div>`+
  `<div><div class="eyebrow">来源</div><ul>`+
@@ -467,7 +467,7 @@ function stageHTML(){
     `<div class="sp-duo" id="sp-duo" hidden><div class="sp-duo-p" id="sp-duo-f"></div><div class="sp-duo-p" id="sp-duo-k"></div></div>`+
     `<div class="sp-b" id="sp-b" hidden><div class="sp-cap" id="sp-b-cap"></div><div class="sp-tree" id="sp-tree"></div><p class="sp-sent" id="sp-sent"></p></div>`+
    `</div>`+
-   `<p class="sp-scope small muted" tabindex="0" data-tipx="${esc(TIP.illus())}">${tx('Illustrative scores, not a real model’s; every chance is computed from them exactly.','示意的分数，不是真实模型的；每个概率都由它们精确算出。')}</p>`+
+   `<p class="sp-scope small muted" tabindex="0" data-tipx="${esc(TIP.illus())}">${tx('Illustrative scores; every chance is computed from them exactly.','示意的分数；每个概率都由它们精确算出。')}</p>`+
    `<div class="metrics sp-metrics" id="sp-metrics"></div>`+
    `<details class="math" id="sp-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="sp-mathbody"></div></details></div>`;
 }
@@ -487,7 +487,7 @@ function controlsHTML(){
     `<button type="button" class="btn ghost sm" data-act="reseed">${tx('New draws','重新抽')}</button>`+
     `<div class="ctl-note">${tx(`The random numbers come from a seed, so the page shows the same 20 runs every time: mulberry32 seeded with ${A.ui.math('\\text{seed} \\times 7919 + 17')}, each run taking the next three numbers. This is assumed so that every result can be checked; a new seed gives 20 new runs with the same chances.`,`随机数来自一个种子，所以页面每次都给出同样的 20 次运行：生成器是 mulberry32，初始值为 ${A.ui.math('\\text{种子} \\times 7919 + 17')}，每次运行依次取接下来的三个随机数。这样设定是为了每个结果都能核对；换一个种子，就得到 20 次新的运行，概率不变。`)}</div></div></div>`+
    `<div class="sp-grp lockable" id="sp-ctl-z"><div class="sp-gh">${tx('Assumed values','假设值')}</div>`+
-    `<div class="ctl"><span class="lbl">${tx('The logits','logit')}</span><div class="ctl-note">${tx('These are made up for this lab, not taken from a model: a real model would compute them from the prompt, over its whole vocabulary. They are chosen so that a few words lead and many unlikely words follow, the usual shape of a next-token distribution.','这些是为这个 Lab 编的，不是从模型里取的：真实模型会根据 prompt 为整个词表算出它们。选这些数，是为了让少数几个词领先、后面跟着许多不太可能的词，这是下一个 token 分布常见的形状。')}</div>${zListHTML()}</div></div>`+
+    `<div class="ctl"><span class="lbl">${tx('The logits','logit')}</span><div class="ctl-note">${tx('These are made up for this lab; a real model would compute them from the prompt, over its whole vocabulary. They are chosen so that a few words lead and many unlikely words follow, the usual shape of a next-token distribution.','这些是为这个 Lab 编的；真实模型会根据 prompt 为整个词表算出它们。选这些数，是为了让少数几个词领先、后面跟着许多不太可能的词，这是下一个 token 分布常见的形状。')}</div>${zListHTML()}</div></div>`+
    `<div class="lockable" id="sp-ctl-reset-wrap"><button type="button" class="btn ghost sm" data-act="reset">${A.t('reset')}</button></div></aside>`;
 }
 const CODE=`import numpy as np

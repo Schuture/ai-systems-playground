@@ -361,10 +361,10 @@ const FIDPOP=()=>tx(
  `<li>A score is the average of n right-or-wrong answers, and its error bar comes from the normal approximation (the formula is in part 2). For scores between 50% and 90% and at least 164 questions, the approximation is close enough: a bar drawn this way covers the true level at least about ${Math.floor(COV.min*100)}% of the time. For scores near 100% on few questions, the bar comes out too narrow.</li>`+
  `<li>When two models answer the same questions, the standard error of the difference depends only on the questions only one model gets right; the formula is in part 4.</li>`+
  `<li>Several answers per question: averaging k answers removes the part of the swing that comes from each answer, not the part from which questions were drawn.</li>`+
- `<li>Part 2’s re-runs are drawn with a seeded generator (mulberry32, seed 7): a picture of the formula, not a recording.</li></ul></div>`+
+ `<li>Part 2’s re-runs are drawn with a seeded generator (mulberry32, seed 7): a picture of the formula.</li></ul></div>`+
  `<div><div class="eyebrow">Assumed</div><ul>`+
  `<li>The questions are drawn independently from a large pool of similar ones. A real benchmark is often written in groups (several questions on one passage); then the true swing is larger.</li>`+
- `<li>Part 4’s answer sheet (76% both right, 4% only A, 6% only B, 14% both wrong) is this lab’s assumption, not a recorded run.</li>`+
+ `<li>Part 4’s answer sheet (76% both right, 4% only A, 6% only B, 14% both wrong) is this lab’s assumption.</li>`+
  `<li>Coin-flip questions: in part 5 and the challenge, 20% of the questions are answered right half the time at temperature 0.7, and the rest always right or always wrong. Real models vary; measure yours.</li></ul></div>`+
  `<div><div class="eyebrow">Sources</div><ul>`+
  `<li>164 problems: HumanEval’s <code>data/HumanEval.jsonl.gz</code> has 164 lines (${cite(SRC.he,'openai/human-eval')}). 1,319 problems: GSM8K’s <code>grade_school_math/data/test.jsonl</code> has 1,319 lines (${cite(SRC.gsm,'openai/grade-school-math')}). About 14,000: MMLU’s test set (${cite(SRC.mmlu,'Hendrycks et al., arXiv 2009.03300')}; the exact count was not checked). Its 57 subjects are listed in ${cite(SRC.mmlucat,'hendrycks/test <code>categories.py</code>')}.</li>`+
@@ -375,10 +375,10 @@ const FIDPOP=()=>tx(
  `<li>分数是 n 个对错结果的平均，误差线用正态近似算出（公式见第 2 部分）。分数在 50% 到 90% 之间、题数不少于 164 时，这个近似够准，画出的误差线至少有约 ${Math.floor(COV.min*100)}% 的机会盖住真实水平。分数接近 100%、题数又少时，误差线会画得偏窄。</li>`+
  `<li>两个模型做同一批题时，差值的标准误差只取决于一对一错的题，公式在第 4 部分。</li>`+
  `<li>每道题多答几次：k 次回答取平均，消掉的是每次回答带来的那部分摆动，不是抽到哪些题带来的那部分。</li>`+
- `<li>第 2 部分的重考用带种子的随机数生成器（mulberry32，种子 7）画出，是公式的示意，不是真实记录。</li></ul></div>`+
+ `<li>第 2 部分的重考用带种子的随机数生成器（mulberry32，种子 7）画出，是公式的示意。</li></ul></div>`+
  `<div><div class="eyebrow">假设</div><ul>`+
  `<li>题目是从一大堆同类题里各自独立抽出来的。真实的 benchmark 常常成组出题（一篇材料配几道题），那样真实的摆动会更大。</li>`+
- `<li>第 4 部分的答卷（两个都对 76%，只有 A 对 4%，只有 B 对 6%，两个都错 14%）是这个 Lab 的假设，不是真实记录。</li>`+
+ `<li>第 4 部分的答卷（两个都对 76%，只有 A 对 4%，只有 B 对 6%，两个都错 14%）是本 Lab 的假设。</li>`+
  `<li>时对时错的题：第 5 部分和挑战题假设在 temperature 0.7 下，20% 的题一半答对、一半答错，其余的题每次都对或每次都错。真实模型各不相同，要在自己的模型上量。</li></ul></div>`+
  `<div><div class="eyebrow">来源</div><ul>`+
  `<li>164 道题：HumanEval 的 <code>data/HumanEval.jsonl.gz</code> 有 164 行（${cite(SRC.he,'openai/human-eval')}）。1,319 道题：GSM8K 的 <code>grade_school_math/data/test.jsonl</code> 有 1,319 行（${cite(SRC.gsm,'openai/grade-school-math')}）。约 14,000 道：MMLU 的测试集（${cite(SRC.mmlu,'Hendrycks 等，arXiv 2009.03300')}；准确题数没有核对）。57 个科目列在 ${cite(SRC.mmlucat,'hendrycks/test 的 <code>categories.py</code>')} 里。</li>`+
@@ -442,8 +442,8 @@ function stageHTML(){
 const NOTE={
  q:()=>tx('An assumed value: the share of questions only one of the two models gets right, with one answer each. The smaller it is, the shorter the question-by-question error bar. The real value is counted from the two models’ answer sheets, and it is never smaller than the gap between the two scores. This lab uses 12%, and 10% in part 4 and in the exam scenario.',
           '这是假设值，指两个模型各答一次时，一对一错的题所占的比例。它越小，逐题对比的误差线越短。真实值要从两个模型的答卷里数出来，它不会小于两个分数之差。这个 Lab 用 12%，第 4 部分和考试场景用 10%。'),
- c:()=>tx('An assumed value. At a temperature above 0, a model gets some questions right only about half the time. This value is the share of such questions; on the rest the model is always right or always wrong. The larger the share, the more several answers per question help. It depends on the model, the temperature and the benchmark, and it is close to 0 at temperature 0. This lab uses 20% so that the effect of several answers shows; it is not a measured value.',
-          '这是假设值。temperature 大于 0 时，有些题模型时对时错，大约一半答对。这个值就是这类题的占比，其余的题模型每次都对或每次都错。这个占比越大，每道题多答几次越有用。它取决于模型、temperature 和 benchmark，temperature 为 0 时接近 0。这个 Lab 用 20%，是为了让多答几次的效果看得出来，不是测出来的值。')
+ c:()=>tx('An assumed value. At a temperature above 0, a model gets some questions right only about half the time. This value is the share of such questions; on the rest the model is always right or always wrong. The larger the share, the more several answers per question help. It depends on the model, the temperature and the benchmark, and it is close to 0 at temperature 0. This lab assumes 20% so that the effect of several answers shows.',
+          '这是假设值。temperature 大于 0 时，有些题模型时对时错，大约一半答对。这个值就是这类题的占比，其余的题模型每次都对或每次都错。这个占比越大，每道题多答几次越有用。它取决于模型、temperature 和 benchmark，temperature 为 0 时接近 0。本 Lab 假设 20%，让多答几次的效果看得出来。')
 };
 const pIdx=p=>Math.round(p*1000), qIdx=q=>Math.round(q*100), cIdx=c=>Math.round(c*20);
 function controlsHTML(){

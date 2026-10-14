@@ -498,7 +498,7 @@ function controlsHTML(){
    `<div class="lockable" id="qz-ctl-kv-wrap">`+A.ui.seg({id:'qz-ctl-kv',key:'kv',label:tx('KV cache','KV cache'),options:[['bf16','BF16'],['fp8','FP8']],value:S.kv,note:tx('FP8 halves the bytes per token: 64 KiB for the 8B.','FP8 让每个 token 的字节减半：8B 是 64 KiB。')})+`</div>`+
    `<div class="lockable" id="qz-ctl-model-wrap">`+A.ui.seg({id:'qz-ctl-model',key:'model',label:tx('Model (memory chart)','模型（显存图）'),options:SCN.map(([v,n])=>[v,n.replace('Llama‑3.1‑','')]),value:S.model})+`</div>`+
    `<div class="lockable" id="qz-ctl-view-wrap">`+A.ui.seg({id:'qz-ctl-view',key:'view',label:tx('Picture','图'),options:[['block',tx('a block of weights','一块权重')],['serve',tx('step time and memory','耗时和显存')]],value:S.view})+`</div>`+
-   `<div class="qz-grp"><div class="qz-gh">${tx('Assumed values (set for this lab, not measured)','假设值（都是这个 Lab 设定的，不是测出来的）')}</div><ul class="qz-asm">${ASSUME().map(([k,v])=>`<li><b>${esc(k)}</b> ${v}</li>`).join('')}</ul></div>`+
+   `<div class="qz-grp"><div class="qz-gh">${tx('Values this lab assumes','本 Lab 假设的值')}</div><ul class="qz-asm">${ASSUME().map(([k,v])=>`<li><b>${esc(k)}</b> ${v}</li>`).join('')}</ul></div>`+
    `<div class="lockable" id="qz-ctl-reset-wrap"><button type="button" class="btn ghost sm" data-act="reset">${A.t('reset')}</button></div></aside>`;
 }
 const CODE=`import numpy as np

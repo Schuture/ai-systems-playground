@@ -157,6 +157,8 @@ with sync_playwright() as pw:
     # ---------------- 3. MoE routing ----------------
     for ntok in (32, 256, 2048):
         check(f'route({ntok}) matches', pg.evaluate(f"()=>window.__mgs.engine.route({ntok})") == route(ntok), route(ntok))
+        pk = pg.evaluate(f"()=>{{const per=new Array(8).fill(0); window.__mgs.engine.picks({ntok}).forEach(ch=>ch.forEach(e=>per[Math.floor(e/32)]++)); return per;}}")
+        check(f'picks({ntok}), the draws the stage animates, give the same counts as route({ntok})', pk == route(ntok), pk)
     r32 = route(32)
     check('32 tokens: busiest GPU 1.28 x average', num(max(r32)/(32*8/8), 2) == '1.28', r32)
 
@@ -219,7 +221,7 @@ with sync_playwright() as pw:
         check(f'{L_} part 6: the KV cache read per GPU halves on 16 GPUs', close(rr2['need'], r8['need']/2))
         nxt()
         for ntok in (256, 2048, 32):
-            click(f'#mgs-rail .seg-ctl[data-key="p7"] button[data-v="{ntok}"]')
+            click(f'#mgs-rail .seg-ctl[data-key="p7"] button[data-v="{ntok}"]'); finish()   # the layer plays; its end shows every count
             per = route(ntok); avg = ntok
             has(f'{L_} part 7, {ntok} tokens (card)', T(), [num(max(per)/avg, 2)])
             st = pg.evaluate("()=>document.querySelector('#mgs-stage').innerText")

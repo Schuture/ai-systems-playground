@@ -410,8 +410,8 @@ const FIDPOP=()=>tx(
  `<li>The gradient check: a central difference with the chosen ε, and the relative error ${M(REL_TEX)}.</li></ul></div>`+
  `<div><div class="eyebrow">Simplified</div><ul>`+
  `<li>Scalars, not tensors: a matrix multiplication’s backward is two matrix products, but each element follows the same chain rule. Inputs and the target are constants, so they get no gradient.</li>`+
- `<li>“About twice the forward pass” holds for matrix multiplications, which dominate a model’s compute: training costs about 6 operations per parameter per token, 2 forward and 4 backward (Kaplan et al., 2020). In this tiny graph the counts are smaller and not measured.</li>`+
- `<li>This lab passes a check below 10⁻⁷ and fails it above 10⁻⁴, the usual line for suspecting a bug; the band in between counts as not a pass yet. These thresholds are a rule of thumb for float64, not a law; with float32 or at a kink the errors are larger.</li></ul></div>`+
+ `<li>“About twice the forward pass” holds for matrix multiplications, which dominate a model’s compute: training costs about 6 operations per parameter per token, 2 forward and 4 backward (Kaplan et al., 2020). In this tiny graph the counts are smaller.</li>`+
+ `<li>This lab passes a check below 10⁻⁷ and fails it above 10⁻⁴, the usual line for suspecting a bug; the band in between counts as not a pass yet. These thresholds are a rule of thumb for float64; with float32 or at a kink the errors are larger.</li></ul></div>`+
  `<div><div class="eyebrow">Sources</div><ul>`+
  `<li>The engine’s shape: micrograd’s ${cite(SRC.micro,'<code>engine.py</code>')}. The in-place error and the version check: PyTorch ${cite(SRC.saved,'<code>saved_variable.cpp</code>')}.</li>`+
  `<li>Backpropagation: ${cite(SRC.rhw,'Rumelhart, Hinton and Williams, 1986')}. Reverse-mode autodiff: ${cite(SRC.baydin,'Baydin et al., 2018')}. Compute per token: ${cite(SRC.kaplan,'Kaplan et al., 2020')}. The relative error and the thresholds: the practice problem mlp-backprop (Go further, under the challenge); the ${cite(SRC.cs231n,'CS231n notes')} give similar thresholds with max(|a|, |n|) as the denominator.</li></ul>`+
@@ -422,8 +422,8 @@ const FIDPOP=()=>tx(
  `<li>梯度检查：用所选 ε 做中心差分，相对误差为 ${M(REL_TEX)}。</li></ul></div>`+
  `<div><div class="eyebrow">简化和假设</div><ul>`+
  `<li>标量，不是张量：矩阵乘法的反向是两个矩阵乘法，但每个元素遵循同样的链式法则。输入和目标是常数，所以没有梯度。</li>`+
- `<li>“大约是前向的两倍”对矩阵乘法成立，而矩阵乘法占了模型计算的大头：训练时每个参数每个 token 大约 6 次运算，前向 2 次，反向 4 次（Kaplan 等，2020）。这个小图里的次数更少，也没有实测。</li>`+
- `<li>这个 Lab 里低于 10⁻⁷ 算通过，高于 10⁻⁴ 算不通过（这是怀疑有 bug 的常用界线），介于两者之间算还不通过。这些阈值是 float64 下常用的经验，不是定律；float32 或在拐点处误差会更大。</li></ul></div>`+
+ `<li>“大约是前向的两倍”对矩阵乘法成立，而矩阵乘法占了模型计算的大头：训练时每个参数每个 token 大约 6 次运算，前向 2 次，反向 4 次（Kaplan 等，2020）。这个小图里的次数更少。</li>`+
+ `<li>这个 Lab 里低于 10⁻⁷ 算通过，高于 10⁻⁴ 算不通过（这是怀疑有 bug 的常用界线），介于两者之间算还不通过。这些阈值是 float64 下常用的经验值；float32 或在拐点处误差会更大。</li></ul></div>`+
  `<div><div class="eyebrow">来源</div><ul>`+
  `<li>引擎的结构：micrograd 的 ${cite(SRC.micro,'<code>engine.py</code>')}。原地修改的报错和版本核对：PyTorch 的 ${cite(SRC.saved,'<code>saved_variable.cpp</code>')}。</li>`+
  `<li>反向传播：${cite(SRC.rhw,'Rumelhart、Hinton 和 Williams，1986')}。反向模式自动微分：${cite(SRC.baydin,'Baydin 等，2018')}。每个 token 的计算量：${cite(SRC.kaplan,'Kaplan 等，2020')}。相对误差和阈值：练习题 mlp-backprop（挑战题下面的“延伸练习”）；${cite(SRC.cs231n,'CS231n 讲义')}给出相近的阈值，分母用 max(|a|, |n|)。</li></ul>`+

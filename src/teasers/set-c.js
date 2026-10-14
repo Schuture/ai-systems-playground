@@ -99,8 +99,8 @@ function ragText(k){
 function ragNotes(){
   const n=RAG.n, a=RAG.ans;
   return [
-    tx(`Illustrative ranking, not a measurement: ${n} chunks, and the answer sits in the one ranked ${ordEn(a)}. In a real system that rank depends on the retriever, the chunking and the question.`,
-       `示意的排序，不是实测：共 ${n} 个 chunk，答案在排第 ${a} 的那个里。真实系统里它排第几，取决于检索器、切块方式和问题。`),
+    tx(`Illustrative ranking: ${n} chunks, and the answer sits in the one ranked ${ordEn(a)}. In a real system that rank depends on the retriever, the chunking and the question.`,
+       `示意的排序：共 ${n} 个 chunk，答案在排第 ${a} 的那个里。真实系统里它排第几，取决于检索器、切块方式和问题。`),
     tx('Source for the position effect: Liu et al., “Lost in the Middle: How Language Models Use Long Contexts” (TACL 2024). With 10, 20 or 30 retrieved passages, models tended to do best when the passage with the answer came first or last, and worse in the middle.',
        '位置效应的来源：Liu 等人，“Lost in the Middle: How Language Models Use Long Contexts”（TACL 2024）。在 10、20 或 30 个检索段落上，含答案的段落放在最前或最后时，模型往往答得最好，放在中间时更差。')];
 }
@@ -236,8 +236,8 @@ function anatText(i){
 function anatNotes(i){
   const base=int(TRACE.base), st=TRACE.steps[i-1];
   return [
-    tx('An illustrative trace, not a recording, with plausible rather than measured token counts: a coding agent fixes one failing test with run_tests, search_code, read_file and edit_file.',
-       '示意的 trace，不是真实记录，token 数是合理量级的估计：一个 coding agent 用 run_tests、search_code、read_file 和 edit_file 修一个失败的测试。'),
+    tx('An illustrative trace with token counts of a plausible size: a coding agent fixes one failing test with run_tests, search_code, read_file and edit_file.',
+       '示意的 trace，token 数是合理量级的估计：一个 coding agent 用 run_tests、search_code、read_file 和 edit_file 修一个失败的测试。'),
     tx(`At step ${i} the model ${st.en}. Each step it reads the system prompt with tool definitions and the task (${base} tokens) plus every earlier message and tool output, because each call feeds it the whole history again.`,
        `第 ${i} 步，模型${st.zh}。每一步它都要读 system prompt（含工具定义）和任务（${base} 个 token），再加上之前所有的消息和工具输出，因为每次调用都要把完整历史重新交给模型。`),
     tx('Nothing is trimmed in this trace; some agents clear or summarize old tool outputs (Anthropic engineering blog, “Effective context engineering for AI agents”).',
@@ -308,8 +308,8 @@ function injText(mode){
 // notes: 4 sentences (guide R11.5); that the hidden line is still text the agent reads is in the line's own tooltip
 function injNotes(){
   return [
-    tx('Illustrative, not a recorded run: whether a model obeys such a line depends on the model and the wording. The address uses example.com, a domain reserved for examples (RFC 2606).',
-       '示意，不是真实的运行记录：模型会不会照做，取决于模型和措辞。地址用的是 example.com，这是专供举例的域名（RFC 2606）。'),
+    tx('Illustrative: whether a model obeys such a line depends on the model and the wording. The address uses example.com, a domain reserved for examples (RFC 2606).',
+       '示意：模型会不会照做，取决于模型和措辞。地址用的是 example.com，这是专供举例的域名（RFC 2606）。'),
     tx('Indirect prompt injection: instructions planted in content an agent reads, such as web pages or emails (Greshake et al., 2023). Marking outside content as untrusted and giving only the tools a task needs lower the risk but do not remove it (OWASP LLM01:2025), so actions such as sending email should need the user’s approval.',
        '间接 prompt injection：把指令藏进 agent 会读的内容里，比如网页或邮件（Greshake 等，2023）。把外部内容标为不可信、只给任务需要的工具，都能降低风险，但不能消除（OWASP LLM01:2025），所以发邮件这类操作应该先经用户批准。')];
 }

@@ -43,8 +43,8 @@ function notes(){const rs=BUD.map((_,i)=>model(i).r), lo=Math.floor(Math.min(...
              '公式：曲线是拟合的 loss，L = E + A ÷ Nᵅ + B ÷ Dᵝ。参数量 N 和训练 token 数 D 各在一个分母上。算力固定为 C = 6ND，所以模型越大，分到的 token 越少。常数用的是 Epoch AI 对 Chinchilla 训练数据的重新拟合。'),
     tx(`From 10²⁰ to 10²⁴ FLOPs the lowest point stays between ${lo} and ${hi} tokens per parameter, and the best size grows about as the square root of the budget.`,
        `从 10²⁰ 到 10²⁴ FLOP，最低点都在每个参数 ${lo} 到 ${hi} 个 token 之间，最好的模型大小大约随预算的平方根增长。`),
-    tx('The loss comes from one fit of one family of training runs: use it only to compare sizes, not as any real model’s loss.',
-       '这个 loss 来自对一组训练的拟合，只能用来比较不同的大小，不是哪个真实模型的 loss。')];}
+    tx('The loss comes from one fit of one family of training runs: use it only to compare sizes.',
+       '这个 loss 来自对一组训练的拟合，只能用来比较不同的大小。')];}
 A.registerTeaser('scaling-law',{fid:'formula',render(el){
   const lab=tx('Compute budget','算力预算');
   el.innerHTML=`<div class="tz tz-sl">`+

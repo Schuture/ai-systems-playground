@@ -94,7 +94,8 @@ check('part 2: 8 replies, 7 tool calls', base['n'] == 8 and sum(len(s) for s in 
 # part 3 (the owner, 2026-10-14): the bill counts each call's input plus its output; the replies are the output (the result and Show the math)
 check('part 3: the bill: 73,011 input tokens and 242 output tokens; the replies write 23, 21, 20, 38, 20, 63, 20 and 37',
       base['total'] == 73011 and base['out'] == 242 and base['outs'] == [23, 21, 20, 38, 20, 63, 20, 37], (base['total'], base['out'], base['outs']))
-check('part 3, Show the math: the input tokens are “about 300 times” the output (73,011 / 242 = 301.7)', round(base['total'] / base['out'] / 10) * 10 == 300, base['total'] / base['out'])
+check('part 3, Show the math: the input tokens are “about 300 times” the output (73,011 / 242 = 301.7); every reply is “a few dozen tokens” (20 to 63)',
+      round(base['total'] / base['out'] / 10) * 10 == 300 and all(10 <= o < 100 for o in base['outs']), (base['total'] / base['out'], base['outs']))
 # part 3, part 6 and Explain it, question 1: the model asks for the test file in call 1, so its content first goes out with call 2,
 # and then with every later call: calls 2 to 8, 7 times (not 8)
 asked = next(i + 1 for i, st in enumerate(D['base']['calls']) if any(c['name'] == 'read_file' and c['input'].get('path') == 'tests/test_cart.py' for c in st))
