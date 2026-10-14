@@ -96,7 +96,7 @@ CLOCK = r"""()=>{const st=window.__pdd.state(), w=window.__pdd.watch(), v=window
  const proc=w&&ph>=(w.split?w.x1:w.p0)-1e-9&&ph<w.fin-1e-9?(w.split?w.dg:w.g):null;
  return {playing:st.playing, ph, end:run.end, phX, phVis:phl.getAttribute('visibility'), Xph:X(ph), clipR, Xend:X(run.end), phClient:sr.left+phX*k, thumb,
    value:+pr.value, fill:parseFloat(pr.style.getPropertyValue('--fill')), tickErr:w?Math.max(0,...w.toks.map((t,i)=>Math.abs(tx[i]-X(t)))):0, nt:tx.length,
-   ntok:w?w.toks.length:0, shown:tx.filter(x=>x<=clipR+0.05).length, due:w?w.toks.filter(t=>t<=ph+1e-9).length:0, fin:w?w.fin:0, Xfin:w?X(w.fin):0,
+   ntok:w?w.toks.length:0, shown:tx.filter(x=>x<=clipR+0.05).length, due:w?w.toks.filter(t=>t<=ph+1e-9).length:0, dueLo:w?w.toks.filter(t=>X(t)<=X(ph)-0.6).length:0, dueHi:w?w.toks.filter(t=>X(t)<=X(ph)+0.6).length:0, fin:w?w.fin:0, Xfin:w?X(w.fin):0,
    lane:lane(ph), on:[...new Set([...svg.querySelectorAll('.pdd-on')].map(e=>+e.dataset.lane))].sort((a,b)=>a-b), dotVis:dot?dot.getAttribute('visibility'):'missing',
    dotX:dot?+dot.getAttribute('cx'):NaN, dotY:dot?+dot.getAttribute('cy'):NaN, rows, lanesRun:run.G.some(g=>g.steps.some(s=>s.t1>ph+1e-6)),
    proc, procBusy:proc==null?null:run.G[proc].steps.some(s=>s.t0<=ph+1e-9&&s.t1>=ph-1e-9)};}"""
@@ -120,7 +120,8 @@ def clock(pg, where):
         if abs(c['value'] - 1000 * c['ph'] / c['end']) > 1: bad.append(f"bar value {c['value']} vs clock {1000 * c['ph'] / c['end']:.1f}")
         if c['lanesRun'] and not (c['value'] < 1000 and c['fill'] < 100 and c['clipR'] < c['Xend'] - 0.5): bad.append('looks finished while a GPU lane still runs')
         if c['tickErr'] > 0.11 or c['nt'] != c['ntok']: bad.append(f"the chat's ticks are off the lanes' axis by {c['tickErr']:.2f} ({c['nt']} ticks, {c['ntok']} tokens)")
-        if abs(c['shown'] - c['due']) > 1: bad.append(f"{c['shown']} of the chat's tokens show, the engine has emitted {c['due']}")
+        # (a phone-wide axis can pack several ticks into 0.1 px: count the ticks within 0.6 px of the playhead as either side, as the x checks do)
+        if not (c['dueLo'] - 1 <= c['shown'] <= c['dueHi'] + 1): bad.append(f"{c['shown']} of the chat's tokens show, the engine has emitted {c['due']} ({c['dueLo']}..{c['dueHi']} within 0.6 px)")
         # (its last token is due at its finish; within 0.6 px of the playhead the two cannot be told apart, as for the playhead checks)
         if c['ph'] < c['fin'] - 1e-6 and c['shown'] >= c['ntok'] and c['Xfin'] - c['clipR'] > 0.6: bad.append("the chat's tokens are all out before it finishes")
         if c['lane']:
@@ -181,7 +182,7 @@ def guided(b, w, h, lang):
       const cb=ds.find(e=>/continuous batching/i.test(e.textContent));
       return {ps:[...c.querySelectorAll(':scope > p')].map(p=>p.innerText), cb:cb?cb.getAttribute('data-tipx'):null, tips:ds.map(e=>e.getAttribute('data-tipx')).join(' ')};}""")
     size = sum(len(x) for x in p1['ps'])
-    check(f'{tag} part 1: the setup is three short paragraphs', len(p1['ps']) <= 3 and size <= Z(lang, 520, 260), (len(p1['ps']), size))
+    check(f'{tag} part 1: the setup is three short paragraphs', len(p1['ps']) <= 3 and size <= Z(lang, 560, 280), (len(p1['ps']), size))   # was about 1,000 / 480 characters before the owner's review
     nsent = lambda s: len([x for x in re.split(r'。|\.\s+|\.$', s.strip()) if x.strip()])
     check(f'{tag} part 1: continuous batching is a hover term of two sentences', p1['cb'] is not None and nsent(p1['cb']) == 2, p1['cb'])
     allp1 = ' '.join(p1['ps']) + ' ' + p1['tips']
@@ -240,11 +241,11 @@ def guided(b, w, h, lang):
     rules(pg, f'{tag} part 6')
     # part 7: the sweep
     nav(pg, 'next'); pg.wait_for_function('()=>window.__pdd.state().gpQueue===0', timeout=90000); pg.wait_for_timeout(300); finish(pg)
-    check(f'{tag} part 7: Next waits for a setup', next_dis(pg) and set(why(pg)) == {Z(lang, 'Pick a setup to show to continue.', '选一种方案显示才能继续。')}, why(pg))
+    check(f'{tag} part 7: Next waits for a setup', next_dis(pg) and set(why(pg)) == {Z(lang, 'Click a setup (6:2 too) to watch its run and continue.', '点一种方案（6:2 也行）看它的运行，才能继续。')}, why(pg))
     chart = text(pg, '#pdd-app .stage')
     check(f'{tag} part 7: the chart shows goodput per GPU for the setups', '6.5' in chart and '4' in chart, chart[:300])
     click(pg, '#pdd-rail .seg-ctl[data-key="p7"] button[data-v="0"]'); finish(pg); t7 = cur(pg)
-    check(f'{tag} part 7: the observation names the best split and the chunked colocated run', Z(lang, 'Among the splits, 6 prefill + 2 decode is best', '几种分法里，6 张 prefill、2 张 decode 最好') in t7 and '6.5' in t7 and Z(lang, 'is only the best way to split', '只是分法里最好的') in t7 and next_dis(pg) is False, t7[-500:])
+    check(f'{tag} part 7: the observation names the best split and the chunked colocated run', Z(lang, 'Among the splits, 6:2 is best', '分法里 6:2 最好') in t7 and Z(lang, 'colocated (budget 512) reaches 6.5, more than any split', '混在一起跑（预算 512）能到 6.5 个，比任何分法都多') in t7 and t7.count(Z(lang, 'more than any split', '比任何分法都多')) == 1 and next_dis(pg) is False, t7[-500:])
     pg.screenshot(path=str(SH / f'flow-{tag}-p7.png'))
     click(pg, '#pdd-rail .seg-ctl[data-key="p7"] button[data-v="6"]'); finish(pg); click(pg, '#pdd-replay', 100)
     d7 = clock(pg, f'{tag} part 7 (6:2)')
@@ -298,10 +299,10 @@ def challenge(b, w, h, lang):
     check(f'{tag} challenge: Show the answer shows the chart (passing setups, your pick, the initial setup) and why', rows >= 4 and Z(lang, 'your pick', '你的选择') in tags and Z(lang, 'initial setup', '初始设置') in tags and Z(lang, 'The initial setup, 2 prefill + 6 decode, meets only 7%.', '初始设置是 2 张 prefill、6 张 decode，只有 7% 达标。') in r and Z(lang, 'goodput 3 per GPU', '达标吞吐：每张卡每秒 3 个') in tags, (rows, r[:300]))
     click(pg, '#pdd-app .seg-ctl[data-key="chp"] button[data-v="5"]'); finish(pg)
     pg.wait_for_function('()=>window.__pdd.state().gpQueue===0', timeout=90000); pg.wait_for_timeout(400); r = text(pg, '#pdd-ch-res')
-    check(f'{tag} challenge: 5 + 3 passes but a colocated setup has a higher goodput per GPU', Z(lang, 'Met: 100% of requests meet their goals.', '达标：100% 的请求达标。') in r and Z(lang, 'But “colocated, budget of 2,048 tokens per step” has a higher goodput per GPU.', '不过“混在一起跑，每步的 token 预算 2,048”的达标吞吐更高。') in r and Z(lang, 'It still passes at 3 requests per second per GPU; yours at 1.5, so a little more traffic and yours misses the target.', '它在每张卡每秒 3 个请求时仍能达标，你的是 1.5 个，流量再多一点就达不到目标了。') in r, r[:400])
+    check(f'{tag} challenge: 5 + 3 passes but a colocated setup has a higher goodput per GPU', Z(lang, 'Met: 100% of requests meet their goals.', '达标：100% 的请求达标。') in r and Z(lang, 'But “colocated (budget 2,048)” has a higher goodput per GPU.', '不过“混在一起跑（预算 2,048）”的达标吞吐更高。') in r and Z(lang, 'It still passes at 3 requests per second per GPU; yours at 1.5, so a little more traffic and yours misses the target.', '它在每张卡每秒 3 个请求时仍能达标，你的是 1.5 个，流量再多一点就达不到目标了。') in r, r[:400])
     click(pg, '#pdd-app .seg-ctl[data-key="chm"] button[data-v="co"]'); click(pg, '#pdd-app .seg-ctl[data-key="chb"] button[data-v="2048"]'); finish(pg)
     pg.wait_for_function('()=>window.__pdd.state().gpQueue===0', timeout=90000); pg.wait_for_timeout(300); r = text(pg, '#pdd-ch-res')
-    check(f'{tag} challenge: a budget of 2,048 meets the target with the highest goodput, tied with 512', Z(lang, 'this setup has the highest goodput per GPU (tied with “colocated, budget of 512 tokens per step”).', '而且每张卡的达标吞吐最高（和“混在一起跑，每步的 token 预算 512”并列）。') in r and Z(lang, 'It still passes when traffic grows to 3 requests per second per GPU; today it is 1.5.', '流量涨到每张卡每秒 3 个请求时，它仍能达标；现在是 1.5 个。') in r, r[:300])
+    check(f'{tag} challenge: a budget of 2,048 meets the target with the highest goodput, tied with 512', Z(lang, 'this setup has the highest goodput per GPU (tied with “colocated (budget 512)”).', '而且每张卡的达标吞吐最高（和“混在一起跑（预算 512）”并列）。') in r and Z(lang, 'It still passes when traffic grows to 3 requests per second per GPU; today it is 1.5.', '流量涨到每张卡每秒 3 个请求时，它仍能达标；现在是 1.5 个。') in r, r[:300])
     ex = pg.evaluate("()=>[...document.querySelectorAll('#pdd-app .exits a, #pdd-app .exits button, #pdd-app [data-exit]')].length")
     check(f'{tag} challenge: the exits follow the result', ex >= 3, ex)
     pg.screenshot(path=str(SH / f'flow-{tag}-challenge.png'), full_page=False)

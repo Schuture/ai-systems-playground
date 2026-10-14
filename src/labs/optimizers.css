@@ -129,3 +129,8 @@
 /* H5 (the owner's decision of 2026-10-09): a hairline between the kinds of information on the stage, the path on the map, the step
    sizes and the loss curve; static, so the stage keeps its height while it plays (R7.9) */
 #op-bars-cap,#op-loss-cap{border-top:1px solid var(--line);padding-top:8px}
+
+/* option groups that wrap keep a 1px line between their rows as well as their columns: the buttons sit 1px apart on the line colour
+   instead of drawing right borders (owner 2026-10-14, R7.13; tests/kit_seg_rows.py) */
+.op-app .seg-ctl{gap:1px;background:var(--line)}
+.op-app .seg-ctl button,.op-app .seg-ctl button:last-child{border-right:0}

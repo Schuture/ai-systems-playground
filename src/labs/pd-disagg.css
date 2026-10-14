@@ -75,3 +75,9 @@
 .pdd-app .seg-ctl[data-key="p7"]{flex-wrap:wrap}
 .pdd-app .seg-ctl[data-key="p7"] button{flex:1 0 auto;white-space:nowrap;padding:7px 4px}
 .pdd-app .seg-ctl[data-key="p7"] button[data-v="0"]{flex-basis:100%;border-right:0;border-bottom:1px solid var(--line)}
+/* part 7's goodput bars: on a wide screen each label sits left of its bar, so all nine rows fit on the first screen under the timeline
+   (a first-time reader, 2026-10-14: at 1440x900 the last three needed scrolling) */
+@media (min-width:900px){
+  #pdd-gp .cmp-row{display:grid;grid-template-columns:minmax(150px,30%) minmax(0,1fr);align-items:center;column-gap:10px;margin-top:6px}
+  #pdd-gp .cmp-track{margin:0 28px 0 0}
+}
