@@ -166,7 +166,7 @@ function viewCfg(){
 const cur=()=>E(viewCfg());
 const viewKey=c=>[c.m,c.g,c.tp,c.pp,c.u,c.ctx].join('|');
 const playKey=()=>isP('moe')?'moe|'+p7:viewKey(viewCfg());
-const RUN_SECS={slow:40,med:20,fast:10};
+const RUN_SECS={slow:52,med:26,fast:13};
 const spdNow=()=>spdUser||'med';   // a step-by-step mechanism replay defaults to medium (R3.9)
 
 /* ---------- numbers the copy quotes, all from the engine ---------- */
@@ -179,17 +179,17 @@ const oneGpuAll=()=>{const s=MGS.shape('70b'); return (2*(s.pls+s.ph)+32*4096*s.
 const STEPS=[
  {id:'mission',title:{en:'One GPU cannot hold a 70B model',zh:'一张卡放不下 70B'},lead:{en:'32 users, 8 H100s, one model.',zh:'32 个用户，8 张 H100，一个模型。'},
   body:()=>{const s=MGS.shape('70b'), wb=2*s.pt;
-   return tx(`<p>In BF16, ${M70}’s weights take ${fGi(wb)}, and one H100 has only ${DEF('70 GiB',TIP.mem())} for weights and KV cache. The weights alone do not fit (red in the chart).</p><p>Even if they fit, one GPU would be slow. Every decode step reads the weights once (${labLink('prefill-decode')}); the embedding table is only looked up a few rows, so about ${A.fmt.num(2*(s.pls+s.ph)/1e9,0)} GB are read, about ${fMs(oneGpuRead())} on one GPU.</p><p>So the model is split over several GPUs: each keeps a part and reads only its part every step. How should one node of 8 H100s split it for its 32 users?</p>`,
-              `<p>BF16 的 ${M70} 权重要 ${fGi(wb)}，一张 H100 留给权重和 KV cache 的只有 ${DEF('70 GiB',TIP.mem())}。光是权重就放不下（图里的红色）。</p><p>就算放得下，一张卡也太慢。decode 每一步都要把权重读一遍（见 ${labLink('prefill-decode')}）；embedding 表每步只查用到的几行，不用整个读，所以要读的是约 ${A.fmt.num(2*(s.pls+s.ph)/1e9,0)} GB，一张卡要约 ${fMs(oneGpuRead())}。</p><p>所以要把模型分到几张卡上：每张卡只存一部分，每一步也只读自己那部分。一台 8 张 H100 的机器要服务 32 个用户，该怎么分？</p>`);}},
+   return tx(`<p>In BF16, ${M70}’s weights take ${fGi(wb)}, and one H100 has only ${DEF('70 GiB',TIP.mem())} for weights and KV cache. The weights alone do not fit (red in the chart).</p><p>Even if they fit, one GPU would be slow. Every decode step reads the weights once (${labLink('prefill-decode')}); the embedding table is only looked up a few rows, so each step reads about ${A.fmt.num(2*(s.pls+s.ph)/MGS.GiB,0)} GiB (${A.fmt.num(2*(s.pls+s.ph)/1e9,0)} GB), about ${fMs(oneGpuRead())} on one GPU.</p><p>So the model is split over several GPUs: each keeps a part and reads only its part every step. How should one node of 8 H100s split it for its 32 users?</p>`,
+              `<p>BF16 的 ${M70} 权重要 ${fGi(wb)}，一张 H100 留给权重和 KV cache 的只有 ${DEF('70 GiB',TIP.mem())}。光是权重就放不下（图里的红色）。</p><p>就算放得下，一张卡也太慢。decode 每一步都要把权重读一遍（见 ${labLink('prefill-decode')}）；embedding 表每步只查用到的几行，不用整个读，所以每步要读约 ${A.fmt.num(2*(s.pls+s.ph)/MGS.GiB,0)} GiB（${A.fmt.num(2*(s.pls+s.ph)/1e9,0)} GB），一张卡要约 ${fMs(oneGpuRead())}。</p><p>所以要把模型分到几张卡上：每张卡只存一部分，每一步也只读自己那部分。一台 8 张 H100 的机器要服务 32 个用户，该怎么分？</p>`);}},
  {id:'tp',title:{en:'Tensor parallelism: each GPU keeps a slice of every matrix',zh:'张量并行：每张卡存每个矩阵的一块'},lead:{en:'TP 8: two merges per layer.',zh:'TP 8：每层合并两次。'},
   body:()=>tx(`<p>${dTP('Tensor parallelism (TP)')}, a kind of model parallelism, cuts every matrix of every layer into slices, one per GPU. Here the 8 GPUs form one group, written TP 8 from now on. The “${labLink('model-parallel')}” lab shows the cut for training; serving cuts the same way.</p><p>Attention is cut by head, so each user’s KV cache is split too. A GPU holding a slice computes only a partial result, so after the attention block and again after the MLP block the GPUs add their partial results together: an ${dAR('all-reduce')}, twice per layer.</p><p>In decode each merge is small: each user adds only one hidden vector of 8,192 values in BF16 (16 KiB). The chart plays one of the 80 layers on each GPU: ① it reads its slice of the weights from memory, ② computes its partial result as the bytes arrive, ③ the partial results go round the ring in pieces and are added up, until every GPU holds the full result.</p>`,
               `<p>${dTP('张量并行（TP）')}是模型并行的一种：把每一层的每个矩阵切成几块，每张卡存一块。这里 8 张卡组成一组，下面记作 TP 8。训练时怎么切，“${labLink('model-parallel')}”这个 Lab 讲过；推理时切法一样。</p><p>attention 按 head 切，所以每个用户的 KV cache 也分开了。每张卡只有矩阵的一块，算出来的只是部分结果；attention 块和 MLP 块算完以后，各张卡都要把部分结果加起来，这叫 ${dAR('all-reduce')}，每层两次。</p><p>decode 时每次合并的数据很少：每个用户只有一个 8,192 维的隐藏向量，用 BF16 存（16 KiB）。图里播的是 80 层中的一层：① 每张卡从显存读自己那块权重，② 边读边算出部分结果，③ 部分结果切成小块沿环传、边传边加，最后每张卡都拿到完整结果。</p>`),
   obs:()=>{const r=R8(), one=oneGpuAll();
-   return tx(`<p><b>A token takes ${fMs(r.tpot)} here, about ${A.fmt.num(one/r.tpot,1)} times faster than one GPU doing the same work.</b></p><p>One GPU would need ${fMs(one)} to read the weights and the users’ KV cache (if it fit). On 8 GPUs, reading and computing take an eighth of that; the rest is the merges, about a fifth of the step.</p><p>Each merge carries only ${fKiB(r.S)}, which NVLink moves almost at once; most of a merge is its ${dLat('fixed cost')} of about 18 µs, paid before any byte moves.</p>`,
-              `<p><b>这里每个 token 要 ${fMs(r.tpot)}，是一张卡做同样的活的约 ${A.fmt.num(one/r.tpot,1)} 倍快。</b></p><p>一张卡读一遍权重和这些用户的 KV cache（假设放得下）要 ${fMs(one)}。分到 8 张卡上，读显存和计算正好是它的八分之一；剩下的是合并，约占一步的五分之一。</p><p>每次合并只有 ${fKiB(r.S)}，NVLink 几乎一下就传完了；合并的时间大部分是${dLat('固定开销')}，约 18 微秒，一个字节还没传就先花掉了。</p>`);},always:true},
+   return tx(`<p><b>A token takes ${fMs(r.tpot)} here, about ${A.fmt.num(one/r.tpot,1)} times faster than one GPU.</b></p><p>If one GPU could hold it all, it would read the weights (${fMs(oneGpuRead())}) and then the 32 users’ KV cache, ${fMs(one)} in all. On 8 GPUs, reading and computing take an eighth of that; the rest is the merges, about a fifth of the step.</p><p>Each merge carries only ${fKiB(r.S)}, which NVLink moves almost at once; most of a merge is its ${dLat('fixed cost')} of about 18 µs, paid before any byte moves.</p>`,
+              `<p><b>这里每个 token 要 ${fMs(r.tpot)}，比一张卡快约 ${A.fmt.num(one/r.tpot,1)} 倍。</b></p><p>假如一张卡放得下，它读完权重（${fMs(oneGpuRead())}）再读 32 个用户的 KV cache，共要 ${fMs(one)}。分到 8 张卡上，读显存和计算正好是它的八分之一；剩下的是合并，约占一步的五分之一。</p><p>每次合并只有 ${fKiB(r.S)}，NVLink 几乎一下就传完了；合并的时间大部分是${dLat('固定开销')}，约 18 微秒，一个字节还没传就先花掉了。</p>`);},always:true},
  {id:'size',title:{en:'How big should the group be?',zh:'一组用几张卡？'},lead:{en:'One group, or several replicas.',zh:'一个组，还是几个副本。'},expect:()=>Object.keys(tried).filter(k=>/^s/.test(k)).length>=2,
-  body:()=>tx(`<p>The 8 GPUs can also form smaller groups, each holding a whole copy of the model: ${dRep('replicas')} (data parallelism), each serving its share of the users. “4 replicas, TP 2 each” means every 2 GPUs form a group with a whole copy of the model, and each group serves 8 of the 32 users.</p><p class="small">Pick a way to split the 8 GPUs and watch the memory per GPU, the ${dTPOT('time per output token')} and the tokens each GPU produces per second.</p>`,
-              `<p>8 张卡也可以分成更小的组，每组放一整份模型，这叫${dRep('副本')}（数据并行），各服务一部分用户。比如“4 个副本，每个 TP 2”，就是每两张卡一组，各放一整份模型，每组服务 32 个用户里的 8 个。</p><p class="small">选一种分法，看看每张卡的显存、${dTPOT('每个输出 token 的耗时')}和每张卡每秒出的 token 怎么变。</p>`)
+  body:()=>tx(`<p>The 8 GPUs can also form smaller groups, each holding a whole copy of the model: ${dRep('replicas')} (data parallelism), each serving its share of the users. “4 replicas, TP 2 each” means every 2 GPUs form a group, and each group serves 8 of the 32 users.</p><p class="small">Pick a way to split the 8 GPUs and watch the memory per GPU, the ${dTPOT('time per output token')} and the tokens each GPU produces per second.</p>`,
+              `<p>8 张卡也可以分成更小的组，每组放一整份模型，这叫${dRep('副本')}（数据并行），各服务一部分用户。比如“4 个副本，每个 TP 2”，就是每两张卡一组，每组服务 32 个用户里的 8 个。</p><p class="small">选一种分法，看看每张卡的显存、${dTPOT('每个输出 token 的耗时')}和每张卡每秒出的 token 怎么变。</p>`)
    +A.ui.levers({aria:tx('How to split 8 GPUs','8 张卡怎么分'),value:p3==null?null:String(p3),options:[2,4,8].map(t=>({v:String(t),title:t===8?tx('One TP 8 group','一个 TP 8 的组'):tx(`${8/t} replicas, TP ${t} each`,`${8/t} 个副本，每个 TP ${t}`),desc:'',result:sizeRes(t)}))}),
   obs:()=>{const t=p3, r=E(P3[t]);
    if(!r.fits) return tx(`<p class="badline"><b>Does not fit: each GPU keeps ${fGi(r.w)} of weights and has ${fGi(r.room)} left for its users’ KV cache.</b></p><p>The KV cache of the users given to this replica needs ${fGi(r.need)} on each GPU. Two GPUs are the fewest that hold the weights at all, and then almost nothing is left for the users.</p>`,
@@ -206,28 +206,28 @@ const STEPS=[
    +A.ui.levers({aria:tx('Layout','放法'),value:String(p5),options:[{v:'8',title:tx('TP 8 in one node','TP 8，一台机器'),desc:'',result:tried.x8||p5===8?fMs(R8().tpot):''},{v:'16',title:tx('TP 16 across two nodes','TP 16，跨两台机器'),desc:'',result:tried.x16?fMs(R16().tpot):''}]}),
   obs:()=>{const r=R16(), q=R8();
    if(p5!==16) return tx(`<p><b>In one node: ${fMs(q.tpot)} per output token, merges ${fP(q.share)} of the step.</b> Now try two nodes.</p>`,`<p><b>一台机器：每个输出 token ${fMs(q.tpot)}，合并占一步的 ${fP(q.share)}。</b>再试试两台机器。</p>`);
-   return tx(`<p class="badline"><b>Across two nodes a token takes ${fMs(r.tpot)}, slower than ${fMs(q.tpot)} in one node.</b></p><p>Reading and computing fell from ${fMs(q.tcm)} to ${fMs(r.tcm)}, not to half: with only eight KV heads, ${DEF('each KV head is kept on two GPUs',TIP.kvrep())}, so each GPU reads as much KV cache as before.</p><p>The merges now take more than half the step (red in the chart). Each pays a fixed cost of about 60 µs across nodes, this lab’s assumption (the fidelity note says where the result flips), so a NIC with more bandwidth alone would hardly help.</p><p>A prefill is different: it computes long enough that halving the compute saves more than its larger merges cost, so TP 16 gives a sooner first token here (metric cards).</p>`,
-              `<p class="badline"><b>跨两台机器，每个 token 要 ${fMs(r.tpot)}，比一台机器的 ${fMs(q.tpot)}还慢。</b></p><p>读显存和计算从 ${fMs(q.tcm)}降到 ${fMs(r.tcm)}，没能减半：模型只有八个 KV head，${DEF('每个 KV head 要在两张卡上各存一份',TIP.kvrep())}，每张卡要读的 KV cache 没有变少。</p><p>合并占了一步的一半以上（图里的红色）。每次跨机器都有约 60 微秒的固定开销，这是这个 Lab 的假设（页末的“简化、假设和来源”里写了取多少时结论会反过来），所以只换带宽更大的网卡也帮不了多少。</p><p>prefill 不一样：它要算很久，把计算减半省下的时间，比更大的合并多花的还多，所以在这里 TP 16 的首 token 反而更快（见指标卡）。</p>`);}},
+   return tx(`<p class="badline"><b>Across two nodes a token takes ${fMs(r.tpot)}, slower than ${fMs(q.tpot)} in one node.</b></p><p>Reading and computing fell from ${fMs(q.tcm)} to ${fMs(r.tcm)}, not to half: with only eight KV heads, ${DEF('each KV head is kept on two GPUs',TIP.kvrep())}, so each GPU reads as much KV cache as before.</p><p>The merges now take more than half the step (red in the chart). A merge across nodes takes ${fUs(r.ar.t)}, of which moving the bytes is only about ${A.fmt.num((r.ar.t-r.ar.lat)*1e6,0)} µs; the rest is the fixed cost (this lab assumes 60 µs; the fidelity note says where the result flips), so a NIC with more bandwidth alone would hardly help.</p><p>A prefill is different: it computes long enough that halving the compute saves more than its larger merges cost, so TP 16 gives a sooner first token here (metric cards).</p>`,
+              `<p class="badline"><b>跨两台机器，每个 token 要 ${fMs(r.tpot)}，比一台机器的 ${fMs(q.tpot)}还慢。</b></p><p>读显存和计算从 ${fMs(q.tcm)}降到 ${fMs(r.tcm)}，没能减半：模型只有八个 KV head，${DEF('每个 KV head 要在两张卡上各存一份',TIP.kvrep())}，每张卡要读的 KV cache 没有变少。</p><p>合并占了一步的一半以上（图里的红色）。跨机器的一次合并要 ${fUs(r.ar.t)}，传字节只占约 ${A.fmt.num((r.ar.t-r.ar.lat)*1e6,0)} 微秒，其余是固定开销（本 Lab 假设为 60 微秒，页末的“简化、假设和来源”里写了取多少时结论会反过来），所以只换带宽更大的网卡也帮不了多少。</p><p>prefill 不一样：它要算很久，把计算减半省下的时间，比更大的合并多花的还多，所以在这里 TP 16 的首 token 反而更快（见指标卡）。</p>`);}},
  {id:'pp',title:{en:'Pipeline stages and replicas across nodes',zh:'跨机器：流水线和副本'},lead:{en:'Three ways to use 16 GPUs.',zh:'16 张卡的三种用法。'},expect:()=>!!(tried.pp&&tried.rep),
   body:()=>tx(`<p>${dPP('Pipeline parallelism')} cuts by layer: the first node keeps the first half of the layers, the second node the other half, with TP 8 inside each node (the “${labLink('model-parallel')}” lab). A token passes the two stages one after the other; between them only its hidden vector moves, 16 KiB per user.</p><p>The pipeline does not cut the weights read for each token: the two stages together read as many as one group of eight, and the token waits for both in turn. What it buys is twice the memory, and the users split into two batches that the stages work on at once. With the pipeline, the chart plays one step: batch A goes through layers 1–40 on stage 1 and hands its hidden vectors to stage 2, which starts only when they arrive; this hand-off keeps the stages in step.</p><p>The other way is two replicas: each node keeps a whole copy with TP 8 and serves half the users. <span class="small">Pick a way to use the sixteen GPUs and compare.</span></p>`,
               `<p>${dPP('流水线并行')}按层切：第一台机器存前一半的层，第二台存后一半，每台机器里再用 TP 8（见“${labLink('model-parallel')}”这个 Lab）。一个 token 依次走过两段，两段之间只传它的隐藏向量，每个用户 16 KiB。</p><p>流水线不会减少每个 token 要读的权重：两段读的加起来，和一个八张卡的组一样多，这个 token 要依次等两段读完。它换来的是显存翻倍，用户分成两批，两段可以同时各处理一批。选流水线时，图里播一步：A 批在第 1 段走完第 1–40 层，把隐藏向量交给第 2 段；第 2 段收到才开始，两段就靠这次交接同步。</p><p>另一种是两个副本：每台机器各放一整份模型，用 TP 8，各服务一半的用户。<span class="small">选一种十六张卡的用法，比一比。</span></p>`)
    +A.ui.levers({aria:tx('How to use 16 GPUs','16 张卡怎么用'),value:p6,options:[{v:'tp16',title:tx('One TP 16 group','一个 TP 16 的组'),desc:'',result:tried.tp16||p6==='tp16'?fMs(R16().tpot):''},{v:'pp',title:tx('TP 8 × 2 pipeline stages','TP 8 × 流水线 2 段'),desc:'',result:tried.pp?fMs(RPP().tpot):''},{v:'rep',title:tx('2 replicas, TP 8 each','2 个副本，每个 TP 8'),desc:'',result:tried.rep?fMs(RR2().tpot):''}]}),
   obs:()=>{const b=RPP(), c=RR2(), q=R8();
-   return tx(`<p><b>The pipeline (${fMs(b.tpot)}) and the two replicas (${fMs(c.tpot)}) are about equally fast, and both beat one group of sixteen.</b></p><p>Both are also a little faster than one node (${fMs(q.tpot)}): the KV cache is spread over sixteen GPUs, so each GPU reads half as much. The pipeline adds only two small messages across nodes per step.</p><p>When the model fits in one node, replicas are the simplest. When it does not (${M405} in BF16 needs ${fGi(2*MGS.shape('405b').pt)} of weights), vLLM’s advice is TP inside a node and pipeline stages across nodes.</p>`,
-              `<p><b>流水线（${fMs(b.tpot)}）和两个副本（${fMs(c.tpot)}）差不多快，都比一个十六张卡的组快。</b></p><p>两种也都比一台机器（${fMs(q.tpot)}）快一点：KV cache 分到了十六张卡上，每张卡要读的只有一半。流水线每步只多了两次跨机器的小消息。</p><p>模型在一台机器里放得下时，最简单的是多放几个副本。放不下时（BF16 的 ${M405} 光权重就要 ${fGi(2*MGS.shape('405b').pt)}），vLLM 的建议是机器内用 TP，机器之间用流水线。</p>`);}},
+   return tx(`<p><b>The pipeline (${fMs(b.tpot)}) and the two replicas (${fMs(c.tpot)}) are about equally fast, and both beat one group of sixteen.</b></p><p>Both are also a little faster than one node (${fMs(q.tpot)}): each GPU reads only half as much KV cache (and as much of the weights). The pipeline adds only two small messages across nodes per step.</p><p>When the model fits in one node, replicas are the simplest. When it does not (${M405} in BF16 needs ${fGi(2*MGS.shape('405b').pt)} of weights), vLLM’s advice is TP inside a node and pipeline stages across nodes.</p>`,
+              `<p><b>流水线（${fMs(b.tpot)}）和两个副本（${fMs(c.tpot)}）差不多快，都比一个十六张卡的组快。</b></p><p>两种也都比一台机器（${fMs(q.tpot)}）快一点：每张卡要读的 KV cache 只有一半（权重一样多）。流水线每步只多了两次跨机器的小消息。</p><p>模型在一台机器里放得下时，最简单的是多放几个副本。放不下时（BF16 的 ${M405} 光权重就要 ${fGi(2*MGS.shape('405b').pt)}），vLLM 的建议是机器内用 TP，机器之间用流水线。</p>`);}},
  {id:'moe',title:{en:'MoE: experts on different GPUs',zh:'MoE：专家分到不同的卡上'},lead:{en:'Each token visits the GPUs of its experts.',zh:'每个 token 要去找它选中的专家。'},expect:()=>!!tried.m,
-  body:()=>tx(`<p>A ${DEF('mixture-of-experts (MoE)',TIP.moe())} model replaces the MLP block with many experts, and each token uses only a few (${LL('moe')}). ${MDS} has 256 ${DEF('routed experts',TIP.routed())} in each MoE layer and picks 8 for every token.</p><p>${DEF('Expert parallelism (EP)',TIP.ep())} puts different experts on different GPUs; here eight GPUs keep 32 experts each. In every MoE layer a token’s hidden vector goes to the GPUs of its experts and the results come back: an ${DEF('all-to-all',TIP.a2a())}, twice per layer.</p><p>This part looks only at how the work of one layer is shared, not at whether the model fits: at 671B parameters, ${MDS} does not fit in one node of H100s. <span class="small">Each token picks 8 experts, so it brings 8 pieces of work, one token–expert pair each; a pair is computed by the GPU that holds its expert, so a GPU’s load is how many pairs in this step chose an expert on that GPU. Pick how many tokens are in the step (in decode, roughly how many users are being served at once) and watch the busiest GPU against the average (the chart).</span></p>`+moeSeg(),
-              `<p>${DEF('混合专家（MoE）',TIP.moe())}模型把 MLP 块换成很多个专家，每个 token 只用其中几个（见 ${LL('moe')}）。${MDS} 每个 MoE 层有 256 个${DEF('路由专家',TIP.routed())}，每个 token 选 8 个。</p><p>${DEF('专家并行（EP）',TIP.ep())}把专家分到不同的卡上：这里八张卡，每张放 32 个。每个 MoE 层，token 的隐藏向量要发到它选中的专家所在的卡，算完再把结果发回来，这叫 ${DEF('all-to-all',TIP.a2a())}，每层两次。</p><p>这一部分只看一层的活怎么分，不管放不放得下：${MDS} 有 671B 个参数，一台 H100 的机器放不下。<span class="small">每个 token 选 8 个专家，就带来 8 份活，每份叫一个 token–专家对；一个 token–专家对，由放着那个专家的卡来算；所以一张卡要算多少对，就看这一步里有多少对选中的是这张卡上的专家。选这一步有多少个 token（decode 时大约就是同时在服务的用户数），看看最忙的卡比平均忙多少（见图）。</span></p>`+moeSeg()),
+  body:()=>tx(`<p>A ${DEF('mixture-of-experts (MoE)',TIP.moe())} model replaces the MLP block with many experts, and each token uses only a few (${LL('moe')}). ${MDS} has 256 ${DEF('routed experts',TIP.routed())} in each MoE layer and picks 8 for every token.</p><p>${DEF('Expert parallelism (EP)',TIP.ep())} puts different experts on different GPUs; here eight GPUs keep 32 experts each. In every MoE layer a token’s hidden vector goes to the GPUs of its experts and the results come back: an ${DEF('all-to-all',TIP.a2a())}, twice per layer.</p><p>Here we look only at how much work each GPU gets in one layer (the whole DeepSeek-V3 has 671B parameters and needs two H100 nodes to hold). <span class="small">Each token picks 8 experts, so it brings 8 pieces of work (token–expert pairs), each computed by the GPU that holds that expert. Pick the tokens in the step (in decode, about the number of users served at once) and see how much more the busiest GPU computes than the average (the chart).</span></p>`+moeSeg(),
+              `<p>${DEF('混合专家（MoE）',TIP.moe())}模型把 MLP 块换成很多个专家，每个 token 只用其中几个（见 ${LL('moe')}）。${MDS} 每个 MoE 层有 256 个${DEF('路由专家',TIP.routed())}，每个 token 选 8 个。</p><p>${DEF('专家并行（EP）',TIP.ep())}把专家分到不同的卡上：这里八张卡，每张放 32 个。每个 MoE 层，token 的隐藏向量要发到它选中的专家所在的卡，算完再把结果发回来，这叫 ${DEF('all-to-all',TIP.a2a())}，每层两次。</p><p>这里只看一层里每张卡分到多少活（整个 DeepSeek-V3 有 671B 个参数，要两台 H100 机器才放得下）。<span class="small">每个 token 选 8 个专家，就是 8 份活（叫 token–专家对），每份由放着那个专家的卡来算。选这一步的 token 数（decode 时约等于同时服务的用户数），看最忙的卡比平均多算多少（见图）。</span></p>`+moeSeg()),
   obs:()=>{const per=MGS.route(p7), avg=p7*MGS.EP.K/MGS.EP.G, mx=Math.max(...per), k=mx/avg;
-   return tx(`<p><b>With ${fint(p7)} tokens, the busiest GPU has ${A.fmt.num(k,2)} times the average work.</b></p><p>The layer waits for the busiest GPU; the others sit idle meanwhile. The more tokens in the step, the more the random ups and downs even out. This lab picks experts uniformly at random; vLLM’s documentation says real routing “can be highly skewed”.</p><p>${MDS}’s own serving copies its busiest experts (${cite(SRC.eplb,'EPLB')}), and in decode spreads one unit over 18 nodes and serves a great many tokens at once; with only 2 routed experts per GPU, each expert gets many tokens, and the load evens out (${cite(SRC.ds,'DeepSeek’s inference overview')}). vLLM can also serve MoE models with expert parallelism; across nodes its documentation recommends ${cite(SRC.deepep,'DeepEP')}’s kernels for the all-to-all.</p>`,
-              `<p><b>${fint(p7)} 个 token 时，最忙的卡要做平均的 ${A.fmt.num(k,2)} 倍。</b></p><p>这一层要等最忙的那张卡算完、发完，其他卡这时只能闲着。一步里的 token 越多，随机的起伏越会互相抵消。这个 Lab 让每个 token 均匀随机地选专家；vLLM 的文档说，真实的路由“可能非常不均匀”（can be highly skewed）。</p><p>${MDS} 自己的推理服务把负载重的专家多复制几份（${cite(SRC.eplb,'EPLB')}）；decode 时一个部署单元跨 18 台机器，同时服务的 token 很多；每张卡只放 2 个路由专家，所以分到每个专家的 token 也多，各张卡的忙闲容易拉平（${cite(SRC.ds,'DeepSeek 的推理系统介绍')}）。vLLM 也能用专家并行跑 MoE 模型；跨机器时，它的文档推荐用 ${cite(SRC.deepep,'DeepEP')} 的 kernel 做 all-to-all。</p>`);}},
+   return tx(`<p><b>With ${fint(p7)} tokens, the busiest GPU has ${A.fmt.num(k,2)} times the average work.</b></p><p>The layer waits for the busiest GPU; the others sit idle meanwhile. The more tokens in the step, the more the random ups and downs even out. This lab picks experts uniformly at random; vLLM’s documentation says real routing “can be highly skewed”.</p><p>${MDS}’s serving copies its busy experts, and in decode it serves a great many tokens at once, so the load evens out.</p>`,
+              `<p><b>${fint(p7)} 个 token 时，最忙的卡要做平均的 ${A.fmt.num(k,2)} 倍。</b></p><p>这一层要等最忙的那张卡算完、发完，其他卡这时只能闲着。一步里的 token 越多，随机的起伏越会互相抵消。这个 Lab 让每个 token 均匀随机地选专家；vLLM 的文档说，真实的路由“可能非常不均匀”（can be highly skewed）。</p><p>${MDS} 的服务把忙的专家多复制几份；decode 时一次服务的 token 很多，忙闲容易拉平。</p>`);}},
  {id:'remember',title:{en:'What to remember',zh:'要记住的'},lead:{en:'Four rules, two misconceptions.',zh:'四条规律，两个误解。'},
   body:()=>{const r8=R8(), r16=R16(), s70=MGS.shape('70b');
-   return tx(`<ol class="mgs-rem"><li><p><b>First check that it fits, then how fast it is.</b> ${M70} in BF16 needs ${fGi(2*s70.pt)} of weights, more than one GPU holds. With two GPUs almost nothing is left for KV cache, so 70B needs at least four to leave room for its users.</p></li><li><p><b>A larger TP group reads less per GPU, but its merges cost the same each time.</b> Decode merges are small, so their time is mostly the fixed cost. Under this lab’s assumed 60 µs per merge across nodes, ${M70} gets its tokens slower from two nodes with TP 16 than from one node; at a smaller cost this flips (the fidelity note says where).</p></li><li><p><b>Across nodes, use pipeline stages or replicas.</b> They send only a few small messages across per step. A much larger model can still win with TP across nodes: in this lab ${M405} in BF16 is faster with one group of sixteen than with the pipeline (Scenarios).</p></li><li><p><b>An MoE layer waits for its busiest GPU.</b> With ${fint(32)} tokens in a step the busiest GPU does about ${A.fmt.num(Math.max(...MGS.route(32))/32,1)} times the average; with thousands of tokens the load nearly evens out. Real routing is less even, so vLLM and DeepSeek copy busy experts.</p></li></ol>`+
-     `<div class="obs"><div class="eyebrow">Common misconceptions</div><p>✗ “More GPUs, faster tokens.” In this lab, ${M70}’s users get a token every ${fMs(r16.tpot)} from two nodes and every ${fMs(r8.tpot)} from one.</p><p>✗ “A merge moves only a few hundred KiB, so it costs nothing.” Each merge first pays a fixed cost, about 18 µs in a node here, and a step has 160 of them.</p></div>`+
+   return tx(`<ol class="mgs-rem"><li><p><b>First check that it fits, then how fast it is.</b> ${M70} in BF16 needs ${fGi(2*s70.pt)} of weights, more than one GPU holds. With two GPUs almost nothing is left for KV cache, so 70B needs at least four to leave room for its users.</p></li><li><p><b>A larger TP group reads less per GPU, but its merges cost the same each time.</b> Decode merges are small, so their time is mostly the fixed cost. Under this lab’s assumed 60 µs per merge across nodes, ${M70} gets its tokens slower from two nodes with TP 16 than from one node; at a smaller cost this flips (the fidelity note says where).</p></li><li><p><b>Across nodes, use pipeline stages or replicas.</b> They send only a few small messages across per step. A much larger model can still win with TP across nodes: in this lab ${M405} in BF16 is faster with one group of sixteen than with the pipeline (Scenarios). vLLM still recommends pipeline stages across nodes: its documentation says TP across nodes is efficient only with a fast network such as InfiniBand.</p></li><li><p><b>An MoE layer waits for its busiest GPU.</b> With ${fint(32)} tokens in a step the busiest GPU does about ${A.fmt.num(Math.max(...MGS.route(32))/32,1)} times the average; with thousands of tokens the load nearly evens out. Real routing is less even, so vLLM and DeepSeek copy busy experts.</p></li></ol>`+
+     `<div class="obs"><div class="eyebrow">Common misconceptions</div><p>✗ “More GPUs, faster tokens.” In this lab, with two nodes as one TP 16 group, ${M70}’s users get a token every ${fMs(r16.tpot)}; one node with TP 8 takes only ${fMs(r8.tpot)}.</p><p>✗ “A merge moves only a few hundred KiB, so it costs nothing.” Each merge first pays a fixed cost, about 18 µs in a node here, and a step has 160 of them.</p></div>`+
      `<div class="obs"><div class="eyebrow">What real systems do</div><ul class="mgs-sys"><li>vLLM: “use tensor parallelism” when the model fits in one node; across nodes, the tensor parallel size is the GPUs per node and the pipeline parallel size the nodes (${cite(SRC.vllm,'parallelism and scaling')}).</li><li>vLLM: when the TP size exceeds the KV heads, the KV heads are replicated (${cite(SRC.llama,'llama.py')}).</li><li>${MDS}: expert parallelism with redundant copies of busy experts; prefill units span 4 nodes, decode units 18 (${cite(SRC.ds,'inference overview')}).</li><li>vLLM: <code>--enable-expert-parallel</code>; across nodes its documentation recommends DeepEP kernels, and it has a load balancer for experts (${cite(SRC.vep,'expert parallel deployment')}).</li></ul></div>`+A.shell.toScenarios(),
-              `<ol class="mgs-rem"><li><p><b>先看放不放得下，再看快不快。</b>BF16 的 ${M70} 权重要 ${fGi(2*s70.pt)}，一张卡放不下。两张卡时几乎没有地方留给 KV cache，所以 70B 至少要四张卡才留得出用户的空间。</p></li><li><p><b>TP 组越大，每张卡读得越少，但每次合并的开销不变。</b>decode 的合并消息很小，时间主要是固定开销。按这个 Lab 假设的跨机器每次 60 微秒，${M70} 用两台机器的 TP 16 出 token 比一台机器还慢；这笔开销小一些，结论就会反过来（页末的“简化、假设和来源”里写了界线）。</p></li><li><p><b>跨机器用流水线或副本。</b>它们每步只有几次小消息跨机器。比 70B 大得多的模型，跨机器的 TP 也可能划算：在这个 Lab 里，BF16 的 ${M405} 用十六张卡的组比用流水线快（见应用场景）。</p></li><li><p><b>MoE 层要等最忙的那张卡。</b>一步只有 ${fint(32)} 个 token 时，最忙的卡要做平均的约 ${A.fmt.num(Math.max(...MGS.route(32))/32,1)} 倍；token 多到上千个，忙闲就几乎拉平了。真实的路由更不均匀，所以 vLLM 和 DeepSeek 都会把忙的专家多复制几份。</p></li></ol>`+
-     `<div class="obs"><div class="eyebrow">常见误解</div><p>✗ “卡越多越快。”在这个 Lab 里，${M70} 的用户从两台机器每 ${fMs(r16.tpot)}拿到一个 token，从一台机器只要 ${fMs(r8.tpot)}。</p><p>✗ “合并只传几百 KiB，不花时间。”每次合并都要先付一笔固定开销，这里机器内约 18 微秒，而一步有 160 次。</p></div>`+
+              `<ol class="mgs-rem"><li><p><b>先看放不放得下，再看快不快。</b>BF16 的 ${M70} 权重要 ${fGi(2*s70.pt)}，一张卡放不下。两张卡时几乎没有地方留给 KV cache，所以 70B 至少要四张卡才留得出用户的空间。</p></li><li><p><b>TP 组越大，每张卡读得越少，但每次合并的开销不变。</b>decode 的合并消息很小，时间主要是固定开销。按这个 Lab 假设的跨机器每次 60 微秒，${M70} 用两台机器的 TP 16 出 token 比一台机器还慢；这笔开销小一些，结论就会反过来（页末的“简化、假设和来源”里写了界线）。</p></li><li><p><b>跨机器用流水线或副本。</b>它们每步只有几次小消息跨机器。比 70B 大得多的模型，跨机器的 TP 也可能划算：在这个 Lab 里，BF16 的 ${M405} 用十六张卡的组比用流水线快（见应用场景）。vLLM 还是建议机器之间用流水线：它的文档说，跨机器的 TP 要有 InfiniBand 这样快的网络才高效。</p></li><li><p><b>MoE 层要等最忙的那张卡。</b>一步只有 ${fint(32)} 个 token 时，最忙的卡要做平均的约 ${A.fmt.num(Math.max(...MGS.route(32))/32,1)} 倍；token 多到上千个，忙闲就几乎拉平了。真实的路由更不均匀，所以 vLLM 和 DeepSeek 都会把忙的专家多复制几份。</p></li></ol>`+
+     `<div class="obs"><div class="eyebrow">常见误解</div><p>✗ “卡越多越快。”在这个 Lab 里，两台机器组成一个 TP 16 的组时，${M70} 的用户每 ${fMs(r16.tpot)}拿到一个 token；一台机器的 TP 8 只要 ${fMs(r8.tpot)}。</p><p>✗ “合并只传几百 KiB，不花时间。”每次合并都要先付一笔固定开销，这里机器内约 18 微秒，而一步有 160 次。</p></div>`+
      `<div class="obs"><div class="eyebrow">真实系统怎么做</div><ul class="mgs-sys"><li>vLLM：模型在一台机器里放得下，就“用张量并行”（use tensor parallelism）；跨机器时，TP 设成每台机器的卡数，流水线段数设成机器数（${cite(SRC.vllm,'parallelism and scaling')}）。</li><li>vLLM：TP 的卡数比 KV head 多时，KV head 复制到几张卡上（${cite(SRC.llama,'llama.py')}）。</li><li>${MDS}：用专家并行，并把忙的专家多复制几份；prefill 的部署单元跨 4 台机器，decode 的跨 18 台（${cite(SRC.ds,'推理系统介绍')}）。</li><li>vLLM：<code>--enable-expert-parallel</code>；跨机器时它的文档推荐 DeepEP 的 kernel，还有专家的负载均衡器（${cite(SRC.vep,'expert parallel deployment')}）。</li></ul></div>`+A.shell.toScenarios());}}
 ];
 function sizeRes(t){if(!tried['s'+t]&&p3!==t) return ''; const r=E(P3[t]); return r.fits?fMs(r.tpot):tx('does not fit','放不下');}
@@ -252,19 +252,21 @@ const moeK=()=>{const per=MGS.route(p7); return Math.max(...per)/(p7*MGS.EP.K/MG
 /* the four steps of the layer, as shares of the replay (this part is not timed) */
 const MOE_B=[0,0.16,0.46,0.74,1];
 function moeHTML(){
-  const d=moeData(), host=$('#mgs-ep-host',app), W=Math.max(280,Math.round((host&&host.clientWidth)||600)), pad=4, gap=W<480?3:6, cw=(W-2*pad-7*gap)/8, f=v=>+v.toFixed(1);
-  const cx=g=>pad+g*(cw+gap)+cw/2, x0=g=>pad+g*(cw+gap), rng=cw>=78?2:cw>=46?1:0;
-  const nT=Math.min(32,d.n/d.G), tpq=d.n/d.G/nT, sq=nT<=4?7:3, perRow=nT<=4?4:8, tokTop=rng?30:20, tokRows=Math.ceil(nT/perRow), tokH=tokRows*(sq+1);
-  const netTop=tokTop+tokH+3, netH=W<480?40:48, expTop=netTop+netH, ce=(cw-4-7)/8, eh=4, expH=4*eh+3, pileTop=expTop+expH+8, pileH=W<480?54:68, numY=pileTop+pileH+12, H=numY+5;
+  const d=moeData(), host=$('#mgs-ep-host',app), W=Math.max(280,Math.round((host&&host.clientWidth)||600)), nar=W<480, pad=4, gap=nar?3:6, cw=(W-2*pad-7*gap)/8, f=v=>+v.toFixed(1);
+  const cx=g=>pad+g*(cw+gap)+cw/2, x0=g=>pad+g*(cw+gap), exL=(a,z)=>tx(`experts ${a}–${z}`,`专家 ${a}–${z}`), rng=tw(exL(225,256),11)<=cw-4?2:tw('225–256',11)>cw-4?0:tw(exL(1,32),11)<=cw-4?1.5:1;
+  const nT=Math.min(32,d.n/d.G), sq=nT<=4?8:nar?3:5, perRow=nT<=4?4:8, tokTop=rng?32:20, tokRows=Math.ceil(nT/perRow), tokH=tokRows*(sq+1);
+  /* the experts: 8 × 4 cells on a wide card, 4 × 8 on a narrow one */
+  const eC=cw>=60?8:4, eR=32/eC, ce=(cw-4-(eC-1))/eC, eh=eC===8?7:4;
+  const cs=nar?12:14, netTop=tokTop+tokH+4, rowY=netTop+4+cs/2, netH=nar?78:W<700?96:112, expTop=netTop+netH, expH=eR*(eh+1)-1, pileTop=expTop+expH+8, pileH=nar?54:68, numY=pileTop+pileH+13, H=numY+5;
   const top=Math.max(d.mx,d.avg)*1.08, bw=Math.min(18,cw*0.5), yAvg=pileTop+pileH-pileH*d.avg/top;
   const tokXY=(g,i)=>[x0(g)+(cw-(Math.min(perRow,nT)*(sq+1)-1))/2+(i%perRow)*(sq+1),tokTop+Math.floor(i/perRow)*(sq+1)];
-  const cellXY=e=>{const g=d.gpu(e), i=e-g*d.perG; return [x0(g)+2+(i%8)*(ce+1),expTop+Math.floor(i/8)*(eh+1)];};
+  const cellXY=e=>{const g=d.gpu(e), i=e-g*d.perG; return [x0(g)+2+(i%eC)*(ce+1),expTop+Math.floor(i/eC)*(eh+1)];};
   let s=`<svg class="mgs-svg mgs-ep-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(tx('One MoE layer on 8 GPUs: tokens, the experts each GPU holds, and the work each GPU gets','8 张卡上的一个 MoE 层：token、每张卡放的专家、每张卡分到的活'))}">`+
     `<defs><pattern id="mgs-ep-idle" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" class="mgs-ep-idlebg"/><line x1="0" y1="0" x2="0" y2="5" class="mgs-ep-idleln"/></pattern></defs>`;
   for(let g=0;g<d.G;g++){const a=g*d.perG+1, z=(g+1)*d.perG;
     s+=`<g class="mgs-ep-col" data-gpu="${g}"><rect class="mgs-ep-card" x="${f(x0(g))}" y="0" width="${f(cw)}" height="${f(pileTop-4)}" rx="4"/>`+
-      `<text class="mgs-ep-gn" x="${f(cx(g))}" y="12" text-anchor="middle">${esc(tx(`GPU ${g+1}`,`卡 ${g+1}`))}</text>`+
-      (rng?`<text class="mgs-ep-rg" x="${f(cx(g))}" y="23" text-anchor="middle">${esc(rng===2?tx(`experts ${a}–${z}`,`专家 ${a}–${z}`):`${a}–${z}`)}</text>`:'');
+      `<text class="mgs-ep-gn" x="${f(cx(g))}" y="13" text-anchor="middle">${esc(tx(`GPU ${g+1}`,`卡 ${g+1}`))}</text>`+
+      (rng?`<text class="mgs-ep-rg" x="${f(cx(g))}" y="26" text-anchor="middle">${esc(rng===2||(rng===1.5&&g===0)?exL(a,z):`${a}–${z}`)}</text>`:'');
     for(let i=0;i<nT;i++){const [tx0,ty0]=tokXY(g,i); s+=`<rect class="mgs-ep-tok${g===0&&i===0?' ex':''}" x="${f(tx0)}" y="${f(ty0)}" width="${sq}" height="${sq}" rx="1"/>`;}
     for(let i=0;i<d.perG;i++){const e=g*d.perG+i, [ex0,ey0]=cellXY(e); s+=`<rect class="mgs-ep-x" data-e="${e}" x="${f(ex0)}" y="${f(ey0)}" width="${f(ce)}" height="${eh}"/>`;}
     const hp=pileH*d.per[g]/top, px=cx(g)-bw/2, py=pileTop+pileH;
@@ -274,18 +276,21 @@ function moeHTML(){
       `<rect class="mgs-ep-pile${g===d.busy?' bad':''}" data-h="${f(hp)}" x="${f(px)}" y="${f(py-hp)}" width="${f(bw)}" height="${f(hp)}"><title>${esc(tx(`GPU ${g+1}: ${fint(d.per[g])} pairs`,`卡 ${g+1}：${fint(d.per[g])} 对`))}</title></rect>`+
       `<text class="mgs-ep-v" x="${f(cx(g))}" y="${numY}" text-anchor="middle">${fint(d.per[g])}</text></g>`;}
   s+=`<line class="mgs-ep-avg" x1="${pad}" y1="${f(yAvg)}" x2="${f(W-pad)}" y2="${f(yAvg)}"/>`;
-  /* the framed token 1's eight picks: lines to its experts, and its eight copies, each marked with the GPU it goes to */
-  const [ax,ay]=tokXY(0,0), tokC=[ax+sq/2,ay+sq];
-  d.ex.forEach((e,i)=>{const [ex0,ey0]=cellXY(e); s+=`<path class="mgs-ep-pick" data-i="${i}" d="M${f(tokC[0])} ${f(tokC[1])}L${f(ex0+ce/2)} ${f(ey0)}"/>`;});
-  /* the all-to-all: a line from every GPU's tokens to every GPU's experts, thicker for more token–expert pairs; the dots on it are the pairs
-     on their way (one dot per k pairs), out in the dispatch and back in the combine */
-  const outY=tokTop+tokH+4, inY=expTop-3, mM=Math.max(...d.M.flat()), rnd=MGS.mulberry(97+d.n), dots=[];
-  for(let a=0;a<d.G;a++) for(let b=0;b<d.G;b++){const m=d.M[a][b]; if(!m) continue;
-    s+=`<line class="mgs-ep-mesh${b===d.busy?' to-busy':''}" x1="${f(cx(a))}" y1="${f(outY)}" x2="${f(cx(b))}" y2="${f(inY)}" stroke-width="${f(0.4+2.4*m/mM)}"/>`;
-    const cnt=Math.max(1,Math.round(m/d.k)); for(let i=0;i<cnt;i++) dots.push({a,b,l:(i+rnd())/cnt*0.62,sx:cx(a),sy:outY,ex:cx(b),ey:inY});}
-  dots.forEach((o,i)=>{s+=`<circle class="mgs-ep-dot${o.b===d.busy?' to-busy':''}" data-i="${i}" r="${W<480?1.6:2}" cx="${f(o.sx)}" cy="${f(o.sy)}"/>`;});
-  const exd=d.ex.map((e,i)=>{const [ex0,ey0]=cellXY(e); return {b:d.gpu(e),l:0.04+i*0.035,sx:tokC[0],sy:tokC[1]-sq/2,ex:ex0+ce/2,ey:ey0+eh/2};});
-  exd.forEach((o,i)=>{s+=`<g class="mgs-ep-exd" data-i="${i}"><rect x="-5" y="-5" width="10" height="10" rx="2"/><text x="0" y="3.5" text-anchor="middle">${o.b+1}</text></g>`;});
+  /* the all-to-all: a line from every GPU's tokens to every GPU's experts, thicker for more token–expert pairs; each GPU's eight lines leave
+     from their own spot along its edge and arrive at their own spot, so their widths can be compared; the dots on a line are the pairs on
+     their way (one dot per k pairs), out in the dispatch and back in the combine */
+  const outY=tokTop+tokH+3, inY=expTop-3, mM=Math.max(...d.M.flat()), sp=Math.min(9,(cw-8)/8), rnd=MGS.mulberry(97+d.n), dots=[];
+  for(let a=0;a<d.G;a++) for(let b=0;b<d.G;b++){const m=d.M[a][b]; if(!m) continue; const sx=cx(a)+(b-3.5)*sp, ex=cx(b)+(a-3.5)*sp;
+    s+=`<line class="mgs-ep-mesh${b===d.busy?' to-busy':''}" x1="${f(sx)}" y1="${f(outY)}" x2="${f(ex)}" y2="${f(inY)}" stroke-width="${f(0.6+(nar?3.4:5)*m/mM)}"/>`;
+    const cnt=Math.max(1,Math.round(m/d.k)); for(let i=0;i<cnt;i++) dots.push({a,b,l:(i+rnd())/cnt*0.62,sx,sy:outY,ex,ey:inY});}
+  dots.forEach((o,i)=>{s+=`<circle class="mgs-ep-dot${o.b===d.busy?' to-busy':''}" data-i="${i}" r="${nar?1.7:2.2}" cx="${f(o.sx)}" cy="${f(o.sy)}"/>`;});
+  /* the framed token 1's eight copies: lined up under it in ① (in the order of the GPUs they go to, each marked with that GPU), a dashed line
+     from each to its expert, then off to the expert in ② and back in ④ */
+  const ord=d.ex.map((e,i)=>i).sort((i,j)=>d.ex[i]-d.ex[j]), cx0=Math.max(pad+cs/2,cx(0)-3.5*(cs+2));
+  const exd=d.ex.map((e,i)=>{const [ex0,ey0]=cellXY(e), k=ord.indexOf(i); return {b:d.gpu(e),k,l:0.04+k*0.035,sx:cx0+k*(cs+2),sy:rowY,ex:ex0+ce/2,ey:ey0+eh/2};});
+  const [ax,ay]=tokXY(0,0);
+  exd.forEach((o,i)=>{s+=`<path class="mgs-ep-pick" data-i="${i}" d="M${f(ax+sq/2)} ${f(ay+sq)}L${f(o.sx)} ${f(o.sy-cs/2)}M${f(o.sx)} ${f(o.sy+cs/2)}L${f(o.ex)} ${f(o.ey-eh/2)}"/>`;});
+  exd.forEach((o,i)=>{s+=`<g class="mgs-ep-exd" data-i="${i}" transform="translate(${f(o.sx)} ${f(o.sy)})"><rect x="${-cs/2}" y="${-cs/2}" width="${cs}" height="${cs}" rx="2"/><text x="0" y="4" text-anchor="middle">${o.b+1}</text></g>`;});
   s+='</svg>';
   /* the order in which the used experts light up while the pairs land */
   const order=d.used.map((u,e)=>u?e:-1).filter(e=>e>=0), thr={}; order.forEach((e,i)=>{thr[e]=((i*7919)%order.length)/order.length;});
@@ -302,7 +307,7 @@ function moeBuild(){
     lg('pkl',tx('the experts token 1 (framed) picked','加框的 token 1 选中的专家'))+lg('exd',tx('a copy of token 1: the number is the GPU it goes to','token 1 的副本：数字是要去的卡'))+
     lg('mesh',tx('traffic from one GPU to another: the thicker, the more pairs','一张卡发给另一张卡的：线越粗，对越多'))+
     lg('dot',d.k>1?tx(`a dot is ${d.k} token–expert pairs on their way`,`飞的点：每个是 ${d.k} 个 token–专家对`):tx('a dot is one token–expert pair on its way','飞的点：一个 token–专家对'))+
-    lg('todo',tx('pairs received, not yet computed','已收到、还没算的对'))+lg('ep',tx('token–expert pairs this GPU computes','这张卡要算的 token–专家对'))+lg('bad',tx('the busiest GPU','最忙的卡'))+lg('idle',tx('idle: done, waiting for the busiest','空闲：算完了，等最忙的卡'))+lg('avgl',tx(`average: ${fint(d.avg)}`,`平均：${fint(d.avg)}`));
+    lg('todo',tx('pairs received, not yet computed','已收到、还没算的对'))+lg('ep',tx('pairs computed','已算完的对'))+lg('bad',tx('the busiest GPU','最忙的卡'))+lg('epidle',tx('idle: done, waiting for the busiest','空闲：算完了，等最忙的卡'))+lg('avgl',tx(`average: ${fint(d.avg)}`,`平均：${fint(d.avg)}`));
   const lh=$('#mgs-ep-leg',app); if(lh._h!==leg){lh.innerHTML=leg; lh._h=leg;}}
 function moeState(){const done=ph>=1&&!PLAY.on, p=Math.min(1,ph), i=done?4:(p<MOE_B[1]?0:p<MOE_B[2]?1:p<MOE_B[3]?2:3); return {done,i,q:i<4?(p-MOE_B[i])/(MOE_B[i+1]-MOE_B[i]):1};}
 function moeFrame(){
@@ -310,16 +315,19 @@ function moeFrame(){
   const d=moeData(), {done,i,q}=moeState(), G=el.geo, FL=0.36, pos=(o,u)=>[o.sx+(o.ex-o.sx)*u,o.sy+(o.ey-o.sy)*u];
   $$('#mgs-ep-steps .mgs-st4',app).forEach(e=>e.classList.toggle('on',+e.dataset.i===i));
   el.mesh.forEach(e=>e.classList.toggle('on',i===1||i===3));
-  /* the framed token's picks: drawn one by one in ①, kept while its copies fly in ② */
-  el.picks.forEach((e,j)=>e.classList.toggle('on',(i===0&&q*8>j)||(i===1&&q<0.5)));
+  /* the framed token's copies and the dashed lines to their experts: lined up one by one in ①, kept while the copies fly in ② */
+  el.picks.forEach((e,j)=>{const k=G.exd[j].k; e.classList.toggle('on',(i===0&&q*8>k)||(i===1&&q<0.5));});
   if(el.ex) el.ex.classList.toggle('on',!done);
   /* ② dispatch: every dot flies from its token's GPU to its expert's GPU; ④ combine: back again */
   const landed=new Array(d.G).fill(0), total=new Array(d.G).fill(0); let nl=0;
   el.dots.forEach((e,j)=>{const o=G.dots[j]; total[o.b]++; let u=-1;
     if(i===1){u=(q-o.l)/FL; if(u>=1){landed[o.b]++; nl++; u=-1;}} else if(i===3){u=(q-o.l)/FL; if(u>=1) u=-1; else if(u>=0) u=1-u;} else if(i===2||done){landed[o.b]++; nl++;}
     if(u>=0&&u<1){const [x,y]=pos(o,u); setA(e,'cx',x.toFixed(1)); setA(e,'cy',y.toFixed(1)); e.classList.add('on');} else e.classList.remove('on');});
-  el.exd.forEach((e,j)=>{const o=G.exd[j]; let u=-1; if(i===1) u=(q-o.l)/FL; else if(i===3) {u=(q-o.l)/FL; u=u>=0&&u<1?1-u:-1;}
-    if(u>=1) u=-1; if(u>=0){const [x,y]=pos(o,u); e.setAttribute('transform',`translate(${x.toFixed(1)} ${y.toFixed(1)})`); e.classList.add('on');} else e.classList.remove('on');});
+  el.exd.forEach((e,j)=>{const o=G.exd[j]; let u=-1;
+    if(i===0) u=q*8>o.k?0:-1;
+    else if(i===1){u=Math.max(0,(q-o.l)/FL); if(u>=1) u=-1;}
+    else if(i===3){const v=(q-o.l)/FL; u=v<0?-1:v<1?1-v:0;}
+    if(u>=0){const [x,y]=pos(o,u); e.setAttribute('transform',`translate(${x.toFixed(1)} ${y.toFixed(1)})`); e.classList.add('on');} else e.classList.remove('on');});
   /* the experts that this step's pairs reach light up as the pairs land */
   const lf=i===1?nl/Math.max(1,el.dots.length):(i>=2?1:0);
   el.cells.forEach(e=>{const k=+e.dataset.e, on=d.used[k]>0&&(G.thr[k]<lf||(i>=2)), pk=!done&&i<=1&&d.ex.includes(k); e.classList.toggle('on',on); e.classList.toggle('pk',pk);});
@@ -479,10 +487,11 @@ function stageHTML(){
      `${lg(tx('The GPU’s compute units multiply what is read by the hidden vectors. In decode they are much faster than the memory, so the read sets the time.',`计算单元：把读进来的权重乘上隐藏向量。decode 时它比读显存快得多，所以时间由读显存决定。`),'chip',tx('compute','计算单元'),'layer')}`+
      `${lg(tx('A partial result: each GPU holds only its slice’s share of every value; the filled part of a cell is the share of the sum it holds.','部分结果：每个数值里只有这张卡那一块矩阵的贡献；格子里填满的部分是它已有的那份和。'),'pr',tx('partial result','部分结果'),'layer')}`+
      `${lg(tx('The full result, the sum of every GPU’s partial result, the same on every GPU.','完整结果：所有卡的部分结果之和，每张卡上都一样。'),'fr',tx('full result','完整结果'),'layer')}`+
-     `<span data-tipx="${esc(TIP.ar())}" data-anim="layer"><svg class="mgs-swsvg" width="34" height="10" viewBox="0 0 34 10" aria-hidden="true"><path class="mgs-arw on" d="M1 5H28"/><path class="mgs-ahp" d="M27 1.5L33 5L27 8.5z"/><rect class="mgs-pk on" x="3" y="2" width="7" height="6" rx="1"/><rect class="mgs-pk on f" x="15" y="2" width="7" height="6" rx="1"/></svg>${tx('merge: pieces hop GPU to GPU (hollow partial, solid full)','合并：一块结果沿环传给下一张卡，空心的还在加，实心的已加完')}</span>`+
+     `<span data-tipx="${esc(tx('In a merge across the two nodes, each GPU swaps its summed piece with the GPU in the same place in the other node, over its own InfiniBand link (50 GB/s per GPU).','跨两台机器合并时，每张卡经自己的 InfiniBand 链路（每张卡 50 GB/s），和另一台机器里同一位置的卡交换加好的那块。'))}" data-anim="layer" data-x=""><i class="mgs-sw ibl"></i>${tx('InfiniBand link, 50 GB/s','InfiniBand 链路，50 GB/s')}</span>`+
+     `<span data-tipx="${esc(TIP.ar())}" data-anim="layer"><svg class="mgs-swsvg" width="40" height="12" viewBox="0 0 40 12" aria-hidden="true"><path class="mgs-arw on" d="M1 6H34"/><path class="mgs-ahp" d="M33 2.5L39 6L33 9.5z"/><rect class="mgs-pk on" x="2" y="1.5" width="11" height="9" rx="2"/><rect class="mgs-pk on f" x="17" y="1.5" width="11" height="9" rx="2"/></svg>${tx('merge: pieces hop GPU to GPU (hollow partial, solid full)','合并：一块结果沿环传给下一张卡，空心的还在加，实心的已加完')}</span>`+
      `<span class="mgs-lbr" data-anim="pipe"></span>`+
      `${lg(tx('A stage working on a batch of users: the batch’s letter and the layer it is on.','正在处理某一批用户的段：写着是哪一批、走到第几层。'),'bandA',tx('a stage at work: batch, layer','段在算：哪一批、第几层'),'pipe')}`+
-     `${lg(tx('A batch’s hidden vectors on their way to the next stage; from the last stage, the batch’s new token on its way back to stage 1.','一批用户的隐藏向量正发往下一段；从最后一段出发的，是这一批的新 token，正回到第 1 段。'),'hpk',tx('hand-off to the next stage','交给下一段'),'pipe')}`+
+     `${lg(tx('A batch’s hidden vectors on their way to the next stage.','一批用户的隐藏向量正发往下一段。'),'hpk',tx('hand-off to the next stage','交给下一段'),'pipe')}${lg(tx('From the last stage, the batch’s new token on its way back to stage 1.','从最后一段出发，这一批的新 token 正回到第 1 段。'),'hpkt',tx('new token on its way to stage 1','新 token 正回第 1 段'),'pipe')}`+
      `</div><p class="mgs-nofit" id="mgs-nofit" hidden></p></div>`+
     `<div class="mgs-blk" id="mgs-lb"><div class="mgs-bh" id="mgs-l-h"></div><div class="mgs-layer" id="mgs-layer"></div>`+
     `<div class="legend-row mgs-legend" id="mgs-l-leg">${lg(tx('Merges that take half the step or more.','占了一步一半以上时间的合并。'),'bad',tx('merges dominate','合并占大头'),'layer',' data-red=""')}`+
@@ -576,62 +585,80 @@ function pipePlan(r){
 const MBL='ABCD';
 const mbUsers=(r,j)=>{const a=j*r.b+1, z=Math.min((j+1)*r.b,r.u); return tx(`users ${a}–${z}`,`第 ${a}–${z} 个用户`);};
 function gpuDiagram(r){
-  const host=$('#mgs-gpus',app), c=r.c, nodes=c.g>8?2:1, W=Math.max(260,Math.round(host.clientWidth||600)), am=animMode(r), lay=am==='layer', pipe=am==='pipe';
+  const host=$('#mgs-gpus',app), c=r.c, nodes=c.g>8?2:1, W=Math.max(260,Math.round(host.clientWidth||600)), am=animMode(r), lay=am==='layer', pipe=am==='pipe', nar=W<480;
   /* two nodes sit side by side when there is room (the stage must fit the screen), else one above the other */
-  const side=nodes>1&&W>=400, pad=6, gut=lay?(W<480?11:15):0, gap=side?3:(W<480?4:8), ngap=side?14:0;
-  const cw=side?((W-ngap)/2-2*pad-gut-7*gap)/8:(W-2*pad-gut-7*gap)/8, BH=nodes>1?(W<480?30:40):(W<480?40:52);
+  const side=nodes>1&&W>=400, pad=6, gut=lay?(nar?14:17):0, gap=side?3:(nar?3:8), ngap=side?14:0;
+  const cw=side?((W-ngap)/2-2*pad-gut-7*gap)/8:(W-2*pad-gut-7*gap)/8, BH=nodes>1?(nar?28:32):(nar?36:42);
   /* under the memory boxes, while a layer plays: this layer's bytes (a bar that empties), the bytes streaming into the compute units, the
-     result vector and the ring the merge runs on, with ① ② ③ at the left; while a pipeline plays: one band per stage saying what it works on */
-  const XR=lay?62:pipe?21:0, NH=BH+40+XR;
-  const nodeW=side?(W-ngap)/2:W, IBH=nodes>1?(side?16:22):0, H=(side?NH:nodes*NH)+IBH+4;
+     result cut into one cell per piece of the merge, and the ring the merge runs on, with ① ② ③ at the left; while a pipeline plays: one band per stage */
+  const nP=c.tp>1?Math.min(c.tp,8):8, cg=nar?1:1.5, perRow=nP<=2||(cw-4-(nP-1)*cg)/nP>=14?nP:Math.ceil(nP/2), rows=Math.ceil(nP/perRow);
+  const cellsTop=34, cellsH=22, cwc=(cw-4-(perRow-1)*cg)/perRow, chc=(cellsH-(rows-1)*2)/rows, ry0=cellsTop+cellsH+9, pkW=nar?10:14, pkH=nar?8:10;
+  const XR=lay?ry0+9:pipe?21:0, FULL=80*MGS.GiB, bad=!r.fits;
+  /* when a GPU needs more than it can use, the part that does not fit is drawn in red above the line it can fill to (72 of its 80 GiB),
+     sticking out of the box when it is large (at most one more box) */
+  const overH=bad?Math.min(BH,Math.max(3,(r.w+MGS.OVH+r.need-MGS.USABLE)/FULL*BH)):0, OVT=overH>BH*(1-MGS.USABLE/FULL)?Math.ceil(overH-BH*(1-MGS.USABLE/FULL))+2:0, NH=BH+40+XR+OVT;
+  /* TP 16: in the merge each GPU swaps its summed piece with its partner in the other node, over one InfiniBand link each */
+  const cross=lay&&nodes>1&&!!r.ar.cross, UB=cross&&side?20:0;
+  const nodeW=side?(W-ngap)/2:W, IBH=nodes>1?(side?(cross?0:16):22):0, H=(side?NH:nodes*NH)+IBH+UB+4;
   const nodeX=k=>side?k*(nodeW+ngap):0, nodeY=k=>side?2:k*(NH+22)+2;
-  const gx=i=>nodeX(Math.floor(i/8))+pad+gut+(i%8)*(cw+gap), gy=i=>nodeY(Math.floor(i/8))+19, FULL=80*MGS.GiB, f=x=>+x.toFixed(1);
-  const bad=!r.fits, red=r.share>=0.5, G=groupsOf(c);
+  const gx=i=>nodeX(Math.floor(i/8))+pad+gut+(i%8)*(cw+gap), gy=i=>nodeY(Math.floor(i/8))+19+OVT, f=x=>+x.toFixed(1);
+  const red=r.share>=0.5, G=groupsOf(c);
   let s=`<svg class="mgs-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(tx('GPUs, their memory and their groups','每张卡的显存和分组'))}">`+
     `<defs><marker id="mgs-ah" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path class="mgs-ahp" d="M0 0L6 3L0 6z"/></marker>`+
     `<marker id="mgs-ahb" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path class="mgs-ahp bad" d="M0 0L6 3L0 6z"/></marker></defs>`;
   for(let k=0;k<nodes;k++){const x=nodeX(k), y=nodeY(k);
     s+=`<rect class="mgs-node" x="${x+1}" y="${y}" width="${nodeW-2}" height="${NH}" rx="6"/><text class="mgs-nt" x="${x+pad}" y="${y+13}">${esc(tx(`Node ${k+1}: 8 H100s on NVLink`,`机器 ${k+1}：8 张 H100，NVLink 互连`))}</text>`;
-    if(lay){const mx=f(x+pad+gut/2), b=y+19+BH; s+=`<text class="mgs-mk" data-k="r" x="${mx}" y="${b+20}" text-anchor="middle">①</text><text class="mgs-mk" data-k="r" x="${mx}" y="${b+32}" text-anchor="middle">②</text>`+(c.tp>1?`<text class="mgs-mk" data-k="a" x="${mx}" y="${b+55}" text-anchor="middle">③</text>`:'');}
+    if(lay){const mx=f(x+pad+gut/2), b=y+19+OVT+BH; s+=`<text class="mgs-mk" data-k="r" x="${mx}" y="${b+14}" text-anchor="middle">①</text><text class="mgs-mk" data-k="r" x="${mx}" y="${b+28}" text-anchor="middle">②</text>`+(c.tp>1?`<text class="mgs-mk" data-k="a" x="${mx}" y="${b+ry0+4}" text-anchor="middle">③</text>`:'');}
     for(let i=0;i<8;i++){const gi=k*8+i, gx0=gx(gi), y0=gy(gi), used=gi<c.g;
-      const hW=Math.min(1,r.w/FULL), hO=MGS.OVH/FULL, hK=Math.min(Math.max(0,1-hW-hO),r.need/FULL);
       s+=`<g class="mgs-gpu${used?'':' off'}" data-gpu="${gi}"><rect class="mgs-gbox${bad?' bad':''}" x="${f(gx0)}" y="${y0}" width="${f(cw)}" height="${BH}" rx="3"/>`;
-      if(used){let yy=y0+BH; const seg=(h,cls)=>{const hh=h*BH; yy-=hh; return hh>0.2?`<rect class="mgs-m ${cls}" x="${f(gx0+1)}" y="${f(yy)}" width="${f(cw-2)}" height="${f(hh)}"/>`:'';};
-        s+=seg(hW,'w')+seg(Math.min(hO,1-hW),'oh')+seg(hK,'kv');}
+      /* weights, runtime overhead and KV cache from the bottom; when they need more than the GPU can use (72 of its 80 GiB), they fill up to
+         that line and the rest of the box is red */
+      if(used){let yy=y0+BH, left=bad?MGS.USABLE/FULL:1; const seg=(h,cls)=>{const hh=Math.max(0,Math.min(h,left))*BH; left-=hh/BH; yy-=hh; return hh>0.2?`<rect class="mgs-m ${cls}" x="${f(gx0+1)}" y="${f(yy)}" width="${f(cw-2)}" height="${f(hh)}"/>`:'';};
+        s+=seg(r.w/FULL,'w')+seg(MGS.OVH/FULL,'oh')+seg(r.need/FULL,'kv');
+        if(bad){const yl=y0+BH*(1-MGS.USABLE/FULL); s+=`<rect class="mgs-m over" x="${f(gx0+1)}" y="${f(yl-overH)}" width="${f(cw-2)}" height="${f(overH)}"/>`;}}
       s+=`<text class="mgs-gn" x="${f(gx0+cw/2)}" y="${y0+BH-4}" text-anchor="middle">${gi+1}</text></g>`;
-      if(lay&&used){const cx=gx0+cw/2, b=y0+BH, chW=Math.min(cw-8,52), nC=cw>=60?8:4, cwc=(cw-4-(nC-1))/nC, chT=fitLab([tx('compute','计算')],chW-4,8.5);
-        s+=`<g class="mgs-col" data-gpu="${gi}"><rect class="mgs-sl0" x="${f(gx0+2)}" y="${b+3}" width="${f(cw-4)}" height="6" rx="1"/>`+
-          `<rect class="mgs-sl w" x="${f(gx0+2)}" y="${b+3}" width="0" height="6"/><rect class="mgs-sl kv" x="${f(gx0+2)}" y="${b+3}" width="0" height="6"/>`+
-          `<path class="mgs-fl w" d="M${f(cx-3)} ${b+10}V${b+22}"/><path class="mgs-fl kv" d="M${f(cx+3)} ${b+10}V${b+22}"/>`+
-          `<rect class="mgs-chip" x="${f(cx-chW/2)}" y="${b+22}" width="${f(chW)}" height="12" rx="2"/>`+(chT?`<text class="mgs-chipt" x="${f(cx)}" y="${b+31}" text-anchor="middle">${esc(chT)}</text>`:'');
-        for(let j=0;j<nC;j++){const xx=f(gx0+2+j*(cwc+1)); s+=`<rect class="mgs-cell" x="${xx}" y="${b+38}" width="${f(cwc)}" height="8" rx="1"/><rect class="mgs-cf" x="${xx}" y="${b+46}" width="${f(cwc)}" height="0"/>`;}
+      if(lay&&used){const cx=gx0+cw/2, b=y0+BH, chW=Math.min(cw-(nar?4:8),56), chT=fitLab([tx('compute','计算')],chW-2,11);
+        s+=`<g class="mgs-col" data-gpu="${gi}"><rect class="mgs-sl0" x="${f(gx0+2)}" y="${b+2}" width="${f(cw-4)}" height="7" rx="1"/>`+
+          `<rect class="mgs-sl w" x="${f(gx0+2)}" y="${b+2}" width="0" height="7"/><rect class="mgs-sl kv" x="${f(gx0+2)}" y="${b+2}" width="0" height="7"/>`+
+          `<path class="mgs-fl w" d="M${f(cx-3)} ${b+10}V${b+16}"/><path class="mgs-fl kv" d="M${f(cx+3)} ${b+10}V${b+16}"/>`+
+          `<rect class="mgs-chip" x="${f(cx-chW/2)}" y="${b+16}" width="${f(chW)}" height="14" rx="2"/>`+(chT?`<text class="mgs-chipt" x="${f(cx)}" y="${b+27}" text-anchor="middle">${esc(chT)}</text>`:'');
+        for(let j=0;j<nP;j++){const xx=f(gx0+2+(j%perRow)*(cwc+cg)), yc=b+cellsTop+Math.floor(j/perRow)*(chc+2);
+          s+=`<rect class="mgs-cell" x="${xx}" y="${f(yc)}" width="${f(cwc)}" height="${f(chc)}" rx="1"/><rect class="mgs-cf" x="${xx}" y="${f(yc+chc)}" width="${f(cwc)}" height="0" data-b="${f(yc+chc)}"/>`;}
         s+='</g>';}}
     }
   /* pipeline: one band per stage group, under its GPUs */
   const BC={};
   if(pipe) for(const g of G){for(let k=0;k<nodes;k++){const a=Math.max(g.a,k*8), z=Math.min(g.z,k*8+7); if(a>z) continue;
       const y=gy(a)+BH+5, x0=gx(a)-1, x1=gx(z)+cw+1; if(!BC[g.rep+'|'+g.st]) BC[g.rep+'|'+g.st]={x0,x1,y:y+7.5};
-      s+=`<g class="mgs-bandg" data-st="${g.st}" data-rep="${g.rep}"><rect class="mgs-band" x="${f(x0)}" y="${y}" width="${f(x1-x0)}" height="15" rx="3"/><text class="mgs-band-t" x="${f((x0+x1)/2)}" y="${y+11}" text-anchor="middle" data-w="${f(x1-x0-6)}"></text></g>`;}}
+      s+=`<g class="mgs-bandg" data-st="${g.st}" data-rep="${g.rep}"><rect class="mgs-band" x="${f(x0)}" y="${y}" width="${f(x1-x0)}" height="15" rx="3"/><text class="mgs-band-t" x="${f((x0+x1)/2)}" y="${y+11.5}" text-anchor="middle" data-w="${f(Math.max(x1-x0-46,(x1-x0-6)/2))}"></text></g>`;}}
   /* groups: a bracket under each block of tp GPUs in a node, with its name when it fits */
   for(const g of G){for(let k=0;k<nodes;k++){const a=Math.max(g.a,k*8), z=Math.min(g.z,k*8+7); if(a>z) continue;
       const y=gy(a)+BH+XR+6, x0=gx(a), x1=gx(z)+cw;
       s+=`<path class="mgs-br" d="M${f(x0)} ${y-3}V${y}H${f(x1)}V${y-3}"/>`;
-      if(c.tp*c.pp>1){let lab=groupLabel(c,g,k,false); if(lab.length*6.3>x1-x0+6) lab=groupLabel(c,g,k,true);
-        if(lab&&lab.length*6.3<=x1-x0+6) s+=`<text class="mgs-bt" x="${f((x0+x1)/2)}" y="${y+12}" text-anchor="middle">${esc(lab)}</text>`;}}}
+      if(c.tp*c.pp>1){let lab=groupLabel(c,g,k,false); if(tw(lab,11)>x1-x0+6) lab=groupLabel(c,g,k,true);
+        if(lab&&tw(lab,11)<=x1-x0+6) s+=`<text class="mgs-bt" data-a="${a}" x="${f((x0+x1)/2)}" y="${y+12}" text-anchor="middle">${esc(lab)}</text>`;}}}
   if(c.tp*c.pp===1){const y=gy(0)+BH+XR+18; s+=`<text class="mgs-bt" x="${W/2}" y="${y}" text-anchor="middle">${esc(tx('each GPU keeps a whole copy','每张卡各放一整份模型'))}</text>`;}
-  if(nodes>1){const cross=r.ar.cross||r.sends.some(x=>x.x), cl=`mgs-ib${cross&&red?' bad':''}`, lab=esc(side?tx('InfiniBand between the nodes, 50 GB/s per GPU','两台机器之间走 InfiniBand，每张卡 50 GB/s'):tx('InfiniBand between nodes, 50 GB/s a GPU','机器之间走 InfiniBand，每张卡 50 GB/s'));
+  /* TP 16: one InfiniBand link from each GPU to its partner in the other node (below the nodes when they sit side by side, between them when stacked) */
+  const IBL=[];
+  if(cross) for(let k=0;k<8;k++){const xa=gx(k)+cw/2, xb=gx(k+8)+cw/2;
+    const pts=side?[[xa,NH+2],[xa,NH+5+k*2],[xb,NH+5+k*2],[xb,NH+2]]:[[xa,nodeY(0)+NH],[xa,nodeY(1)]];
+    s+=`<path class="mgs-ibl${red?' bad':''}" d="M${pts.map(p=>`${f(p[0])} ${f(p[1])}`).join('L')}"/>`; IBL.push(pts);}
+  if(nodes>1&&!cross){const xr=r.ar.cross||r.sends.some(x=>x.x), cl=`mgs-ib${xr&&red?' bad':''}`, lab=esc(side?tx('InfiniBand between the nodes, 50 GB/s per GPU','两台机器之间走 InfiniBand，每张卡 50 GB/s'):tx('InfiniBand between nodes, 50 GB/s a GPU','机器之间走 InfiniBand，每张卡 50 GB/s'));
     if(side){const xm=W/2, y=NH/2; s+=`<line class="${cl}" x1="${f(xm-ngap/2+1)}" y1="${y}" x2="${f(xm+ngap/2-1)}" y2="${y}"/><path class="${cl}" d="M${f(xm)} ${y}V${NH+8}"/><text class="mgs-ibt" x="${f(xm)}" y="${NH+15}" text-anchor="middle">${lab}</text>`;}
     else {const y=nodeY(0)+NH, xl=pad+12; s+=`<line class="${cl}" x1="${xl}" y1="${y}" x2="${xl}" y2="${y+22}"/><text class="mgs-ibt" x="${xl+8}" y="${y+15}">${lab}</text>`;}}
-  /* the merge of each TP group: its ring inside each node (drawn faint, lit while it merges) and one packet per GPU that hops along it */
+  /* the merge of each TP group: its ring inside each node (drawn faint, lit while it merges), one packet per GPU that hops along it, and
+     under it a label saying which hop it is (in place of the group's name while the merge plays) */
   const RP=[];
   if(lay&&c.tp>1) for(const g of G){for(let k=0;k<nodes;k++){const a=Math.max(g.a,k*8), z=Math.min(g.z,k*8+7); if(a>=z) continue;
-      const ry=gy(a)+BH+51, cx=i=>gx(i)+cw/2, mk=red?'mgs-ahb':'mgs-ah', cl=`mgs-arw${red?' bad':''}`, pts=[];
+      const ry=gy(a)+BH+ry0, cx=i=>gx(i)+cw/2, mk=red?'mgs-ahb':'mgs-ah', cl=`mgs-arw${red?' bad':''}`, pts=[];
       s+=`<g class="mgs-ring" data-a="${a}" data-z="${z}">`;
-      for(let i=a;i<z;i++){const p0=[cx(i)+4,ry], p1=[cx(i+1)-5,ry]; pts.push([p0,p1]); s+=`<path class="${cl}" d="M${f(p0[0])} ${ry}H${f(p1[0])}" marker-end="url(#${mk})"/>`;}
-      pts.push([[cx(z),ry+2],[cx(z),ry+6],[cx(a),ry+6],[cx(a),ry+3]]);
-      s+=`<path class="${cl}" d="M${f(cx(z))} ${ry+2}V${ry+6}H${f(cx(a))}V${ry+3}" marker-end="url(#${mk})"/>`;
-      for(let i=a;i<=z;i++) s+=`<rect class="mgs-pk" x="-3.5" y="-3" width="7" height="6" rx="1"/>`;
+      for(let i=a;i<z;i++){const p0=[cx(i)+4,ry], p1=[cx(i+1)-6,ry]; pts.push([p0,p1]); s+=`<path class="${cl}" d="M${f(p0[0])} ${ry}H${f(p1[0])}" marker-end="url(#${mk})"/>`;}
+      pts.push([[cx(z),ry+2],[cx(z),ry+7],[cx(a),ry+7],[cx(a),ry+3]]);
+      s+=`<path class="${cl}" d="M${f(cx(z))} ${ry+2}V${ry+7}H${f(cx(a))}V${ry+3}" marker-end="url(#${mk})"/>`;
+      for(let i=a;i<=z;i++) s+=`<rect class="mgs-pk" x="${-pkW/2}" y="${-pkH/2}" width="${pkW}" height="${pkH}" rx="2"/>`;
+      const x0=gx(a), x1=gx(z)+cw; s+=`<text class="mgs-hop" x="${f((x0+x1)/2)}" y="${gy(a)+BH+XR+18}" text-anchor="middle" data-w="${f(x1-x0+4)}"></text>`;
       s+='</g>'; RP.push({a,z,pts});}}
+  if(cross) for(let k=0;k<8;k++) s+=`<rect class="mgs-ibp" data-k="${k}" data-d="0" x="-4" y="-3" width="8" height="6" rx="1"/><rect class="mgs-ibp" data-k="${k}" data-d="1" x="-4" y="-3" width="8" height="6" rx="1"/>`;
   /* the pipeline's hand-offs: one packet per stage and replica, carrying a batch's hidden vectors to the next stage (from the last stage: the new token back to stage 1) */
   if(pipe){const R=Math.max(1,Math.floor(c.g/(c.tp*c.pp)));
     /* from the edge of one stage's band to the facing edge of the next; between rows, centre to centre */
@@ -641,16 +668,18 @@ function gpuDiagram(r){
   s+='</svg>';
   if(host._h!==s){host.innerHTML=s; host._h=s;
     const svg=host.querySelector('svg');
-    const rg=[...svg.querySelectorAll('.mgs-ring')], rings=RP.map((q,k)=>({...q,n:q.z-q.a+1,paths:[...rg[k].querySelectorAll('.mgs-arw')],pks:[...rg[k].querySelectorAll('.mgs-pk')]}));
+    const rg=[...svg.querySelectorAll('.mgs-ring')], rings=RP.map((q,k)=>({...q,n:q.z-q.a+1,paths:[...rg[k].querySelectorAll('.mgs-arw')],pks:[...rg[k].querySelectorAll('.mgs-pk')],
+      hop:rg[k].querySelector('.mgs-hop'),hw:+rg[k].querySelector('.mgs-hop').dataset.w,bt:svg.querySelector(`.mgs-bt[data-a="${q.a}"]`)}));
     host._els={cols:[...svg.querySelectorAll('.mgs-col')].map(g=>{const gi=+g.dataset.gpu, q=rings.find(o=>gi>=o.a&&gi<=o.z), c0=g.querySelector('.mgs-cell');
         return {x:+g.querySelector('.mgs-sl0').getAttribute('x'),w:+g.querySelector('.mgs-sl0').getAttribute('width'),slw:g.querySelector('.mgs-sl.w'),slk:g.querySelector('.mgs-sl.kv'),flw:g.querySelector('.mgs-fl.w'),flk:g.querySelector('.mgs-fl.kv'),
-          chip:g.querySelector('.mgs-chip'),chipt:g.querySelector('.mgs-chipt'),cells:[...g.querySelectorAll('.mgs-cell')],cfs:[...g.querySelectorAll('.mgs-cf')],cb:+c0.getAttribute('y')+(+c0.getAttribute('height')),chh:+c0.getAttribute('height'),rn:q?q.n:1,rr:q?gi-q.a:0};}),
-      rings,marks:[...svg.querySelectorAll('.mgs-mk')],ib:[...svg.querySelectorAll('.mgs-ib')],
+          chip:g.querySelector('.mgs-chip'),chipt:g.querySelector('.mgs-chipt'),cells:[...g.querySelectorAll('.mgs-cell')],cfs:[...g.querySelectorAll('.mgs-cf')],cbs:[...g.querySelectorAll('.mgs-cf')].map(e=>+e.dataset.b),chh:+c0.getAttribute('height'),rn:q?q.n:1,rr:q?gi-q.a:0};}),
+      rings,marks:[...svg.querySelectorAll('.mgs-mk')],ib:[...svg.querySelectorAll('.mgs-ib')],ibl:[...svg.querySelectorAll('.mgs-ibl')],
+      ibp:[...svg.querySelectorAll('.mgs-ibp')].map(e=>({e,pts:+e.dataset.d?[...IBL[+e.dataset.k]].reverse():IBL[+e.dataset.k]})),
       hpk:[...svg.querySelectorAll('.mgs-hpk')].map(g=>({g,s:+g.dataset.s,p:g.dataset.p.split(',').map(Number),t:g.querySelector('text')})),
       bands:[...svg.querySelectorAll('.mgs-bandg')].map(g=>({st:+g.dataset.st,rep:+g.dataset.rep,g,t:g.querySelector('.mgs-band-t'),w:+g.querySelector('.mgs-band-t').dataset.w}))};}
   $('#mgs-g-h',app).textContent=lay?tx('Each GPU: its memory (80 GiB), what it reads and computes for one layer, and how the GPUs are grouped','每张卡：显存（80 GiB）、一层里读什么、算什么，以及卡的分组')
     :tx(`Memory of each GPU (80 GiB) and how the GPUs are grouped`,`每张卡的显存（80 GiB）和卡的分组`);
-  $$('#mgs-g-leg [data-anim]',app).forEach(e=>{e.hidden=e.dataset.anim!==am;});
+  $$('#mgs-g-leg [data-anim]',app).forEach(e=>{e.hidden=e.dataset.anim!==am||(e.dataset.x!=null&&!cross);});
   const nf=$('#mgs-nofit',app); nf.hidden=r.fitW; if(!r.fitW) nf.textContent=tx(`Does not fit: each GPU would need ${fGi(r.w)} for the weights alone, and it can use 70 GiB.`,`放不下：光是权重每张卡就要 ${fGi(r.w)}，能用的只有 70 GiB。`);}
 const nodeOf8=i=>Math.floor(i/8);
 function groupLabel(c,g,k,short){
@@ -684,16 +713,16 @@ function pipeHTML(r,host){
     s+=`<text class="mgs-gl" x="0" y="${y+RH/2+4}">${esc(tx(`Stage ${k+1}`,`第 ${k+1} 段`))}</text><rect class="mgs-gtr" x="${LW}" y="${y+1}" width="${f(W-LW-8)}" height="${RH-2}" rx="2"/>`;
     const first=P.blocks.filter(b=>b.s===k).reduce((a,b)=>Math.min(a,b.t0),P.T);
     if(first>1e-9){const x0=x(0), x1=x(first); s+=`<rect class="mgs-gidle" x="${f(x0)}" y="${y+1}" width="${f(x1-x0)}" height="${RH-2}" rx="2" data-tipx="${esc(tx(`Stage ${k+1} is idle: no batch has reached it yet.`,`第 ${k+1} 段空闲：还没有哪一批走到这里。`))}"/>`;
-      const t=fitLab([tx('idle','空闲')],x1-x0-6,10); if(t) s+=`<text class="mgs-git" x="${f((x0+x1)/2)}" y="${y+RH/2+4}" text-anchor="middle">${esc(t)}</text>`;}}
+      const t=fitLab([tx('idle','空闲')],x1-x0-6,11); if(t) s+=`<text class="mgs-git" x="${f((x0+x1)/2)}" y="${y+RH/2+4}" text-anchor="middle">${esc(t)}</text>`;}}
   P.blocks.forEach((b,i)=>{const x0=x(b.t0), x1=x(Math.min(b.t1,P.T)), y=rowY(b.s), L0=b.s*Lp+1, L1=(b.s+1)*Lp, J=mbName(b.j);
     const tip=tx(`Batch ${J} (${mbUsers(r,b.j)}), layers ${L0}–${L1}: ${ms(P.st)} (reading and computing ${ms(r.tcm)}${r.nAR?`, ${r.nAR} merges ${ms(r.nAR*r.ar.t)}`:''})`,`${J} 批（${mbUsers(r,b.j)}），第 ${L0}–${L1} 层：${ms(P.st)}（读显存和计算 ${ms(r.tcm)}${r.nAR?`，合并 ${r.nAR} 次 ${ms(r.nAR*r.ar.t)}`:''}）`);
-    const lab=fitLab([tx(`${J}: layers ${L0}–${L1}`,`${J}：第 ${L0}–${L1} 层`),tx(`${J}: ${L0}–${L1}`,`${J}：${L0}–${L1}`),J],x1-x0-6,10.5);
+    const lab=fitLab([tx(`${J}: layers ${L0}–${L1}`,`${J}：第 ${L0}–${L1} 层`),tx(`${J}: ${L0}–${L1}`,`${J}：${L0}–${L1}`),J],x1-x0-6,11);
     s+=`<g class="mgs-gb mb${b.j%2?'B':'A'}" data-i="${i}" data-tipx="${esc(tip)}"><rect x="${f(x0+0.5)}" y="${y+1.5}" width="${f(Math.max(1,x1-x0-1))}" height="${RH-3}" rx="2"/>${lab?`<text x="${f((x0+x1)/2)}" y="${y+RH/2+4}" text-anchor="middle">${esc(lab)}</text>`:''}</g>`;});
   P.hands.forEach((h,i)=>{const xa=x(h.t0), xb=x(h.t1), y0=rowY(h.s)+RH-2, y1=rowY(h.s+1)+3;
     s+=`<path class="mgs-ghand" data-i="${i}" d="M${f(xa)} ${y0}L${f(Math.max(xb,xa+1))} ${y1}" marker-end="url(#mgs-gah)" data-tipx="${esc(tx(`Hand-off: batch ${mbName(h.j)}’s hidden vectors go to stage ${h.s+2} (${fKiB(r.S)}, ${fUs(h.t1-h.t0)}); stage ${h.s+2} starts when they arrive.`,`交接：${mbName(h.j)} 批的隐藏向量发到第 ${h.s+2} 段（${fKiB(r.S)}，${fUs(h.t1-h.t0)}）；第 ${h.s+2} 段收到才开始。`))}"/>`;});
   s+=`<line class="mgs-gax" x1="${LW}" y1="${ya}" x2="${f(W-8)}" y2="${ya}"/>`;
   P.toks.forEach((k,i)=>{const xt=x(k.t1), J=mbName(k.j); s+=`<path class="mgs-gtok" data-i="${i}" d="M${f(xt)} ${ya-4}L${f(xt+4)} ${ya}L${f(xt)} ${ya+4}L${f(xt-4)} ${ya}Z" data-tipx="${esc(tx(`Batch ${J}’s new token is back at stage 1, after ${ms(k.t1)}.`,`${J} 批的新 token 回到第 1 段：${ms(k.t1)}。`))}"/>`;});
-  const xT=x(P.tpot), bl=fitLab([tx(`batch A: one output token every ${ms(P.tpot)}`,`A 批：每 ${ms(P.tpot)} 拿到一个 token`),tx(`A: ${ms(P.tpot)} a token`,`A：每个 token ${ms(P.tpot)}`),ms(P.tpot)],xT-LW-4,10.5);
+  const xT=x(P.tpot), bl=fitLab([tx(`batch A: one output token every ${ms(P.tpot)}`,`A 批：每 ${ms(P.tpot)} 拿到一个 token`),tx(`A: ${ms(P.tpot)} a token`,`A：每个 token ${ms(P.tpot)}`),ms(P.tpot)],xT-LW-4,11);
   s+=`<path class="mgs-gbr" d="M${LW} ${ya+8}V${ya+12}H${f(xT)}V${ya+8}"/>${bl?`<text class="mgs-gbt" x="${f((LW+xT)/2)}" y="${ya+24}" text-anchor="middle">${esc(bl)}</text>`:''}`;
   s+=`<text class="mgs-gbt" x="${f(W-8)}" y="${ya+24}" text-anchor="end">${esc(ms(P.T))}</text>`;
   s+=`<line class="mgs-gph" id="mgs-gph" x1="${LW}" y1="${top}" x2="${LW}" y2="${ya}"/>`;
@@ -701,31 +730,56 @@ function pipeHTML(r,host){
   if(host._h!==s){host.innerHTML=s; host._h=s; host._geo={LW,W,T:P.T};}}
 /* the moving parts, drawn from ph (0 → 1 over the layer or the step); scrubbing draws the same frame as playing */
 const setA=(e,k,v)=>{if(e&&e.getAttribute(k)!==String(v)) e.setAttribute(k,v);};
-function layerState(r){const P=layerPlan(r), done=ph>=1&&!PLAY.on, t=Math.min(1,ph)*P.T;
-  let i=P.ph.findIndex(p=>t<p.t1-1e-15); if(i<0) i=P.ph.length-1;
-  const p=P.ph[i]; return {P,i,p,q:Math.max(0,Math.min(1,(t-p.t0)/p.d)),t,done};}
+/* the replay's clock for one layer: model time runs evenly through reading and computing; each merge, when it is too short to follow
+   (about 20 µs inside a node), is played slowed down over about a quarter of the replay, with a short pause between its two halves; the
+   caption says so. The time bar's playhead follows model time. */
+const AR_HOLD=0.24;
+function layerClock(P,cross){
+  const ar=P.ph.filter(p=>p.k==='ar'), rcT=P.ph.filter(p=>p.k==='rc').reduce((a,p)=>a+p.d,0);
+  const fa=ar.map(p=>Math.max(p.d/P.T,AR_HOLD)), FA=fa.reduce((a,b)=>a+b,0), seg=[]; let x=0, k=0;
+  for(const p of P.ph){const f=p.k==='ar'?fa[k++]:(1-FA)*p.d/rcT; seg.push({x0:x,x1:x+f,p}); x+=f;}
+  const slow=ar.length?(fa[0]/ar[0].d)/((1-FA)/rcT):1, pause=!cross&&slow>1.2;
+  const qOf=u=>!pause?u:u<0.46?0.5*u/0.46:u<0.54?0.5:0.5+0.5*(u-0.54)/0.46;
+  return {slow,pause,at:x0=>{const xx=Math.max(0,Math.min(1,x0)), g=seg.find(s=>xx<s.x1-1e-12)||seg[seg.length-1], u=g.x1>g.x0?Math.min(1,(xx-g.x0)/(g.x1-g.x0)):1, q=g.p.k==='ar'?qOf(u):u;
+    return {p:g.p,i:P.ph.indexOf(g.p),q,t:g.p.t0+q*g.p.d};}};}
+function layerState(r){const P=layerPlan(r), done=ph>=1&&!PLAY.on, K=layerClock(P,!!r.ar.cross), s=K.at(Math.min(1,ph));
+  return {P,i:s.i,p:s.p,q:s.q,t:s.t,done,slow:K.slow,pause:K.pause&&s.p.k==='ar'&&Math.abs(s.q-0.5)<1e-9};}
 /* the merge (ring all-reduce) at a fraction q of its time. Each GPU's result is cut into n pieces (n GPUs in the ring). In the first n−1 hops
    every GPU passes one piece to the next GPU, which adds its own; in the last n−1 hops the finished pieces go round. Across two nodes: the
    ring inside each node, the two nodes swap over InfiniBand, then the ring again (the engine's terms: lat/3 + bwIn/2, lat/3 + bwX, lat/3 + bwIn/2). */
 function mergeAt(r,n,q){
-  const a=r.ar, nh=n-1, full=a.cross?2*n:n;
-  if(!a.cross){const hp=q*2*nh, H=Math.min(2*nh,Math.floor(hp)); return {rs:Math.min(H,nh),ag:Math.max(0,H-nh),ib:0,live:H<2*nh,hf:hp-H,mode:H<nh?'rs':'ag',full};}
+  const a=r.ar, nh=n-1, full=a.cross?2*n:n, AR=0.85;
+  /* hp hops of a half (or of both halves) have passed: the packets of the hop under way move during the first 85% of it and are added in
+     (the cells change) when they arrive; hop is the number of the hop under way within its half */
+  const ring=(hp,base,lim)=>{const Hm=Math.min(lim,Math.floor(hp+1e-9)), hf=Math.max(0,hp-Hm), Hd=Math.min(lim,Hm+(hf>=AR?1:0));
+    return {Hm:base+Hm,Hd:base+Hd,hf,live:Hm<lim&&hf<AR};};
+  if(!a.cross){const g=ring(q*2*nh,0,2*nh), md=g.Hm<nh?'rs':'ag';
+    return {rs:Math.min(g.Hd,nh),ag:Math.max(0,g.Hd-nh),ib:0,live:g.live,hf:g.hf/AR,mode:md,hop:Math.min(nh,md==='rs'?g.Hm+1:g.Hm-nh+1),full};}
   const q1=(a.lat/3+a.bwIn/2)/a.t, q2=q1+(a.lat/3+a.bwX)/a.t;
-  if(q<q1){const hp=q/q1*nh, H=Math.min(nh,Math.floor(hp)); return {rs:H,ag:0,ib:0,live:H<nh,hf:hp-H,mode:'rs',full};}
-  if(q<q2) return {rs:nh,ag:0,ib:(q-q1)/(q2-q1),live:false,hf:0,mode:'ib',full};
-  const hp=(q-q2)/(1-q2)*nh, H=Math.min(nh,Math.floor(hp)); return {rs:nh,ag:H,ib:1,live:H<nh,hf:hp-H,mode:'ag',full};}
-/* how much of the sum piece c on ring position rr holds, 0 to 1 */
+  if(q<q1){const g=ring(q/q1*nh,0,nh); return {rs:g.Hd,ag:0,ib:0,live:g.live,hf:g.hf/AR,mode:'rs',hop:Math.min(nh,g.Hm+1),full};}
+  if(q<q2) return {rs:nh,ag:0,ib:(q-q1)/(q2-q1),live:false,hf:0,mode:'ib',hop:0,full};
+  const g=ring((q-q2)/(1-q2)*nh,0,nh); return {rs:nh,ag:g.Hd,ib:1,live:g.live,hf:g.hf/AR,mode:'ag',hop:Math.min(nh,g.Hm+1),full};}
+/* how much of the sum piece c on ring position rr holds, 0 to 1 (across nodes, the piece a GPU owns goes from its node's half to the whole
+   sum while the two nodes swap) */
 function pieceLv(m,n,rr,c){
   if(m.ag>0&&((rr-c)%n+n)%n<m.ag) return 1;
   const h=((rr-1-c)%n+n)%n, k=h<m.rs?h+2:1;
-  return k===n&&m.full>n&&m.ib>=1?1:k/m.full;}
+  return k===n&&m.full>n?0.5+0.5*Math.min(1,m.ib):k/m.full;}
 /* a point a share u of the way along a polyline */
 function polyAt(pts,u){let L=0; const sg=[]; for(let i=1;i<pts.length;i++){const d=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]); sg.push(d); L+=d;}
   let w=Math.max(0,Math.min(1,u))*L; for(let i=0;i<sg.length;i++){if(w<=sg[i]||i===sg.length-1){const k=sg[i]?Math.min(1,w/sg[i]):0; return [pts[i][0]+(pts[i+1][0]-pts[i][0])*k,pts[i][1]+(pts[i+1][1]-pts[i][1])*k];} w-=sg[i];}
   return pts[0];}
+/* the label under a ring while it merges: which half, which hop */
+function hopText(m,n,pause,w){
+  const nh=n-1; let o;
+  if(pause) o=[tx('added up: each GPU holds one finished piece','加完了：每张卡有一块加好的和'),tx('one finished piece each','每张卡一块加好的'),''];
+  else if(m.mode==='rs'){const h=m.hop; o=[tx(`adding up as they go: hop ${h} of ${nh}`,`边传边加：第 ${h}/${nh} 跳`),tx(`adding: hop ${h}/${nh}`,`边传边加 ${h}/${nh}`),`${h}/${nh}`];}
+  else if(m.mode==='ib') o=[tx('swapping with the partner GPU in the other node','和另一台机器里对应的卡交换'),tx('swap with the other node','和另一台机器交换'),tx('swap','交换')];
+  else {const h=m.hop; o=[tx(`passing the finished pieces: hop ${h} of ${nh}`,`传加好的块：第 ${h}/${nh} 跳`),tx(`passing: hop ${h}/${nh}`,`传加好的块 ${h}/${nh}`),`${h}/${nh}`];}
+  return fitLab(o,w,11);}
 function layerFrame(r){
   const host=$('#mgs-gpus',app), el=host&&host._els; if(!el) return;
-  const {i,p,q,t,done}=layerState(r), B=layerBytes(r), tp=r.c.tp, rc=!done&&p.k==='rc', ar=!done&&p.k==='ar';
+  const {i,p,q,t,done,pause}=layerState(r), B=layerBytes(r), tp=r.c.tp, rc=!done&&p.k==='rc', ar=!done&&p.k==='ar';
   const off=String(-(t*1e6*3).toFixed(1));      /* the bytes stream down with the layer's own time */
   for(const col of el.cols){
     if(rc){const att=p.blk==='attn', L=col.w*(att?B.aw+B.akv:B.mw)/B.max, lw=L*(att?B.aw/(B.aw+B.akv):1)*(1-q), lk=att?L*B.akv/(B.aw+B.akv)*(1-q):0;
@@ -733,27 +787,33 @@ function layerFrame(r){
     else {setA(col.slw,'width',0); setA(col.slk,'width',0);}
     col.flw.classList.toggle('on',rc); col.flk.classList.toggle('on',rc&&p.blk==='attn'); if(rc){col.flw.style.strokeDashoffset=off; col.flk.style.strokeDashoffset=off;}
     col.chip.classList.toggle('on',rc); if(col.chipt) col.chipt.classList.toggle('on',rc);
+    /* one cell per piece of the merge (tp 1: the result, whole at once); while reading and computing the cells fill in turn with this
+       GPU's share, then the merge adds the others' shares in */
     const n=col.cells.length, k=Math.ceil(q*n-1e-9), m=ar?mergeAt(r,col.rn,q):null;
     for(let j=0;j<n;j++){let st='p', lv;
       if(done) lv=1;
       else if(rc){st=j<k?'p':''; lv=j<k?(tp>1?1/tp:1):0;}
-      else {const c0=Math.floor(j*col.rn/n), c1=Math.max(c0+1,Math.ceil((j+1)*col.rn/n)); let sm=0; for(let c=c0;c<c1;c++) sm+=pieceLv(m,col.rn,col.rr,c); lv=sm/(c1-c0);}
+      else lv=pieceLv(m,col.rn,col.rr,j);
       const cl='mgs-cell'+(st?' '+st:''), e=col.cells[j], h=lv*col.chh; if(e.getAttribute('class')!==cl) e.setAttribute('class',cl);
-      setA(col.cfs[j],'y',(col.cb-h).toFixed(2)); setA(col.cfs[j],'height',h.toFixed(2));}}
-  /* the packets: one per GPU, all hopping at once; light while the pieces are still being added up, dark once they are finished */
-  for(const rg of el.rings){const m=ar?mergeAt(r,rg.n,q):null, hop=!!m&&(m.mode==='rs'||m.mode==='ag'), live=hop&&m.live&&m.hf<0.8;
-    rg.pks.forEach((e,j)=>{if(!live){e.classList.remove('on'); return;} const [x,y]=polyAt(rg.pts[j],m.hf/0.8); setA(e,'transform',`translate(${x.toFixed(1)} ${y.toFixed(1)})`); e.classList.add('on'); e.classList.toggle('f',m.mode==='ag');});
-    rg.paths.forEach(e=>e.classList.toggle('on',hop));}
-  const mi=ar&&el.rings.length?mergeAt(r,el.rings[0].n,q):null;
-  el.ib.forEach(e=>{const on=!!mi&&mi.mode==='ib'; e.classList.toggle('on',on); if(on) e.style.strokeDashoffset=off;});
+      setA(col.cfs[j],'y',(col.cbs[j]-h).toFixed(2)); setA(col.cfs[j],'height',h.toFixed(2)); setA(col.cfs[j],'class',lv>=0.999?'mgs-cf full':'mgs-cf');}}
+  /* the packets: one per GPU, all hopping at once; hollow while the pieces are still being added up, solid once they are finished */
+  for(const rg of el.rings){const m=ar?mergeAt(r,rg.n,q):null, hop=!!m&&(m.mode==='rs'||m.mode==='ag'), live=hop&&m.live&&!pause;
+    rg.pks.forEach((e,j)=>{if(!live){e.classList.remove('on'); return;} const [x,y]=polyAt(rg.pts[j],m.hf); setA(e,'transform',`translate(${x.toFixed(1)} ${y.toFixed(1)})`); e.classList.add('on'); e.classList.toggle('f',m.mode==='ag');});
+    rg.paths.forEach(e=>e.classList.toggle('on',hop));
+    const ht=m?hopText(m,rg.n,pause,rg.hw):''; if(rg.hop.textContent!==ht) rg.hop.textContent=ht; rg.hop.classList.toggle('on',!!ht); if(rg.bt) rg.bt.classList.toggle('off',!!ht);}
+  /* across nodes: the swap, one hollow packet each way on every GPU's InfiniBand link */
+  const mi=ar&&el.rings.length?mergeAt(r,el.rings[0].n,q):null, ibOn=!!mi&&mi.mode==='ib';
+  el.ib.forEach(e=>{e.classList.toggle('on',ibOn); if(ibOn) e.style.strokeDashoffset=off;});
+  el.ibl.forEach(e=>e.classList.toggle('on',ibOn));
+  el.ibp.forEach(o=>{if(!ibOn||mi.ib>=0.97){o.e.classList.remove('on'); return;} const [x,y]=polyAt(o.pts,mi.ib/0.97); setA(o.e,'transform',`translate(${x.toFixed(1)} ${y.toFixed(1)})`); o.e.classList.add('on');});
   el.marks.forEach(e=>e.classList.toggle('on',e.dataset.k==='r'?rc:ar));
   $$('#mgs-lbar .mgs-seg',app).forEach(e=>e.classList.toggle('now',!done&&+e.dataset.i===i));}
 /* the replay's clock for a pipeline step: model time runs evenly, except that each hand-off (tens of µs, too short to see) is played
    slowed down over a short stretch of the replay, so the hidden vectors can be seen travelling; the chart's playhead follows model time */
 function pipeClock(P){
   const ev=[...P.hands,...P.toks].map(e=>[e.t0,Math.min(e.t1,P.T)]).filter(e=>e[1]>e[0]).sort((a,b)=>a[0]-b[0]), win=[];
-  for(const e of ev){const w=win[win.length-1]; if(w&&e[0]<=w[1]+1e-12) w[1]=Math.max(w[1],e[1]); else win.push([...e]);}
-  const dw=Math.min(0.045,0.35/Math.max(1,win.length)), slow=win.reduce((a,w)=>a+w[1]-w[0],0), rate=(P.T-slow)/(1-win.length*dw), seg=[];
+  for(const e of ev){const w=win[win.length-1]; if(w&&e[0]<w[1]-1e-12) w[1]=Math.max(w[1],e[1]); else win.push([...e]);}
+  const dw=Math.min(0.08,0.4/Math.max(1,win.length)), slow=win.reduce((a,w)=>a+w[1]-w[0],0), rate=(P.T-slow)/(1-win.length*dw), seg=[];
   let t=0, q=0;
   for(const w of win){if(w[0]>t){const d=(w[0]-t)/rate; seg.push([q,q+d,t,w[0]]); q+=d;} seg.push([q,q+dw,w[0],w[1]]); q+=dw; t=w[1];}
   if(t<P.T) seg.push([q,1,t,P.T]);
@@ -766,10 +826,10 @@ function pipeFrame(r){
       let txt, cl='mgs-bandg';
       if(done){txt=''; cl+=' off';}
       else if(k){const L=b.st*Lp+Math.min(Lp,Math.floor((t-k.t0)/P.st*Lp)+1), J=MBL[k.j%4]; txt=tx(`${J}: layer ${L} of ${Lm}`,`${J}：第 ${L} 层 / 共 ${Lm} 层`); cl+=' on mb'+(k.j%2?'B':'A');}
-      else if(inb){txt=tx(`waiting for ${MBL[inb.j%4]}’s hidden vectors`,`等 ${MBL[inb.j%4]} 批的隐藏向量`); cl+=' wait';}
-      else if(intk){txt=tx(`waiting for ${MBL[intk.j%4]}’s new token`,`等 ${MBL[intk.j%4]} 批的新 token`); cl+=' wait';}
+      else if(inb){const J=MBL[inb.j%4]; txt=[tx(`waiting for ${J}’s hidden vectors`,`等 ${J} 批的隐藏向量`),tx(`waiting for ${J}`,`等 ${J} 批`)]; cl+=' wait';}
+      else if(intk){const J=MBL[intk.j%4]; txt=[tx(`waiting for ${J}’s new token`,`等 ${J} 批的新 token`),tx(`waiting for ${J}`,`等 ${J} 批`)]; cl+=' wait';}
       else txt=t<first?tx('idle: nothing yet','空闲：还没有活'):tx('waiting','在等');
-      txt=fitLab([txt,txt.split(/[:：]/)[0]],b.w,10.5);
+      txt=fitLab(Array.isArray(txt)?txt:[txt,txt.split(/[:：]/)[0]],b.w,11);
       if(b.t.textContent!==txt) b.t.textContent=txt; if(b.g.getAttribute('class')!==cl) b.g.setAttribute('class',cl);});
     /* a batch's hidden vectors on their way to the next stage; from the last stage, the new token on its way back to stage 1 */
     el.hpk.forEach(o=>{const e=o.s<r.c.pp-1?P.hands.find(h=>h.s===o.s&&act(h)):P.toks.find(act);
@@ -786,20 +846,22 @@ function pipeFrame(r){
 /* the sentence under the picture: what happens in this frame while the layer plays, the step's sum once it has played */
 function capText(r){
   const am=animMode(r); if(ph>=1&&!PLAY.on) return sumText(r);
-  if(am==='layer'){const {p}=layerState(r), c=r.c, R=Math.max(1,Math.floor(c.g/(c.tp*c.pp))), lat=fUs(r.ar.lat);
+  if(am==='layer'){const {p,slow}=layerState(r), c=r.c, R=Math.max(1,Math.floor(c.g/(c.tp*c.pp))), lat=fUs(r.ar.lat), sl=slow>1.2;
     if(p.k==='rc'){if(c.tp===1) return p.blk==='attn'?tx(`①② Read and compute: each GPU reads all of this layer’s attention weights and its users’ KV cache, and computes the whole result itself, with no merge (${fUs(p.d)}).`,`①② 读权重、计算：每张卡读这一层 attention 的全部权重和它的用户的 KV cache，自己就算出完整结果，不用合并（${fUs(p.d)}）。`)
         :tx(`①② Read and compute: each GPU reads all of the MLP weights and computes the result (${fUs(p.d)}).`,`①② 读权重、计算：再读 MLP 的全部权重，算出结果（${fUs(p.d)}）。`);
       return p.blk==='attn'?tx(`①② Read and compute: each GPU reads its slice of this layer’s attention weights and its share of the KV cache from memory (the bar shrinks) and computes its partial result as the bytes arrive (the row of cells, ${fUs(p.d)}).`,`①② 读权重、计算：每张卡从显存读这一层 attention 的那块权重和它那份 KV cache（条在变短），边读边算出部分结果（下面那排格子，${fUs(p.d)}）。`)
         :tx(`①② Read and compute: then its slice of the MLP weights, and a new partial result (${fUs(p.d)}).`,`①② 读权重、计算：再读 MLP 的那块权重，算出新的部分结果（${fUs(p.d)}）。`);}
     const n=Math.min(c.tp,8), u=fUs(p.d);
-    if(r.ar.cross) return tx(`③ All-reduce: in each node the partial results go round the ring of 8 in pieces and are added up (7 hops); each GPU swaps its summed piece with its partner in the other node over InfiniBand; then the full sums go round (7 hops), so every GPU holds the full result (${u}, ${lat} of it the fixed cost).`,`③ all-reduce 合并：每台机器里，部分结果切成 8 块沿环边传边加（7 跳）；每张卡再经 InfiniBand 和另一台机器里对应的卡交换加好的那块；最后完整的和沿环传遍（7 跳），每张卡都有完整结果（${u}，其中固定开销 ${lat}）。`);
-    return tx(`③ All-reduce: ${R>1?'in each replica, ':''}the partial results go round the ring in ${n} pieces, one hop at a time. In the first ${n-1} hops each piece is added to as it goes; in the last ${n-1} the finished pieces reach every GPU, which then holds the full result (${u}, ${lat} of it the fixed cost).`,`③ all-reduce 合并：${R>1?'每个副本里，':''}部分结果切成 ${n} 块，沿环一跳一跳传。前 ${n-1} 跳边传边加，后 ${n-1} 跳把加好的块传给每张卡，最后每张卡都有完整结果（${u}，其中固定开销 ${lat}）。`);}
+    if(r.ar.cross) return tx(`③ All-reduce${sl?' (slowed down here)':''}: in each node the partial results go round the ring of 8 in pieces and are added up (7 hops); each GPU swaps its summed piece with its partner in the other node over InfiniBand; then the full sums go round (7 hops), so every GPU holds the full result (${u}, ${lat} of it the fixed cost).`,`③ all-reduce 合并${sl?'（这里放慢了）':''}：每台机器里，部分结果切成 8 块沿环边传边加（7 跳）；每张卡再经 InfiniBand 和另一台机器里对应的卡交换加好的那块；最后完整的和沿环传遍（7 跳），每张卡都有完整结果（${u}，其中固定开销 ${lat}）。`);
+    return tx(`③ All-reduce${sl?' (slowed down here)':''}: ${R>1?'in each replica, ':''}the partial results go round the ring in ${n} pieces, one hop at a time. In the first ${n-1} hops each piece is added to as it goes (hollow); in the last ${n-1} the finished pieces (solid) reach every GPU, which then holds the full result (${u}, ${lat} of it the fixed cost).`,`③ all-reduce 合并${sl?'（这里放慢了）':''}：${R>1?'每个副本里，':''}部分结果切成 ${n} 块，沿环一跳一跳传。前 ${n-1} 跳边传边加（空心的块），后 ${n-1} 跳把加好的块（实心的）传给每张卡，最后每张卡都有完整结果（${u}，其中固定开销 ${lat}）。`);}
   if(am==='pipe'){const {P,t}=pipeState(r), c=r.c, Lm=MGS.MODELS[c.m].L, Lp=Lm/c.pp, pu=fKiB(MGS.MODELS[c.m].d*2), parts=[];
     /* the latest hand-off or new token stays in the sentence for a while after it happens */
-    const ev=[...P.hands.map(h=>({...h,k:'h'})),...P.toks.map(k=>({...k,k:'t'}))].filter(e=>e.t0<=t).sort((a,b)=>b.t0-a.t0)[0], hd=ev&&t<ev.t1+0.15*P.T?ev:null;
-    if(hd&&hd.k==='t'){const b0=P.blocks.find(b=>b.s===0&&b.j===hd.j&&b.round===hd.round), el=hd.t1-(b0?b0.t0:0), J=MBL[hd.j%4];
-      return tx(`Batch ${J}’s new token is back at stage 1 after ${fMs(el)}. It went through all ${Lm} layers: each stage’s GPUs read only their own ${Lp} layers’ weights (${fGi(r.w)} per GPU), but the token waits for ${c.pp===2?'both stages':`the ${c.pp} stages`} to read theirs one after another, the same as one group reading all ${Lm} layers.`,
-        `${J} 批的新 token 回到第 1 段，用了 ${fMs(el)}。它走完了全部 ${Lm} 层：每段的卡只读自己那 ${Lp} 层的权重（每张卡 ${fGi(r.w)}），可这个 token 要等 ${c.pp} 段依次读完，等于一组卡读完全部 ${Lm} 层的权重。`);}
+    const ev=[...P.hands.map(h=>({...h,k:'h'})),...P.toks.map(k=>({...k,k:'t'}))].filter(e=>e.t0<=t).sort((a,b)=>b.t0-a.t0)[0], hd=ev&&t<ev.t1+0.05*P.T?ev:null;
+    if(hd&&hd.k==='t'){const b0=P.blocks.find(b=>b.s===0&&b.j===hd.j&&b.round===hd.round), t0=b0?b0.t0:0, el=hd.t1-t0, J=MBL[hd.j%4];
+      const lead=t0>1e-9?tx(`Batch ${J} set off ${fMs(t0)} later; its new token is back at stage 1 at ${fMs(hd.t1)}, again after ${fMs(el)}.`,`${J} 批晚 ${fMs(t0)}出发，${fMs(hd.t1)}时新 token 回到第 1 段，同样用了 ${fMs(el)}。`)
+        :tx(`Batch ${J}’s new token is back at stage 1 after ${fMs(el)}.`,`${J} 批的新 token 回到第 1 段，用了 ${fMs(el)}。`);
+      return lead+tx(` It went through all ${Lm} layers: each stage’s GPUs read only their own ${Lp} layers’ weights (${fGi(r.w)} per GPU), but the token waits for ${c.pp===2?'both stages':`the ${c.pp} stages`} to read theirs one after another, the same as one group reading all ${Lm} layers.`,
+        `它走完了全部 ${Lm} 层：每段的卡只读自己那 ${Lp} 层的权重（每张卡 ${fGi(r.w)}），可这个 token 要等 ${c.pp} 段依次读完，等于一组卡读完全部 ${Lm} 层的权重。`);}
     if(hd){const J=MBL[hd.j%4], a=hd.s+1, b=hd.s+2;
       return tx(`Hand-off, the sync between stages: stage ${a} finishes layer ${a*Lp} for batch ${J} and sends its hidden vectors to stage ${b} (${pu} per user, ${fUs(hd.t1-hd.t0)}, slowed down here); stage ${b} starts layer ${a*Lp+1} only when they arrive.`,
         `交接，也就是两段之间的同步：第 ${a} 段算完 ${J} 批的第 ${a*Lp} 层，把隐藏向量发给第 ${b} 段（每个用户 ${pu}，${fUs(hd.t1-hd.t0)}，这里放慢了）；第 ${b} 段收到后才开始第 ${a*Lp+1} 层。`);}
@@ -812,7 +874,7 @@ function capText(r){
 function animFrame(){
   if(!app) return; const r=cur(), am=animMode(r);
   if(am==='moe'){moeFrame(); return;}
-  const hd=$('#mgs-head',app); if(hd) hd.style.left=(100*Math.min(1,ph)).toFixed(2)+'%';
+  const hd=$('#mgs-head',app); if(hd){const ls=am==='layer'?layerState(r):null; hd.style.left=(100*(ls?ls.t/ls.P.T:Math.min(1,ph))).toFixed(2)+'%';}
   if(am==='layer') layerFrame(r); else if(am==='pipe') pipeFrame(r);
   const sm=$('#mgs-sum',app); if(sm){const t=capText(r); if(sm.textContent!==t) sm.textContent=t; sm.classList.toggle('mgs-cap',!(ph>=1&&!PLAY.on));}}
 function sumText(r){
@@ -905,7 +967,7 @@ function drawHead(r){
   const c=r.c;
   if(isP('moe')){
     $('#mgs-st-title',app).textContent=(PLAY.on?tx('Playing: ','正在播放：'):'')+tx(`One MoE layer of ${MDS} on 8 GPUs, 32 routed experts each`,`${MDS} 的一个 MoE 层，8 张卡各放 32 个路由专家`);
-    $('#mgs-st-sub',app).textContent=tx(`${fint(p7)} tokens in the step, each picking 8 experts: how many token–expert pairs each GPU computes. This part is not timed.`,`这一步有 ${fint(p7)} 个 token，每个选 8 个专家：每张卡要算多少 token–专家对。这一部分不计时。`);
+    $('#mgs-st-sub',app).textContent=tx(`${fint(p7)} tokens in the step, each picking 8 experts: how many token–expert pairs each GPU gets.`,`这一步有 ${fint(p7)} 个 token，每个选 8 个专家：每张卡分到多少 token–专家对。`);
     const b=$('#mgs-status',app); b.className='status'; b.textContent=statusOf(r).short; b.dataset.tipx=tx('The busiest GPU’s work against the average; the layer waits for the busiest.','最忙的卡的活和平均比；这一层要等最忙的那张卡。'); return;}
   $('#mgs-st-title',app).textContent=(PLAY.on?(c.pp>1?tx('Playing one step: ','正在播放一步：'):tx('Playing one layer: ','正在播放一层：')):'')+tx(`${gpusName(c.g)}, ${setupName(c)}`,`${gpusName(c.g)}，${setupName(c)}`);
   $('#mgs-st-sub',app).textContent=tx(`${L(MNAME[c.m])}; ${c.u} users, ${fint(c.ctx)} tokens of context each; one decode step.`,`${L(MNAME[c.m])}；${c.u} 个用户，每人 ${fint(c.ctx)} 个 token 的上下文；一步 decode。`);
@@ -918,7 +980,7 @@ function drawRunCtl(r){
   run.hidden=am==='none';
   const what=am==='pipe'?tx('one step','一步'):am==='moe'?tx('the MoE layer','这一层 MoE'):tx('one layer','一层'), whatS=am==='pipe'?tx('this step','这一步'):am==='moe'?tx('this MoE layer','这一层 MoE'):tx('this layer','这一层');
   pb.textContent=PLAY.on?tx('❚❚ Pause','❚❚ 暂停'):(ph>=1?tx('▶ Play','▶ 播放'):tx('▶ Continue','▶ 继续'));
-  pb.dataset.tipx=tx(`Plays ${what} at the chosen speed: about ${RUN_SECS[spdNow()]} s.`,`按选定的速度播放${what}：约 ${RUN_SECS[spdNow()]} 秒。`);
+  if(PLAY.on) delete pb.dataset.tipx; else pb.dataset.tipx=tx(`Plays ${what} at the chosen speed: about ${RUN_SECS[spdNow()]} s.`,`按选定的速度播放${what}：约 ${RUN_SECS[spdNow()]} 秒。`);
   $('#mgs-replay',app).dataset.tipx=tx(`Plays ${whatS} again from the start.`,`从头再播放一次${whatS}。`);
   const pr=$('#mgs-prog',app); pr.value=String(Math.round(1000*Math.min(1,ph)));
   $$('.seg-ctl[data-key="spd"]',app).forEach(g=>A.ui.setPressed(g,spdNow()));}
@@ -942,7 +1004,7 @@ function stopPlay(){if(PLAY.raf) cancelAnimationFrame(PLAY.raf); PLAY.on=false; 
 function playFrom(p0){
   stopPlay(); const r=cur(); if(animMode(r)==='none'){ph=1; render(); return;} ph=p0; nPlays++;
   const secs=RUN_SECS[spdNow()];
-  PLAY={on:true,raf:0,last:0,key:playKey()};
+  PLAY={on:true,raf:0,last:0,key:playKey()}; A.tip.hide();
   const tick=ts=>{if(!PLAY.on||!app){PLAY.raf=0; return;}
     if(PLAY.last){ph+=Math.min(0.1,(ts-PLAY.last)/1000)/secs; if(ph>=1){ph=1; watched.add(PLAY.key); PLAY.on=false; PLAY.raf=0; render(); return;} animFrame(); const pr=$('#mgs-prog',app); if(pr) pr.value=String(Math.round(1000*ph));}
     PLAY.last=ts; PLAY.raf=requestAnimationFrame(tick);};

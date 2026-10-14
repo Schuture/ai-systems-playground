@@ -77,7 +77,7 @@ def captions(pg, d, label):
 
 def stage(pg, d, label):
     d.add(label + ' — stage', txt(pg, '#mgs-st-title, #mgs-st-sub, #mgs-status, #mgs-app .mgs-legend, #mgs-app .mgs-bh, #mgs-lbar, #mgs-nofit, #mgs-sum, #mgs-sweep, #mgs-sw-n, #mgs-ep-steps, #mgs-ep-leg, #mgs-ep-cap'))
-    d.add(label + ' — chart labels', pg.evaluate("()=>[...document.querySelectorAll('#mgs-app .stage svg')].filter(e=>e.getClientRects().length).map(s=>[...s.querySelectorAll('text')].map(t=>t.textContent).join(' | ')).join('\\n')"))
+    d.add(label + ' — chart labels', pg.evaluate("()=>[...document.querySelectorAll('#mgs-app .stage svg')].filter(e=>e.getClientRects().length).map(s=>[...s.querySelectorAll('text')].map(t=>t.textContent).filter(Boolean).join(' | ')).join('\\n')"))
     d.add(label + ' — metric cards', txt(pg, '#mgs-metrics'))
 
 

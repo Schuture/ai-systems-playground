@@ -229,7 +229,7 @@ with sync_playwright() as pw:
         hid = pg.evaluate("()=>['#mgs-gb','#mgs-lb','#mgs-metrics','#mgs-math'].map(s=>document.querySelector(s).hidden)")
         check(f'{L_} part 7: the 70B pictures, metric cards and math are hidden', hid == [True]*4, hid)
         has(f'{L_} part 7: 671B does not fit one node (S14)', T(), ['671B'])
-        check('671B at one byte each is about 625 GiB, more than 8 x 70 GiB', 671e9/GiB > 8*70 and round(671e9/GiB) == 625)
+        check('671B at one byte each is about 625 GiB: more than 8 x 70 GiB, within 16 x 70 GiB (two nodes)', 8*70 < 671e9/GiB <= 16*70 and round(671e9/GiB) == 625)
         nxt()
         has(f'{L_} part 8 numbers', T(), [ms(r16['tpot'], z), ms(r8['tpot'], z), '131.4 GiB', num(max(route(32))/32, 1)])
         # metric cards of the TP 8 view

@@ -5,7 +5,7 @@
 - R3.20: entering part 2 plays its layer at medium speed; Play pauses and resumes; the speed control works; Back and Next again replay
   nothing (watched); Replay plays from the start; in part 3 a new split plays, the same split again and a split already watched replay
   nothing; parts 4 to 7 open on a watched picture and replay nothing; a new layout in parts 5 and 6 plays;
-- the observations (TP 8 14.5 ms and 6.2 times one GPU doing the same work, TP 16 17.1 ms, the pipeline and replicas against one node,
+- the observations (TP 8 14.5 ms and 6.2 times faster than one GPU, TP 16 17.1 ms, the pipeline and replicas against one node,
   the MoE imbalance drawn on the stage with the 70B pictures hidden), part 8 links to the scenarios;
 - every metric value fits its box (scrollWidth <= clientWidth);
 - at 1440 the sticky stage fits the screen in every part (no scrolling inside it);
@@ -134,7 +134,7 @@ def guided(b, w, h, lang):
     check(f'{tag} part 2: the speed control switches to slow', speed(pg) == 'slow' and state(pg)['spd'] == 'slow', speed(pg))
     click(pg, '#mgs-run .seg-ctl[data-key="spd"] button[data-v="med"]', 150)
     finish(pg); t2 = cur(pg)
-    check(f'{tag} part 2: the observation quotes 14.5 ms and 6.2 times against the same work on one GPU (S1)', Z(lang, 'A token takes 14.5 ms here, about 6.2 times faster than one GPU doing the same work.', '这里每个 token 要 14.5 毫秒，是一张卡做同样的活的约 6.2 倍快。') in t2 and Z(lang, '90.5 ms', '90.5 毫秒') in t2, t2[-500:])
+    check(f'{tag} part 2: the observation quotes 14.5 ms and 6.2 times against one GPU (S1)', Z(lang, 'A token takes 14.5 ms here, about 6.2 times faster than one GPU.', '这里每个 token 要 14.5 毫秒，比一张卡快约 6.2 倍。') in t2 and Z(lang, '90.5 ms', '90.5 毫秒') in t2, t2[-500:])
     rules(pg, f'{tag} part 2')
     p0 = state(pg)['plays']; nav(pg, 'back'); nav(pg, 'next'); s = state(pg)
     check(f'{tag} part 2 again: Back and Next replay nothing (R3.20)', s['step'] == 1 and not s['playing'] and s['plays'] == p0, s)
@@ -198,7 +198,7 @@ def guided(b, w, h, lang):
     st7 = text(pg, '#mgs-st-title'); hid = pg.evaluate("()=>['#mgs-gb','#mgs-lb','#mgs-metrics','#mgs-math'].map(s=>document.querySelector(s).hidden)")
     check(f'{tag} part 7: the stage title names the MoE layer; the 70B pictures, cards and math are hidden', 'DeepSeek' in st7 and 'MoE' in st7 and hid == [True]*4, (st7, hid))
     leg = text(pg, '#mgs-stage .mgs-leg')
-    check(f'{tag} part 7: the legend says token–expert pairs (S15)', Z(lang, 'token–expert pairs this GPU computes', '这张卡要算的 token–专家对') in leg and '对数' not in leg, leg)
+    check(f'{tag} part 7: the legend says token–expert pairs, and pairs computed for the done part of a bar (S15)', Z(lang, '2 token–expert pairs on their way', '每个是 2 个 token–专家对') in leg and Z(lang, 'pairs computed', '已算完的对') in leg and '对数' not in leg, leg)
     pg.screenshot(path=str(SH / f'flow-{tag}-p7.png'))
     p0 = state(pg)['plays']; click(pg, '#mgs-rail .seg-ctl[data-key="p7"] button[data-v="256"]'); t7 = cur(pg); s = state(pg)
     check(f'{tag} part 7: 256 tokens, 1.07 times', Z(lang, 'the busiest GPU has 1.07 times the average work', '最忙的卡要做平均的 1.07 倍') in t7 and next_dis(pg) is False, t7[-500:])
