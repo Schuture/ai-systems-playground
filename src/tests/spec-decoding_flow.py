@@ -119,6 +119,17 @@ def rules(pg, where, lang):
     if o > 0: rule_hits.append(f'{where}: horizontal overflow {o}px')
 
 
+def folds(pg, where, n, lang):
+    """owner review 2026-10-14 (point 4): the card says the point in plain words; formulas and detail wait in n folds, closed at first.
+    Opens them (they stay open for the checks that follow) and runs the copy rules on what they hold."""
+    vis_math = "()=>[...document.querySelectorAll('#spd-rail .step.current math')].filter(m=>m.getClientRects().length&&!m.closest('details:not([open])')).length"
+    k = count(pg, '#spd-rail .step.current details.spd-more'); shut = count(pg, '#spd-rail .step.current details.spd-more:not([open])')
+    check(f'{where} (owner 2026-10-14): {n} fold(s), closed at first; no formula in the card text in view', k == n and shut == n and pg.evaluate(vis_math) == 0, f'{k} folds, {shut} closed, {pg.evaluate(vis_math)} formulas in view')
+    pg.evaluate("()=>document.querySelectorAll('#spd-rail .step.current details.spd-more').forEach(d=>d.open=true)"); pg.wait_for_timeout(150)
+    check(f'{where}: the folds open and hold the detail', count(pg, '#spd-rail .step.current details.spd-more[open]') == n and len(text(pg, '#spd-rail .step.current .spd-more-b')) > 40)
+    rules(pg, f'{where} (folds open)', lang)
+
+
 def walk(b, lang, w):
     tag = f'{lang} {w}'
     pg = page(b, w, lang)
@@ -128,11 +139,15 @@ def walk(b, lang, w):
     rules(pg, f'{tag} part 1', lang); shot(pg, f'{lang}_{w}_1_mission')
     nxt(pg)
     # part 2: the step cost
-    check(f'{tag} part 2 gated until 5 and 640 tokens are tried; the reason is shown', next_off(pg) and Z(lang, 'Try 5 tokens and 640 tokens', '试过 5 个和 640 个 token') in text(pg, '#spd-rail'))
+    check(f'{tag} part 2 gated until 1 × 5 and 128 × 5 tokens are tried; the reason is shown', next_off(pg) and Z(lang, 'Try 1 request × 5 tokens and 128 requests × 5 tokens', '试过“1 个请求 × 5 个 token”和“128 个请求 × 5 个 token”') in text(pg, '#spd-rail'))
     check(f'{tag} part 2: the rows not tried yet (and the plain-decode baseline of 128 requests) show no step time', '20.1' not in text(pg, '#spd-cost') and '8.54' not in text(pg, '#spd-cost') and '16.0' not in text(pg, '#spd-cost'), text(pg, '#spd-cost')[:120])
     lever(pg, '5'); c5 = text(pg, '#spd-cost')
     check(f'{tag} part 2: 5 tokens take the same 7.53 ms as 1', c5.count('7.53 ms') == 2, c5[:120])
+    check(f'{tag} part 2 (owner 2026-10-14): the step drawn holds 5 positions of one request; every row of the time chart is labelled requests × tokens',
+          count(pg, '#spd-cost .spd-cxc') == 5 and all(Z(lang, e, z) in c5 for e, z in (('1 request × 1 token', '1 个请求 × 1 个 token'), ('1 request × 5 tokens', '1 个请求 × 5 个 token'), ('16 requests × 5 tokens', '16 个请求 × 5 个 token'),
+          ('128 requests × 1 token', '128 个请求 × 1 个 token'), ('128 requests × 5 tokens', '128 个请求 × 5 个 token'))), c5[:300])
     lever(pg, '640'); s = st(pg)
+    check(f'{tag} part 2: at 128 × 5 the step drawn is one request’s card of 5 positions, times 128 requests', count(pg, '#spd-cost .spd-cxc') == 5 and Z(lang, '× 128 requests', '× 128 个请求') in text(pg, '#spd-cost'), text(pg, '#spd-cost')[:200])
     check(f'{tag} part 2: 640 tokens take 20.1 ms against 16.0 ms for plain decode of the same 128 requests; compute-bound; next opens', '20.1 ms' in text(pg, '#spd-cost') and '16.0 ms' in text(pg, '#spd-cost') and not next_off(pg) and Z(lang, 'compute-bound', '受算力限制') in text(pg, '#spd-rail') and '16.0 ms' in text(pg, '#spd-rail .obs'))
     rules(pg, f'{tag} part 2', lang); shot(pg, f'{lang}_{w}_2_cost')
     nxt(pg)
@@ -146,6 +161,16 @@ def walk(b, lang, w):
           and text(pg, '#spd-round [data-act="rp-replay"]') == Z(lang, 'Replay', '重放') and text(pg, '#spd-round .seg-ctl[data-key="rpSpd"]').replace(' ', '') == Z(lang, 'SlowMediumFast', '慢中快')
           and text(pg, '#spd-round .seg-ctl[data-key="rpSpd"] [aria-pressed="true"]') == Z(lang, 'Medium', '中') and count(pg, '#spd-rp-pos') == 1, text(pg, '#spd-round .seg-ctl[data-key="rpSpd"]'))
     check(f'{tag} part 3: next is open once the round has been seen to its end', not next_off(pg))
+    rc = text(pg, '#spd-rcost')
+    check(f'{tag} part 3 (owner 2026-10-14): the time strip compares the round with plain decode for the same 3 tokens; it computes 1.9 times more and reads the weights once',
+          Z(lang, 'Plain decode', '普通 decode') in rc and Z(lang, '3 tokens', '3 个 token') in rc and '1.9' in rc and Z(lang, 'computes more', '并不省计算') in rc, rc[:300])
+    def stages_at(f):
+        pg.evaluate(f"()=>{{const r=document.querySelector('#spd-rp-pos'); r.value={f}; r.dispatchEvent(new Event('input',{{bubbles:true}}))}}"); pg.wait_for_timeout(120)
+        return pg.evaluate("()=>[...document.querySelectorAll('#spd-round .spd-stl')].map(e=>e.classList.contains('on')?'on':e.classList.contains('done')?'done':'-')")
+    seq = [stages_at(f) for f in (2, 5, 6, 9)]
+    check(f'{tag} part 3 (owner 2026-10-14): the stages ① guess, ② check, ③ keep are named on the figure and light up in order as the round plays',
+          all(Z(lang, e, z) in text(pg, '#spd-round') for e, z in (('The draft model guesses', 'draft 模型猜'), ('The target model checks, in one step', '目标模型一次检查'), ('Keep', '留下')))
+          and seq == [['on', '-', '-'], ['done', 'on', '-'], ['done', 'done', 'on'], ['done', 'done', 'done']], json.dumps(seq))
     rules(pg, f'{tag} part 3', lang); shot(pg, f'{lang}_{w}_3_round')
     nxt(pg)
     # part 4: the prediction
@@ -170,6 +195,7 @@ def walk(b, lang, w):
     check(f'{tag} part 6: greedy keeps exactly the target’s output', Z(lang, 'exactly', '完全一样') in text(pg, '#spd-rail [data-lkey][data-lever="greedy"] .lv-r'))
     lever(pg, 'nocheck')
     check(f'{tag} part 6 (R5.11): without the check the output changes, drawn in red, the status says so; next opens', count(pg, '#spd-acc .spd-badb') >= 1 and Z(lang, 'changed', '输出变了') in text(pg, '#spd-stage') and not next_off(pg) and '55.4%' in text(pg, '#spd-rail .obs'))
+    folds(pg, f'{tag} part 6', 1, lang)
     rules(pg, f'{tag} part 6', lang); shot(pg, f'{lang}_{w}_6_same')
     nxt(pg)
     # part 7: the batch
@@ -178,8 +204,13 @@ def walk(b, lang, w):
     obs = text(pg, '#spd-rail .obs')
     check(f'{tag} part 7 (R5.11): at batch 128 the 3B is slower than plain decode (0.86, red points); next opens', not next_off(pg) and '0.86' in obs and count(pg, '#spd-bcurve .spd-baddot') >= 1 and st(pg)['B'] == 128, obs[:160])
     check(f'{tag} part 7: the timeline shows 24 tokens with plain decode and with guessing', count(pg, '#spd-time svg') == 1 and '24' in text(pg, '#spd-time'))
+    folds(pg, f'{tag} part 7', 1, lang)
     rules(pg, f'{tag} part 7', lang); shot(pg, f'{lang}_{w}_7_batch')
     nxt(pg)
+    r8 = text(pg, '#spd-rail .step.current')
+    check(f'{tag} part 8 (owner 2026-10-14): three short take-aways with their numbers (2.77 tokens, 1.67 times, 0.86 times at batch 128)',
+          count(pg, '#spd-rail .step.current ul > li') == 3 and all(x in r8 for x in ('2.77', '1.67', '0.86')) and 'vLLM' not in r8, r8[:300])
+    folds(pg, f'{tag} part 8', 3, lang)
     check(f'{tag} part 8: misconceptions, production systems and the way to the scenarios', count(pg, '#spd-rail [data-mode-go="sandbox"]') >= 1 and 'vLLM' in text(pg, '#spd-rail') and '✗' in text(pg, '#spd-rail'))
     pg.evaluate("()=>{document.querySelector('#spd-math').open=true}"); pg.wait_for_timeout(150)
     check(f'{tag} Show the math: four named formulas, typeset', count(pg, '#spd-mathbody .spd-eq') >= 4 and count(pg, '#spd-mathbody math') >= 8)

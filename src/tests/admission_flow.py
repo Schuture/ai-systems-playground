@@ -88,7 +88,8 @@ RULES = """(sel)=>{const root=document.querySelector(sel); if(!root) return [];
    [/in this toy\\b|在这个玩具里|\\btoy\\b(?! run)|玩具(?!实跑)/i,'“toy”'],[/一次只能选|不会叠加|第 [0-9一二三四五六七八] 部分里/,'banned phrase'],
    [/updates as you|随之更新|会立刻更新|updates at once/i,'sentence about the page updating'],[/\\bNaN\\b|undefined|\\[object|Infinity/,'broken value'],
    [/亿|万/,'亿 or 万'],[/(?<![这那两])个数(?![值量])/,'“个数”'],
-   [/深色|浅色|浅灰|深灰|\\b(?:dark|light|pale)(?:er)? (?:bar|line|block|part|cell)/i,'colour named by lightness']];
+   [/深色|浅色|浅灰|深灰|\\b(?:dark|light|pale)(?:er)? (?:bar|line|block|part|cell)/i,'colour named by lightness'],
+   [/不是哪家|不是实测|不是测出来|不是对真实|假设，不是|自己的假设|不是真实录制|不是真实 agent|不是真的分词器|not a vendor|not a quote|, not a measurement|its own assumption|not a recording|not a real tokenizer/i,'negative disclaimer (the owner, 2026-10-14: state the assumption positively)'],[/SDE → LLM Serving|学习路线|learning path/i,'a learning path the site no longer has (the owner, 2026-10-14)']];
  let n; while((n=tw.nextNode())){const e=n.parentElement; if(!e||e.closest('[data-endnotes],pre, code, #tip, .fid-tag')||!e.getClientRects().length) continue; const t=n.textContent;
    for(const [re,name] of bad) if(re.test(t)) out.push(name+': '+t.trim().slice(0,90));}
  root.querySelectorAll('[data-tipx]').forEach(e=>{const t=e.getAttribute('data-tipx'); for(const [re,name] of bad) if(re.test(t)) out.push(name+' (tooltip): '+t.slice(0,90));});
@@ -121,6 +122,12 @@ def guided(b, w, h, lang):
     tag = f'{w}_{lang}'; pg = page(b, w, h, lang)
     title = text(pg, '#adm-app .labtitle')
     check(f'{tag} title', title == Z(lang, 'How many GPUs does your traffic need, and who should wait?', '你的流量要几张卡，谁该排队？'), title)
+    # the owner (2026-10-14): assumptions stated positively, “本 Lab 假设每 GPU 每小时 3 美元”, in the GPU-hour tooltip and in the end notes
+    tips = pg.evaluate("()=>[...document.querySelectorAll('#adm-app [data-tipx]')].map(e=>e.getAttribute('data-tipx')).join('\\n')")
+    ends = pg.evaluate("()=>{const v=document.querySelector('#view-dyn:not([hidden])')||document.querySelector('#view-lab:not([hidden])'); const e=v&&v.querySelector('[data-endnotes]'); return e?e.textContent:''}")
+    check(f'{tag} the GPU-hour tooltip and the end notes state the price positively', Z(lang, 'This lab assumes $3 per GPU hour.', '本 Lab 假设每 GPU 每小时 3 美元。') in tips
+          and Z(lang, 'it assumes $3 per GPU hour', '本 Lab 假设每 GPU 每小时 3 美元') in ends and not any(x in tips + ends for x in ('not a vendor', 'its own assumption', '不是哪家', '自己的假设', 'both percentages are assumptions', '两个百分比都是假设')),
+          ([t for t in tips.split('\n') if 'GPU' in t][:2], ends[:160]))
     s = state(pg); check(f'{tag} part 1: guided, nothing plays on the first part', s['mode'] == 'guided' and s['step'] == 0 and s['plays'] == 0 and not s['playing'], s)
     day = pg.evaluate("()=>document.querySelectorAll('#adm-day svg rect.adm-pa').length")
     check(f'{tag} part 1: the day chart has 24 hours, the capacity line', day == 24 and pg.query_selector('#adm-day .adm-cap') is not None, day)

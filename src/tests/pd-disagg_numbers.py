@@ -328,7 +328,7 @@ with sync_playwright() as pw:
     check('page part 6 quotes 27 ms, 104 ms and 98%', 'from 27 ms to 104 ms' in t6 and 'With either link, 98% of requests' in t6, t6[-400:])
     nxt(); pg.wait_for_function('()=>window.__pdd.state().gpQueue===0', timeout=60000); pg.wait_for_timeout(300)
     pg.click('#pdd-rail .seg-ctl[data-key="p7"] button[data-v="6"]'); pg.wait_for_timeout(300); t7 = obs_text()
-    check('page part 7 quotes the best split 6 + 2 at 4, colocated 0, chunks of 512 at 6.5', 'The best split gives 6 GPUs to prefill and the rest to decode: about 4 requests' in t7 and 'Colocated, the 8 GPUs take only 0.5 requests per second per GPU without chunking, and 6.5 with a budget of 512 tokens per step.' in t7, t7[-600:])
+    check('page part 7 quotes the best split 6 + 2 at 4, colocated 0.5 without chunks and 6.5 with chunks of 512, more than any split', 'Among the splits, 6 prefill + 2 decode is best: about 4 requests per second per GPU.' in t7 and 'Colocated, with a budget of 512 tokens per step, each GPU takes 6.5, more than any split (without chunking, only 0.5).' in t7, t7[-600:])
     nxt(); t8 = obs_text()
     check('page part 8 quotes 1.49 s, 61%, 4 GiB, 10 ms and 86 ms', all(x in t8 for x in ('1.49 s', '61%', '4 GiB', '10 ms', '86 ms')), t8[:600])
 

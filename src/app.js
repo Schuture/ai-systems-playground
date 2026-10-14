@@ -746,7 +746,7 @@ function markMap(){
 const TZF={
  formula:{en:'Formula',zh:'公式计算',d:{en:'This mini experiment’s numbers come from closed-form formulas with published specs or stated assumptions; nothing is simulated.',zh:'这个小实验的数由闭式公式算出，代入公开规格或写明的假设，不做模拟。'}},
  toy:{en:'Toy run',zh:'玩具实跑',d:{en:'In this mini experiment your browser really runs the algorithm, on a small made-up input.',zh:'这个小实验里，浏览器真的在运行这个算法，只是输入是小规模的虚构数据。'}},
- illus:{en:'Illustrative',zh:'示意',d:{en:'This mini experiment is a hand-made example of the mechanism, not a recording and not a measurement.',zh:'这个小实验是手工构造的例子，用来演示机制；不是录制，也不是实测。'}}
+ illus:{en:'Illustrative',zh:'示意',d:{en:'This mini experiment is a hand-made example that shows the mechanism.',zh:'这个小实验是为演示机制手工构造的例子。'}}
 };
 const TZKIND={'kv-cache':'formula','paged-attention':'formula','continuous-batching':'toy','prefill-decode':'formula','chunked-prefill':'formula','prefix-caching':'formula','serving-capstone':'toy',
  'quantization':'toy','spec-decoding':'formula','training-memory':'formula','parallelism':'formula','sft':'toy','lora':'formula','reward-model':'toy','ppo':'toy','dpo':'toy','grpo':'toy','rlvr':'toy','post-capstone':'formula','sampling':'toy',
@@ -2152,7 +2152,13 @@ const pbarHTML=o=>{const c=o.steps[o.current]||{}, a=o.ans||null, q=o.q||{}, sq=
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.pbar [data-pbgo]'); if(!b) return; const host=b.closest('.pbar').parentElement,
   sb=host&&host.querySelector(':scope>.steps>.step.current>.step-b'); if(!sb) return; const isQ=b.dataset.pbgo==='q', f=sb.querySelector(isQ?PQ_SEL:PC_SEL);
   if(!f){revealTop(sb); return;} const g=f.closest('[role="group"],.choices,.levers,.inline-ctl,.ctl')||f, pv=g.previousElementSibling;
-  revealTop(isQ&&pv&&pv.matches('p')?pv:g); f.focus({preventScroll:true}); flashEl(g);});
+  // a question comes up from the top of its stem (the paragraphs right above the options, owner 2026-10-14: the question line alone
+  // left the setup under the top bar), as far back as still leaves the options on the screen (a long list: at least its first 45%)
+  let to=isQ&&pv&&pv.matches('p')?pv:g;
+  if(to!==g){const bar=$('.topbar'), dk=$('#dock'), av=window.innerHeight-(bar?bar.offsetHeight:56)-(dk&&!dk.hidden?dk.offsetHeight:50)-12,
+    room=av-Math.min(g.offsetHeight,av*0.45), gt=g.getBoundingClientRect().top;
+    for(let e=to.previousElementSibling; e&&e.matches('p:not(.nx-why),ul,ol')&&e.getClientRects().length; e=e.previousElementSibling){if(gt-e.getBoundingClientRect().top>room) break; to=e;}}
+  revealTop(to); f.focus({preventScroll:true}); flashEl(g);});
 /* why Next is disabled (kit fixes, round K): steps({nextWhy}) puts this line under the card's buttons and under the part bar's buttons.
    It shows while Next is disabled; once Next is enabled, in place or by a re-render, it keeps its height but goes blank (CSS, visibility),
    so nothing below it moves. Rendered while Next is already enabled, it takes no room until Next is disabled in place (kitObserve) */

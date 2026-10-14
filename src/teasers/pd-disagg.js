@@ -22,7 +22,7 @@ function render(el){
    `<div class="tz-leg"><span><i class="tz-pdd-sw tz-pdd-pf"></i>prefill</span><span><i class="tz-pdd-sw tz-pdd-dc"></i>decode</span><span><i class="tz-pdd-sw tz-pdd-st"></i>${tx('chats stalled','聊天被卡住')}</span></div>`+
    `<p class="tz-read">${v==='co'?tx(`On one GPU, a 32K-token document’s prefill makes every chat wait ${fT(g)} for its next token.`,`同一张卡上，一篇 32K token 文档的 prefill 让每个聊天等 ${fT(g)}才出下一个 token。`)
      :tx(`With prefill on its own GPU, the chats’ longest wait between tokens is ${fT(g)}.`,`prefill 放到单独一张卡上，聊天两个 token 之间最多只等 ${fT(g)}。`)}</p>`+
-   `<p class="tz-note">${tx('Toy run: Llama-3.1-8B on H100s, 8 chats and one 32,768-token document, priced by the lab’s step model (50% of peak compute, 60% of peak bandwidth). The split sends the KV cache over NVLink at 450 GB/s. Not a recording.','玩具实跑：H100 上的 Llama-3.1-8B，8 个聊天请求和 1 篇 32,768 个 token 的文档，按 Lab 的步模型计时（算力按峰值的 50%，带宽按 60%）。分开跑时 KV cache 走 NVLink，450 GB/s。不是真实录制。')}</p></div>`;
+   `<p class="tz-note">${tx('Toy run: Llama-3.1-8B on H100s, 8 chats and one 32,768-token document, priced by the lab’s step model (50% of peak compute, 60% of peak bandwidth). The split sends the KV cache over NVLink at 450 GB/s.','玩具实跑：H100 上的 Llama-3.1-8B，8 个聊天请求和 1 篇 32,768 个 token 的文档，按 Lab 的步模型计时（算力按峰值的 50%，带宽按 60%）。分开跑时 KV cache 走 NVLink，450 GB/s。')}</p></div>`;
   el.querySelector('.seg-ctl').addEventListener('click',e=>{const b=e.target.closest('button[data-v]'); if(!b) return; v=b.dataset.v; render(el);});
 }
 A.registerTeaser('pd-disagg',{fid:'toy',render});

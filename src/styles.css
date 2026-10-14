@@ -700,6 +700,10 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
 .exits{margin-top:12px}
 .exits .ex-tabs{margin:4px 0 12px;flex-wrap:wrap}
 .exits .ex-tabs button{flex:1 1 auto}
+/* the tabs wrap to a second row (English, up to 1280 px) and keep a 1px line between rows as well as columns: the buttons sit 1px apart on the line colour
+   instead of each drawing a right border (owner 2026-10-14: agent-anatomy's token-budget rows lost their line; R7.13) */
+.exits .ex-tabs{gap:1px;background:var(--line)}
+.exits .ex-tabs button{border-right:0}
 .ex-body p{margin:0 0 8px}
 .ex-qs{display:flex;gap:4px;margin:0 0 8px}
 .ex-opts{display:grid;gap:6px;margin:0 0 8px}
@@ -923,7 +927,9 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
 .flow .fl-sub a.on{color:var(--ink);border-left-color:var(--ink);font-weight:620}
 .flow .fl-see{margin:8px 4px 0;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
 .flow .fl-see a{color:var(--ink);font-weight:620;text-underline-offset:2px}
-:is(#view-dyn,#view-lab) .bench.flowed,:is(#view-dyn,#view-lab) .bench.flowed.no-ctl{grid-template-columns:300px minmax(0,1fr)}
+/* the outline column is wide so the guided cards' text runs in fewer lines (owner 2026-10-14; the stage gave up the room when Settings left the right rail) */
+:is(#view-dyn,#view-lab) .bench.flowed,:is(#view-dyn,#view-lab) .bench.flowed.no-ctl{grid-template-columns:400px minmax(0,1fr)}
+@media (max-width:1300px){:is(#view-dyn,#view-lab) .bench.flowed,:is(#view-dyn,#view-lab) .bench.flowed.no-ctl{grid-template-columns:360px minmax(0,1fr)}}
 :is(#view-dyn,#view-lab) .bench.flowed>[data-flow-nav]{grid-column:1;grid-row:1}
 :is(#view-dyn,#view-lab) .bench.flowed>.rail,:is(#view-dyn,#view-lab) .bench.flowed>.controls{grid-column:1;grid-row:2}
 :is(#view-dyn,#view-lab) .bench.flowed:is(.peek,.compat):not([data-flow="free"])>.controls{grid-row:3}
