@@ -2,8 +2,8 @@
 
 python3 tests/spec-decoding_copy_deck.py [tag]  ->  out/spd/copy/<tag>-zh.md and out/spd/copy/<tag>-en.md (default tag: now)
 
-Order: lab header with the mode descriptions, each guided part (card before and after its actions, the stage, the tooltips in view that
-were not shown before; part 3's round frame by frame), "Show the math", the scenarios card for every preset, the settings panel, the
+Order: lab header with the mode descriptions, the 知识梳理 (primer), each guided part (card before and after its actions, the card with its folds open, the stage,
+the tooltips in view that were not shown before; "Show the math" of parts 2 and 3; part 3's round frame by frame), "Show the math", the scenarios card for every preset, the settings panel, the
 challenge before and after submitting (every feedback tier and the chart), the capability layer and the connect section. The home tile
 stays in teasers/set-a.js (not this lab's file), so it is not dumped here. A tooltip is printed the first time it appears with a given text.
 """
@@ -58,12 +58,26 @@ with sync_playwright() as p:
         pg.evaluate("()=>{location.hash='spec-decoding'}"); pg.wait_for_timeout(600)
         L += ['# Header', txt(pg, '#spd-app .lab-head') or txt(pg, '#spd-app header')]
         L += ['## Mode descriptions'] + [f'- {x}' for x in pg.evaluate("()=>[...document.querySelectorAll('#spd-app .modes [data-mode]')].map(b=>b.innerText+': '+(b.dataset.tipx||''))")]
+        # the 知识梳理 (primer): opened from the list of steps, dumped, then back to the guided parts
+        click(pg, '#spd-app [data-flow-nav] button[data-flow="primer"]', 500)
+        L += ['# 知识梳理 (primer)', txt(pg, '#spd-app .primer[data-primer="spec-decoding"]')]
+        click(pg, '#spd-app [data-flow-nav] button[data-flow="guided"]', 400)
         acts = {1: ["#spd-rail [data-lever='5']", "#spd-rail [data-lever='80']", "#spd-rail [data-lever='640']"], 3: ["#spd-rail [data-pred='a34']"],
                 4: ["#spd-rail [data-lever='2']", "#spd-rail [data-lever='8']"], 5: ["#spd-rail [data-lever='greedy']", "#spd-rail [data-lever='sample']", "#spd-rail [data-lever='nocheck']"],
                 6: ["#spd-rail [data-lever='128']", "#spd-rail [data-lever='32']"]}
         for i in range(8):
             click(pg, f'#spd-rail [data-go="{i}"]')
             L += [f'# Part {i + 1}', '## Card', card(pg), '## Stage', stage(pg), '## Tooltips (new)'] + T.grab(pg, '#spd-app')
+            # the card's folds (owner review 2026-10-14: the detail one click away), opened for the dump, then closed again
+            nf = pg.evaluate("()=>{const ds=[...document.querySelectorAll('#spd-rail .step.current details.spd-more')]; ds.forEach(d=>d.open=true); return ds.length}")
+            if nf:
+                pg.wait_for_timeout(150)
+                L += [f'## Card with its {nf} fold(s) open', card(pg)] + T.grab(pg, '#spd-app')
+                pg.evaluate("()=>document.querySelectorAll('#spd-rail .step.current details.spd-more').forEach(d=>d.open=false)"); pg.wait_for_timeout(150)
+            if i in (1, 2):   # "Show the math" of the step cost (part 2) and of the example round (part 3)
+                pg.evaluate("()=>{document.querySelector('#spd-math').open=true}"); pg.wait_for_timeout(200)
+                L += [f'## Show the math (part {i + 1})', txt(pg, '#spd-mathbody')]
+                pg.evaluate("()=>{document.querySelector('#spd-math').open=false}"); pg.wait_for_timeout(100)
             if i == 2:   # the round, frame by frame
                 n = pg.evaluate("()=>+document.querySelector('#spd-rp-pos').max")
                 for f in range(n + 1):

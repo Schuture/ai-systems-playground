@@ -360,7 +360,7 @@ const FIDPOP=()=>tx(
  `<li>A task is n steps; every step must end right. Each attempt at a step succeeds with the per-step rate; a failure is loud (seen, retried) or silent (unseen, the task goes on, wrong, to the end).</li>`+
  `<li>A loud failure can be retried, up to a cap; when the retries run out, the task stops. A check can follow every attempt: one more call, and part of the silent failures get reported.</li></ul></div>`+
  `<div><div class="eyebrow">Simplified</div><ul>`+
- `<li>These rates are this lab’s assumptions, not measurements:<ul><li>a step is right 95% of the time;</li><li>70% of the failures are loud;</li><li>of the silent failures, the check finds 80%;</li><li>a retry with the error message is as good as a first attempt;</li><li>the same call again is right only 50% of the time.</li></ul></li>`+
+ `<li>This lab assumes these rates:<ul><li>a step is right 95% of the time;</li><li>70% of the failures are loud;</li><li>of the silent failures, the check finds 80%;</li><li>a retry with the error message is as good as a first attempt;</li><li>the same call again is right only 50% of the time.</li></ul></li>`+
  `<li>Steps fail independently and at the same rate; real steps differ (editing a file is harder than reading one), and one mistake can make the next more likely. A check never raises a false alarm here.</li>`+
  `<li>A model call is the unit of cost; tool calls, tokens and waiting time are not counted.</li></ul></div>`+
  `<div><div class="eyebrow">Sources</div><ul><li>No outside rate is used: ${M('p^n')} needs no source. The loop of a step (the model calls a tool and reads its result): ${cite(SRC.react,'ReAct, arXiv 2210.03629')}.</li>`+
@@ -370,7 +370,7 @@ const FIDPOP=()=>tx(
  `<li>一个任务有 n 步，每一步都要做对。每次尝试做对的把握是固定的。做错时，要么是报出来的错（看得见，可以重试），要么是悄悄出的错（没人看见，任务带着错一路做到最后）。</li>`+
  `<li>报出来的错可以重试，但次数有上限，用完了任务就停下。每次尝试之后还可以加一次检查：多花一次调用，让一部分悄悄出的错报出来。</li></ul></div>`+
  `<div><div class="eyebrow">简化和假设</div><ul>`+
- `<li>下面这些比例都是这个 Lab 的假设，不是实测：<ul><li>每一步做对的把握是 95%。</li><li>70% 的错会报出来。</li><li>悄悄出的错里，检查能发现 80%。</li><li>带着报错信息重试，和第一次做一样有把握。</li><li>原样重试，只有 50% 的把握。</li></ul></li>`+
+ `<li>本 Lab 假设下面这些比例：<ul><li>每一步做对的把握是 95%。</li><li>70% 的错会报出来。</li><li>悄悄出的错里，检查能发现 80%。</li><li>带着报错信息重试，和第一次做一样有把握。</li><li>原样重试，只有 50% 的把握。</li></ul></li>`+
  `<li>每一步独立出错，把握都一样；真实的步骤难度不同（改文件比读文件难），一个错也可能让下一步更容易错。这里的检查不会误报。</li>`+
  `<li>成本只算模型调用，不算工具调用、token 和等待时间。</li></ul></div>`+
  `<div><div class="eyebrow">来源</div><ul><li>没有用任何外部的成功率：${M('p^n')} 不需要出处。一步的循环（模型调用工具、读回结果）：${cite(SRC.react,'ReAct，arXiv 2210.03629')}。</li>`+
@@ -434,7 +434,7 @@ function stageHTML(){
     `<div class="arl-tally mono" id="arl-tally"></div>`+
     `<div class="arl-curve" id="arl-curve"><div class="arl-cap" id="arl-curve-cap"></div><div class="arl-svgw" id="arl-svgw" tabindex="0"></div></div>`+
    `</div>`+
-   `<p class="arl-scope small muted" tabindex="0" data-tipx="${esc(tx('Every per-step rate on this page is the lab’s assumption, not a measurement of a real agent. The task’s success follows exactly from those rates.','页面上每一步的把握都是这个 Lab 的假设，不是对真实 agent 的测量。任务的成功率由这些假设精确算出。'))}">${tx('Assumed per-step rates; every task’s chance follows from them exactly.','每一步的把握是假设的；任务的成功率由它们精确算出。')}</p>`+
+   `<p class="arl-scope small muted" tabindex="0" data-tipx="${esc(tx('Every per-step rate on this page is this lab’s assumption. The task’s success follows exactly from those rates.','页面上每一步的把握都是本 Lab 的假设，任务的成功率由这些假设精确算出。'))}">${tx('Assumed per-step rates; every task’s chance follows from them exactly.','每一步的把握是假设的；任务的成功率由它们精确算出。')}</p>`+
    `<div class="metrics arl-metrics" id="arl-metrics"></div>`+
    `<details class="math" id="arl-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="arl-mathbody"></div></details></div>`;
 }
@@ -443,7 +443,7 @@ function controlsHTML(){
   return `<aside class="panel controls" id="arl-controls" aria-label="${esc(A.t('ctrlAria'))}"><div class="eyebrow">${A.t('ctrlEyebrow')}</div>`+
    `<p class="ctl-lock" id="arl-lock" hidden></p>`+
    `<div class="lockable" id="arl-w-n">`+A.ui.range({id:'arl-ctl-n',key:'n',label:tx('Steps in the task','任务的步数'),min:1,max:50,value:S.n,out:String(S.n),note:tx('How many steps one task takes. Each step is one model call, usually followed by one tool call. Retries and checks make extra model calls.','一个任务要走几步。每一步调用一次模型，模型通常再调用一次工具。重试和检查要另外调用模型。')})+`</div>`+
-   `<div class="lockable" id="arl-w-p">`+A.ui.range({id:'arl-ctl-p',key:'p',label:tx('Chance a step is right','一步做对的把握'),min:800,max:999,value:Math.round(S.p*1000),out:fPc(S.p),note:tx('Assumed, not measured. It depends on the model, the tools and how hard the step is, so measure it on your own tasks. The initial setup’s 95% is this lab’s choice for “a capable model doing a routine step”.','这是假设，不是实测。它取决于模型、工具和这一步有多难，要在自己的任务上测。初始设置的 95%，是这个 Lab 给“能力不错的模型做一步常规操作”取的数。')})+`</div>`+
+   `<div class="lockable" id="arl-w-p">`+A.ui.range({id:'arl-ctl-p',key:'p',label:tx('Chance a step is right','一步做对的把握'),min:800,max:999,value:Math.round(S.p*1000),out:fPc(S.p),note:tx('At the initial setup this lab assumes 95%, for “a capable model doing a routine step”. The real chance depends on the model, the tools and how hard the step is, so measure it on your own tasks.','初始设置里，本 Lab 假设它是 95%，代表“能力不错的模型做一步常规操作”。真实的把握取决于模型、工具和这一步有多难，要在自己的任务上测。')})+`</div>`+
    `<div class="lockable" id="arl-w-r">`+A.ui.range({id:'arl-ctl-r',key:'r',label:tx('Share of failures that are loud','报出来的错占全部错的'),min:0,max:10,value:Math.round(S.r*10),out:fPs(S.r),note:tx('Assumed. It is high for work where the tools report errors and tests back it up (writing code, for example). It is low for work where a mistake looks like a normal result (copying numbers, for example).','这是假设。工具会报错、有测试兜底的工作（比如写代码），这个比例就高。做错了看上去也像正常结果的工作（比如抄数字），这个比例就低。')})+`</div>`+
    `<div class="lockable" id="arl-w-R">`+A.ui.seg({id:'arl-ctl-R',key:'R',label:tx('Retries per step','每一步最多重试'),options:[0,1,2,3].map(v=>[v,String(v)]),value:S.R,note:tx('After a loud failure, a step is redone at most this many times. When the retries run out, the task stops. This cap is the lab’s assumption. A real harness (the program that runs the agent) re-sends the same request once or twice by itself after a timeout or a dropped connection. After an error such as a failing test, it hands the error back to the model to fix on its next step. There is no separate retry count then, only the cap on the total number of steps (often called max_steps).','一步报了错，最多再重做几次。次数用完，任务就停下。这个次数是这个 Lab 的假设。真实的 harness（运行 agent 的程序）遇到超时、断线这类错，会把同一个请求自动重发一两次。遇到测试没通过这类错，它会把报错交回模型，让模型在下一步改正。这时没有单独的重试次数，只受总步数上限（常叫 max_steps）的约束。')})+`</div>`+
    `<div class="lockable" id="arl-w-ck">`+A.ui.seg({id:'arl-ctl-ck',key:'ck',label:tx('Check after each step','每一步做完检查'),options:[[0,tx('No','不检查')],[1,tx('Yes','检查')]],value:S.ck,note:tx('After every attempt at a step, one more model call judges whether the step is right. A redone step is checked too, so every attempt costs one more call. An error the check finds is redone, like a reported one.','每一步做完，再调用一次模型，判断这一步做得对不对。重做的那一次也要检查，所以每次尝试多一次调用。检查发现的错，和报出来的错一样会重做。')})+`</div>`+
@@ -935,7 +935,7 @@ function renderDrill(){
    ===================================================================== */
 const CTLN={n:{en:'Steps in the task',zh:'任务的步数'},p:{en:'Chance a step is right',zh:'一步做对的把握'},r:{en:'Share of failures that are loud',zh:'报出来的错占全部错的'},R:{en:'Retries per step',zh:'每一步最多重试'},ck:{en:'Check after each step',zh:'每一步做完检查'},kind:{en:'How a retry is done',zh:'怎样重试'}};
 const TERM={
- p:()=>tx('p: the chance that one attempt at a step is right. It is assumed, not measured.','p：一步的一次尝试做对的把握。这是假设，不是实测。'),
+ p:()=>tx('p: the chance that one attempt at a step is right; its value is this lab’s assumption.','p：一步的一次尝试做对的把握，取值是本 Lab 的假设。'),
  n:()=>tx('n: the number of steps in the task. Each extra step multiplies the success rate by p once more, so it is one more chance to fail.','n：任务的步数。每多一步，成功率就要再乘一个 p，也就多一次出错的机会。'),
  r:()=>tx('Of all the failures, some are reported and seen by the harness (the program that runs the agent). This line is their share. With a check, the failures it finds count too. Only these failures can be retried.','全部的错里，有一部分会报出来，被 harness（运行 agent 的程序）看见。这一行算的是这部分错所占的比例。有检查时，检查发现的错也算在里面。只有这些错能重试。'),
  R:()=>tx('After a loud failure, a step is redone at most this many times. When the retries run out, the task stops.','一步报了错，最多再重做几次。次数用完，任务就停下。'),

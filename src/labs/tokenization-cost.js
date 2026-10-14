@@ -489,7 +489,7 @@ const FIDPOP=()=>{const zb=utf8(TK_ZH).length, eb=utf8(EN_TEXT).length, tile=`<a
  `<div><div class="eyebrow">Simplified</div><ul>`+
  `<li>${DEF('The training texts',TIP.mixes())} count the one Chinese paragraph 0, 1, 16 or 48 times. So the Chinese merges fit that paragraph’s words closely, and some join the bytes of two neighbouring characters.</li>`+
  `<li>The pieces follow a simplified form of ${cite(SRC.gpt2enc,'GPT-2’s rule')}: GPT-2 also splits off endings such as ’s and ’ll and treats runs of spaces differently. This lab’s texts have no apostrophes and no double spaces, so every count is the same either way.</li>`+
- `<li>Real tokenizers train on far more text and learn far more merges (Llama 3’s vocabulary has 128,256 tokens); this one learns at most ${K_MAX}. The counts show the mechanism, not the numbers of any real model.</li>`+
+ `<li>Real tokenizers train on far more text and learn far more merges (Llama 3’s vocabulary has 128,256 tokens); this one learns at most ${K_MAX}. The counts show the mechanism.</li>`+
  `<li>Cost is counted in tokens only: the price per token, the context window and the decode steps all scale with the token count.</li></ul></div>`+
  `<div><div class="eyebrow">Sources</div><ul>`+
  `<li>${cite(SRC.gpt2,'Radford et al. (2019)')}, sections 2.2 and 2.3: byte-level BPE with a base vocabulary of 256 and no merges across character categories (2.2), a vocabulary of 50,257 tokens (2.3); a base of Unicode characters would need over 130,000 (2.2).</li>`+
@@ -506,7 +506,7 @@ const FIDPOP=()=>{const zb=utf8(TK_ZH).length, eb=utf8(EN_TEXT).length, tile=`<a
  `<div><div class="eyebrow">简化和假设</div><ul>`+
  `<li>${DEF('几种训练文本',TIP.mixes())}把同一段中文按 0、1、16 或 48 份计。所以学到的中文合并和这段话的用词贴得很紧，有的还会把相邻两个汉字的字节拼在一起。</li>`+
  `<li>切段用的是 ${cite(SRC.gpt2enc,'GPT-2 规则')}的简化版：GPT-2 还会单独切出 ’s、’ll 这类词尾，对连续空格的处理也不同。这个 Lab 的文本里没有撇号，也没有连续空格，所以两种切法的结果完全一样。</li>`+
- `<li>真实的 tokenizer 训练文本多得多，学到的合并也多得多（Llama 3 的词表有 128,256 个 token）；这里最多学 ${K_MAX} 次。这些数展示的是机制，不是任何真实模型的数字。</li>`+
+ `<li>真实的 tokenizer 训练文本多得多，学到的合并也多得多（Llama 3 的词表有 128,256 个 token）；这里最多学 ${K_MAX} 次。这些数用来展示机制。</li>`+
  `<li>成本只按 token 数算：每个 token 的价格、上下文窗口和 decode 步数都随 token 数成比例变化。</li></ul></div>`+
  `<div><div class="eyebrow">来源</div><ul>`+
  `<li>${cite(SRC.gpt2,'Radford 等（2019）')}第 2.2 和 2.3 节：byte-level BPE，初始词表 256 个，不跨字符类别合并（2.2）；词表共 50,257 个 token（2.3）；如果从 Unicode 字符起步，初始词表要超过 130,000 个（2.2）。</li>`+

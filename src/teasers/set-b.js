@@ -157,7 +157,7 @@ function tokRead(r){
 function tokNotes(m){
   return [tx(`A small byte-level BPE trained on ${nf(m.corpus.enBytes)} bytes of English and ${nf(m.corpus.zhBytes)} of Chinese written for this demo (${nf(m.corpus.enShare*100,0)}% English). Like GPT-2's, it starts from the 256 byte values, merges the most frequent adjacent pair each time, and never merges across words or punctuation.`,
       `一个小的 byte-level BPE，训练文本是为演示写的 ${nf(m.corpus.enBytes)} 字节英文和 ${nf(m.corpus.zhBytes)} 字节中文（${nf(m.corpus.enShare*100,0)}% 是英文）。和 GPT-2 一样，它从 256 个字节值开始，每次合并最常见的相邻一对，不跨词或标点合并。`),
-    tx(`These counts come from this small BPE, not from a real model's tokenizer.`,`这里的数来自这个小 BPE，不代表任何真实模型的 tokenizer。`),
+    tx(`These counts come from this small BPE.`,`这里的数来自这个小 BPE。`),
     tx(`On real tokenizers, the same text in different languages can differ up to 15-fold in tokens (Petrov et al., NeurIPS 2023).`,`在真实 tokenizer 上，同一段文字换成不同语言，token 数最多能差 15 倍（Petrov 等，NeurIPS 2023）。`)];
 }
 function tokStrip(text,toks,n){

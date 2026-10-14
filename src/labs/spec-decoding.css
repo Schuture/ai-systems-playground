@@ -21,7 +21,7 @@
 .spd-sw-q{background:var(--line-2)}
 .spd-sw-pt{height:3px;background:var(--ink)}
 .spd-sw-ok{background:var(--c-ok)}
-.spd-sw-rs{background:repeating-linear-gradient(45deg,var(--ink-3) 0 2px,transparent 2px 4px);border:1px solid var(--ink-3)}
+.spd-sw-rs{background:color-mix(in srgb,var(--ink-3) 55%,transparent)}   /* as the redrawn segment of the bars (.spd-rsb) */
 .spd-sw-bad{background:var(--c-oom)}
 .spd-sw-line{height:3px;background:var(--ink-3)}
 .spd-sw-dot{width:8px;height:8px;border-radius:50%;background:var(--ink-2)}
@@ -120,3 +120,80 @@
 .spd-dk{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;min-width:60px}
 .spd-dk i{display:block;height:100%;background:var(--ink-2)}
 @media (prefers-reduced-motion:reduce){.spd-chip{transition:none}}
+/* part 2: what one step holds (requests × tokens each) and what each position sees */
+.spd-stepin{padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--line-2)}
+.spd-cap{margin:4px 0 0}
+.spd-card{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.spd-shadow{fill:var(--surface-2)}
+.spd-cxc{fill:color-mix(in srgb,var(--c-kv) 22%,var(--surface));stroke:var(--c-kv);stroke-width:1}
+.spd-tin{fill:var(--sunken);stroke:var(--ink-3);stroke-width:1}
+.spd-hid{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 2;stroke-opacity:.7}
+.spd-tout{fill:var(--surface);stroke:var(--ink);stroke-width:1.5}
+.spd-svg .spd-ct{font-size:10.5px;fill:var(--ink)}
+.spd-svg .spd-cto{font-weight:650}
+.spd-svg .spd-tsub{font-size:10.5px;fill:var(--ink-2)}
+.spd-rowbg{fill:var(--sunken);fill-opacity:.75}
+.spd-sw-cxc{background:color-mix(in srgb,var(--c-kv) 22%,var(--surface));border:1px solid var(--c-kv)}
+.spd-sw-tin{background:var(--sunken);border:1px solid var(--ink-3)}
+.spd-sw-hid{background:none;border:1px dashed var(--ink-3)}
+.spd-sw-tout{background:var(--surface);border:1.5px solid var(--ink)}
+.spd-svg .spd-ct.spd-ctn{font-size:9.5px}
+/* part 3: the round's three stages, highlighted in the order the card tells them (① guess, ② one check, ③ keep) */
+.spd-3s{margin:6px 0 8px;padding-left:0;list-style:none}
+.spd-3s li{margin:0 0 6px}
+.spd-stg{margin-top:8px}
+.spd-stl{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;font-size:12.5px;line-height:1.4;color:var(--ink-3);margin:0 0 5px;padding:3px 6px 3px 8px;border-left:3px solid transparent;border-radius:2px;transition:color .2s,border-color .2s,background-color .2s}
+.spd-stl b{font-weight:650}
+.spd-stl .spd-stx{font-size:12px}
+.spd-stn{font-weight:700}
+.spd-stl.on{color:var(--ink);border-left-color:var(--ink);background:var(--sunken)}
+.spd-stl.done{color:var(--ink-2)}
+.spd-brk{position:relative;height:14px;margin:10px 2px 4px;border:1.5px solid var(--ink-2);border-bottom:0;border-radius:3px 3px 0 0;visibility:hidden;display:flex;justify-content:center}
+.spd-brk span{position:relative;top:-9px;height:16px;background:var(--surface);padding:0 6px;font-size:11.5px;font-family:var(--font-mono);color:var(--ink);line-height:16px;white-space:nowrap;max-width:calc(100% - 12px);overflow:hidden;text-overflow:ellipsis}
+.spd-brk.on{visibility:visible}
+.spd-agree{border-color:var(--c-ok)}
+.spd-na{text-decoration:line-through}
+.spd-rleg{margin-top:10px}
+.spd-rleg .spd-sw-ok{background:color-mix(in srgb,var(--c-ok) 22%,var(--surface));border:1.5px solid var(--c-ok)}
+.spd-rleg .spd-sw-bad{background:color-mix(in srgb,var(--c-oom) 16%,var(--surface));border:1.5px solid var(--c-oom)}
+.spd-sw-own{background:var(--ink)}
+.spd-sw-drop{background:repeating-linear-gradient(45deg,var(--sunken) 0 2px,transparent 2px 4px);border:1px dashed var(--ink-3)}
+.spd-rcost{margin-top:12px;padding-top:10px;border-top:1px solid var(--line-2)}
+.spd-rnote{margin:6px 0 0}
+.spd-rnote.spd-later{visibility:hidden}
+.spd-rcost .spd-drf{stroke:var(--ink-3);stroke-width:.8}
+/* folds in the guided cards (owner review 2026-10-14): the card says the point in a sentence or two; the detail and the formulas are one click away */
+.spd-more{margin:8px 0 0}
+.spd-more>summary{cursor:pointer;list-style:none;display:flex;align-items:flex-start;gap:7px;font-size:13px;font-weight:600;color:var(--ink-2);width:fit-content;max-width:100%}
+.spd-more>summary::-webkit-details-marker{display:none}
+.spd-more>summary::before{content:"+";flex:none;font-family:var(--font-mono);width:16px;height:16px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-size:11px;margin-top:1px}
+.spd-more[open]>summary::before{content:"−"}
+.spd-more>summary:hover{color:var(--ink)}
+.spd-more>summary:focus-visible{outline:2px solid var(--ink-3);outline-offset:2px}
+.spd-more-b{margin:6px 0 0 7px;padding-left:12px;border-left:2px solid var(--line-2)}
+.spd-more-b>p{margin:6px 0 0}
+.spd-more-b>p:first-child{margin-top:0}
+/* 知识梳理: two schematic pictures in the text's own symbols (HTML grids that size to the figure), formulas on a line of their own.
+   Section 2: one forward pass, row i sees x₁…xᵢ (solid cells; dashed: after it) and gives p(· | x₁, …, xᵢ) */
+.spd-prf{container-type:inline-size}
+.primer .spd-prg{display:grid;grid-template-columns:auto repeat(5,minmax(26px,44px)) auto auto;gap:6px;align-items:center;justify-content:start;font-size:15px;line-height:1.2}
+.primer .spd-prg-h,.primer .spd-prg-i,.primer .spd-prr-l,.primer .spd-prr-n{font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+.primer .spd-prg-hc{grid-column:2 / span 5;text-align:center}
+.primer .spd-prg-i,.primer .spd-prr-n{text-align:center}
+.primer .spd-prg-c{height:30px;display:grid;place-items:center;border-radius:4px;border:1px dashed var(--line-2);min-width:0}
+.primer .spd-prg-c.spd-seen{background:var(--sunken);border:1px solid var(--ink-3)}
+.primer .spd-prg-a{color:var(--ink-3)}
+.primer .spd-prg-o{justify-self:start;white-space:nowrap;padding:3px 8px;border:1.5px solid var(--ink);border-radius:4px}
+/* section 3: one round, the guesses d₁…d₄ against the target's ŷ₁…ŷ₅ in the lab's chip colours, the verdict under them in words */
+.primer .spd-prr{display:grid;grid-template-columns:auto repeat(5,minmax(0,76px));gap:6px 8px;align-items:center;justify-content:start;font-size:15px;line-height:1.2}
+.primer .spd-prr-l{padding-right:4px}
+.primer .spd-prc{height:30px;display:grid;place-items:center;border-radius:5px;border:1.5px solid transparent;min-width:0}
+.primer .spd-prm{text-align:center;font-size:13px;font-weight:600;white-space:nowrap}
+.primer .spd-pm-ok{color:var(--c-ok)}
+.primer .spd-pm-bad{color:var(--c-oom)}
+.primer .spd-pm-void{color:var(--ink-3)}
+@container (max-width:420px){.primer .spd-prg{gap:5px 4px;font-size:14px}.primer .spd-prg-c{height:28px}.primer .spd-prg-o{padding:2px 5px}
+  .primer .spd-prr{gap:5px 5px;font-size:14px}.primer .spd-prc{height:28px}.primer .spd-prm{font-size:12px}}
+.primer .spd-prfx{display:flex;flex-wrap:wrap;align-items:center;column-gap:.35em;row-gap:6px;margin:2px 0 14px;padding-left:1em;font-size:1.05em;line-height:1.3;min-width:0}
+.primer .spd-prfx>span{min-width:0;max-width:100%}
+@media (max-width:760px){.primer .spd-prfx{padding-left:.4em}}

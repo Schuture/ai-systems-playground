@@ -22,8 +22,8 @@ const T={render(el){
     `<div class="tz-vis"><svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="${esc(read)}">${h}</svg></div>`+
     `<div class="tz-leg"><span><i class="sw tz-rgf-swok"></i>${tx('correct','答对')}</span><span><i class="sw tz-rgf-swme"></i>${tx('wrong at this stage','错在这一环')}</span><span><i class="sw tz-rgf-swot"></i>${tx('wrong elsewhere','错在别处')}</span></div>`+
     `<p class="tz-read">${esc(read)}</p>`+
-    `<p class="tz-note">${esc(tx(`Illustrative: a made-up help-center bot answered 200 graded questions; ${mix.ok} are correct. The mix of failures is the lab’s stated example, not a measurement. Each square is one question.`,
-      `示意：一个虚构的帮助中心机器人回答了 200 个问题，每个都判过对错，答对 ${mix.ok} 个。各类错的数量是 Lab 写定的例子，不是实测。每个方块是一个问题。`))}</p>`+
+    `<p class="tz-note">${esc(tx(`Illustrative: a made-up help-center bot answered 200 graded questions; ${mix.ok} are correct. The mix of failures is the lab’s stated example. Each square is one question.`,
+      `示意：一个虚构的帮助中心机器人回答了 200 个问题，每个都判过对错，答对 ${mix.ok} 个。各类错的数量是 Lab 写定的例子。每个方块是一个问题。`))}</p>`+
     `<p class="tz-note">${esc(tx('Retrieval recall can be high while many answers are still wrong: most failures here happen after retrieval, at the budget, in old pages or in the model.','检索召回率很高，答错的也可能很多。这里大多数错发生在检索之后，在预算、旧文档或模型那几环。'))}</p></div>`;
   el.querySelectorAll('.seg-ctl[data-key="tzs"] button').forEach(b=>b.addEventListener('click',()=>{si=+b.dataset.v; T.render(el);}));}};
 A.registerTeaser('rag-failure',T);

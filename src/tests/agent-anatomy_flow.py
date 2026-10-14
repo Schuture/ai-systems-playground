@@ -8,13 +8,15 @@ Every mode and every guided part at 1440×900 and 390×844, in EN and ZH (plus o
 - part 2: the replay auto-plays on entering (R3.9), pause stops it, Fast finishes within 5 s, Next waits for the end; the boxes of the
   stage keep their height during the replay (R7.9); then the result: 8 replies, 7 tool calls run by your code;
 - part 3: Next waits for call 8; call 4 shows 9,441 sent, 5,650 already sent; at call 8 the total 73,011, 6.1 times, the verdict
-  and the formula on its own line; the dock at 390;
+  and the formula on its own line; the resending happens between calls, inside one call the input is computed once (the KV cache),
+  the bill (73,011 input, 242 output; the owner, 2026-10-14), and Show the math sums the tokens written; the dock at 390;
 - part 4: three ways, single choice, results on the options; stop on error ends after call 5 (red status, the stop row); “exit
   code 1” fixes at call 10 with 18,109 more tokens; Next waits for both;
 - part 5: the speeds can be changed; three tools at once: 6 calls, 20.2 s against 22.8 s; the time line;
 - part 6: four points with “show in the chart”, three misconceptions, See the scenarios; Skip on part 1;
 - Scenarios: four, single choice, pressed state follows the settings, the URL carries the setup and a fresh page restores it;
-- the challenge: Settings locked, the plain statement, the three feedback tiers, tier 2 saying in its first line that a tighter
+- the challenge: Settings locked, the plain statement, a 1px line between the rows of an option group that wraps (the owner,
+  2026-10-14), the three feedback tiers, tier 2 saying in its first line that a tighter
   setting exists, “Show the answer”; the brief chart (the owner's review of batch 8): only the 6 settings that let the normal run
   finish, the initial setup and the pick, both tagged, no other row, a note in the lab's words that counts the settings left out
   (10, or 9 when the pick stops the normal run too early), a title without “each setting”; the capability card; a language switch
@@ -53,7 +55,8 @@ RULES = """(sel)=>{const root=document.querySelector(sel); if(!root) return [];
    [/mini result bar|迷你结果条/i,'sentence about the mini result bar'],[/\\bhover\\b|悬停/i,'hover instruction'],[/in this toy\\b|在这个玩具里|\\btoy\\b(?! run)|玩具(?!实跑)/i,'“toy” (the fidelity label “Toy run” is the exception, R6.11)'],
    [/updates as you|随之更新|会立刻更新|updates at once/i,'sentence about the page updating'],[/Locked in|已锁定/,'“Locked in”'],[/\\bNaN\\b|undefined|\\[object|Infinity/,'broken value'],
    [/亿|万/,'亿 or 万 instead of K, M, B (R6.18)'],[/(?<![这那两])个数(?![值量])/,'“个数” (R6.17)'],
-   [/深色|浅色|\\b(?:dark|light)(?:er)? (?:bar|line|block|part)/i,'dark / light named as a colour (R5.7)']];
+   [/深色|浅色|\\b(?:dark|light)(?:er)? (?:bar|line|block|part)/i,'dark / light named as a colour (R5.7)'],
+   [/不是哪家|不是实测|不是测出来|不是对真实|假设，不是|自己的假设|不是真实录制|不是真实 agent|不是真的分词器|not a vendor|not a quote|, not a measurement|its own assumption|not a recording|not a real tokenizer/i,'negative disclaimer (the owner, 2026-10-14: state the assumption positively)']];
  let n; while((n=tw.nextNode())){const e=n.parentElement; if(!e||e.closest('[data-endnotes],pre, code, #tip, .fid-tag')||!e.getClientRects().length) continue; const t=n.textContent;
    for(const [re,name] of bad) if(re.test(t)) out.push(name+': '+t.trim().slice(0,90));}
  root.querySelectorAll('[data-tipx]').forEach(e=>{const t=e.getAttribute('data-tipx'); for(const [re,name] of bad) if(re.test(t)) out.push(name+' (tooltip): '+t.slice(0,90));
@@ -205,6 +208,11 @@ def run_guided(b, w, h, lang, dark=False):
     phone = w <= 760
     check(f'{tag} title', text(pg, '#ana-app .labtitle') == Z(lang, 'What actually happens inside one agent task?', 'Agent 一次任务里到底发生了什么？'), text(pg, '#ana-app .labtitle'))
     check(f'{tag} no fidelity tag on top (owner, 2026-10-11 19:28 UTC)', not any(w in text(pg, '#ana-app .labmeta') for w in ('Fidelity', '保真度')), text(pg, '#ana-app .labmeta'))
+    # the owner (2026-10-14): the end notes state what the lab assumes, positively, and how a provider bills an agent task
+    ends = pg.evaluate("()=>{const v=document.querySelector('#view-dyn:not([hidden])')||document.querySelector('#view-lab:not([hidden])'); const e=v&&v.querySelector('[data-endnotes]'); return e?e.textContent:''}")
+    check(f'{tag} end notes: the billing note (input plus output per call, cached input cheaper), no negative disclaimer',
+          Z(lang, 'a provider bills each call for its input tokens plus its output tokens', '服务商对每次调用收它的输入 token 加输出 token') in ends
+          and not any(x in ends for x in ('not a recording', 'not counted here', 'is left out', '不是真实', '这里不算', '这里没有算')), ends[:300])
     for pid in pg.evaluate("()=>[...document.querySelectorAll('#ana-app .labhead [data-pop]')].map(e=>e.getAttribute('data-pop'))"):
         pg.evaluate(f"()=>document.querySelector('#ana-app .labhead [data-pop=\"{pid}\"]').click()"); pg.wait_for_timeout(200)
         check(f'{tag} popover {pid} opens', pg.evaluate(f"()=>{{const p=document.getElementById('{pid}'); return !!p&&p.getClientRects().length>0}}"))
@@ -276,6 +284,15 @@ def run_guided(b, w, h, lang, dark=False):
     check(f'{tag} part 3: call 8: 73,011 in all, 6.1 times the last call, the verdict, the formula', '73,011' in o and '6.1' in o and Z(lang, 'was right', '是对的') in o
           and pg.evaluate("()=>document.querySelectorAll('#ana-rail [data-obs] .ana-fx math').length") == 1 and not any(nexts(pg)), o[:300])
     check(f'{tag} part 3: the test file first goes out with call 2, 7 times in all', Z(lang, 'from call 2 on, 7 times in all', '从第 2 次调用起每次都发，一共发了 7 遍') in o, o[-400:])
+    # the owner (2026-10-14): resending between calls against reading the KV cache inside one call, and what the bill counts
+    kv = pg.evaluate("()=>{const d=[...document.querySelectorAll('#ana-rail [data-obs] .def')].find(e=>/KV cache/.test(e.textContent)); return d?d.getAttribute('data-tipx'):''}")
+    check(f'{tag} part 3: the resending happens between calls; inside one call the input is computed once and its KV cache (with its tooltip) reused, at no extra charge; each call is charged per input and output token: 73,011 and 242',
+          Z(lang, 'The resending happens between calls', '重发发生在两次调用之间') in o and Z(lang, 'the input is computed only once', '输入只算一遍') in o
+          and Z(lang, 'charges for the input tokens and the output tokens, each at its own price', '按输入 token 和输出 token 各自的单价收费') in o
+          and Z(lang, '73,011 input tokens and 242 output tokens', '输入共 73,011 个，输出 242 个') in o and 'key' in kv and 'prompt caching' in kv, (o[-500:], kv))
+    mt = pg.evaluate("()=>{const d=document.querySelector('#ana-app details.math'); return d?d.textContent.replace(/\\s+/g,' '):''}")
+    check(f'{tag} part 3: Show the math adds the tokens written (242), the bill and why the input is about 300 times the output (short replies, growing inputs)', Z(lang, 'Tokens written, and the bill.', '写出的 token 和账单。') in mt and '242' in mt
+          and Z(lang, 'about 300 times the output: the model writes a reply of only a few dozen tokens each time', '约是输出的 300 倍：模型每次只写几十个 token 的回复') in mt, mt[-600:])
     check(f'{tag} part 3: the chart: 8 bars, the total in its caption', pg.evaluate("()=>document.querySelectorAll('#ana-bars .ana-col:not(.todo)').length") == 8 and '73,011' in text(pg, '#ana-bars-cap'), text(pg, '#ana-bars-cap'))
     if phone:
         check(f'{tag} part 3: the phone’s slider sits next to the chart', vis(pg, '#ana-ph-call'))
@@ -404,6 +421,11 @@ def run_modes(b, w, h, lang):
     check(f'{tag} challenge: the chart’s labels are readable (≥ 10 px), both axes named, 0 not 0K (R7.4, R5.3)', ct['h'] >= 10 and Z(lang, 'model call', '第几次调用') in ct['txt'] and Z(lang, 'tokens read so far', '累计读入的 token') in ct['txt']
           and not any(x.endswith('K') for x in ct['txt']) and '0' in ct['txt'], ct)
     check(f'{tag} challenge: plain statement and the assumptions', Z(lang, 'Set a call limit and a token budget', '请设一个调用次数上限和一个 token 预算') in text(pg, '#ana-rail') and pg.evaluate("()=>document.querySelectorAll('#ana-rail .ana-asm li').length") == 2)
+    # the owner (2026-10-14): when the token budget wraps to a second row, a 1px line divides the rows (the buttons sit 1px apart on the line colour)
+    sep = pg.evaluate("""()=>{const out={}; for(const k of ['chl','chb']){const g=document.querySelector('#ana-rail .seg-ctl[data-key="'+k+'"]'); const r=[...g.querySelectorAll('button')].map(b=>b.getBoundingClientRect());
+      const rows=[...new Set(r.map(x=>Math.round(x.top)))].sort((a,b)=>a-b), i=document.createElement('i'); i.style.color='var(--line)'; g.appendChild(i); const line=getComputedStyle(i).color; i.remove();
+      out[k]={rows:rows.length, gaps:rows.slice(1).map((t,j)=>+(Math.min(...r.filter(x=>Math.round(x.top)===t).map(x=>x.top))-Math.max(...r.filter(x=>Math.round(x.top)===rows[j]).map(x=>x.bottom))).toFixed(2)), bg:getComputedStyle(g).backgroundColor, line};} return out;}""")
+    check(f'{tag} challenge: a line divides the rows of the call limit and the token budget when they wrap', all(v['bg'] == v['line'] and all(0.9 <= x <= 1.6 for x in v['gaps']) for v in sep.values()), sep)
     every(pg, f'{tag} challenge start', lang, f'{tag}_challenge_start')
     click(pg, '#ana-rail .seg-ctl[data-key="chb"] button[data-v="100000"]')
     click(pg, '#ana-rail [data-act="submit"]')
@@ -429,6 +451,9 @@ def run_modes(b, w, h, lang):
     bf = brief(pg)
     check(f'{tag} challenge tier 1: the chart still holds the 6 settings that let the normal run finish, 10 left out', brief_ok(lang, bf, 6, 10), bf)
     check(f'{tag} challenge: the capability card', vis(pg, '#ana-rail [data-exits]'))
+    xt = pg.evaluate("""()=>{const g=document.querySelector('#ana-rail .ex-tabs'); if(!g) return null; const i=document.createElement('i'); i.style.color='var(--line)'; g.appendChild(i); const line=getComputedStyle(i).color; i.remove();
+      return {bg:getComputedStyle(g).backgroundColor, line, gap:getComputedStyle(g).rowGap, br:[...g.querySelectorAll('button')].map(x=>getComputedStyle(x).borderRightWidth)};}""")
+    check(f'{tag} challenge: the capability card’s tabs keep a line between rows when they wrap (1px gaps on the line colour)', xt is not None and xt['bg'] == xt['line'] and xt['gap'] == '1px' and set(xt['br']) == {'0px'}, xt)
     every(pg, f'{tag} challenge solved', lang, f'{tag}_challenge_solved')
     other = 'zh' if lang == 'en' else 'en'
     pg.click(f'.langsw button[data-lang="{other}"]'); pg.wait_for_timeout(400)

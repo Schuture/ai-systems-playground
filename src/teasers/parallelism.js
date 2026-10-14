@@ -26,8 +26,8 @@ function notes(){return [
      '模型状态按每个参数 18 字节算：BF16 权重 2、FP32 梯度 4、FP32 权重副本 4、Adam 的 m 和 v 各 4，和 Megatron-LM、Hugging Face 的算法一样。'),
   tx('13B means 13 × 10⁹ parameters, a round size. ZeRO-3 splits all the model states evenly over the GPUs: twice the GPUs, half as much on each.',
      '13B 指 13 × 10⁹ 个参数，是个取整的规模。ZeRO-3 把模型状态全部平均分到各张卡上，卡数多一倍，每张卡存的就少一半。'),
-  tx('Formula, not a measurement. Activations, logits and the weights of the layers in use come on top; the lab adds them. GB = 10⁹ bytes.',
-     '公式计算，不是实测。激活、logits 和正在用的几层权重还要另算，Lab 里会加上。GB = 10⁹ 字节。')];}
+  tx('Computed from a formula. Activations, logits and the weights of the layers in use come on top; the lab adds them. GB = 10⁹ bytes.',
+     '由公式算出。激活、logits 和正在用的几层权重还要另算，Lab 里会加上。GB = 10⁹ 字节。')];}
 function legendHTML(){
   return `<span><i class="sw tz-zr-sw" aria-hidden="true"></i>${esc(tx('model states per GPU','每张卡的模型状态'))}</span>`+
     `<span><i class="sw over" aria-hidden="true"></i>${esc(tx('over 80 GB','超出 80 GB'))}</span>`+

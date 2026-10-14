@@ -785,10 +785,10 @@ function stageHTML(){
    `<div class="metrics px-metrics" id="px-metrics"></div>`+
    `<details class="math" id="px-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="px-mathbody"></div></details></div>`;
 }
-const EFF_NOTE=()=>tx(`This is an estimate, not a measurement: the share of the ${GPUN}’s dense BF16 peak (989.5 TFLOP/s) a step reaches, ${fixd(H100.peak*EFF.mfu/1e12,2)} TFLOP/s. It matters when arithmetic sets the time: a prefill without a hit, or a hit followed by many new tokens.`,
-  `这是估计值，不是实测：一步能用到 ${GPUN} 稠密 BF16 峰值（989.5 TFLOP/s）的多少，即 ${fixd(H100.peak*EFF.mfu/1e12,2)} TFLOP/s。计算决定耗时的时候它才起作用：没有命中的 prefill，或者命中之后还有很多新 token 要算。`);
-const BW_NOTE=()=>tx(`This is an estimate, not a measurement: the share of the peak memory bandwidth (3.35 TB/s) a step reaches, ${fixd(H100.bw*EFF.mbu/1e12,2)} TB/s; Databricks (2023) measured 60% at batch size 1 on H100 GPUs. It sets the time of a step that computes few tokens, such as a prefill after a long hit.`,
-  `这是估计值，不是实测：一步能用到峰值显存带宽（3.35 TB/s）的多少，即 ${fixd(H100.bw*EFF.mbu/1e12,2)} TB/s；Databricks（2023）在 H100 上实测，batch 大小为 1 时是 60%。只算少量 token 的一步，比如长命中之后的 prefill，耗时由它决定。`);
+const EFF_NOTE=()=>tx(`This lab assumes a step reaches 50% of the ${GPUN}’s dense BF16 peak (989.5 TFLOP/s), that is ${fixd(H100.peak*EFF.mfu/1e12,2)} TFLOP/s. It matters when arithmetic sets the time: a prefill without a hit, or a hit followed by many new tokens.`,
+  `本 Lab 假设一步能用到 ${GPUN} 稠密 BF16 峰值（989.5 TFLOP/s）的 50%，即 ${fixd(H100.peak*EFF.mfu/1e12,2)} TFLOP/s。计算决定耗时的时候它才起作用：没有命中的 prefill，或者命中之后还有很多新 token 要算。`);
+const BW_NOTE=()=>tx(`This lab assumes a step reaches 60% of the peak memory bandwidth (3.35 TB/s), that is ${fixd(H100.bw*EFF.mbu/1e12,2)} TB/s; Databricks (2023) measured 60% at batch size 1 on H100 GPUs. It sets the time of a step that computes few tokens, such as a prefill after a long hit.`,
+  `本 Lab 假设一步能用到峰值显存带宽（3.35 TB/s）的 60%，即 ${fixd(H100.bw*EFF.mbu/1e12,2)} TB/s；Databricks（2023）在 H100 上实测，batch 大小为 1 时是 60%。只算少量 token 的一步，比如长命中之后的 prefill，耗时由它决定。`);
 const rangeStops=(id,key,label,stops,val,fmt,inline)=>A.ui.range({id,key,label,min:0,max:stops.length-1,value:Math.max(0,stops.indexOf(val)),out:fmt(val),inline});
 const segCtl=(id,key,label,opts,val,inline,note)=>A.ui.seg({id,key,label,options:opts,value:String(val),inline,note});
 const changeOpts=()=>[['none',tx('Nothing','没有')],['dateStart',tx('Date first','日期在前')],['dateAfter',tx('Date after','日期在后')],['edit',tx('One word','改一个词')],['nameStart',tx('Name first','名字在前')]];
@@ -1617,8 +1617,8 @@ const TERM={
  wh:()=>tx(`2 FLOPs for each of the LM head’s ${fint(P_HEAD)} parameters: it scores the vocabulary once, for the first token of the answer.`,`LM head 的 ${fint(P_HEAD)} 个参数，每个 2 FLOP：只为回答的第一个 token 给词表打一次分。`),
  att0:()=>{const x=selRes(); return tx(`Attention over the whole prompt: token i meets the keys of tokens 1 to i, so ${fint(x.N)} × ${fint(x.N+1)} ÷ 2 query–key pairs, at 4 × 32 × 4,096 FLOPs a pair (score and value, 32 layers).`,`对整个 prompt 的 attention：第 i 个 token 和第 1 到第 i 个 token 的 key 相遇，一共 ${fint(x.N)} × ${fint(x.N+1)} ÷ 2 对，每对 4 × 32 × 4,096 FLOP（得分和 value，32 层）。`);},
  att1:()=>{const x=selRes(); return tx(`Attention of the new tokens only: tokens ${fint(x.hit+1)} to ${fint(x.N)} each meet every key before them, cached ones included: (${fint(x.N)} × ${fint(x.N+1)} − ${fint(x.hit)} × ${fint(x.hit+1)}) ÷ 2 pairs.`,`只算新 token 的 attention：第 ${fint(x.hit+1)} 到第 ${fint(x.N)} 个 token 各自和它前面的每个 key 相遇，包括缓存的：（${fint(x.N)} × ${fint(x.N+1)} − ${fint(x.hit)} × ${fint(x.hit+1)}）÷ 2 对。`);},
- effc:()=>tx(`${fixd(H100.peak*EFF.mfu/1e12,2)} TFLOP/s is 50% of the ${GPUN}’s dense BF16 peak, 989.5 TFLOP/s. The 50% is this lab’s assumption, not a measurement.`,`${fixd(H100.peak*EFF.mfu/1e12,2)} TFLOP/s 是 ${GPUN} 稠密 BF16 峰值 989.5 TFLOP/s 的 50%。50% 是这个 Lab 的假设，不是实测。`),
- effm:()=>tx(`${fixd(H100.bw*EFF.mbu/1e12,2)} TB/s is 60% of the ${GPUN}’s peak memory bandwidth, 3.35 TB/s. The 60% is this lab’s assumption, not a measurement.`,`${fixd(H100.bw*EFF.mbu/1e12,2)} TB/s 是 ${GPUN} 峰值显存带宽 3.35 TB/s 的 60%。60% 是这个 Lab 的假设，不是实测。`)
+ effc:()=>tx(`${fixd(H100.peak*EFF.mfu/1e12,2)} TFLOP/s is 50% of the ${GPUN}’s dense BF16 peak, 989.5 TFLOP/s. The 50% is this lab’s assumption.`,`${fixd(H100.peak*EFF.mfu/1e12,2)} TFLOP/s 是 ${GPUN} 稠密 BF16 峰值 989.5 TFLOP/s 的 50%。50% 是本 Lab 的假设。`),
+ effm:()=>tx(`${fixd(H100.bw*EFF.mbu/1e12,2)} TB/s is 60% of the ${GPUN}’s peak memory bandwidth, 3.35 TB/s. The 60% is this lab’s assumption.`,`${fixd(H100.bw*EFF.mbu/1e12,2)} TB/s 是 ${GPUN} 峰值显存带宽 3.35 TB/s 的 60%。60% 是本 Lab 的假设。`)
 };
 /* part 5's terms: one per position (otb-front …), so that each line's hover speaks of its own numbers */
 const OT_TERM=k=>{const m=/^ot([bhrwas])-(front|middle|end)$/.exec(k); if(!m) return '';

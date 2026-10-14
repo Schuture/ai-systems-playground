@@ -544,10 +544,10 @@ function stageHTML(){
    `<div class="metrics ck-metrics" id="ck-metrics"></div>`+
    `<details class="math" id="ck-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="ck-mathbody"></div></details></div>`;
 }
-const EFF_NOTE=()=>tx(`This is an estimate, not a measurement: the share of the ${GPUN}’s dense BF16 peak (989.5 TFLOP/s) a step reaches, ${tfS(FS)} TFLOP/s. It is assumed because this lab does not simulate kernels; how much of the peak a real kernel reaches depends on the kernel and on how many tokens a step computes. It sets how long a prefill or a chunk takes, and so the chunk size up to which a chunk rides free.`,
-  `这是估计值，不是实测：一步能用到 ${GPUN} 稠密 BF16 峰值（989.5 TFLOP/s）的多少，即 ${tfS(FS)} TFLOP/s。它是假设的，因为这个 Lab 不模拟 kernel；真实 kernel 能用到峰值的多少，取决于 kernel 本身和一步算多少个 token。它决定 prefill 和每个 chunk 要多久，也就决定了多大的 chunk 能白搭车。`);
-const BW_NOTE=()=>tx(`This is an estimate, not a measurement: the share of the peak memory bandwidth (3.35 TB/s) a step reaches, ${tbS(BS)} TB/s. Kernels never stream memory at the full peak; Databricks (2023) measured 60% at batch size 1 on two H100 80GB GPUs. It sets a usual decode step’s time, and so how much arithmetic a chunk can add before the step gets longer.`,
-  `这是估计值，不是实测：一步能用到峰值显存带宽（3.35 TB/s）的多少，即 ${tbS(BS)} TB/s。kernel 读显存从来达不到满峰值；Databricks（2023）在两张 H100 80GB 上实测，batch 大小为 1 时是 60%。它决定平时一个 decode 步的耗时，也就决定了 chunk 能加多少计算而不让这一步变长。`);
+const EFF_NOTE=()=>tx(`This lab assumes a step reaches 50% of the ${GPUN}’s dense BF16 peak (989.5 TFLOP/s), that is ${tfS(FS)} TFLOP/s; how much of the peak a real kernel reaches depends on the kernel and on how many tokens a step computes. It sets how long a prefill or a chunk takes, and so the chunk size up to which a chunk rides free.`,
+  `本 Lab 假设一步能用到 ${GPUN} 稠密 BF16 峰值（989.5 TFLOP/s）的 50%，即 ${tfS(FS)} TFLOP/s；真实 kernel 能用到峰值的多少，取决于 kernel 本身和一步算多少个 token。它决定 prefill 和每个 chunk 要多久，也就决定了多大的 chunk 能白搭车。`);
+const BW_NOTE=()=>tx(`This lab assumes a step reaches 60% of the peak memory bandwidth (3.35 TB/s), that is ${tbS(BS)} TB/s. Kernels never stream memory at the full peak; Databricks (2023) measured 60% at batch size 1 on two H100 80GB GPUs. It sets a usual decode step’s time, and so how much arithmetic a chunk can add before the step gets longer.`,
+  `本 Lab 假设一步能用到峰值显存带宽（3.35 TB/s）的 60%，即 ${tbS(BS)} TB/s。kernel 读显存从来达不到满峰值；Databricks（2023）在两张 H100 80GB 上实测，batch 大小为 1 时是 60%。它决定平时一个 decode 步的耗时，也就决定了 chunk 能加多少计算而不让这一步变长。`);
 const rng=(id,key,label,stops,val,fmt,note)=>A.ui.range({id,key,label,min:0,max:stops.length-1,value:Math.max(0,stops.indexOf(val)),out:fmt(val)})+'';
 function controlsHTML(){
   const note=(h,id)=>`<div class="ctl-note"${id?` id="${id}"`:''}>${h}</div>`;
@@ -1201,8 +1201,8 @@ const TERM={
  tcd:()=>{const r=R(); return tx(`${fixd(r.tcD*1e3,4)} ms is the arithmetic of the users’ tokens in one step; every step of the prefill has it.`,`${fixd(r.tcD*1e3,4)} ms 是一步里用户 token 的计算；prefill 的每一步都有它。`);},
  extra:()=>{const r=R(); return r.nMem?tx(`${fixd(r.extra*1e3,2)} ms is what memory traffic adds: in ${fint(r.nMem)} of the ${fint(r.n)} steps the reads take longer than the arithmetic, and the step lasts as long as the reads.`,`${fixd(r.extra*1e3,2)} ms 是读写显存多出来的时间：${fint(r.n)} 步里有 ${fint(r.nMem)} 步读取比计算更久，这一步就按读取的时间算。`)
    :tx('0 ms: every step of this prefill is set by arithmetic, so memory traffic adds nothing.','0 ms：这次 prefill 的每一步都由计算决定，所以读写显存没有多花时间。');},
- effc:()=>tx(`${tfS(FS)} TFLOP/s is 50% of the ${GPUN}’s dense BF16 peak, 989.5 TFLOP/s (its datasheet’s 1,979 TFLOPS with sparsity, halved). The 50% is this lab’s assumption, not a measurement.`,`${tfS(FS)} TFLOP/s 是 ${GPUN} 稠密 BF16 峰值 989.5 TFLOP/s（规格表上 with sparsity 的 1,979 TFLOPS 减半）的 50%。50% 是这个 Lab 的假设，不是实测。`),
- effm:()=>tx(`${tbS(BS)} TB/s is 60% of the ${GPUN}’s peak memory bandwidth, 3.35 TB/s. The 60% is this lab’s assumption, not a measurement.`,`${tbS(BS)} TB/s 是 ${GPUN} 峰值显存带宽 3.35 TB/s 的 60%。60% 是这个 Lab 的假设，不是实测。`),
+ effc:()=>tx(`${tfS(FS)} TFLOP/s is 50% of the ${GPUN}’s dense BF16 peak, 989.5 TFLOP/s (its datasheet’s 1,979 TFLOPS with sparsity, halved). The 50% is this lab’s assumption.`,`${tfS(FS)} TFLOP/s 是 ${GPUN} 稠密 BF16 峰值 989.5 TFLOP/s（规格表上 with sparsity 的 1,979 TFLOPS 减半）的 50%。50% 是本 Lab 的假设。`),
+ effm:()=>tx(`${tbS(BS)} TB/s is 60% of the ${GPUN}’s peak memory bandwidth, 3.35 TB/s. The 60% is this lab’s assumption.`,`${tbS(BS)} TB/s 是 ${GPUN} 峰值显存带宽 3.35 TB/s 的 60%。60% 是本 Lab 的假设。`),
  mem:()=>{const u=fint(Math.round(H100.mem*A.GiB*UTIL)); return tx(`${u} bytes are the ${pct0(UTIL)} of the ${GPUN}’s memory the server uses: its 80 GB read as 80 GiB (80 × 2^30 bytes), as the KV cache memory lab does, since a card’s GB figure is close to that many GiB.`,`${u} 字节是服务端能用的 ${GPUN} 显存的 ${pct0(UTIL)}：和 KV cache 显存那个 Lab 一样，80 GB 按 80 GiB（80 × 2^30 字节）计，因为显卡标的 GB 接近同样多的 GiB。`);},
  util:()=>A.t('utilNote'), oh:()=>A.t('ohNote'),
  wmem:()=>tx(`The weights in GPU memory: all ${fint(P_TOTAL)} parameters, the embedding table included, 2 bytes each: ${gbS(W_MEM)} = ${fixd(W_MEM/A.GiB,2)} GiB.`,`显存里的权重：全部 ${fint(P_TOTAL)} 个参数，包括 embedding 表，每个 2 字节，一共 ${gbS(W_MEM)} = ${fixd(W_MEM/A.GiB,2)} GiB。`)

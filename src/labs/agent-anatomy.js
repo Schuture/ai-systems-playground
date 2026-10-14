@@ -197,8 +197,12 @@ const TIP={
  harness:()=>tx('The harness is the code around the model that runs the agent: it calls the model, runs the tools, hands the results back, and decides when to retry or stop.',
                 'harness 是包在模型外面、负责运行 agent 的代码：它调用模型、执行工具、把结果交回去，并决定什么时候重试、什么时候停下。'),
  token:()=>A.terms&&A.terms.token?A.terms.token():tx('A token is a piece of text the model reads or writes, often a word or part of one.','token 是模型读写文字的单位，常常是一个词或词的一部分。'),
- rule:()=>tx('This lab counts about 4 characters of English text or code as 1 token, rounded up per block. It is an approximation, not a real tokenizer: real counts depend on the model’s tokenizer and the language, so treat every token count here as an estimate (see the lab Tokenization cost).',
-             '这个 Lab 按“大约 4 个字符算 1 个 token”来数英文和代码，每一块向上取整。这是近似，不是真的分词器：真实的数取决于模型的分词器和语言，所以这里的每个 token 数都是估计（见 Lab“token 成本”）。'),
+ rule:()=>tx('This lab counts about 4 characters of English text or code as 1 token, rounded up per block. Real counts depend on the model’s tokenizer and the language, so every token count here is an estimate (see the lab Tokenization cost).',
+             '本 Lab 按“大约 4 个字符算 1 个 token”来数英文和代码，每一块向上取整。真实的数取决于模型的分词器和语言，所以这里的每个 token 数都是估计（见 Lab“token 成本”）。'),
+ kv:()=>(A.terms&&A.terms.kvcache?A.terms.kvcache():tx('The KV cache keeps the key and value vectors of every token the model has already processed, in every layer, so that when the model generates the next token it reads them from memory instead of computing them again.',
+             'KV cache 存着模型已经处理过的每个 token 在每一层的 key 和 value 向量，模型生成下一个 token 时直接从显存里读，不再重算。'))+
+    tx(' After a call ends, the next call rebuilds it from the whole conversation sent again; with prompt caching, a provider reuses the part that starts the same way.',
+       '一次调用结束后，下一次调用要从重发来的整段对话重新算出它；开了 prompt caching 的服务商，能复用开头相同的那一段。'),
  toolUse:()=>tx('tool_use is a block in the model’s reply: the name of a tool and its arguments (input), with an id. It is only data; nothing runs until your code runs it.',
                 'tool_use 是模型回复里的一块：工具的名字和参数（input），再加一个 id。它只是一段数据，你的代码去执行它之前，什么都没有发生。'),
  toolRes:()=>tx('tool_result is the block your code sends back: the tool’s output (content), the id of the tool_use it answers (tool_use_id), and is_error, set to true when the tool failed.',
@@ -287,6 +291,10 @@ function obsMemory(){
         `<p>原因是模型不记得之前收到过什么。发过一次的内容，后面每次调用都要再发一遍。system prompt 和工具说明，${r.n} 次调用每次都发。测试文件是模型在第 ${tf.asked} 次调用里要的。你的代码把它读出来以后，从第 ${tf.first} 次调用起每次都发，一共发了 ${tf.times} 遍。</p><p>所以模型读进去的 token，是每根柱子加起来，也就是图里所有柱子的总面积：</p>`)+
     M(tx('\\text{tokens read} = \\sum_{i=1}^{8} \\text{input}_i','\\text{读进去的 token} = \\sum_{i=1}^{8} \\text{输入}_i'))+
     tx(`<p>${m('\\text{input}_i')} is everything call i sends: the system prompt, the tool definitions and every message before it.</p>`,`<p>${m('\\text{输入}_i')} 是第 i 次调用发出的全部内容：system prompt、工具说明，加上它之前的每一条消息。</p>`);
+  /* the owner (2026-10-14): resending the conversation between calls is not the same thing as decode reading the KV cache for every token
+     inside one call; and the bill counts each call's input plus its output */
+  s+=tx(`<p><b>The resending happens between calls.</b> Within one call, the input is computed only once: the model keeps each token’s intermediate results (the ${DEF('KV cache',TIP.kv())}) in GPU memory and uses them directly for every token it then writes, with no second computation of the input and no extra charge. For each call, the provider charges for the input tokens and the output tokens, each at its own price: for this task, ${fT(r.totalIn)} input tokens and ${fT(r.totalOut)} output tokens.</p>`,
+        `<p><b>重发发生在两次调用之间。</b>一次调用之内，输入只算一遍：模型把每个 token 的中间结果（${DEF('KV cache',TIP.kv())}）存在显存里，之后每写一个 token 都直接用它，不再重算输入，也不另收钱。服务商每次调用按输入 token 和输出 token 各自的单价收费：这个任务输入共 ${fT(r.totalIn)} 个，输出 ${fT(r.totalOut)} 个。</p>`);
   return s;
 }
 function obsFail(){
@@ -405,30 +413,30 @@ const DESCS=()=>({
                '给一个新任务设调用次数上限和 token 预算，让正常的运行能做完，卡住的运行尽早停下。')
 });
 const FIDPOP=()=>tx(
- `<p><b>Illustrative:</b> a constructed run in the real message format of a tool-use API, not a recording of a real agent.</p><div class="pop-grid"><div><div class="eyebrow">Modeled</div><ul>`+
+ `<p><b>Illustrative:</b> this lab constructs one run in the real message format of a tool-use API.</p><div class="pop-grid"><div><div class="eyebrow">Modeled</div><ul>`+
  `<li>The message format: system and tools sent with every call; tool_use blocks with an id, a name and an input; tool_result blocks with tool_use_id, content and is_error; stop_reason tool_use or end_turn (as in the interview problem under “Go further”).</li>`+
  `<li>Every call sends every block so far, so a call’s input is the sum of all blocks before it; the tokens read are the sum over calls.</li>`+
  `<li>Limits are checked before each call, as mini-swe-agent’s <code>query()</code> checks its step and cost limits.</li></ul></div>`+
  `<div><div class="eyebrow">Assumed</div><ul>`+
- `<li>Tokens: about 4 characters per token, per block, rounded up. Real counts depend on the tokenizer; the message format adds a few tokens per message, not counted here.</li>`+
+ `<li>Tokens: this lab counts about 4 characters per token, per block, rounded up, and counts the blocks’ content only. Real counts depend on the tokenizer, and the message format adds a few tokens per message.</li>`+
  `<li>The sizes of the system prompt (12,000 characters), the tool definitions and the files are the lab’s choices. Real agents vary a lot. mini-swe-agent’s system message and task template come to only about 3,000 characters together. An agent with many tools can spend far more on tool definitions alone.</li>`+
  `<li>Time: each model call takes 0.5 s plus reading at 10,000 tokens/s plus writing at 50 tokens/s; a test run takes 3 s. All are assumptions you can change in Settings. Real APIs vary with load and model size; a slow test suite can make tools the larger share.</li>`+
- `<li>Prompt caching is left out: providers can reuse the repeated start of the conversation, which makes resent tokens much cheaper (one provider’s cookbook prices a cache read at 0.1 times a normal input token), but they are still sent and counted.</li></ul></div>`+
+ `<li>Billing: a provider bills each call for its input tokens plus its output tokens, so a task’s bill adds up all its calls. This lab counts every resent input token as a normal input token. With prompt caching, a provider reads the repeated start of the conversation from a cache and bills it at a lower price (one provider’s cookbook prices a cache read at 0.1 times a normal input token); those tokens are still sent and counted.</li></ul></div>`+
  `<div><div class="eyebrow">Sources</div><ul>`+
  `<li>The loop and the message format: the interview problem ${cite(SRC.loop,'coding/llm-agent-tool-loop')}.</li>`+
  `<li>A real minimal agent: ${cite(SRC.miniAgent,'SWE-agent/mini-swe-agent <code>agents/default.py</code>')} (checked 2026-10-03) has <code>step_limit</code>, <code>cost_limit</code> and <code>wall_time_limit_seconds</code>; its README says the trajectory and the messages sent to the model are the same.</li>`+
  `<li>mini-swe-agent’s default config, ${cite(SRC.miniCfg,'<code>config/default.yaml</code>')} (checked 2026-10-03): step_limit and cost_limit are 0, which means no limit; the system and task templates come to about 3,000 characters.</li>`+
  `<li>Prompt caching prices: a provider’s cookbook, ${cite(SRC.cache,'<code>misc/prompt_caching.ipynb</code>')}.</li></ul>`+
  `<p class="mono small muted" style="margin-top:8px">Last verified 2026-10-03. Prototype, not yet expert-reviewed.</p></div></div>`,
- `<p><b>示意：</b>按真实的工具调用 API 消息格式构造的一次运行，不是真实 agent 的记录。</p><div class="pop-grid"><div><div class="eyebrow">建模了什么</div><ul>`+
+ `<p><b>示意：</b>本 Lab 按真实的工具调用 API 消息格式构造了一次运行。</p><div class="pop-grid"><div><div class="eyebrow">建模了什么</div><ul>`+
  `<li>消息格式：system 和工具说明随每次调用一起发；tool_use 块带 id、name 和 input；tool_result 块带 tool_use_id、content 和 is_error；stop_reason 是 tool_use 或 end_turn（和“延伸练习”里那道面试题一样）。</li>`+
  `<li>每次调用都发出之前的全部内容，所以一次调用的输入是它之前所有块的总和；模型读进去的 token，是每次调用加起来。</li>`+
  `<li>上限在每次调用之前检查，和 mini-swe-agent 的 <code>query()</code> 检查它的步数上限和花费上限一样。</li></ul></div>`+
  `<div><div class="eyebrow">假设</div><ul>`+
- `<li>token：每一块按大约 4 个字符算 1 个 token，向上取整。真实的数取决于分词器；消息格式本身每条还会多几个 token，这里不算。</li>`+
+ `<li>token：本 Lab 每一块按大约 4 个字符算 1 个 token，向上取整，只数各块的内容。真实的数取决于分词器，消息格式本身每条还会多几个 token。</li>`+
  `<li>system prompt（12,000 个字符）、工具说明和各个文件的长度，是这个 Lab 设定的。真实的 agent 差别很大。mini-swe-agent 的 system 消息和任务模板加起来只有约 3,000 个字符。工具多的 agent，光是工具说明就可能长得多。</li>`+
  `<li>时间：每次模型调用 0.5 秒，加上每秒读 10,000 个 token、每秒写 50 个 token；跑一遍测试 3 秒。这些都是假设，可以在自由调参里改。真实 API 的速度随负载和模型大小变化；测试很慢时，工具的时间也可能占大头。</li>`+
- `<li>这里没有算 prompt caching：服务商可以复用对话里重复的开头，让重发的 token 便宜得多（一家服务商的 cookbook 里，读缓存的价格是普通输入 token 的 0.1 倍），但这些 token 照样要发、照样计数。</li></ul></div>`+
+ `<li>计费：服务商对每次调用收它的输入 token 加输出 token，一次任务的账单是所有调用加起来。本 Lab 把每个重发的输入 token 都算作普通输入 token。用了 prompt caching 的服务商，从缓存里读对话里重复的开头，按更低的价格计费（一家服务商的 cookbook 里，读缓存的价格是普通输入 token 的 0.1 倍）；这些 token 照样要发、照样计数。</li></ul></div>`+
  `<div><div class="eyebrow">来源</div><ul>`+
  `<li>循环和消息格式：面试题 ${cite(SRC.loop.replace('README.md','README.zh.md'),'coding/llm-agent-tool-loop')}。</li>`+
  `<li>一个真实的最小 agent：${cite(SRC.miniAgent,'SWE-agent/mini-swe-agent 的 <code>agents/default.py</code>')}（2026-10-03 核对），里面有 <code>step_limit</code>、<code>cost_limit</code> 和 <code>wall_time_limit_seconds</code>；它的 README 说，运行记录和发给模型的消息是同一份。</li>`+
@@ -839,7 +847,13 @@ function mathHTML(run,st){
   if(!hide&&(st.call>=run.calls.length||viewNow()!=='calls')){const n=run.calls.length;
     blocks.push(MB(tx(`<b>Tokens read in all.</b> Every call resends what came before, so the model reads the inputs of all ${n} calls added up.`,`<b>一共读进去的 token。</b>每次调用都把前面的内容再发一遍，所以模型读进去的，是 ${n} 次调用的输入加起来。`),
       EQ([[tx('\\text{tokens read}','\\text{读进去的 token}'),tx(`\\sum_{i=1}^{${n}} \\text{input}_i`,`\\sum_{i=1}^{${n}} \\text{输入}_i`)],].concat(SUMROWS('',n<=10?run.calls.map(x=>fT(x.inTok)):run.calls.slice(0,4).map(x=>fT(x.inTok)).concat(['\\ldots',fT(run.finalIn)])),[['',fint(run.totalIn)]])),
-      tx(`That is <b>${fK(run.totalIn)}</b> tokens.`,`也就是 <b>${fK(run.totalIn)}</b> 个 token。`)));}
+      tx(`That is <b>${fK(run.totalIn)}</b> tokens.`,`也就是 <b>${fK(run.totalIn)}</b> 个 token。`)));
+    /* part 3 (the owner, 2026-10-14): what the bill counts, each call's input plus its output */
+    if(isP('memory')){const k=Math.round(run.totalIn/run.totalOut/10)*10;
+      blocks.push(MB(tx('<b>Tokens written, and the bill.</b> The reply of each call is its output. The provider bills every call’s input tokens and output tokens, each at its own price.','<b>写出的 token 和账单。</b>每次调用写出的回复，就是这次的输出。服务商对每次调用的输入 token 和输出 token，各按各的单价收费。'),
+        EQ([[tx('\\text{tokens written}','\\text{写出的 token}'),tx(`\\sum_{i=1}^{${n}} \\text{output}_i`,`\\sum_{i=1}^{${n}} \\text{输出}_i`)],].concat(SUMROWS('',run.calls.map(x=>fT(x.out))),[['',fint(run.totalOut)]]))+
+        EQ([[tx('\\text{cost}','\\text{费用}'),tx(`\\text{input price} \\times ${fT(run.totalIn)}`,`\\text{输入单价} \\times ${fT(run.totalIn)}`)],['',tx(`+\\ \\text{output price} \\times ${fT(run.totalOut)}`,`+\\ \\text{输出单价} \\times ${fT(run.totalOut)}`),' ']]),
+        tx(`The input tokens are about ${k} times the output: the model writes a reply of only a few dozen tokens each time, while each input holds every step before it and grows with every call.`,`输入 token 约是输出的 ${k} 倍：模型每次只写几十个 token 的回复，输入却装着之前的每一步，一次比一次长。`)));}}
   blocks.push(MB(tx(`<b>Time of call ${c.i}.</b> The model first reads the input, then writes the output one token at a time. ${m('t_0')} is the fixed cost of a call (${T_('lat',fS(run.P.lat)+' s')}); reading runs at ${T_('pre',fint(run.P.pre))} tokens/s and writing at ${T_('dec',String(run.P.dec))} tokens/s.`,
                     `<b>第 ${c.i} 次调用的时间。</b>模型先读完输入，再一个一个 token 地写出输出。${m('t_0')} 是每次调用固定的开销（${T_('lat',fS(run.P.lat)+' 秒')}）。读的速度是每秒 ${T_('pre',fint(run.P.pre))} 个 token，写的速度是每秒 ${T_('dec',String(run.P.dec))} 个 token。`),
     EQ([[tx('t_\\text{call}','t_\\text{调用}'),tx('t_0 + \\frac{\\text{input}}{v_\\text{prefill}} + \\frac{\\text{output}}{v_\\text{decode}}','t_0 + \\frac{\\text{输入}}{v_\\text{prefill}} + \\frac{\\text{输出}}{v_\\text{decode}}')],['',`${fS(run.P.lat)} + \\frac{${fT(c.inTok)}}{${fint(run.P.pre)}} + \\frac{${fT(c.out)}}{${run.P.dec}}`],['',fixd(c.tM,2)]]),

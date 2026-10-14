@@ -28,8 +28,8 @@ const T={render(el){
     `<div class="tz-vis"><svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="${esc(read)}">${h}</svg></div>`+
     `<div class="tz-leg"><span><i class="sw tz-tls-swm"></i>${tx('model call','模型调用')}</span><span><i class="sw tz-tls-swb"></i>${tx('tool call','工具调用')}</span></div>`+
     `<p class="tz-read">${esc(read)}</p>`+
-    `<p class="tz-note">${esc(tx('Computed from assumed times, not a recording: each model call 1.5 s, and each tool takes as long as its bar (the axis is in seconds). Booking a flight needs the flight search’s result and booking a hotel the hotel search’s, so they wait for the next model call. Tools asked for in one reply run at the same time; your code sends their results back together, so the next model call waits for the slowest. One more model call writes the answer at the end.',
-      '按假设的耗时算出来的，不是录像：每次模型调用 1.5 秒，每个工具的耗时就是它那根条的长度（横轴单位是秒）。订机票要用查航班的结果，订酒店要用查酒店的结果，所以要等下一次模型调用。一次回复里要的工具同时执行；你的代码把结果一起发回去，所以下一次模型调用等最慢的那个。最后还有一次模型调用给出答案。'))}</p></div>`;
+    `<p class="tz-note">${esc(tx('Computed from assumed times: each model call 1.5 s, and each tool takes as long as its bar (the axis is in seconds). Booking a flight needs the flight search’s result and booking a hotel the hotel search’s, so they wait for the next model call. Tools asked for in one reply run at the same time; your code sends their results back together, so the next model call waits for the slowest. One more model call writes the answer at the end.',
+      '按假设的耗时算出来的：每次模型调用 1.5 秒，每个工具的耗时就是它那根条的长度（横轴单位是秒）。订机票要用查航班的结果，订酒店要用查酒店的结果，所以要等下一次模型调用。一次回复里要的工具同时执行；你的代码把结果一起发回去，所以下一次模型调用等最慢的那个。最后还有一次模型调用给出答案。'))}</p></div>`;
   el.querySelectorAll('.seg-ctl[data-key="tzs"] button').forEach(b=>b.addEventListener('click',()=>{si=+b.dataset.v; T.render(el);}));}};
 A.registerTeaser('tool-scheduling',T);
 })();

@@ -88,7 +88,8 @@ RULES = """(sel)=>{const root=document.querySelector(sel); if(!root) return [];
    [/in this toy\\b|在这个玩具里|\\btoy\\b(?! run)|玩具(?!实跑)/i,'“toy”'],[/一次只能选|不会叠加|第 [0-9一二三四五六七八] 部分里/,'banned phrase'],
    [/updates as you|随之更新|会立刻更新|updates at once/i,'sentence about the page updating'],[/\\bNaN\\b|undefined|\\[object|Infinity/,'broken value'],
    [/亿|万/,'亿 or 万'],[/(?<![这那两])个数(?![值量])/,'“个数”'],
-   [/深色|浅色|浅灰|深灰|\\b(?:dark|light|pale)(?:er)? (?:bar|line|block|part|cell)/i,'colour named by lightness']];
+   [/深色|浅色|浅灰|深灰|\\b(?:dark|light|pale)(?:er)? (?:bar|line|block|part|cell)/i,'colour named by lightness'],
+   [/不是哪家|不是实测|不是测出来|不是对真实|假设，不是|自己的假设|不是真实录制|不是真实 agent|不是真的分词器|not a vendor|not a quote|, not a measurement|its own assumption|not a recording|not a real tokenizer/i,'negative disclaimer (the owner, 2026-10-14: state the assumption positively)'],[/SDE → LLM Serving|学习路线|learning path/i,'a learning path the site no longer has (the owner, 2026-10-14)']];
  let n; while((n=tw.nextNode())){const e=n.parentElement; if(!e||e.closest('[data-endnotes],pre, code, #tip, .fid-tag')||!e.getClientRects().length) continue; const t=n.textContent;
    for(const [re,name] of bad) if(re.test(t)) out.push(name+': '+t.trim().slice(0,90));}
  root.querySelectorAll('[data-tipx]').forEach(e=>{const t=e.getAttribute('data-tipx'); for(const [re,name] of bad) if(re.test(t)) out.push(name+' (tooltip): '+t.slice(0,90));});
@@ -121,6 +122,12 @@ def guided(b, w, h, lang):
     tag = f'{w}_{lang}'; pg = page(b, w, h, lang)
     title = text(pg, '#adm-app .labtitle')
     check(f'{tag} title', title == Z(lang, 'How many GPUs does your traffic need, and who should wait?', '你的流量要几张卡，谁该排队？'), title)
+    # the owner (2026-10-14): assumptions stated positively, “本 Lab 假设每 GPU 小时 3 美元”, in the GPU-hour tooltip and in the end notes
+    tips = pg.evaluate("()=>[...document.querySelectorAll('#adm-app [data-tipx]')].map(e=>e.getAttribute('data-tipx')).join('\\n')")
+    ends = pg.evaluate("()=>{const v=document.querySelector('#view-dyn:not([hidden])')||document.querySelector('#view-lab:not([hidden])'); const e=v&&v.querySelector('[data-endnotes]'); return e?e.textContent:''}")
+    check(f'{tag} the GPU-hour tooltip and the end notes state the price positively', Z(lang, 'This lab assumes $3 per GPU hour.', '本 Lab 假设每 GPU 小时 3 美元。') in tips
+          and Z(lang, 'it assumes $3 per GPU hour', '本 Lab 假设每 GPU 小时 3 美元') in ends and not any(x in tips + ends for x in ('not a vendor', 'its own assumption', '不是哪家', '自己的假设', 'both percentages are assumptions', '两个百分比都是假设')),
+          ([t for t in tips.split('\n') if 'GPU' in t][:2], ends[:160]))
     s = state(pg); check(f'{tag} part 1: guided, nothing plays on the first part', s['mode'] == 'guided' and s['step'] == 0 and s['plays'] == 0 and not s['playing'], s)
     day = pg.evaluate("()=>document.querySelectorAll('#adm-day svg rect.adm-pa').length")
     check(f'{tag} part 1: the day chart has 24 hours, the capacity line', day == 24 and pg.query_selector('#adm-day .adm-cap') is not None, day)
@@ -130,6 +137,9 @@ def guided(b, w, h, lang):
     # part 2
     nav(pg, 'next'); s = state(pg)
     check(f'{tag} part 2: Next waits for a fleet, with the why line', next_dis(pg) and set(why(pg)) == {Z(lang, 'Pick a fleet to continue.', '选一种卡数才能继续。')}, why(pg))
+    t2c = cur(pg)
+    check(f'{tag} part 2: quantization and speculative decoding raise the goodput per GPU; the P/D lab uses it to compare setups', Z(lang, 'the P/D disaggregation lab uses it to compare setups', 'P/D 分离 Lab 也用它比较方案') in t2c
+          and Z(lang, 'speculative decoding all raise this number', '投机解码这类 Lab 提高的都是这个数') in t2c, t2c[:400])
     p0 = s['plays']; lever(pg, '4'); s = state(pg)
     check(f'{tag} part 2: 4 GPUs plays the new run at fast speed (R3.20, R3.9)', s['playing'] and s['plays'] == p0 + 1 and speed(pg) == 'fast' and s['p2n'] == 4, (s, speed(pg)))
     click(pg, '#adm-play', 200); s1 = state(pg); pg.wait_for_timeout(300); s2 = state(pg)
@@ -193,6 +203,13 @@ def guided(b, w, h, lang):
     check(f'{tag} part 8: what to remember (the extra peak traffic falls on free users as 429), misconceptions, real systems', all(x in t8 for x in (Z(lang, 'Size the fleet for the peak', '按高峰配卡'), Z(lang, 'The free users absorb the extra', '多出来的这部分由免费请求承担'), Z(lang, 'Common misconceptions', '常见误解'), Z(lang, 'What real systems do', '真实系统怎么做'), 'vLLM', 'SGLang', 'llm-d')), t8[:200])
     rules(pg, f'{tag} part 8')
     pg.screenshot(path=str(SH / f'flow-{tag}-p8.png'))
+    # first-time reader (2026-10-14): Show the math states the price before the cost line, in the same words as the metric card
+    pg.evaluate("()=>{const d=document.getElementById('adm-math'); if(d) d.open=true;}"); pg.wait_for_timeout(400)
+    cost = pg.evaluate("""()=>{const b=[...document.querySelectorAll('#adm-mathbody .adm-mb')].find(x=>/What the day costs|一天要花多少/.test((x.querySelector('p')||{}).textContent||'')); if(!b) return null;
+      const r=b.querySelector('.adm-mb-res'); return {lead:b.querySelector('p').textContent, res:r?r.textContent:''};}""")
+    pg.evaluate("()=>{const d=document.getElementById('adm-math'); if(d) d.open=false;}"); pg.wait_for_timeout(150)
+    check(f'{tag} Show the math: the price is stated in the lead of “what the day costs”, before the cost line', cost is not None
+          and Z(lang, 'this lab assumes $3 per GPU hour', '本 Lab 假设每 GPU 小时 3 美元') in cost['lead'] and Z(lang, 'assumes', '假设') not in cost['res'], cost)
     pg.close()
 
 

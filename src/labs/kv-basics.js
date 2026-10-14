@@ -449,7 +449,7 @@ const FIDPOP=()=>tx(
  `<li>Llama-3.1-8B’s KV cache per token, from its config.json.</li>`+
  `<li>Time per decode step on one H100 SXM, with the step model that the home-page tile ${TILE_A()} uses. The GPU reads memory and does arithmetic at the same time, so a step takes the longer of the two. The arithmetic is 2 FLOPs per multiplied parameter per token, plus attention. The memory traffic is every parameter but the embedding table, read once per step however many tokens it computes. With the cache, a step also reads 128 KiB of keys and values per earlier token; the first step, the prefill, writes 128 KiB per prompt token instead. Without the cache, nothing is read from or written to a cache.</li></ul></div>`+
  `<div><div class="eyebrow">Simplified</div><ul>`+
- `<li>The small model’s parameters and its 9 input vectors are made-up numbers, fixed on every visit; nothing is trained, and the same numbers stand for the English and the Chinese sentence.</li>`+
+ `<li>The small model’s parameters and its 9 input vectors are made-up numbers, fixed on every visit; the same numbers stand for the English and the Chinese sentence.</li>`+
  `<li>The small model has no LM head (LM: language model), the matrix that scores every possible next token; each next word is taken from the sentence instead, because the lab counts work, not guesses.</li>`+
  `<li>Compute at 50% of the dense BF16 peak and memory at 60% of the bandwidth are estimates (${J('eff','see Settings')}).</li>`+
  `<li>A step without the cache is priced as one pass of the whole context through the model. The memory traffic of activations is left out: the vectors each block passes on and, without the cache, the keys and values the step computes and then drops. It grows with the tokens a step computes, so at 256 tokens the step without the cache would take somewhat longer than shown; from 512 tokens on, that step’s arithmetic takes far longer than this traffic, so leaving it out does not change its time. One conversation on one GPU, no batching.</li></ul></div>`+
@@ -466,7 +466,7 @@ const FIDPOP=()=>tx(
  `<li>Llama-3.1-8B 每个 token 的 KV cache，按它的 config.json 算。</li>`+
  `<li>一张 H100 SXM 上每个 decode 步的耗时，用的是首页方块${TILE_A()}的耗时模型。GPU 读显存和做计算是同时进行的，所以一步取两者中较长的那个。计算按每个参与乘法的参数每个 token 2 FLOP，再加 attention。读显存算除 embedding 表外的全部参数，每一步读一遍，不管这一步算多少个 token。用 cache 时，每一步再读之前每个 token 128 KiB 的 key 和 value；第一步 prefill 则把 prompt 每个 token 的 128 KiB 写进 cache。不用 cache 时，既不读也不写 cache。</li></ul></div>`+
  `<div><div class="eyebrow">简化和假设</div><ul>`+
- `<li>小模型的参数和 9 个输入向量都是编出来的数值，每次打开都一样；没有训练过，英文句子和中文句子用的是同一组数。</li>`+
+ `<li>小模型的参数和 9 个输入向量都是编出来的数值，每次打开都一样；英文句子和中文句子用的是同一组数。</li>`+
  `<li>小模型没有 LM head（LM 即语言模型，language model），也就是给每个可能的下一个 token 打分的那个矩阵；每一步的下一个词直接取自这句话，因为这个 Lab 数的是工作量，不是猜词。</li>`+
  `<li>计算按稠密 BF16 峰值的 50%、读显存按峰值带宽的 60% 算，都是估计值（${J('eff','见“自由调参”')}）。</li>`+
  `<li>不用 cache 的一步，按“整段上下文一次过一遍模型”计价。不计激活值读写显存的流量，包括各个块传下去的向量；不用 cache 时，还包括这一步算出后又丢掉的 key 和 value。它们随一步算的 token 数增长，所以 256 个 token 时，不用 cache 的一步实际会比这里显示的慢一些；从 512 个 token 起，这一步的计算远比这些流量耗时，不计它们不改变它的耗时。只算一张 GPU 上的一个对话，不做批处理。</li></ul></div>`+
@@ -546,8 +546,8 @@ function stageHTML(){
    `<div class="metrics kvb-metrics" id="kvb-metrics"></div>`+
    `<details class="math" id="kvb-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="kvb-mathbody"></div></details></div>`;
 }
-const EFF_NOTE=()=>tx('This is an estimate, not a measurement. The GPU reads memory and does arithmetic at the same time, so a decode step takes about as long as the slower of the two: its arithmetic, at 50% of the H100 SXM’s dense BF16 peak (989.5 TFLOP/s), or its memory traffic, at 60% of its peak bandwidth (3.35 TB/s). Every step reads the weights once, however many tokens it computes. Both shares are round numbers assumed for this estimate, not measured: real kernels reach only part of the peak, and how much depends on the kernel and on how many tokens a step handles.',
-  '这是估计值，不是实测。GPU 读显存和做计算是同时进行的，所以一个 decode 步的耗时约等于两者中较慢的那个：计算按 H100 SXM 稠密 BF16 峰值（989.5 TFLOP/s）的 50% 算，读显存按峰值带宽（3.35 TB/s）的 60% 算。不管一步算多少个 token，权重都只读一遍。这两个比例都是为这个估计取的整数，不是测出来的：真实 kernel 只能用到峰值的一部分，用到多少取决于 kernel 和一步处理多少个 token。');
+const EFF_NOTE=()=>tx('This is an estimate. The GPU reads memory and does arithmetic at the same time, so a decode step takes about as long as the slower of the two: its arithmetic, at 50% of the H100 SXM’s dense BF16 peak (989.5 TFLOP/s), or its memory traffic, at 60% of its peak bandwidth (3.35 TB/s). Every step reads the weights once, however many tokens it computes. Both shares are round numbers this lab assumes: real kernels reach only part of the peak, and how much depends on the kernel and on how many tokens a step handles.',
+  '这是估计值。GPU 读显存和做计算是同时进行的，所以一个 decode 步的耗时约等于两者中较慢的那个：计算按 H100 SXM 稠密 BF16 峰值（989.5 TFLOP/s）的 50% 算，读显存按峰值带宽（3.35 TB/s）的 60% 算。不管一步算多少个 token，权重都只读一遍。这两个比例是本 Lab 假设的整数：真实 kernel 只能用到峰值的一部分，用到多少取决于 kernel 和一步处理多少个 token。');
 function controlsHTML(){
   return `<aside class="panel controls" id="kvb-controls" aria-label="${esc(A.t('ctrlAria'))}"><div class="eyebrow">${A.t('ctrlEyebrow')}</div>`+
    `<p class="ctl-lock" id="kvb-lock" hidden></p>`+
@@ -1031,7 +1031,7 @@ const TERM={
  ctx:{en:'The tokens one decode step works on: the prompt plus everything written so far.',zh:'一个 decode 步要处理的 token：prompt 加上目前已生成的全部。'},
  model:()=>tx(`From Llama-3.1-8B’s config.json: 32 layers, 8 KV heads, head_dim 128, ${bigS(P_TOTAL)} parameters in all (${fint(P_TOTAL)}).`,`来自 Llama-3.1-8B 的 config.json：32 层，8 个 KV head，head_dim 128，一共 ${bigS(P_TOTAL)} 个参数（${fint(P_TOTAL)} 个）。`),
  gpu:{en:'The H100 SXM’s datasheet: BF16 1,979 TFLOPS with sparsity, so 989.5 TFLOP/s dense, and 3.35 TB/s of memory bandwidth.',zh:'H100 SXM 的规格表：BF16 标着 1,979 TFLOPS（with sparsity），稠密是 989.5 TFLOP/s；显存带宽 3.35 TB/s。'},
- eff:{en:'The shares of the peaks a step reaches, 50% for arithmetic and 60% for memory, are assumptions of this lab, not measurements.',zh:'一步能用到的峰值比例（计算 50%、读显存 60%）是这个 Lab 的假设，不是实测。'},
+ eff:{en:'This lab assumes a step reaches 50% of the peak for arithmetic and 60% of the peak for memory.',zh:'本 Lab 假设一步能用到峰值的 50%（计算）和 60%（读显存）。'},
  /* Llama-3.1-8B's shape (config.json) */
  kv2:{en:'The 2 counts the two vectors a token keeps for each KV head in every layer: a key and a value.',zh:'2 是一个 token 在每一层、每个 KV head 上存的两个向量：一个 key 和一个 value。'},
  layers:{en:'32 is Llama-3.1-8B’s number of layers (num_hidden_layers in its config.json), and every layer keeps its own keys and values.',zh:'32 是 Llama-3.1-8B 的层数（config.json 里的 num_hidden_layers），每一层都存自己的 key 和 value。'},
@@ -1054,8 +1054,8 @@ const TERM={
              `不用 cache 时，每个 token 的 query 都要重算，第 i 个 token 和第 1 到第 i 个 token 的 key 相遇：一共 1 + 2 + … + ${C} = ${C} × ${C1} ÷ 2 对 query 和 key。每对 4 × 32 × 4,096 FLOP，合起来是 4 × 32 × 4,096 × ${C} × ${C1} ÷ 2 = 2 × 32 × 4,096 × ${C} × ${C1}。`);},
  kvread:()=>tx(`With the cache the step also reads the keys and values of the ${fint(S.ctx-1)} earlier tokens from the cache, 131,072 bytes (128 KiB) each.`,`用 cache 时，这一步还要从 cache 里读之前 ${fint(S.ctx-1)} 个 token 的 key 和 value，每个 token 131,072 字节（128 KiB）。`),
  kvnone:{en:'Without the cache nothing is kept, so the step reads nothing from a cache. The keys and values it computes are used within the step and dropped, like the other activations, whose memory traffic this lab leaves out.',zh:'不用 cache 时什么都不存，所以这一步不从 cache 读任何东西。它算出的 key 和 value 在这一步里用完就丢，和其他激活值一样；激活值读写显存的流量，这个 Lab 不计。'},
- effc:()=>tx(`${fixd(H100.peak*EFF.mfu/1e12,2)} TFLOP/s is 50% of the H100 SXM’s dense BF16 peak, 989.5 TFLOP/s (its datasheet’s 1,979 TFLOPS with sparsity, halved). The 50% is this lab’s assumption, not a measurement.`,`${fixd(H100.peak*EFF.mfu/1e12,2)} TFLOP/s 是 H100 SXM 稠密 BF16 峰值 989.5 TFLOP/s（规格表上 with sparsity 的 1,979 TFLOPS 减半）的 50%。50% 是这个 Lab 的假设，不是实测。`),
- effm:()=>tx(`${fixd(H100.bw*EFF.mbu/1e12,2)} TB/s is 60% of the H100 SXM’s peak memory bandwidth, 3.35 TB/s. The 60% is this lab’s assumption, not a measurement.`,`${fixd(H100.bw*EFF.mbu/1e12,2)} TB/s 是 H100 SXM 峰值显存带宽 3.35 TB/s 的 60%。60% 是这个 Lab 的假设，不是实测。`),
+ effc:()=>tx(`${fixd(H100.peak*EFF.mfu/1e12,2)} TFLOP/s is 50% of the H100 SXM’s dense BF16 peak, 989.5 TFLOP/s (its datasheet’s 1,979 TFLOPS with sparsity, halved). The 50% is this lab’s assumption.`,`${fixd(H100.peak*EFF.mfu/1e12,2)} TFLOP/s 是 H100 SXM 稠密 BF16 峰值 989.5 TFLOP/s（规格表上 with sparsity 的 1,979 TFLOPS 减半）的 50%。50% 是本 Lab 的假设。`),
+ effm:()=>tx(`${fixd(H100.bw*EFF.mbu/1e12,2)} TB/s is 60% of the H100 SXM’s peak memory bandwidth, 3.35 TB/s. The 60% is this lab’s assumption.`,`${fixd(H100.bw*EFF.mbu/1e12,2)} TB/s 是 H100 SXM 峰值显存带宽 3.35 TB/s 的 60%。60% 是本 Lab 的假设。`),
  /* the small model's shape and its counts */
  skv2:{en:'The 2 counts the two vectors a token keeps for each head in every layer: a key and a value.',zh:'2 是一个 token 在每一层、每个 head 上存的两个向量：一个 key 和一个 value。'},
  slayers:{en:'The small model has 2 layers.',zh:'小模型有 2 层。'},

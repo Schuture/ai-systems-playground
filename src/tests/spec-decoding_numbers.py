@@ -213,6 +213,16 @@ with sync_playwright() as pw:
     check('80 tokens (16 x 5) still memory-bound, 8.54 ms', r80[1] < r80[2] and f'{r80[0]*1e3:.2f}' == '8.54', r80)
     check('plain decode of 128 requests: memory-bound, 16.0 ms (the baseline of 640)', r128[1] < r128[2] and f'{r128[0]*1e3:.1f}' == '16.0', r128)
     check('640 tokens (128 x 5) compute-bound, 20.1 ms', r640[1] > r640[2] and f'{r640[0]*1e3:.1f}' == '20.1', r640)
+    # part 3 (owner review 2026-10-14): the example round (k = 4, 2 kept, 3 tokens) against plain decode writing the same 3 tokens, 8B + 1B, batch 1:
+    # less time, more arithmetic (the thrown-away guesses included), the 8B's weights read once instead of 3 times
+    rc = J('k=>window.__spd.roundCost(k)', 4)
+    ds = [step(M['d1'], 1, 1, CTX + j, 1) for j in range(4)]; v4 = step(M['t8'], 1, 5, CTX, 1); p1 = step(M['t8'], 1, 1, CTX, 1)
+    td4 = sum(d[0] for d in ds); flD = sum(d[3] for d in ds)
+    check('example round: 4 draft steps + one check of 5 positions', all(close(a_, d[0]) for a_, d in zip(rc['ds'], ds)) and close(rc['td'], td4) and close(rc['tv'], v4[0]) and close(rc['tRound'], td4 + v4[0]), (rc['td'], td4, rc['tv'], v4[0]))
+    check('example round: plain decode needs 3 steps for the same tokens', rc['n'] == 3 and close(rc['tPlain'], p1[0]) and close(rc['plain'], 3 * p1[0]), rc)
+    check('example round: less time than plain decode', rc['tRound'] < rc['plain'], (rc['tRound'], rc['plain']))
+    check('example round: more arithmetic than plain decode, 1.9 times', close(rc['flDraft'], flD) and close(rc['flCheck'], v4[3]) and close(rc['flRound'], flD + v4[3]) and close(rc['flPlain'], 3 * p1[3]) and f"{rc['flRound'] / rc['flPlain']:.1f}" == '1.9', rc['flRound'] / rc['flPlain'])
+    check('example round: fewer weight bytes read (8B once + 1B 4 times < 8B 3 times)', close(rc['dW'], M['d1']['W']) and M['t8']['W'] + 4 * M['d1']['W'] < 3 * M['t8']['W'], (M['t8']['W'], M['d1']['W']))
     # E: formula = brute force = page
     for a in (0.3, 0.6, 0.65, 0.7, 0.75, 0.8, 0.9):
         for k in range(1, 9):

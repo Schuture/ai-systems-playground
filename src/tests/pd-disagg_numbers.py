@@ -288,6 +288,24 @@ with sync_playwright() as pw:
     gaps = {b_: fT(run_of('one', CO1(b_), 0)['m']['chat']['gap_max']) for b_ in (2048, 512, 128, 64)}
     check('part 3: longest gaps 126 / 32 / 10 / 10 ms for budgets 2,048 / 512 / 128 / 64; the document\'s first token 1.55 / 1.51 / 2.28 / 4.51 s', list(gaps.values()) == ['126 ms', '32 ms', '10 ms', '10 ms']
           and [fT(run_of('one', CO1(b_), 0)['m']['doc']['ttft_max']) for b_ in (2048, 512, 128, 64)] == ['1.55 s', '1.51 s', '2.28 s', '4.51 s'], gaps)
+    # what the text says about the followed chat (a first-time reader's review, 2026-10-14): part 1's 38 ms gap sits at the start of
+    # request 1's row and its step also computes another chat's prefill; in part 3 the chats that arrive after the document all miss
+    # the 1 s goal, and at 128 / 64 the followed chat is one of them (request 7: 2.31 s / 4.60 s); at 7:1 in part 7 the answer stops
+    # for 8.95 s right after its first token
+    def watched(run): return max((r for r in run['R'] if r['cls'] == 'chat'), key=gap)
+    def gap_at(r):
+        i = max(range(1, len(r['toks'])), key=lambda k: r['toks'][k] - r['toks'][k - 1]); return i, r['toks'][i] - r['toks'][i - 1]
+    w1 = watched(r1); i1, g1 = gap_at(w1)
+    in_gap = [s_ for s_ in r1['G'][w1['g']]['steps'] if s_[1] > w1['toks'][i1 - 1] + 1e-9 and s_[0] < w1['toks'][i1] - 1e-9]
+    check('part 1: the chat with the longest gap is request 1; its 38 ms gap is at the start of its row, in a step that also computes another chat\'s prefill', w1['id'] == 0 and i1 <= 3 and fT(g1) == '38 ms' and len(in_gap) >= 1 and all(s_[2] > 0 for s_ in in_gap), (w1['id'], i1, g1, in_gap))
+    lates = {}
+    for b_ in (2048, 512, 128, 64):
+        rb = run_of('one', CO1(b_), 0); d_ = next(r for r in rb['R'] if r['cls'] == 'doc')
+        lates[b_] = ([r for r in rb['R'] if r['cls'] == 'chat' and r['arr'] > d_['arr']], watched(rb))
+    check('part 3: at every budget the 3 chats that arrive after the document all get their first token later than 1 s', all(len(l_) == 3 and all(r['first'] - r['arr'] > 1.0 for r in l_) for l_, _ in lates.values()), {b_: [round(r['first'] - r['arr'], 3) for r in l_] for b_, (l_, _) in lates.items()})
+    check('part 3: at 128 and 64 the followed chat is request 7, one of them (first token after 2.31 s / 4.60 s); at 2,048 and 512 it is not one of them', all(w_['id'] == 6 and w_ in l_ for l_, w_ in (lates[128], lates[64])) and fT(lates[128][1]['first'] - lates[128][1]['arr']) == '2.31 s' and fT(lates[64][1]['first'] - lates[64][1]['arr']) == '4.60 s' and all(w_ not in l_ for l_, w_ in (lates[2048], lates[512])), {b_: w_['id'] for b_, (l_, w_) in lates.items()})
+    w71 = watched(run_of('A', SP(8, 7), 3)); i71, g71 = gap_at(w71)
+    check('part 7 at 7:1: the followed chat stops for 8.95 s right after its first token', i71 == 1 and fT(g71) == '8.95 s', (i71, g71))
     m4 = run_of('A', {'mode': 'co', 'n': 4, 'budget': 0}, 1.5)['m']; m5 = {p: run_of('A', SP(4, p), 1.5)['m'] for p in (1, 2, 3)}; m6 = run_of('A', SP(4, 2, 'ib'), 1.5)['m']
     check('part 4: colocated 4 GPUs: 81% meet; the chats\' longest gap 1.44 s; documents\' first token 1.41 s (p90)', fP(m4['ok_frac']) == '81%' and fT(m4['chat']['gap_max']) == '1.44 s' and fT(m4['doc']['ttft_p90']) == '1.41 s', m4)
     check('part 5: 1:3 meets 61%, 2:2 98%, 3:1 100%; gaps stay under 33 ms', [fP(m5[p]['ok_frac']) for p in (1, 2, 3)] == ['61%', '98%', '100%'] and all(m5[p]['chat']['gap_max'] < 0.033 for p in (1, 2, 3)), {p: m5[p]['ok_frac'] for p in m5})
@@ -316,10 +334,14 @@ with sync_playwright() as pw:
         return J("()=>{const s=document.querySelector('#pdd-rail .step.current'); return s?s.innerText:''}")
     def nxt():
         J("()=>document.querySelector('#pdd-rail .step.current [data-nav=next]').click()"); pg.wait_for_timeout(250)
+    t1 = obs_text()
+    check('page part 1 points to the box at the start of request 1\'s row and says why that step took longer', 'waited at most 38 ms for its next token (the box at the start of request 1’s row)' in t1 and 'that step also computed another chat’s prefill, so it took longer' in t1, t1[:600])
     nxt(); t2 = obs_text()
-    check('page part 2 quotes the 1.49 s step', 'That step takes 1.49 s' in t2 and 'dozens of times longer' in t2, t2[:300])
+    check('page part 2 quotes the 1.49 s step and the jump from 38 ms', 'That step takes 1.49 s' in t2 and 'jumps from 38 ms to 1.49 s' in t2, t2[:300])
     nxt(); pg.click('#pdd-rail [data-lever="512"]'); pg.wait_for_timeout(250); t3 = obs_text()
-    check('page part 3 at 512 quotes 32 ms, the document at 1.51 s and the late chats\' shortest wait 1.21 s', 'falls to 32 ms' in t3 and 'comes after 1.51 s' in t3 and 'The 3 chats that arrive' in t3 and 'shortest of their waits is 1.21 s' in t3, t3[-700:])
+    check('page part 3 at 512 quotes 32 ms, the document at 1.51 s, and that the late chats miss the first-token goal', 'falls to 32 ms' in t3 and 'comes after 1.51 s' in t3 and 'The 3 chats that arrive' in t3 and 'so all their first tokens miss the 1 s goal' in t3, t3[-700:])
+    pg.click('#pdd-rail [data-lever="128"]'); pg.wait_for_timeout(250); t3b = obs_text()
+    check('page part 3 at 128 points to request 7 in the chart, first token after 2.31 s, and the other 2 late chats', 'Request 7 in the chart arrives while the document prefills' in t3b and 'only after 2.31 s, past the 1 s goal' in t3b and 'The other two chats that arrive then miss it too.' in t3b, t3b[-700:])
     nxt(); pg.click('#pdd-rail [data-pred="gapT"]'); pg.wait_for_timeout(200); t4 = obs_text()
     check('page part 4 quotes the gap 1.44 s and the 1.49 s prefill hint', 'up to 1.44 s' in t4 and 'takes 1.49 s of prefill on one GPU' in t4, t4[:600])
     nxt(); pg.click('#pdd-rail [data-lever="2"]'); pg.wait_for_timeout(250); t5 = obs_text()
@@ -328,7 +350,11 @@ with sync_playwright() as pw:
     check('page part 6 quotes 27 ms, 104 ms and 98%', 'from 27 ms to 104 ms' in t6 and 'With either link, 98% of requests' in t6, t6[-400:])
     nxt(); pg.wait_for_function('()=>window.__pdd.state().gpQueue===0', timeout=60000); pg.wait_for_timeout(300)
     pg.click('#pdd-rail .seg-ctl[data-key="p7"] button[data-v="6"]'); pg.wait_for_timeout(300); t7 = obs_text()
-    check('page part 7 quotes the best split 6 + 2 at 4, colocated 0, chunks of 512 at 6.5', 'The best split gives 6 GPUs to prefill and the rest to decode: about 4 requests' in t7 and 'Colocated, the 8 GPUs take only 0.5 requests per second per GPU without chunking, and 6.5 with a budget of 512 tokens per step.' in t7, t7[-600:])
+    gp7 = J("()=>document.querySelector('#pdd-gp').innerText")
+    check('page part 7 quotes the best split 6:2 at 4 and colocated (budget 512) at 6.5, more than any split; the bars show colocated without chunking at 0.5', 'Among the splits, 6:2 is best, at about 4 requests per second per GPU; colocated (budget 512) reaches 6.5, more than any split.' in t7 and 'colocated (no chunking)' in gp7 and '0.5/s' in gp7 and '6.5/s' in gp7, (t7[-600:], gp7[:300]))
+    pg.click('#pdd-rail .seg-ctl[data-key="p7"] button[data-v="7"]'); pg.wait_for_timeout(300)
+    J("()=>{const r=document.querySelector('#pdd-prog'); r.value='1000'; r.dispatchEvent(new Event('input',{bubbles:true}));}"); t7b = obs_text()
+    check('page part 7 at 7:1 says the answers stop for 8.95 s after their first token', 'Your pick, 7:1, misses the target.' in t7b and 'answers stop for 8.95 s after their first token' in t7b, t7b[-600:])
     nxt(); t8 = obs_text()
     check('page part 8 quotes 1.49 s, 61%, 4 GiB, 10 ms and 86 ms', all(x in t8 for x in ('1.49 s', '61%', '4 GiB', '10 ms', '86 ms')), t8[:600])
 

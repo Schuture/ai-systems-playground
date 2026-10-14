@@ -61,9 +61,23 @@ def click(pg, sel, ms=200):
     pg.evaluate("s=>document.querySelector(s).click()", sel); pg.wait_for_timeout(ms)
 
 
+def captions(pg, d, label):
+    """The sentences under the picture while it plays: drag the replay through its length and keep each new sentence, in order (with the
+    labels inside the picture that change as it plays); a sentence that differs from an earlier one only in its numbers is printed once."""
+    out = pg.evaluate("""async ()=>{const r=document.querySelector('#mgs-prog'); if(!r||!r.getClientRects().length) return '';
+      const seen=new Set(), out=[], w=()=>new Promise(f=>setTimeout(f,0));
+      for(let v=0;v<1000;v+=4){r.value=String(v); r.dispatchEvent(new Event('input',{bubbles:true})); await w();
+        const c=document.querySelector('#mgs-epb:not([hidden]) #mgs-ep-cap')||document.querySelector('#mgs-sum');
+        const bands=[...document.querySelectorAll('#mgs-gpus .mgs-band-t')].map(t=>t.textContent).filter(Boolean).join(' | ');
+        for(const t of [c&&c.textContent.trim(), bands&&('[bands] '+bands)]){const k=t&&t.replace(/[0-9]+/g,'#'); if(t&&!seen.has(k)){seen.add(k); out.push(t);}}}
+      r.value='1000'; r.dispatchEvent(new Event('input',{bubbles:true})); r.dispatchEvent(new Event('change',{bubbles:true})); await w();
+      return out.join('\\n');}""")
+    d.add(label + ' — while it plays (dragged through)', out)
+
+
 def stage(pg, d, label):
-    d.add(label + ' — stage', txt(pg, '#mgs-st-title, #mgs-st-sub, #mgs-status, #mgs-app .mgs-legend, #mgs-app .mgs-bh, #mgs-sum, #mgs-sweep, #mgs-sw-n, #mgs-app .mgs-lscale, #mgs-ep-host .mgs-ep-row, #mgs-ep-host .mgs-leg'))
-    d.add(label + ' — chart labels', pg.evaluate("()=>[...document.querySelectorAll('#mgs-app .stage svg')].filter(e=>e.getClientRects().length).map(s=>[...s.querySelectorAll('text')].map(t=>t.textContent).join(' | ')).join('\\n')"))
+    d.add(label + ' — stage', txt(pg, '#mgs-st-title, #mgs-st-sub, #mgs-status, #mgs-app .mgs-legend, #mgs-app .mgs-bh, #mgs-lbar, #mgs-nofit, #mgs-sum, #mgs-sweep, #mgs-sw-n, #mgs-ep-steps, #mgs-ep-leg, #mgs-ep-cap'))
+    d.add(label + ' — chart labels', pg.evaluate("()=>[...document.querySelectorAll('#mgs-app .stage svg')].filter(e=>e.getClientRects().length).map(s=>[...s.querySelectorAll('text')].map(t=>t.textContent).filter(Boolean).join(' | ')).join('\\n')"))
     d.add(label + ' — metric cards', txt(pg, '#mgs-metrics'))
 
 
@@ -93,9 +107,11 @@ def run(lang):
             d.h(f'Guided part {i + 1}')
             d.add('Card', txt(pg, '#mgs-rail .step.current')); d.tipsOf(pg, '#mgs-rail')
             stage(pg, d, f'Part {i + 1}'); d.tipsOf(pg, '#mgs-app .stage')
+            if i in (1, 6): captions(pg, d, f'Part {i + 1}')
             for sel, lab in ACTIONS.get(i, []):
                 click(pg, '#mgs-rail ' + sel, 300)
                 d.add(f'Card after {lab}', txt(pg, '#mgs-rail .step.current')); stage(pg, d, f'Part {i + 1} after {lab}'); d.tipsOf(pg, '#mgs-app')
+                if (i, lab) in ((4, 'TP 16'), (5, 'pipeline'), (5, 'replicas')): captions(pg, d, f'Part {i + 1} after {lab}')
             nb = pg.query_selector('#mgs-rail .step.current [data-nav="next"]')
             if nb and not nb.is_disabled(): click(pg, '#mgs-rail .step.current [data-nav="next"]', 300)
         d.add('Next-lab footer', txt(pg, '.next-lab'))

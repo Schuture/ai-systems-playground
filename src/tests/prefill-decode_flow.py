@@ -350,7 +350,7 @@ def run_part6(pg, tag, w, h, lang, phone, dark):
     check(f'{tag} part 6: before the pick the two doubled GPUs are masked and their numbers are nowhere (30.0 ms, 3.80 ms, 2.31 s, 1.20 s), the status says predict first',
           masked == [True, True] and not any(x in at for x in ['30.0 ms', '3.80 ms', '2.31 s', '1.20 s']) and text(pg, '#pd-status') == Z(lang, 'Predict first', '先预测'), (masked, [x for x in ['30.0 ms', '3.80 ms', '2.31 s', '1.20 s'] if x in at]))
     check(f'{tag} part 6: Settings locked with a note (R4.2)', vis(pg, '#pd-lock') and not vis(pg, '#pd-ctl-N') and not vis(pg, '#pd-ctl-B') and Z(lang, 'In this experiment', '这个实验里') in text(pg, '#pd-lock'))
-    check(f'{tag} part 6: the idealised label on the stage', text(pg, '.pd-xa-ideal') == Z(lang, 'Idealised: one number doubled, everything else the same; not a real GPU.', '理想化实验：只把一项指标翻倍，其余不变；不是某张真实的 GPU。'), text(pg, '.pd-xa-ideal'))
+    check(f'{tag} part 6: the idealised label on the stage', text(pg, '.pd-xa-ideal') == Z(lang, 'Idealised: one number doubled, everything else the same.', '理想化实验：只把一项指标翻倍，其余不变。'), text(pg, '.pd-xa-ideal'))
     if phone:
         fs = pg.evaluate("""()=>{const r=e=>e.getBoundingClientRect(), rows=[...document.querySelectorAll('.pd-xrow')].map(e=>Math.round(r(e).bottom)), pb=r(document.querySelector('#pd-rail .pbar')), tb=document.querySelector('.topbar').getBoundingClientRect().bottom;
           return {rows, pbTop:Math.round(pb.top), topbar:Math.round(tb), vh:innerHeight}}""")

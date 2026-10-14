@@ -1,9 +1,9 @@
 /* pd-disagg: P/D disaggregation lab */
 .pdd-graph{display:flex;flex-direction:column;gap:0}
 .pdd-blk{padding:8px 0}
-.pdd-blk+.pdd-blk,.pdd-run+.pdd-blk{border-top:1px solid var(--line)}
+.pdd-blk+.pdd-blk,.pdd-wcap+.pdd-blk{border-top:1px solid var(--line)}
 .pdd-bh{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);margin:0 0 6px;min-height:1.35em;overflow-wrap:anywhere}
-.pdd-tl,.pdd-watch{width:100%;min-width:0}
+.pdd-tl{width:100%;min-width:0}
 .pdd-svg{display:block;max-width:100%;height:auto}
 .pdd-svg text{font-family:var(--font-mono);font-size:11px;fill:var(--ink-2)}
 .pdd-svg .pdd-rk{font-size:9.5px;fill:var(--ink-3)}
@@ -18,7 +18,17 @@
 .pdd-wt{fill:none;stroke:var(--ink-3);stroke-dasharray:3 2}
 .pdd-wg{fill:var(--sunken);stroke:var(--ink-2)}
 .pdd-wg.bad{fill:var(--c-oom);stroke:var(--c-oom);opacity:.85}
-.pdd-tk{stroke:var(--ink);stroke-width:1}
+.pdd-tk{stroke:var(--c-weights);stroke-width:1}
+/* the followed chat, in blue on the lanes: in a GPU's batch (outline), waiting (dashed), its KV transfer, where it is now (dot) */
+.pdd-wbox{fill:none;stroke:var(--c-weights);stroke-width:2}
+.pdd-wq{stroke:var(--c-weights);stroke-width:1.6;stroke-dasharray:3 3}
+.pdd-wkv{stroke:var(--c-weights);stroke-width:1.8}
+.pdd-wdot{fill:var(--c-weights);stroke:var(--surface);stroke-width:1.5}
+.pdd-warr{stroke:var(--ink-3)}
+.pdd-svg .pdd-wlab{fill:var(--c-weights);font-weight:600}
+.pdd-svg .pdd-on{fill:var(--c-weights);font-weight:700}
+.pdd-sw.wr{background:transparent;box-shadow:inset 0 0 0 2px var(--c-weights)}
+.pdd-wcap{margin:0 0 6px;font-size:12px;line-height:1.5;color:var(--ink-2)}
 .pdd-svg .pdd-wl.bad{fill:var(--c-oom)}
 .pdd-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:2px 0 4px;font-size:12px}
 .pdd-legend>span{display:inline-flex;align-items:center;gap:6px;cursor:help}
@@ -27,12 +37,16 @@
 .pdd-sw.dc{background:var(--ink-3);height:4px;opacity:.75}
 .pdd-sw.st{background:var(--c-oom)}
 .pdd-sw.kv{background:var(--c-kv);height:2px}
-.pdd-run{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 0}
+.pdd-run{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 0 0}
 .pdd-run .btn{min-height:30px}
 .pdd-speed{display:inline-flex;align-items:center;gap:6px;flex:none}
 .pdd-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
 .pdd-app .pdd-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;min-height:30px}
-.pdd-prog{flex:1 1 140px;min-width:120px}
+/* the progress bar sits under the time axis: drawTimeline sets its left padding and width so the thumb's centre is the playhead */
+.pdd-scrub{padding:0}
+.pdd-app input[type=range].pdd-prog{display:block;width:100%;margin:0;padding:0;border:0}
+.pdd-app input[type=range].pdd-prog::-webkit-slider-thumb{width:14px;box-sizing:border-box}
+.pdd-app input[type=range].pdd-prog::-moz-range-thumb{width:14px;box-sizing:border-box}
 .pdd-metrics.pdd-wait .metric{opacity:.55}
 .pdd-scope{margin:6px 0 0}
 .pdd-goal{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
@@ -61,3 +75,9 @@
 .pdd-app .seg-ctl[data-key="p7"]{flex-wrap:wrap}
 .pdd-app .seg-ctl[data-key="p7"] button{flex:1 0 auto;white-space:nowrap;padding:7px 4px}
 .pdd-app .seg-ctl[data-key="p7"] button[data-v="0"]{flex-basis:100%;border-right:0;border-bottom:1px solid var(--line)}
+/* part 7's goodput bars: on a wide screen each label sits left of its bar, so all nine rows fit on the first screen under the timeline
+   (a first-time reader, 2026-10-14: at 1440x900 the last three needed scrolling) */
+@media (min-width:900px){
+  #pdd-gp .cmp-row{display:grid;grid-template-columns:minmax(150px,30%) minmax(0,1fr);align-items:center;column-gap:10px;margin-top:6px}
+  #pdd-gp .cmp-track{margin:0 28px 0 0}
+}

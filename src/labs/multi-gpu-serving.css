@@ -1,14 +1,17 @@
 /* multi-gpu-serving: tensor, pipeline and expert parallelism for serving */
 .mgs-graph{display:flex;flex-direction:column;gap:0}
-.mgs-blk{padding:6px 0}
+.mgs-blk{padding:4px 0}
 .mgs-blk+.mgs-blk{border-top:1px solid var(--line)}
-.mgs-bh{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);margin:0 0 6px;min-height:1.35em;overflow-wrap:anywhere}
+.mgs-bh{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);margin:0 0 4px;min-height:1.35em;overflow-wrap:anywhere}
 .mgs-gpus{width:100%;min-width:0}
 .mgs-svg{display:block;max-width:100%;height:auto}
 .mgs-svg text{font-family:var(--font-mono);font-size:11px;fill:var(--ink-2)}
-.mgs-svg .mgs-gn{font-size:10px;fill:var(--ink)}
-.mgs-svg .mgs-bt{font-size:10px;fill:var(--ink-2)}
-.mgs-svg .mgs-ibt{font-size:10px;fill:var(--ink-3)}
+.mgs-svg .mgs-gn{font-size:11px;fill:var(--ink)}
+.mgs-svg .mgs-bt{font-size:11px;fill:var(--ink-2)}
+.mgs-svg .mgs-bt.off{opacity:0}
+.mgs-svg .mgs-hop{font-size:11px;fill:var(--ink);font-weight:600;opacity:0}
+.mgs-svg .mgs-hop.on{opacity:1}
+.mgs-svg .mgs-ibt{font-size:11px;fill:var(--ink-3)}
 .mgs-node{fill:none;stroke:var(--line);stroke-width:1}
 .mgs-gbox{fill:var(--sunken);stroke:var(--ink-3);stroke-width:.8}
 .mgs-gbox.bad{stroke:var(--c-oom);stroke-width:1.6}
@@ -16,41 +19,40 @@
 .mgs-m.w{fill:var(--c-weights)}
 .mgs-m.kv{fill:var(--c-kv)}
 .mgs-m.oh{fill:var(--c-overhead)}
+.mgs-m.over{fill:var(--c-oom)}
 .mgs-br{fill:none;stroke:var(--ink-3);stroke-width:1}
 .mgs-ib{stroke:var(--ink-3);stroke-width:2;stroke-dasharray:4 3}
 .mgs-ib.bad{stroke:var(--c-oom)}
-.mgs-ring{fill:none;stroke:var(--ink-2);stroke-width:1.6;stroke-dasharray:6 4;opacity:0;transition:opacity .2s}
-.mgs-ring.bad{stroke:var(--c-oom)}
-.mgs-merging .mgs-ring{opacity:1}
-.mgs-busy .mgs-m.w,.mgs-busy .mgs-m.kv{opacity:.7}
-.mgs-legend{display:flex;flex-wrap:wrap;gap:2px 14px;margin:4px 0 2px;font-size:12px}
+.mgs-ibl{fill:none;stroke:var(--ink-3);stroke-width:1;opacity:.35}
+.mgs-ibl.bad{stroke:var(--c-oom)}
+.mgs-ibl.on{opacity:1;stroke-width:1.5}
+.mgs-ibp{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.3;opacity:0}
+.mgs-ibp.on{opacity:1}
+.mgs-sw.ibl{width:14px;height:0;border-top:1.5px solid var(--ink-3);border-radius:0}
+.mgs-legend{display:flex;flex-wrap:wrap;gap:2px 14px;margin:3px 0 1px;font-size:12px;line-height:1.35}
 .mgs-legend>span,.mgs-leg>span{display:inline-flex;align-items:center;gap:6px;cursor:help}
 .mgs-sw{display:inline-block;width:14px;height:10px;border-radius:2px;flex:none}
 .mgs-sw.w{background:var(--c-weights)}
 .mgs-sw.kv{background:var(--c-kv)}
 .mgs-sw.oh{background:var(--c-overhead)}
 .mgs-sw.bad{background:var(--c-oom)}
-.mgs-sw.cm{background:var(--ink-3)}
-.mgs-sw.ar{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,transparent 2px 4px);border:1px solid var(--ink-2)}
 .mgs-sw.ep{background:var(--ink-3)}
-.mgs-sw.avgl{width:2px;height:12px;background:var(--ink);border-radius:0}
 /* one layer, played */
 .mgs-layer{width:100%;min-width:0}
 .mgs-lbar{position:relative;height:22px;background:var(--sunken);border-radius:4px;overflow:hidden}
-.mgs-seg{position:absolute;top:0;bottom:0;display:block;cursor:help}
+.mgs-seg{position:absolute;top:0;bottom:0;display:block;cursor:help;font-style:normal}
 .mgs-seg.cm{background:var(--ink-3)}
 .mgs-seg.ar{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--sunken) 2px 5px)}
 .mgs-seg.ar.bad{background:repeating-linear-gradient(135deg,var(--c-oom) 0 2px,var(--c-oom-soft) 2px 5px)}
 .mgs-head{position:absolute;top:-2px;bottom:-2px;width:2px;margin-left:-1px;background:var(--ink);pointer-events:none}
-.mgs-lscale{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);margin-top:2px}
 .mgs-nofit{margin:4px 0;color:var(--c-oom);font-weight:600}
-.mgs-run{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 0 2px}
+.mgs-run{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:4px 0 2px}
 .mgs-run .btn{min-height:30px}
 .mgs-speed{display:inline-flex;align-items:center;gap:6px;flex:none}
 .mgs-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
 .mgs-app .mgs-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;min-height:30px}
-.mgs-prog{flex:1 1 140px;min-width:120px}
-.mgs-sum{margin:4px 0 0;font-size:13.5px}
+.mgs-prog{flex:1 1 120px;min-width:80px}
+.mgs-sum{margin:2px 0 0;font-size:13.5px}
 /* the TP sweep */
 .mgs-swp{display:flex;flex-direction:column;gap:4px}
 .mgs-swp{gap:1px}
@@ -64,17 +66,7 @@
 .mgs-sw-tr i.ar{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,transparent 2px 4px)}
 .mgs-sw-tr i.ar.bad{background:repeating-linear-gradient(135deg,var(--c-oom) 0 2px,var(--c-oom-soft) 2px 4px)}
 .mgs-sw-v{font-size:11.5px;text-align:right;white-space:nowrap}
-@media (max-width:560px){.mgs-sw-row{grid-template-columns:minmax(0,8em) minmax(40px,1fr) minmax(0,6em)}}
-/* MoE: work per GPU */
-.mgs-ep{margin:10px 0 6px;padding:8px 10px;border:1px solid var(--line);border-radius:6px}
-.mgs-ep-row{display:grid;grid-template-columns:3.6em minmax(0,1fr) 3.4em;gap:8px;align-items:center;font-size:12px;margin:3px 0}
-.mgs-ep-l{font-family:var(--font-mono);font-size:11px;color:var(--ink-2)}
-.mgs-ep-tr{position:relative;height:10px;background:var(--sunken);border-radius:3px}
-.mgs-ep-tr i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:3px}
-.mgs-ep-tr i.bad{background:var(--c-oom)}
-.mgs-ep-avg{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink)}
-.mgs-ep-v{text-align:right;font-size:11.5px}
-.mgs-leg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:11.5px}
+@media (max-width:560px){.mgs-sw-row{grid-template-columns:minmax(0,7em) minmax(40px,1fr) max-content}}
 /* challenge */
 .mgs-goal{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
 .mgs-goal.mgs-over b{color:var(--c-oom)}
@@ -105,14 +97,149 @@
 .mathbody{container-type:inline-size}
 @container (max-width:560px){.mgs-eqs{grid-template-columns:max-content minmax(0,1fr)}.mgs-eqs>.mgs-eq-l{grid-column:1/-1;text-align:left}.mgs-eqs>.mgs-eq-l:empty{display:none}.mgs-eq-r{min-width:0;overflow-x:auto}}
 .drill-a .mgs-eqs{font-size:14px}
-@media (prefers-reduced-motion:reduce){.mgs-ring{transition:none}}
 /* metric values fit their box at every width (S22): a smaller number, the unit smaller still */
 .mgs-metrics .metric .v{font-size:clamp(14px,3.6cqi,17px)}
-.mgs-metrics .metric .v .u{font-size:.76em;color:var(--ink-2)}
+.mgs-metrics .metric .v .u{font-size:max(11px,.76em);color:var(--ink-2)}
+/* a stage of 480–560 px keeps the five numbers in one row (the stage must fit the screen at 900 px wide), with a smaller number */
+@container (min-width:480px) and (max-width:559.98px){.mgs-metrics{grid-template-columns:repeat(5,minmax(0,1fr))}.mgs-metrics .metric{padding:8px 7px}.mgs-metrics .metric .v{font-size:15px}}
 .mgs-sw-note{margin:2px 0 0;line-height:1.35}
 /* dock in the MoE part: one bar per GPU */
 .mgs-dk.mgs-dk-ep{align-items:flex-end;gap:2px;height:14px;background:none}
 .mgs-dk.mgs-dk-ep i{flex:1;border-radius:1px}
 .mgs-dk.mgs-dk-ep i.bad{background:var(--c-oom)}
-.mgs-ep-row{cursor:help}
 .mgs-metrics .metric .v.txt{white-space:normal;font-size:14px;line-height:1.25}
+/* one layer, under each GPU: this layer's bytes (a bar that empties as it is read), the flow into the compute units, the result vector,
+   the merge's arrows around each group's ring; red arrows when the merges take half the step or more */
+.mgs-sl0{fill:none;stroke:var(--line);stroke-width:1}
+.mgs-sl.w{fill:var(--c-weights)}
+.mgs-sl.kv{fill:var(--c-kv)}
+.mgs-fl{fill:none;stroke-width:2.6;stroke-dasharray:3 3;opacity:0}
+.mgs-fl.w{stroke:var(--c-weights)}
+.mgs-fl.kv{stroke:var(--c-kv)}
+.mgs-fl.on{opacity:1}
+.mgs-chip{fill:var(--surface);stroke:var(--ink-3);stroke-width:1}
+.mgs-chip.on{fill:var(--ink-2);stroke:var(--ink)}
+.mgs-svg .mgs-chipt{font-size:11px;fill:var(--ink-3);pointer-events:none}
+.mgs-svg .mgs-chipt.on{fill:var(--surface);font-weight:600}
+.mgs-cell{fill:none;stroke:var(--ink-3);stroke-width:.8;stroke-dasharray:1.5 1.5}
+.mgs-cell.p{fill:color-mix(in srgb,var(--ink-3) 22%,transparent);stroke-dasharray:none}
+.mgs-cf{fill:var(--ink-3)}
+.mgs-cf.full{fill:var(--ink)}
+.mgs-arw{fill:none;stroke:var(--ink-2);stroke-width:1.2;opacity:.3}
+.mgs-arw.bad{stroke:var(--c-oom)}
+.mgs-arw.on{opacity:1;stroke-width:1.5}
+.mgs-pk{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.6;opacity:0}
+.mgs-pk.f{fill:var(--ink);stroke:var(--ink)}
+.mgs-pk.on{opacity:1}
+.mgs-svg .mgs-mk{font-size:12px;fill:var(--ink-3);opacity:.55}
+.mgs-svg .mgs-mk.on{fill:var(--ink);opacity:1;font-weight:700}
+.mgs-ahp{fill:var(--ink-2)}
+.mgs-ahp.bad{fill:var(--c-oom)}
+.mgs-ib.on{stroke-width:3.5}
+/* the pipeline: one band per stage under its GPUs; batch A solid, batch B outlined */
+.mgs-band{fill:none;stroke:var(--line);stroke-width:1;stroke-dasharray:3 2}
+.mgs-svg .mgs-band-t{font-size:11px;fill:var(--ink-3)}
+.mgs-bandg.on .mgs-band{stroke-dasharray:none;stroke:var(--ink-2)}
+.mgs-bandg.off{opacity:0}
+.mgs-bandg.on.mbA .mgs-band{fill:var(--ink-2)}
+.mgs-bandg.on.mbA .mgs-band-t{fill:var(--surface);font-weight:600}
+.mgs-bandg.on.mbB .mgs-band{fill:var(--surface);stroke-width:1.6}
+.mgs-bandg.on.mbB .mgs-band-t{fill:var(--ink);font-weight:600}
+.mgs-gantt{overflow:visible}
+.mgs-svg .mgs-gl{font-size:11px;fill:var(--ink-2)}
+.mgs-gtr{fill:var(--sunken)}
+.mgs-gidle{fill:var(--surface);stroke:var(--line);stroke-dasharray:3 2}
+.mgs-svg .mgs-git{font-size:11px;fill:var(--ink-3)}
+.mgs-gb{cursor:help}
+.mgs-gb rect{stroke:var(--ink-2);stroke-width:1}
+.mgs-gb.mbA rect{fill:var(--ink-2)}
+.mgs-gb.mbB rect{fill:var(--surface);stroke-width:1.6}
+.mgs-svg .mgs-gb text{font-size:11px;pointer-events:none}
+.mgs-svg .mgs-gb.mbA text{fill:var(--surface);font-weight:600}
+.mgs-svg .mgs-gb.mbB text{fill:var(--ink);font-weight:600}
+.mgs-gb.now rect{stroke:var(--ink);stroke-width:2}
+.mgs-ghand{fill:none;stroke:var(--ink);stroke-width:1.4;cursor:help}
+.mgs-gax{stroke:var(--line);stroke-width:1}
+.mgs-gtok{fill:var(--ink);cursor:help}
+.mgs-gbr{fill:none;stroke:var(--ink-3);stroke-width:1}
+.mgs-svg .mgs-gbt{font-size:11px;fill:var(--ink-2)}
+.mgs-gph{stroke:var(--ink);stroke-width:2;opacity:0}
+.mgs-gph.on{opacity:1}
+/* the time bar: each phase named inside it; the phase playing now outlined */
+.mgs-seg span{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-family:var(--font-ui);font-size:11.5px;line-height:1;white-space:nowrap;overflow:hidden;color:var(--surface);pointer-events:none}
+.mgs-seg.ar span{left:50%;right:auto;transform:translate(-50%,-50%);max-width:calc(100% - 2px);box-sizing:border-box;padding:2px 3px;border-radius:3px;background:var(--surface);color:var(--ink)}
+.mgs-seg.ar.bad span{color:var(--c-oom)}
+.mgs-seg.now{box-shadow:inset 0 0 0 2px var(--ink)}
+.mgs-sum.mgs-cap{color:var(--ink);min-height:2.7em}
+/* legend swatches of the moving parts */
+.mgs-lbr{flex-basis:100%;height:0}
+.mgs-sw.sl{background:linear-gradient(90deg,var(--c-weights) 0 50%,var(--c-kv) 50% 100%);height:6px}
+.mgs-sw.chip{background:var(--ink-3);border:1px solid var(--ink);height:9px}
+.mgs-sw.pr{background:linear-gradient(to top,var(--ink-3) 0 4px,color-mix(in srgb,var(--ink-3) 22%,transparent) 2px);border:1px solid var(--ink-3)}
+.mgs-swsvg{flex:none;display:block}
+.mgs-sw.fr{background:var(--ink)}
+.mgs-sw.bandA,.mgs-sw.mbA{background:var(--ink-2)}
+.mgs-sw.mbB{background:var(--surface);border:1.6px solid var(--ink-2)}
+.mgs-sw.idle{background:var(--surface);border:1px dashed var(--ink-3)}
+.mgs-sw.hand{height:0;border-top:2px solid var(--ink);border-radius:0;width:12px}
+.mgs-sw.tokm{width:8px;height:8px;background:var(--ink);transform:rotate(45deg);border-radius:0}
+/* MoE: one MoE layer on 8 GPUs, its four steps */
+.mgs-ep-steps{display:flex;flex-wrap:wrap;gap:4px 6px;margin:2px 0 6px}
+.mgs-st4{font-family:var(--font-mono);font-size:11px;padding:2px 7px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3)}
+.mgs-st4.on{color:var(--surface);background:var(--ink);border-color:var(--ink)}
+.mgs-ep-host{width:100%;min-width:0}
+.mgs-ep-card{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.mgs-svg .mgs-ep-gn{font-size:11px;fill:var(--ink);font-weight:600}
+.mgs-svg .mgs-ep-rg{font-size:11px;fill:var(--ink-3)}
+.mgs-ep-tok{fill:var(--ink-3)}
+.mgs-ep-tok.ex.on{fill:var(--ink);stroke:var(--ink);stroke-width:1;outline:none}
+.mgs-ep-tok.ex.on{filter:drop-shadow(0 0 1.5px var(--ink))}
+.mgs-ep-x{fill:none;stroke:var(--c-weights);stroke-width:.7}
+.mgs-ep-x.on{fill:var(--c-weights)}
+.mgs-ep-x.pk{stroke:var(--ink);stroke-width:1.6}
+.mgs-ep-pick{fill:none;stroke:var(--ink);stroke-width:1;stroke-dasharray:2 2;opacity:0}
+.mgs-ep-pick.on{opacity:1}
+.mgs-ep-mesh{stroke:var(--ink-3);opacity:0;stroke-linecap:round}
+.mgs-ep-mesh.to-busy{stroke:var(--c-oom)}
+.mgs-ep-mesh.on{opacity:.45}
+.mgs-ep-dot{fill:var(--ink-2);opacity:0}
+.mgs-ep-dot.to-busy{fill:var(--c-oom)}
+.mgs-ep-dot.on{opacity:.85}
+.mgs-ep-exd{opacity:0}
+.mgs-ep-exd.on{opacity:1}
+.mgs-ep-exd rect{fill:var(--surface);stroke:var(--ink);stroke-width:1.2}
+.mgs-svg .mgs-ep-exd text{font-size:11px;fill:var(--ink);font-weight:700}
+.mgs-ep-slot{fill:none;stroke:var(--line-2);stroke-width:1}
+.mgs-ep-todo{fill:color-mix(in srgb,var(--ink-3) 25%,transparent);stroke:var(--ink-3);stroke-width:1}
+.mgs-ep-pile{fill:var(--ink-3)}
+.mgs-ep-pile.bad{fill:var(--c-oom)}
+.mgs-ep-idlebg{fill:var(--surface)}
+.mgs-ep-idleln{stroke:var(--ink-3);stroke-width:1.4}
+.mgs-ep-idle{stroke:var(--ink-3);stroke-width:1}
+.mgs-sw.epidle{background:repeating-linear-gradient(45deg,var(--ink-3) 0 1.3px,var(--surface) 1.3px 4px);border:1px solid var(--ink-3)}
+.mgs-ep-avg{stroke:var(--ink);stroke-width:1.2;stroke-dasharray:4 3}
+.mgs-svg .mgs-ep-v{font-size:11px;fill:var(--ink)}
+.mgs-leg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:11.5px}
+.mgs-leg>span{display:inline-flex;align-items:center;gap:6px}
+.mgs-sw.tok{width:8px;height:8px;background:var(--ink-3)}
+.mgs-sw.xp{width:10px;height:6px;background:var(--c-weights);border-radius:0}
+.mgs-sw.dot{width:6px;height:6px;border-radius:50%;background:var(--ink-2)}
+.mgs-sw.avgl{width:14px;height:0;border-top:2px dashed var(--ink);border-radius:0}
+/* the pipeline's hand-offs: a batch's hidden vectors travelling to the next stage (batch A dark, batch B light), the new token back to stage 1 */
+.mgs-hpk{opacity:0;pointer-events:none}
+.mgs-hpk.on{opacity:1}
+.mgs-hpk rect{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
+.mgs-svg .mgs-hpk text{font-size:11px;fill:var(--surface);font-weight:700}
+.mgs-hpk.mbB rect{fill:var(--surface);stroke:var(--ink)}
+.mgs-svg .mgs-hpk.mbB text{fill:var(--ink)}
+.mgs-hpk.tok rect{rx:7px}
+.mgs-bandg.wait .mgs-band{stroke:var(--ink);stroke-width:1.4}
+.mgs-svg .mgs-bandg.wait .mgs-band-t{fill:var(--ink);font-weight:600}
+.mgs-ghand.now{stroke-width:2.8}
+.mgs-gtok.now{stroke:var(--ink);stroke-width:3}
+.mgs-sw.hpk{width:14px;height:11px;background:var(--ink);border-radius:3px}
+.mgs-sw.hpkt{width:13px;height:13px;background:var(--ink);border-radius:50%}
+.mgs-sw.pkl{width:14px;height:0;border-top:1.5px dashed var(--ink);border-radius:0}
+.mgs-sw.exd{width:11px;height:11px;border:1.2px solid var(--ink);background:var(--surface);border-radius:2px}
+.mgs-sw.mesh{width:14px;height:0;border-top:2px solid var(--ink-3);border-radius:0}
+.mgs-sw.todo{background:color-mix(in srgb,var(--ink-3) 25%,transparent);border:1px solid var(--ink-3)}

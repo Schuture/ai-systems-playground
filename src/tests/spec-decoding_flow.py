@@ -4,11 +4,13 @@ the three challenge tiers and the brief comparison chart, the capability layer, 
 the dock on phones, no horizontal overflow, the copy rules shared with the other labs (no “toy”, no option-group disclaimers, Chinese
 spacing and punctuation, no formula as plain text), and the replay rules of R3.20 for the round player (no replay when nothing changed,
 none when returning to a watched round, a replay when something changed, the 重放 / Replay control, default speed 中, pause, step, scrub).
+The 知识梳理 (primer, outline approved 2026-10-14): its four sections in order, the link to the prefill-decode primer, the two inert pictures,
+no result of the guided parts and no sentence copied from them, the copy rules, and its button to the guided parts.
 Screenshots go to shots/spec-decoding/.
 
 Run: python3 tests/spec-decoding_flow.py [en|zh] [1440|390]   (filters; without them, everything)
 """
-import json, pathlib, subprocess, sys, time
+import json, pathlib, re, subprocess, sys, time
 from playwright.sync_api import sync_playwright
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent)); from _m2 import open_drawers
 
@@ -119,6 +121,17 @@ def rules(pg, where, lang):
     if o > 0: rule_hits.append(f'{where}: horizontal overflow {o}px')
 
 
+def folds(pg, where, n, lang):
+    """owner review 2026-10-14 (point 4): the card says the point in plain words; formulas and detail wait in n folds, closed at first.
+    Opens them (they stay open for the checks that follow) and runs the copy rules on what they hold."""
+    vis_math = "()=>[...document.querySelectorAll('#spd-rail .step.current math')].filter(m=>m.getClientRects().length&&!m.closest('details:not([open])')).length"
+    k = count(pg, '#spd-rail .step.current details.spd-more'); shut = count(pg, '#spd-rail .step.current details.spd-more:not([open])')
+    check(f'{where} (owner 2026-10-14): {n} fold(s), closed at first; no formula in the card text in view', k == n and shut == n and pg.evaluate(vis_math) == 0, f'{k} folds, {shut} closed, {pg.evaluate(vis_math)} formulas in view')
+    pg.evaluate("()=>document.querySelectorAll('#spd-rail .step.current details.spd-more').forEach(d=>d.open=true)"); pg.wait_for_timeout(150)
+    check(f'{where}: the folds open and hold the detail', count(pg, '#spd-rail .step.current details.spd-more[open]') == n and len(text(pg, '#spd-rail .step.current .spd-more-b')) > 40)
+    rules(pg, f'{where} (folds open)', lang)
+
+
 def walk(b, lang, w):
     tag = f'{lang} {w}'
     pg = page(b, w, lang)
@@ -128,11 +141,19 @@ def walk(b, lang, w):
     rules(pg, f'{tag} part 1', lang); shot(pg, f'{lang}_{w}_1_mission')
     nxt(pg)
     # part 2: the step cost
-    check(f'{tag} part 2 gated until 5 and 640 tokens are tried; the reason is shown', next_off(pg) and Z(lang, 'Try 5 tokens and 640 tokens', '试过 5 个和 640 个 token') in text(pg, '#spd-rail'))
+    check(f'{tag} part 2 gated until 1 × 5 and 128 × 5 tokens are tried; the reason is shown', next_off(pg) and Z(lang, 'Try 1 request × 5 tokens and 128 requests × 5 tokens', '试过“1 个请求 × 5 个 token”和“128 个请求 × 5 个 token”') in text(pg, '#spd-rail'))
+    hit = pg.evaluate("""()=>{const t=[...document.querySelectorAll('#spd-cost .spd-stepin svg text')].filter(e=>e.textContent.trim()).map(e=>e.getBoundingClientRect()), o=[];
+      for(let i=0;i<t.length;i++) for(let j=i+1;j<t.length;j++){const a=t[i], b=t[j]; if(a.left<b.right-1&&b.left<a.right-1&&a.top<b.bottom-1&&b.top<a.bottom-1) o.push(i+'/'+j);} return o;}""")
+    check(f'{tag} part 2 (reader 2026-10-14): the one-token step drawn first has no labels running into each other; the options’ paragraph sends the reader to 1 × 5 for the causal mask',
+          not hit and Z(lang, 'with “1 request × 5 tokens” the top of the chart also draws', '选“1 个请求 × 5 个 token”时，图上半部分还会画出') in text(pg, '#spd-rail .step.current p:has(+ .levers)'), hit)
     check(f'{tag} part 2: the rows not tried yet (and the plain-decode baseline of 128 requests) show no step time', '20.1' not in text(pg, '#spd-cost') and '8.54' not in text(pg, '#spd-cost') and '16.0' not in text(pg, '#spd-cost'), text(pg, '#spd-cost')[:120])
     lever(pg, '5'); c5 = text(pg, '#spd-cost')
     check(f'{tag} part 2: 5 tokens take the same 7.53 ms as 1', c5.count('7.53 ms') == 2, c5[:120])
+    check(f'{tag} part 2 (owner 2026-10-14): the step drawn holds 5 positions of one request; every row of the time chart is labelled requests × tokens',
+          count(pg, '#spd-cost .spd-cxc') == 5 and all(Z(lang, e, z) in c5 for e, z in (('1 request × 1 token', '1 个请求 × 1 个 token'), ('1 request × 5 tokens', '1 个请求 × 5 个 token'), ('16 requests × 5 tokens', '16 个请求 × 5 个 token'),
+          ('128 requests × 1 token', '128 个请求 × 1 个 token'), ('128 requests × 5 tokens', '128 个请求 × 5 个 token'))), c5[:300])
     lever(pg, '640'); s = st(pg)
+    check(f'{tag} part 2: at 128 × 5 the step drawn is one request’s card of 5 positions, times 128 requests', count(pg, '#spd-cost .spd-cxc') == 5 and Z(lang, '× 128 requests', '× 128 个请求') in text(pg, '#spd-cost'), text(pg, '#spd-cost')[:200])
     check(f'{tag} part 2: 640 tokens take 20.1 ms against 16.0 ms for plain decode of the same 128 requests; compute-bound; next opens', '20.1 ms' in text(pg, '#spd-cost') and '16.0 ms' in text(pg, '#spd-cost') and not next_off(pg) and Z(lang, 'compute-bound', '受算力限制') in text(pg, '#spd-rail') and '16.0 ms' in text(pg, '#spd-rail .obs'))
     rules(pg, f'{tag} part 2', lang); shot(pg, f'{lang}_{w}_2_cost')
     nxt(pg)
@@ -146,6 +167,20 @@ def walk(b, lang, w):
           and text(pg, '#spd-round [data-act="rp-replay"]') == Z(lang, 'Replay', '重放') and text(pg, '#spd-round .seg-ctl[data-key="rpSpd"]').replace(' ', '') == Z(lang, 'SlowMediumFast', '慢中快')
           and text(pg, '#spd-round .seg-ctl[data-key="rpSpd"] [aria-pressed="true"]') == Z(lang, 'Medium', '中') and count(pg, '#spd-rp-pos') == 1, text(pg, '#spd-round .seg-ctl[data-key="rpSpd"]'))
     check(f'{tag} part 3: next is open once the round has been seen to its end', not next_off(pg))
+    rc = text(pg, '#spd-rcost')
+    check(f'{tag} part 3 (owner 2026-10-14): the time strip compares the round with plain decode for the same 3 tokens; it computes 1.9 times more and reads the weights once',
+          Z(lang, 'Plain decode', '普通 decode') in rc and Z(lang, '3 tokens', '3 个 token') in rc and '1.9' in rc and Z(lang, 'once instead of 3', '1 次，而不是 3 次') in rc, rc[:300])
+    def stages_at(f):
+        pg.evaluate(f"()=>{{const r=document.querySelector('#spd-rp-pos'); r.value={f}; r.dispatchEvent(new Event('input',{{bubbles:true}}))}}"); pg.wait_for_timeout(120)
+        return pg.evaluate("()=>[...document.querySelectorAll('#spd-round .spd-stl')].map(e=>e.classList.contains('on')?'on':e.classList.contains('done')?'done':'-')")
+    seq = [stages_at(f) for f in (2, 5, 6, 9)]
+    grow = [(stages_at(f), pg.evaluate("()=>[...document.querySelectorAll('#spd-rcost svg text')].map(t=>t.textContent).join(' | ')"))[1] for f in (5, 7, 8)]
+    check(f'{tag} part 3 (reader 2026-10-14): plain decode’s row grows with the tokens kept in ③ (1, 2, then 3 steps)',
+          all(Z(lang, x, y) in g.split(' | ')[-1] for g, x, y in zip(grow, ('1 token', '2 tokens', '3 tokens'), ('1 个 token', '2 个 token', '3 个 token'))), grow)
+    stages_at(9)
+    check(f'{tag} part 3 (owner 2026-10-14): the stages ① guess, ② check, ③ keep are named on the figure and light up in order as the round plays',
+          all(Z(lang, e, z) in text(pg, '#spd-round') for e, z in (('The draft model guesses', 'draft 模型猜'), ('The target model checks, in one step', '目标模型一次检查'), ('Keep', '留下')))
+          and seq == [['on', '-', '-'], ['done', 'on', '-'], ['done', 'done', 'on'], ['done', 'done', 'done']], json.dumps(seq))
     rules(pg, f'{tag} part 3', lang); shot(pg, f'{lang}_{w}_3_round')
     nxt(pg)
     # part 4: the prediction
@@ -158,18 +193,31 @@ def walk(b, lang, w):
     rules(pg, f'{tag} part 4', lang); shot(pg, f'{lang}_{w}_4_predict')
     nxt(pg)
     # part 5: the formula, k = 2 / 4 / 8
-    check(f'{tag} part 5: gated until k = 2 and 8 are tried; the formula is typeset; one metric card (3.36 at k = 4)', next_off(pg) and count(pg, '#spd-rail .spd-eq math') >= 2 and count(pg, '#spd-metrics .metric') == 1 and '3.36' in text(pg, '#spd-metrics'))
+    vis_eq = "()=>[...document.querySelectorAll('#spd-rail .spd-eq math')].filter(m=>m.getClientRects().length&&!m.closest('details:not([open])')).length"
+    shut5 = count(pg, '#spd-rail .step.current details.spd-more:not([open])'); eq0 = pg.evaluate(vis_eq)
+    pg.evaluate("()=>document.querySelectorAll('#spd-rail .step.current details.spd-more').forEach(d=>d.open=true)"); pg.wait_for_timeout(150)
+    check(f'{tag} part 5: gated until k = 2 and 8 are tried; the general formula waits in a closed fold and is typeset when opened (reader 2026-10-14); one metric card (3.36 at k = 4)',
+          next_off(pg) and shut5 == 1 and eq0 == 0 and pg.evaluate(vis_eq) >= 2 and count(pg, '#spd-metrics .metric') == 1 and '3.36' in text(pg, '#spd-metrics')
+          and Z(lang, 'each extra guess adds less', '多猜的收益越来越小') in text(pg, '#spd-rail .step.current'), f'{shut5} closed, {eq0} formulas before opening')
     lever(pg, '2'); lever(pg, '8', 400)
     obs = text(pg, '#spd-rail .obs')
-    check(f'{tag} part 5: the verdict says the pick was right; k = 8 gives 4.33 and its simulated mean', not next_off(pg) and Z(lang, 'right', '是对的') in obs and '4.33' in obs and '4.37' in obs and '4.33' in text(pg, '#spd-metrics'), obs[:200])
+    check(f'{tag} part 5: the verdict says the pick was right; k = 8 gives 4.33 and guess 8 survives about 17% of the time; the chart’s dots show the simulated rounds', not next_off(pg) and Z(lang, 'right', '是对的') in obs and '4.33' in obs and '17%' in obs and '4.33' in text(pg, '#spd-metrics')
+          and count(pg, '#spd-kcurve .spd-dot') == 32, obs[:200])
+    check(f'{tag} part 5 (reader 2026-10-14): the options say what the average counts', Z(lang, '2.44 tokens per target step on average', '跑一次平均 2.44 个 token') in text(pg, '#spd-rail [data-lkey][data-lever="2"] .lv-r'), text(pg, '#spd-rail [data-lkey][data-lever="2"] .lv-r'))
     rules(pg, f'{tag} part 5', lang); shot(pg, f'{lang}_{w}_5_expect')
     nxt(pg)
     # part 6: the acceptance rule
     check(f'{tag} part 6: gated; the sampled rule matches the target within 0.6 percentage points', next_off(pg) and Z(lang, '0.6 percentage points', '0.6 个百分点') in text(pg, '#spd-rail [data-lkey][data-lever="sample"] .lv-r'))
     lever(pg, 'greedy')
-    check(f'{tag} part 6: greedy keeps exactly the target’s output', Z(lang, 'exactly', '完全一样') in text(pg, '#spd-rail [data-lkey][data-lever="greedy"] .lv-r'))
+    check(f'{tag} part 6: greedy keeps exactly the target’s output; its chart runs to 100% (reader 2026-10-14)', Z(lang, 'exactly', '完全一样') in text(pg, '#spd-rail [data-lkey][data-lever="greedy"] .lv-r')
+          and pg.evaluate("()=>[...document.querySelectorAll('#spd-acc svg text.spd-tk')].some(t=>t.textContent==='100%')"))
     lever(pg, 'nocheck')
-    check(f'{tag} part 6 (R5.11): without the check the output changes, drawn in red, the status says so; next opens', count(pg, '#spd-acc .spd-badb') >= 1 and Z(lang, 'changed', '输出变了') in text(pg, '#spd-stage') and not next_off(pg) and '55.4%' in text(pg, '#spd-rail .obs'))
+    check(f'{tag} part 6 (R5.11): without the check the output changes, drawn in red, the status says so; next opens', count(pg, '#spd-acc .spd-badb') >= 1 and Z(lang, 'changed', '输出变了') in text(pg, '#spd-stage') and not next_off(pg) and '55.4%' in text(pg, '#spd-rail .obs')
+          and Z(lang, '15.4 percentage points', '15.4 个百分点') in text(pg, '#spd-rail [data-lkey][data-lever="nocheck"] .lv-r'))
+    r6 = text(pg, '#spd-rail .step.current') + text(pg, '#spd-stage')
+    check(f'{tag} part 6 (reader 2026-10-14): a guess is kept only part of the time and otherwise rejected; kept guesses have one name in the card and the legend',
+          Z(lang, 'kept only part of the time and rejected otherwise', '只按一定比例收下，否则就拒绝') in r6 and (lang == 'en' or '被接受' not in r6), r6[:200])
+    folds(pg, f'{tag} part 6', 1, lang)
     rules(pg, f'{tag} part 6', lang); shot(pg, f'{lang}_{w}_6_same')
     nxt(pg)
     # part 7: the batch
@@ -177,9 +225,18 @@ def walk(b, lang, w):
     lever(pg, '128')
     obs = text(pg, '#spd-rail .obs')
     check(f'{tag} part 7 (R5.11): at batch 128 the 3B is slower than plain decode (0.86, red points); next opens', not next_off(pg) and '0.86' in obs and count(pg, '#spd-bcurve .spd-baddot') >= 1 and st(pg)['B'] == 128, obs[:160])
-    check(f'{tag} part 7: the timeline shows 24 tokens with plain decode and with guessing', count(pg, '#spd-time svg') == 1 and '24' in text(pg, '#spd-time'))
+    check(f'{tag} part 7: the timeline shows 24 tokens with plain decode and with guessing; its caption names the guesser and the acceptance rate (reader 2026-10-14)', count(pg, '#spd-time svg') == 1 and '24' in text(pg, '#spd-time')
+          and Z(lang, 'close to the average', '接近平均水平') in text(pg, '#spd-time .spd-tnote') and Z(lang, 'not drawn at random', '不是随机抽的') not in text(pg, '#spd-time'), text(pg, '#spd-time .spd-tnote'))
+    folds(pg, f'{tag} part 7', 1, lang)
+    r7 = text(pg, '#spd-rail .step.current')
+    check(f'{tag} part 7 (reader 2026-10-14): the card gives each guesser’s acceptance rate; the fold compares the 3B guessing 4 at 128 requests (42.8 ms) with a plain 8B step (16.0 ms): 2.7 times',
+          all(x in r7 for x in ('1B 0.7', '3B 0.8', 'n-gram 0.3', '42.8 ms', '16.0 ms', '66%')) and Z(lang, '2.7 times a plain 8B step', '的 2.7 倍') in r7, r7[:200])
     rules(pg, f'{tag} part 7', lang); shot(pg, f'{lang}_{w}_7_batch')
     nxt(pg)
+    r8 = text(pg, '#spd-rail .step.current')
+    check(f'{tag} part 8 (owner 2026-10-14): three short take-aways with their numbers (2.77 tokens, 1.67 times, 0.86 times at batch 128)',
+          count(pg, '#spd-rail .step.current ul > li') == 3 and all(x in r8 for x in ('2.77', '1.67', '0.86')) and 'vLLM' not in r8, r8[:300])
+    folds(pg, f'{tag} part 8', 3, lang)
     check(f'{tag} part 8: misconceptions, production systems and the way to the scenarios', count(pg, '#spd-rail [data-mode-go="sandbox"]') >= 1 and 'vLLM' in text(pg, '#spd-rail') and '✗' in text(pg, '#spd-rail'))
     pg.evaluate("()=>{document.querySelector('#spd-math').open=true}"); pg.wait_for_timeout(150)
     check(f'{tag} Show the math: four named formulas, typeset', count(pg, '#spd-mathbody .spd-eq') >= 4 and count(pg, '#spd-mathbody math') >= 8)
@@ -273,11 +330,68 @@ def replay_rules(b, lang):
     pg.close()
 
 
+def primer_walk(b, lang, w):
+    """The 知识梳理 (outline approved by the owner on 2026-10-14): four sections in the approved order, the link to the prefill-decode
+    primer (which owns memory-bound decode), two schematic pictures in the text's own symbols as an inert display, no result the guided parts let the reader
+    find, no sentence copied from the guided parts, the copy rules; its last button opens the guided parts on part 1."""
+    tag = f'{lang} {w} primer'
+    pg = b.new_page(viewport={'width': w, 'height': 900 if w > 500 else 844}, reduced_motion='reduce'); pg.add_init_script('window.__aspPrimer=true')
+    pg.on('pageerror', lambda e: errs.append(f'{w} {lang} primer: {e}'))
+    pg.goto(URL); pg.wait_for_timeout(250); pg.click(f'.langsw button[data-lang="{lang}"]'); pg.wait_for_timeout(80)
+    pg.evaluate("()=>{location.hash='spec-decoding'}"); pg.wait_for_timeout(700)
+    PR = '#spd-app .primer[data-primer="spec-decoding"]'
+    r = pg.evaluate("""s=>{const b=[...document.querySelectorAll('.bench.flowed')].find(x=>x.offsetParent), p=document.querySelector(s);
+      return {flow:b&&b.dataset.flow, h:p?[...p.querySelectorAll('.pr-h')].map(e=>e.textContent):[], k:p?[...p.querySelectorAll('.pr-k')].map(e=>e.textContent):[],
+        figs:p?p.querySelectorAll('.pr-fig').length:0, inert:!!p&&[...p.querySelectorAll('.pr-frames')].every(f=>f.inert),
+        a1:p?[...p.querySelectorAll('.pr-sec[data-psec="1"] a')].map(a=>a.getAttribute('href')):[]}}""", PR)
+    want = [Z(lang, 'memory-bound', '受显存带宽限制'), Z(lang, 'one forward pass', '一次前向'), Z(lang, 'Speculative decoding', '投机解码'), Z(lang, 'output does not change', '输出为什么不变')]
+    check(f'{tag}: opens on the 知识梳理; four sections in the approved order (memory-bound decode, one forward pass, speculative decoding, why the output stays)',
+          r['flow'] == 'primer' and len(r['h']) == 4 and r['k'][-1] == '4/4' and all(x in h for x, h in zip(want, r['h'])), json.dumps(r['h'], ensure_ascii=False))
+    # this page is built with this lab only, so the name is plain text here; in the site it is the link that opens that lab on its primer
+    check(f'{tag}: section 1 points to the prefill-decode primer instead of teaching memory-bound decode again',
+          Z(lang, 'the basics of Prefill and decode', '“Prefill 和 decode”的知识梳理') in text(pg, PR + ' .pr-sec[data-psec="1"]') and all(h == '#prefill-decode' for h in r['a1']), r['a1'])
+    # reader 2026-10-14 (second pass): the pictures are schematics in the text’s own symbols, not the lab’s drawings (no word, model or number of theirs)
+    fg = pg.evaluate("""s=>{const f=[...document.querySelectorAll(s+' .pr-fig')], q=(i,c)=>f[i]?[...f[i].querySelectorAll(c)]:[];
+      return {seen:q(0,'.spd-prg-c.spd-seen math').length, hid:q(0,'.spd-prg-c:not(.spd-seen)').length, empty:q(0,'.spd-prg-c:not(.spd-seen)').every(c=>!c.textContent.trim()),
+        outs:q(0,'.spd-prg-o').filter(o=>o.querySelector('math')).length, chips:q(1,'.spd-prc math').length, marks:q(1,'.spd-prm').map(m=>m.textContent),
+        words:f.map(x=>x.innerText).join(' ')}}""", PR)
+    marks = Z(lang, ['keep', 'keep', 'reject', 'void'], ['收下', '收下', '拒绝', '作废'])
+    lab_words = [x for x in ('Llama', '8B', '1B', '3B', 'context', '上文', 'black', 'dog', '一只', '黑', '狗', '3 tokens', '3 个 token') if x in fg['words']]
+    check(f'{tag}: two pictures, schematics in the text’s symbols shown as a display (inert): one forward pass over x₁…x₅ (row i sees x₁…xᵢ and gives p(·|x₁…xᵢ)), and one round, d₁…d₄ against ŷ₁…ŷ₅ marked keep, keep, reject, void',
+          r['figs'] == 2 and r['inert'] and fg['seen'] == 15 and fg['hid'] == 10 and fg['empty'] and fg['outs'] == 5 and fg['chips'] == 12 and fg['marks'] == marks and not lab_words, json.dumps({**fg, 'lab_words': lab_words}, ensure_ascii=False)[:300])
+    t = text(pg, PR)
+    leak = [x for x in ('7.53', '2.44', '3.36', '4.33', '2.77', '1.67', '0.86', '12.5', '22.6', '1.9', '15.0', '15 GB', '0.8') if x in t]
+    check(f'{tag}: no result the guided parts let the reader find (step times, tokens per step, the speedups)', not leak, leak)
+    check(f'{tag}: the formulas are typeset; the acceptance rule adds up to p on a line of its own', count(pg, PR + ' .spd-prfx math') >= 4 and count(pg, PR + ' .pr-text p math') >= 20)
+    rules(pg, tag, lang)
+    out = pg.evaluate("""s=>{const o=[]; for(const fr of document.querySelectorAll(s+' .pr-fig .pr-fr')){const b=fr.getBoundingClientRect();
+      for(const c of fr.querySelectorAll('.spd-prg > *, .spd-prr > *')){if(!c.getClientRects().length) continue; const q=c.getBoundingClientRect();
+        if(q.right>b.right+1||q.left<b.left-1) o.push('outside: '+c.textContent.trim().slice(0,20)); if(c.scrollWidth>c.clientWidth+1) o.push('cut: '+c.textContent.trim().slice(0,20));
+        const m=c.querySelector('math'); if(m){const r=m.getBoundingClientRect(); if(r.right>q.right+1||r.left<q.left-1) o.push('symbol wider than its cell: '+c.textContent.trim().slice(0,20));}}}
+      return o;}""", PR)
+    check(f'{tag}: every cell of both pictures inside the figure, every symbol and word inside its cell', not out, out[:4])
+    pg.screenshot(path=str(SH / f'{lang}_{w}_0_primer.png'), full_page=True)
+    click(pg, PR + ' .pr-end [data-flow-go="guided"]', 400)
+    check(f'{tag}: “Next: the guided parts” opens part 1', pg.evaluate("()=>[...document.querySelectorAll('.bench.flowed')].find(x=>x.offsetParent).dataset.flow") == 'guided' and st(pg)['step'] == 0)
+    # readers flagged primers that repeat the guided parts word for word: no sentence of 16 characters or more appears in a guided card (folds open)
+    cards = []
+    for i in range(8):
+        click(pg, f'#spd-rail [data-go="{i}"]', 250)
+        pg.evaluate("()=>document.querySelectorAll('#spd-rail .step.current details.spd-more').forEach(d=>d.open=true)"); pg.wait_for_timeout(60)
+        cards.append(text(pg, '#spd-rail .step.current'))
+    G = ' '.join(cards)
+    sents = [x.strip() for x in re.split(r'(?<=[。？！.?!])\s+|(?<=[。？！])', t) if len(x.strip()) >= 16]
+    same = [x for x in sents if x in G]
+    check(f'{tag}: no sentence copied from the guided parts ({len(sents)} sentences compared)', len(sents) >= 15 and not same, same[:3])
+    pg.close()
+
+
 with sync_playwright() as p:
     b = p.chromium.launch()
     for lang in LANGS:
         for w in WIDTHS:
             walk(b, lang, w)
+            primer_walk(b, lang, w)
         if 1440 in WIDTHS: replay_rules(b, lang)
     b.close()
 check('copy rules (RULES, spacing, punctuation, colons, boxes, drawing text)', not rule_hits, '; '.join(rule_hits[:10]))

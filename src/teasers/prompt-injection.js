@@ -17,8 +17,8 @@ function readHTML(v){
               'agent 不能发邮件时，就算照着那句话做，<b>文件也发不出去</b>。');
 }
 function notes(){
-  return [tx('Illustrative, not a recorded run: whether a model acts on such a line depends on the model and the wording. The hidden line is described here, not quoted. example.com is reserved for examples (RFC 2606).',
-             '示意，不是真实的运行记录：模型会不会照做，取决于模型和措辞。藏着的那句话这里只描述，不照抄。example.com 是专供举例的域名（RFC 2606）。'),
+  return [tx('Illustrative: whether a model acts on such a line depends on the model and the wording. The hidden line is paraphrased here. example.com is reserved for examples (RFC 2606).',
+             '示意：模型会不会照做，取决于模型和措辞。藏着的那句话这里只转述大意。example.com 是专供举例的域名（RFC 2606）。'),
           tx('Indirect prompt injection: instructions planted in content an agent reads, such as a web page or an email (Greshake et al., arXiv 2302.12173). Without a way out, the files cannot leave, whatever the model does.',
              '间接提示注入：把指令藏进 agent 会读的内容里，比如网页或邮件（Greshake 等，arXiv 2302.12173）。拿掉往外发的路，不管模型怎么做，文件都出不去。')];
 }

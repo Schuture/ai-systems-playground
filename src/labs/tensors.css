@@ -254,3 +254,8 @@
 }
 /* the pairing picture's cells hold typeset x_i − y_j at the text size (H1, 2026-10-09) */
 .ts-pgrid math.tex{font-size:1em}
+
+/* option groups that wrap keep a 1px line between their rows as well as their columns: the buttons sit 1px apart on the line colour
+   instead of drawing right borders (owner 2026-10-14, R7.13; tests/kit_seg_rows.py) */
+.ts-app .seg-ctl{gap:1px;background:var(--line)}
+.ts-app .seg-ctl button,.ts-app .seg-ctl button:last-child{border-right:0}

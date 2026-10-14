@@ -52,7 +52,7 @@ const STR={
   tipLgKV:'The KV cache holds a key and a value vector for every token of every user’s context, in every layer. Thin lines split the amber block into one slice per user; they are left out when the slices get too narrow.',
   tipLgOH:'Runtime overhead is memory the serving engine needs besides the weights and the KV cache, such as one step’s temporary activations and CUDA graphs. It is an estimate, usually a GiB or two per GPU, because inference frees each layer’s activations right away.',
   ohNote:'Memory the serving engine needs besides the weights and the KV cache, such as one step’s temporary activations and CUDA graphs. It is an estimate: engines such as vLLM measure it at startup, and it grows with the tokens one step may process and the CUDA graphs captured. It is usually a GiB or two, because inference frees each layer’s activations right away.',
-  utilNote:'The server uses at most this share of each GPU’s memory and keeps the rest as a safety margin, so memory the engine does not account for (the CUDA runtime, fragmentation) cannot push the GPU out of memory. It is set by hand, not computed: a smaller margin leaves more for the KV cache but makes running out of memory mid-run more likely. vLLM defaulted to 0.9 in earlier releases and uses 0.92 in current ones.',
+  utilNote:'The server uses at most this share of each GPU’s memory and keeps the rest as a safety margin, so memory the engine does not account for (the CUDA runtime, fragmentation) cannot push the GPU out of memory. It is set by hand: a smaller margin leaves more for the KV cache but makes running out of memory mid-run more likely. vLLM defaulted to 0.9 in earlier releases and uses 0.92 in current ones.',
   tipLgKVt:'The KV cache holds a key and a value vector for every token of every user’s context, in every layer.',
   tipLgOver0:'This is the memory still missing to hold every user at once. Here not even one user fits, so a real server such as vLLM would refuse to start: at startup it checks that the weights and one user’s full context fit.',
   lgWas:'dashed outline: before the change', tipLgWas:'The dashed outline marks how much memory each GPU used before your last change.',
@@ -102,7 +102,7 @@ const STR={
   tipLgKV:'KV cache 存着每个用户上下文里每个 token 在每一层的 key 和 value 向量。琥珀色里的细竖线把它隔成每个用户一段；每段太窄时不画。',
   tipLgOH:'运行时开销是推理引擎在权重和 KV cache 之外要占的显存，比如一步前向的临时激活和 CUDA graph。它是估计值，通常每卡一两个 GiB，因为推理时每层的激活用完就释放。',
   ohNote:'推理引擎在权重和 KV cache 之外要占的显存，比如一步前向的临时激活和 CUDA graph。这是估计值：vLLM 这类引擎在启动时实测它，一步最多处理的 token 越多、录制的 CUDA graph 越多，它就越大。它通常只有一两个 GiB，因为推理时每层的激活用完就释放。',
-  utilNote:'服务端最多只用每张卡显存的这个比例，剩下的留作安全余量，免得引擎没算到的占用（如 CUDA 运行时、显存碎片）把显存撑爆。它是人为设定的，不是算出来的：余量留得越少，KV cache 能用的越多，但越容易在运行中显存不足。vLLM 早期版本默认 0.9，当前版本默认 0.92。',
+  utilNote:'服务端最多只用每张卡显存的这个比例，剩下的留作安全余量，免得引擎没算到的占用（如 CUDA 运行时、显存碎片）把显存撑爆。它是人为设定的：余量留得越少，KV cache 能用的越多，但越容易在运行中显存不足。vLLM 早期版本默认 0.9，当前版本默认 0.92。',
   tipLgKVt:'KV cache 存着每个用户上下文里每个 token 在每一层的 key 和 value 向量。',
   tipLgOver0:'这一段是同时装下所有用户还缺的显存。这里一个用户都装不下，vLLM 这类真实服务会直接拒绝启动：它在启动时检查权重和一个用户的完整上下文能不能放下。',
   lgWas:'虚线框：改之前', tipLgWas:'虚线框标出上一次改设置之前，每张 GPU 用了多少显存。',
@@ -746,7 +746,7 @@ function markMap(){
 const TZF={
  formula:{en:'Formula',zh:'公式计算',d:{en:'This mini experiment’s numbers come from closed-form formulas with published specs or stated assumptions; nothing is simulated.',zh:'这个小实验的数由闭式公式算出，代入公开规格或写明的假设，不做模拟。'}},
  toy:{en:'Toy run',zh:'玩具实跑',d:{en:'In this mini experiment your browser really runs the algorithm, on a small made-up input.',zh:'这个小实验里，浏览器真的在运行这个算法，只是输入是小规模的虚构数据。'}},
- illus:{en:'Illustrative',zh:'示意',d:{en:'This mini experiment is a hand-made example of the mechanism, not a recording and not a measurement.',zh:'这个小实验是手工构造的例子，用来演示机制；不是录制，也不是实测。'}}
+ illus:{en:'Illustrative',zh:'示意',d:{en:'This mini experiment is a hand-made example that shows the mechanism.',zh:'这个小实验是为演示机制手工构造的例子。'}}
 };
 const TZKIND={'kv-cache':'formula','paged-attention':'formula','continuous-batching':'toy','prefill-decode':'formula','chunked-prefill':'formula','prefix-caching':'formula','serving-capstone':'toy',
  'quantization':'toy','spec-decoding':'formula','training-memory':'formula','parallelism':'formula','sft':'toy','lora':'formula','reward-model':'toy','ppo':'toy','dpo':'toy','grpo':'toy','rlvr':'toy','post-capstone':'formula','sampling':'toy',
@@ -2152,7 +2152,13 @@ const pbarHTML=o=>{const c=o.steps[o.current]||{}, a=o.ans||null, q=o.q||{}, sq=
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.pbar [data-pbgo]'); if(!b) return; const host=b.closest('.pbar').parentElement,
   sb=host&&host.querySelector(':scope>.steps>.step.current>.step-b'); if(!sb) return; const isQ=b.dataset.pbgo==='q', f=sb.querySelector(isQ?PQ_SEL:PC_SEL);
   if(!f){revealTop(sb); return;} const g=f.closest('[role="group"],.choices,.levers,.inline-ctl,.ctl')||f, pv=g.previousElementSibling;
-  revealTop(isQ&&pv&&pv.matches('p')?pv:g); f.focus({preventScroll:true}); flashEl(g);});
+  // a question comes up from the top of its stem (the paragraphs right above the options, owner 2026-10-14: the question line alone
+  // left the setup under the top bar), as far back as still leaves the options on the screen (a long list: at least its first 45%)
+  let to=isQ&&pv&&pv.matches('p')?pv:g;
+  if(to!==g){const bar=$('.topbar'), dk=$('#dock'), av=window.innerHeight-(bar?bar.offsetHeight:56)-(dk&&!dk.hidden?dk.offsetHeight:50)-12,
+    room=av-Math.min(g.offsetHeight,av*0.45), gt=g.getBoundingClientRect().top;
+    for(let e=to.previousElementSibling; e&&e.matches('p:not(.nx-why),ul,ol')&&e.getClientRects().length; e=e.previousElementSibling){if(gt-e.getBoundingClientRect().top>room) break; to=e;}}
+  revealTop(to); f.focus({preventScroll:true}); flashEl(g);});
 /* why Next is disabled (kit fixes, round K): steps({nextWhy}) puts this line under the card's buttons and under the part bar's buttons.
    It shows while Next is disabled; once Next is enabled, in place or by a re-render, it keeps its height but goes blank (CSS, visibility),
    so nothing below it moves. Rendered while Next is already enabled, it takes no room until Next is disabled in place (kitObserve) */
@@ -2263,7 +2269,7 @@ function doneHTML(id){let x=null; try{x=nextInfo(id);}catch(e){x=null;}
   return `<div class="ex-passed"><p><b>${tx('✓ You have finished this lab’s core: the challenge meets the goal.','✓ 这个 Lab 的核心学习完成了：挑战已达标。')}</b>${tx(' The practice below can wait for later.','下面的练习可以以后再做。')}</p>`+a+`</div>`;}
 function exitsHTML(id,d){EXD[id]=d; const s=exState(id), T=[tx('Explain it','讲清楚'),tx('A new case','新情况'),tx('Go further','延伸练习')];
   const b=s.tab===0?exQuizHTML(d.explain,0,s):(s.tab===1?exQuizHTML(d.transfer,1,s):
-    `<p class="small muted">${tx('Examples of frontier-lab interview questions, reconstructed from second-hand accounts (unofficial). They take this lab further: write the code, or the design.','Frontier lab 真题示例（据面经整理，非官方原题），比这个 Lab 更进一步：要写出代码，或做出设计。')}</p><ul class="ex-links">`+
+    `<p class="small muted">${tx('Examples of frontier-lab interview questions, reconstructed from second-hand accounts. They take this lab further: write the code, or the design.','Frontier lab 真题示例（据面经整理），比这个 Lab 更进一步：要写出代码，或做出设计。')}</p><ul class="ex-links">`+
       d.practice.map(x=>{const p=PRACTICE[x.id]; if(!p) return ''; return `<li><a href="${practiceURL(x.id)}" target="_blank" rel="noopener">${esc(tx(p[2],p[3]))} <span aria-hidden="true">↗</span></a><span>${x.d}</span></li>`;}).join('')+`</ul>`+
       (drillCard()?`<p class="small muted ex-drill">${tx('This lab’s own interview drill, a new question each time, is at the bottom of the page.','这个 Lab 自己的面试题（每次换一道）在页面底部。')}${tx(' ','')}<button type="button" class="linkbtn" data-ex="drill">${tx('Go to it ↓','去看 ↓')}</button></p>`:''));
   return `<div class="panel railcard exits" data-exits="${id}">${!d.selfDone&&labPassed(id)?doneHTML(id):''}<div class="eyebrow">${tx('Going further (optional): can you use it on a new case?','可选进阶：能用到新情况上吗？')}</div>`+
@@ -2361,7 +2367,7 @@ const PRIMER_SEE={'tokenization-cost':'architecture',mha:'architecture',rope:'ar
   'gqa-mla':'architecture',moe:'architecture','kv-cache':'architecture','flash-attention':'roofline','softmax-numerics':'number-formats',optimizers:'backprop','train-debug':'backprop',
   'pass-k':'eval-ci','llm-judge':'eval-ci',contamination:'eval-ci','eval-capstone':'eval-ci',
   'paged-attention':'prefill-decode','continuous-batching':'prefill-decode','chunked-prefill':'prefill-decode','prefix-caching':'prefill-decode','serving-capstone':'prefill-decode',
-  quantization:'prefill-decode','spec-decoding':'prefill-decode','pd-disagg':'prefill-decode','multi-gpu-serving':'prefill-decode',admission:'prefill-decode',
+  quantization:'prefill-decode','pd-disagg':'prefill-decode','multi-gpu-serving':'prefill-decode',admission:'prefill-decode',
   'model-parallel':'parallelism','scaling-law':'training-memory','data-pipeline':'training-memory',checkpointing:'training-memory','train-capstone':'training-memory',
   lora:'sft',grpo:'ppo',rlvr:'ppo','post-capstone':'sft','vector-index':'embeddings','chunk-rerank':'embeddings','rag-failure':'embeddings',
   'agent-reliability':'agent-anatomy','context-eng':'agent-anatomy','tool-scheduling':'agent-anatomy','prompt-injection':'agent-anatomy','agent-capstone':'agent-anatomy'};

@@ -157,8 +157,8 @@ const TIP={
  score:()=>tx('A score is the dot product of one query vector and one key vector. The larger it is, the better that key matches the query.',
               '得分是一个 query 向量和一个 key 向量的点积。得分越大，这个 key 和这个 query 越匹配。'),
  /* A6: why the challenge limits the loop (R2.7: what it stands for, why it is set, what decides it, its usual size) */
- loop:()=>tx('The limit of 1,000 loop runs is this challenge’s setting, not a computed value. It stands for the fixed cost of each run: Python interprets the loop body again and launches at least one GPU operation, and that cost does not shrink when a run does less arithmetic. A few hundred runs add little next to the arithmetic; millions of runs spend most of the time on that cost. 1,000 is a round cut-off between the two.',
-             '循环不超过 1,000 次是这道挑战题的设定，不是算出来的。它代表每次循环的固定开销：Python 要重新解释一遍循环体，还至少要启动一次 GPU 运算；每次循环算得再少，这份开销也不会变小。跑几百次时，这份开销比起计算本身不算什么；跑到 1M 次以上，大部分时间都花在它上面。1,000 是两者之间取的一个整数界限。'),
+ loop:()=>tx('The limit of 1,000 loop runs is this challenge’s setting. It stands for the fixed cost of each run: Python interprets the loop body again and launches at least one GPU operation, and that cost does not shrink when a run does less arithmetic. A few hundred runs add little next to the arithmetic; millions of runs spend most of the time on that cost. 1,000 is a round cut-off between the two.',
+             '循环不超过 1,000 次是这道挑战题的设定。它代表每次循环的固定开销：Python 要重新解释一遍循环体，还至少要启动一次 GPU 运算；每次循环算得再少，这份开销也不会变小。跑几百次时，这份开销比起计算本身不算什么；跑到 1M 次以上，大部分时间都花在它上面。1,000 是两者之间取的一个整数界限。'),
  /* A9: the price of the expansion */
  prec:()=>tx(`When x and y are close, ${A.ui.math('{‖x‖}^2 + {‖y‖}^2')} and ${A.ui.math('2\\, x \\cdot y')} are large and nearly equal, and FP32 keeps only about 7 significant digits of each, so their difference loses most of its digits (catastrophic cancellation): a distance can come out slightly negative, and two near neighbours can swap. scikit-learn’s euclidean_distances uses the same expansion, clamps the result at 0 and computes FP32 inputs in FP64 chunks.`,
              `x 和 y 很接近时，${A.ui.math('{‖x‖}^2 + {‖y‖}^2')} 和 ${A.ui.math('2\\, x \\cdot y')} 都很大，又几乎相等。FP32 每个数值只保留约 7 位有效数字，两者一减，大部分有效数字就丢了（catastrophic cancellation）。于是距离可能算成一个很小的负数，两个很近的近邻也可能排反。scikit-learn 的 euclidean_distances 用的是同一个展开式；它把结果截到不小于 0，并把 FP32 的输入分块转成 FP64 再算。`),
@@ -415,7 +415,7 @@ const FIDPOP=()=>tx(
  `<li>Only the largest single array is counted. A real run also holds the inputs, the output and short-lived copies; the peak is a few times the largest array.</li>`+
  `<li>No timings: the lab counts loop runs, multiply-adds and bytes, not seconds. The GPU’s 80 GB is read as 80 GiB.</li>`+
  `<li>Attention sizes are Llama‑3.1‑8B’s: 32 heads of 128 numbers, at 2,048 tokens. The model computes keys and values for only 8 heads and shares each set among 4 of the 32 heads; this lab counts the scores as the 32 heads compute them.</li>`+
- `<li>The loop limit in the challenge, 1,000 runs, is a setting that stands for the fixed cost of each run of a Python loop, not a measured time.</li></ul></div>`+
+ `<li>The loop limit in the challenge, 1,000 runs, is a setting that stands for the fixed cost of each run of a Python loop.</li></ul></div>`+
  `<div><div class="eyebrow">Sources</div><ul>`+
  `<li>Broadcasting rules: NumPy’s ${cite(SRC.bdoc,'broadcasting guide')} (${cite(SRC.brst,'source')}); PyTorch follows the same rules.</li>`+
  `<li>einsum: NumPy ${cite(SRC.npes,'<code>numpy/_core/einsumfunc.py</code>')}; PyTorch ${cite(SRC.tfun,'<code>torch/functional.py</code>')} and ${cite(SRC.tlin,'<code>aten/src/ATen/native/Linear.cpp</code>')}.</li>`+
@@ -430,7 +430,7 @@ const FIDPOP=()=>tx(
  `<li>只算最大的那个数组。真实运行时还要放输入、输出和临时副本，峰值是最大数组的几倍。</li>`+
  `<li>不计时：这个 Lab 数的是循环次数、乘加次数和字节，不是秒。GPU 的 80 GB 按 80 GiB 计。</li>`+
  `<li>注意力的大小取自 Llama‑3.1‑8B：32 个 head，每个 128 维，2,048 个 token。这个模型只为 8 个 head 算 key 和 value，每一份由 32 个 head 中的 4 个共用；这个 Lab 按 32 个 head 实际算的次数计得分。</li>`+
- `<li>挑战题里循环不超过 1,000 次是一个设定，代表 Python 循环每跑一次的固定开销，不是实测的时间。</li></ul></div>`+
+ `<li>挑战题里循环不超过 1,000 次是一个设定，代表 Python 循环每跑一次的固定开销。</li></ul></div>`+
  `<div><div class="eyebrow">来源</div><ul>`+
  `<li>广播规则：NumPy 的${cite(SRC.bdoc,'广播指南')}（${cite(SRC.brst,'源文件')}）；PyTorch 用同样的规则。</li>`+
  `<li>einsum：NumPy 的 ${cite(SRC.npes,'<code>numpy/_core/einsumfunc.py</code>')}；PyTorch 的 ${cite(SRC.tfun,'<code>torch/functional.py</code>')} 和 ${cite(SRC.tlin,'<code>aten/src/ATen/native/Linear.cpp</code>')}。</li>`+

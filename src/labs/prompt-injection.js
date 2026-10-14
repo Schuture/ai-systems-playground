@@ -400,7 +400,7 @@ const FIDPOP=()=>{const fxM=runAll({...BASE,wl:'mail',scope:1}), fxP=tasksOf('ma
  `<li>A task reads outside content; some of it carries a hidden line that asks the agent to send the user’s files to an outside address. The model obeys, warns the user, or ignores it.</li>`+
  `<li>Obeying needs both the files and a way out in that task; a missing tool, an allowlist or a user who says no blocks it.</li></ul></div>`+
  `<div><div class="eyebrow">Simplified</div><ul>`+
- `<li>Every rate is this lab’s assumption, not a measurement:<ul><li>A model that reads a hidden line acts on it half the time and warns the user a quarter of the time.</li><li>Prompting halves how often it acts on it.</li><li>The detector catches 80% of the poisoned content and wrongly flags 2.5% of the clean content.</li><li>The user always spots and refuses what the hijacked agent tries to send, and approves every ordinary send.</li></ul></li>`+
+ `<li>This lab assumes these rates:<ul><li>A model that reads a hidden line acts on it half the time and warns the user a quarter of the time.</li><li>Prompting halves how often it acts on it.</li><li>The detector catches 80% of the poisoned content and wrongly flags 2.5% of the clean content.</li><li>The user always spots and refuses what the hijacked agent tries to send, and approves every ordinary send.</li></ul></li>`+
  `<li>To keep the counts close to these rates, the lab does not roll dice task by task. It hands out acting, warning and ignoring to the tasks in proportion. So a count that depends on one rate equals its average: of the 20 poisoned tasks, exactly 10 are acted on. When the average is not a whole number, the count can only come close: for the coding agent with prompting the average is 10 × 25% = 2.5, and the count is 2. A count that needs two things to meet only comes close too. Under least privilege the inbox assistant does harm only when it acts on a hidden line in a task that sends a file. Those tasks hold ${fxP} poisoned emails, so the average is ${+(fxP*BASE.f).toFixed(2)}; on this day it is ${fxM.harm}. The same goes for content that slips past the detector and is then acted on.</li>`+
  `<li>The only harm counted is the files leaving; a misled summary is not counted.</li></ul></div>`+
  `<div><div class="eyebrow">Sources</div><ul><li>The defenses are named as in AgentDojo’s ${cite(SRC.dojo,'agent_pipeline.py')}: tool_filter, transformers_pi_detector, spotlighting_with_delimiting, repeat_user_prompt; benchmark: ${cite(SRC.dojoP,'arXiv 2406.13352')}.</li>`+
@@ -410,7 +410,7 @@ const FIDPOP=()=>{const fxM=runAll({...BASE,wl:'mail',scope:1}), fxP=tasksOf('ma
  `<li>任务会读外部的内容；其中一些藏着一句话，要 agent 把用户的文件发到外部地址。模型要么照做，要么提醒用户，要么不理它。</li>`+
  `<li>照做要在同一个任务里既拿到文件、又有往外发的路；缺一个工具、有白名单、或者用户拒绝，都会把它挡下。</li></ul></div>`+
  `<div><div class="eyebrow">简化和假设</div><ul>`+
- `<li>所有比例都是这个 Lab 的假设，不是实测：<ul><li>模型读到藏着的话，一半会照做，四分之一会提醒用户。</li><li>提示词让照做的比例减半。</li><li>检测器能认出 80% 藏了话的内容，也会把 2.5% 的正常内容误判。</li><li>agent 被劫持后要发的东西，用户总能认出来并拒绝。正常的发送，用户都同意。</li></ul></li>`+
+ `<li>本 Lab 假设下面这些比例：<ul><li>模型读到藏着的话，一半会照做，四分之一会提醒用户。</li><li>提示词让照做的比例减半。</li><li>检测器能认出 80% 藏了话的内容，也会把 2.5% 的正常内容误判。</li><li>agent 被劫持后要发的东西，用户总能认出来并拒绝。正常的发送，用户都同意。</li></ul></li>`+
  `<li>为了让次数贴近假设的比例，这里不逐个任务掷骰子，而是按比例把照做、提醒和不理分给各个任务。所以只看一个比例时，次数就等于平均值，比如 20 个藏了话的任务里正好照做 10 次。平均值不是整数时，次数只能接近它。比如 coding agent 开着提示词时，平均是 10 × 25% = 2.5 次，这里是 2 次。两件事碰在一起才算的次数，也只能接近平均值。比如邮件助手用了最小权限，只有在发文件的任务里照做，才会造成损失。这些任务里有 ${fxP} 封藏了话的邮件，平均照做 ${+(fxP*BASE.f).toFixed(2)} 次，这一天是 ${fxM.harm} 次。检测器漏过、模型又照做的次数，也是这样。</li>`+
  `<li>损失只算文件被发出去，摘要被带偏不算。</li></ul></div>`+
  `<div><div class="eyebrow">来源</div><ul><li>防护的名字取自 AgentDojo 的 ${cite(SRC.dojo,'agent_pipeline.py')}：tool_filter、transformers_pi_detector、spotlighting_with_delimiting、repeat_user_prompt；基准论文 ${cite(SRC.dojoP,'arXiv 2406.13352')}。</li>`+
@@ -476,7 +476,7 @@ function stageHTML(){
     `<div class="pin-gridw"><div class="pin-cap" id="pin-grid-cap"></div><div class="pin-grid" id="pin-grid" tabindex="0" role="img"></div><div class="legend-row pin-legend" id="pin-grid-leg"></div></div>`+
    `</div>`+
    `<div class="metrics pin-metrics" id="pin-metrics"></div>`+   // the replay first, the cards under the picture, compact (R7.12)
-   `<p class="pin-scope small muted" tabindex="0" data-tipx="${esc(tx('Every rate on this page is the lab’s assumption, not a measurement of a real model. The counts follow from those rates over 100 made-up tasks.','页面上的每个比例都是这个 Lab 的假设，不是对真实模型的测量。次数由这些比例在 100 个虚构的任务上算出。'))}">${tx('Assumed rates over 100 made-up tasks; not a measurement of a real model.','比例是假设的，100 个任务是虚构的，不是对真实模型的测量。')}</p>`+
+   `<p class="pin-scope small muted" tabindex="0" data-tipx="${esc(tx('Every rate on this page is this lab’s assumption. The counts follow from those rates over 100 made-up tasks.','页面上的每个比例都是本 Lab 的假设，次数由这些比例在 100 个虚构的任务上算出。'))}">${tx('Assumed rates over 100 made-up tasks.','比例是假设的，100 个任务是虚构的。')}</p>`+
    `<details class="math" id="pin-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="pin-mathbody"></div></details></div>`;
 }
 const noteOf=(en,zh)=>`<div class="ctl-note">${tx(en,zh)}</div>`;
@@ -734,7 +734,7 @@ function ctxLegend(){
   const it=(cls,txt,tip)=>`<span data-tipx="${esc(tip)}" tabindex="0"><i class="sw ${cls}"></i><span>${esc(txt)}</span></span>`;
   return it('pin-sw-tr',tx('yours: system, user','你的：system、user'),tx('Solid outline: text you and the user wrote.','实线框：你和用户写的文字。'))+
     it('pin-sw-un',tx('untrusted content','不可信的内容'),TIP.untrusted())+
-    it('pin-sw-hid',HID_TAG(),tx('Red, marked ⚠: the injected instruction, that is, the hidden line. The replay marks it red when it reaches it. People looking at the page do not see it, but the model reads it. It is described here, not quoted.','红色、标着 ⚠ 的这句是注入的指令，也就是藏着的话。演示放到它时，它就标红。看网页的人看不到它，模型却读得到。这里只描述它，不照抄。'))+
+    it('pin-sw-hid',HID_TAG(),tx('Red, marked ⚠: the injected instruction, that is, the hidden line. The replay marks it red when it reaches it. People looking at the page do not see it, but the model reads it. It is paraphrased here.','红色、标着 ⚠ 的这句是注入的指令，也就是藏着的话。演示放到它时，它就标红。看网页的人看不到它，模型却读得到。这里只转述它的大意。'))+
     it('pin-sw-pv',tx('private data','私密数据'),TIP.private())+
     it('pin-sw-hx',HARM_TAG(),tx('Red, marked ✗: a harmful action. In this step the agent really sent private data out. The replay marks it red when it gets there.','红色、标着 ✗ 的这一块是一次有害操作。agent 在这一步真的把私密数据发了出去。演示放到这一步时，它就标红。'));
 }

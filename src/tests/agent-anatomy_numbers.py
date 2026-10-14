@@ -55,7 +55,7 @@ def run(defs, sys_chars, key, lim=0, budget=0, stop_on_err=False, pre=10000, dec
         if stop_on_err and any(c['err'] for c in st): stop = 'error'; break
     stop = stop or 'end'
     return dict(n=len(calls), stop=stop, done=stop == 'end', ins=[c['inp'] for c in calls], total=sum(c['inp'] for c in calls),
-                out=sum(c['out'] for c in calls), tm=sum(c['tm'] for c in calls), tt=sum(c['tt'] for c in calls))
+                out=sum(c['out'] for c in calls), outs=[c['out'] for c in calls], tm=sum(c['tm'] for c in calls), tt=sum(c['tt'] for c in calls))
 
 
 with sync_playwright() as p:
@@ -91,6 +91,11 @@ check('part 1: the answer is “30,000 to 90,000”; reading the last call once 
 check('part 6: the last call is “about a sixth” of the total', 0.15 < base['ins'][-1] / base['total'] < 0.18, base['ins'][-1] / base['total'])
 check('part 3: call 8 resends 11,662 and adds 220', base['ins'][7] - base['ins'][6] == 220)
 check('part 2: 8 replies, 7 tool calls', base['n'] == 8 and sum(len(s) for s in D['base']['calls']) == 7)
+# part 3 (the owner, 2026-10-14): the bill counts each call's input plus its output; the replies are the output (the result and Show the math)
+check('part 3: the bill: 73,011 input tokens and 242 output tokens; the replies write 23, 21, 20, 38, 20, 63, 20 and 37',
+      base['total'] == 73011 and base['out'] == 242 and base['outs'] == [23, 21, 20, 38, 20, 63, 20, 37], (base['total'], base['out'], base['outs']))
+check('part 3, Show the math: the input tokens are “about 300 times” the output (73,011 / 242 = 301.7); every reply is “a few dozen tokens” (20 to 63)',
+      round(base['total'] / base['out'] / 10) * 10 == 300 and all(10 <= o < 100 for o in base['outs']), (base['total'] / base['out'], base['outs']))
 # part 3, part 6 and Explain it, question 1: the model asks for the test file in call 1, so its content first goes out with call 2,
 # and then with every later call: calls 2 to 8, 7 times (not 8)
 asked = next(i + 1 for i, st in enumerate(D['base']['calls']) if any(c['name'] == 'read_file' and c['input'].get('path') == 'tests/test_cart.py' for c in st))

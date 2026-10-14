@@ -478,7 +478,7 @@ const FIDPOP=()=>tx(
  `<li>Each step can go wrong. ${ERRS('shop').rep} of the support agent’s errors are reported, and the other ${ERRS('shop').sil} are silent. A reported error is retried with its message, and when the retries run out, the run stops. A check is one more model call after each step, to see whether the step was done right. Of those ${ERRS('shop').sil} silent errors, the check finds ${ERRS('shop').ck}, and an error it finds is handled like a reported one.</li>`+
  `<li>The context grows with every tool output. Kept in full, it overflows a 128K window. A sliding window keeps the task itself but drops the facts found in early steps. Trim + summary + notes keeps it short. Cost is the input tokens read, at an assumed price.</li>`+
  `<li>Half of the outside pages the support agent reads hide an injected instruction, and the model obeys it half the time. A detector removes 80% of them before the model reads them. When a person must confirm, they refuse whatever an injected instruction asks for.</li></ul></div>`+
- `<div><div class="eyebrow">Simplified</div><ul><li>All rates, sizes and prices are this lab’s assumptions, not measurements.</li>`+
+ `<div><div class="eyebrow">Simplified</div><ul><li>All rates, sizes and prices are this lab’s assumptions.</li>`+
  `<li>The base chance that a step goes wrong is 3% for lookups, 5% for multi-step edits and 4% for reading outside content, halved by the stronger model.</li>`+
  `<li>Tasks differ in difficulty: each task is 0.5 to 4 times as error-prone as the base.</li>`+
  `<li>Prices are $1 for the cheaper model and $5 for the stronger one, per million input tokens. Output tokens are not counted.</li>`+
@@ -494,7 +494,7 @@ const FIDPOP=()=>tx(
  `<li>每一步都可能出错。客服 agent 的错有 ${ERRS('shop').rep} 会报出来，剩下 ${ERRS('shop').sil} 是悄悄出的。报出来的错会带着报错信息重试，次数用完，这次运行就停下。检查就是每一步做完，再调用一次模型，看这一步做对了没有。这 ${ERRS('shop').sil} 悄悄出的错里，检查能发现 ${ERRS('shop').ck}。检查发现的错，和报出来的错一样处理。</li>`+
  `<li>上下文随每个工具输出变长。全部保留，会撑满 128K 的窗口。只留最近几步，任务本身还在，可前几步查到的事实会被删掉。裁剪 + 摘要 + 笔记能让上下文一直很短。花费按读进去的输入 token 算，价格是假设的。</li>`+
  `<li>客服 agent 读的外部网页里，一半藏着注入的指令，模型有一半的机会照做。检测模型能在模型读到之前删掉其中 80%。要人确认时，注入的指令让 agent 做的事，人都会拒绝。</li></ul></div>`+
- `<div><div class="eyebrow">简化和假设</div><ul><li>所有比例、大小和价格都是这个 Lab 的假设，不是实测。</li>`+
+ `<div><div class="eyebrow">简化和假设</div><ul><li>所有比例、大小和价格都是本 Lab 的假设。</li>`+
  `<li>每一步出错的基准机会，查询是 3%，多步修改是 5%，读外部内容是 4%，换更强的模型减半。</li>`+
  `<li>任务的难度各不相同，每个任务的出错机会是基准的 0.5 到 4 倍。</li>`+
  `<li>价格按每 1M 个输入 token 算，便宜的模型 1 美元，更强的模型 5 美元。输出的 token 不计入。</li>`+
@@ -575,7 +575,7 @@ function stageHTML(){
     `<div class="acp-cap" id="acp-score-cap"></div><div class="acp-score" id="acp-score"></div>`+
     `<div class="acp-cap" id="acp-cause-cap"></div><div class="acp-causes" id="acp-causes"></div>`+
    `</div>`+
-   `<p class="acp-scope small muted" data-tipx="${esc(tx('Every rate, size and price on this page is the lab’s assumption, not a measurement of a real agent. The success rate, its interval and pass^3 are computed from the simulated runs.','页面上的每个比例、大小和价格都是这个 Lab 的假设，不是对真实 agent 的测量。成功率、区间和 pass^3 都是从模拟出来的运行算出来的。'))}">${tx('Rates and prices are this lab’s assumptions; the success rate and its interval are computed from these simulated runs.','比例和价格是这个 Lab 的假设，成功率和区间是从这些模拟运行算出来的。')}</p>`+
+   `<p class="acp-scope small muted" data-tipx="${esc(tx('Every rate, size and price on this page is this lab’s assumption. The success rate, its interval and pass^3 are computed from the simulated runs.','页面上的每个比例、大小和价格都是本 Lab 的假设。成功率、区间和 pass^3 都是从模拟出来的运行算出来的。'))}">${tx('Rates and prices are this lab’s assumptions; the success rate and its interval are computed from these simulated runs.','比例和价格是这个 Lab 的假设，成功率和区间是从这些模拟运行算出来的。')}</p>`+
    `<div class="metrics acp-metrics" id="acp-metrics"></div>`+
    `<details class="math" id="acp-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="acp-mathbody"></div></details></div>`;
 }
