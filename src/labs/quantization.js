@@ -167,10 +167,21 @@ const keyOf=s=>{s=s||S; return s.sch==='int4'?'int4-'+s.blk:s.sch;};
 const isP=id=>mode==='guided'&&STEPS[step]&&STEPS[step].id===id;
 const SIX=id=>STEPS.findIndex(s=>s.id===id);
 
-/* the rounding replay: phase 0 originals, 1 the scale and its grid, 2 each weight moves to the nearest grid value, 3 what was lost */
-const SPEEDS={slow:2.4,med:1.2,fast:0.5}; let speed='med';
-let AN={on:false,raf:0,start:0,ph:3,t:1,key:'',paused:false,acc:0}, watched=new Set(), nPlays=0;
+/* the rounding replay (round 1 polish, P6): phase 0 the weights before rounding, 1 divide by s (every weight moves into units of s,
+   where the grid is −7…7), 2 round each to the nearest grid value, 3 multiply back by s (back to weight units: what was lost).
+   Seconds per phase; in Scenarios and Settings a new setting plays in QUICK ms per phase (R3.9: 1.5 s in all) */
+const SPEEDS={slow:10,med:7,fast:4}, QUICK=500; let speed='med';   // seconds per step of the rounding replay: 21 s in all at 中 (R3.9)
+let AN={on:false,raf:0,ph:3,t:1,key:'',paused:false,acc:0,quick:false,pend:'',pendQ:false}, watched=new Set(), nPlays=0, cardAct=false, pendT=0;
 const animKey=()=>S.bsel+'|'+keyOf();
+/* R3.20 decided by the picture (round 1 polish check, N6): two settings replay the same picture when the 32 weights get the same
+   blocks, scales and grid. On the outlier's block, INT4 per row and per 128 are the picture of blocks of 32: one watched, all watched */
+const SIGS=new Map();
+function picSig(key){
+  if(!SIGS.has(key)){const [b,k]=key.split('|'); let s=key;
+    if(k!=='bf16'){const v=view(b,k); s=b+'|'+segsOf(v,k).map(sg=>[sg.from,sg.to,sg.lv.length,lvTop(sg),sg.s.toPrecision(6)].join(':')).join(',');}
+    SIGS.set(key,s);}
+  return SIGS.get(key);}
+const seen=key=>watched.has(key)||[...watched].some(w=>picSig(w)===picSig(key));
 const hidePred=()=>isP('predict')&&!predShown;
 
 /* =====================================================================
@@ -218,11 +229,12 @@ const TIP={
  small:()=>tx('The small layer: a linear layer with 256 inputs and 128 outputs, generated with a seed in your browser. Its weights have heavy tails, and a few are planted dozens of times larger (this lab’s assumption; Settings has the numbers). Read each output as the score of one possible next token.','小模型的一层：一个在你的浏览器里按种子生成的线性层，256 个输入、128 个输出。权重的分布尾巴较重，还有少数权重被放大了几十倍（这是这个 Lab 的假设，具体的数在自由调参里）。可以把每个输出看成一个候选的下一个 token 的得分。'),
  same:()=>tx('Same pick as BF16: on 1,000 sample inputs, how often the layer’s largest output (read as “which next token”) is the same as with BF16 weights. It is this lab’s stand-in for answer quality; real models are checked on eval sets.','和 BF16 选的一样：在 1,000 个样本输入上，这一层最大的那个输出（看成“选哪个下一个 token”）和 BF16 权重时一样的比例。这是这个 Lab 代替回答质量的指标；真实模型要在评测集上检查。'),
  oerr:()=>tx('Output error: how far the layer’s outputs move from the BF16 outputs, over all 1,000 inputs, as a share of their size (the root of the summed squared differences over the root of the summed squares).','输出误差：在全部 1,000 个输入上，这一层的输出离 BF16 的输出有多远，占输出本身大小的比例（差的平方和开根号，除以输出平方和开根号）。'),
- wonly:()=>tx('Weight-only quantization (W4A16 for 4-bit weights and 16-bit activations): the weights are stored in fewer bits and turned back into BF16 right before each multiply. It saves memory and reading time, not arithmetic.','只量化权重（4 位权重、16 位激活时叫 W4A16）：权重用更少的位存，每次相乘之前再还原成 BF16。省的是显存和读的时间，不省计算。'),
+ wonly:()=>tx('Weight-only quantization (W4A16 for 4-bit weights and 16-bit activations): the weights are stored in fewer bits and turned back into BF16 right before each multiply. It saves memory and reading time, not arithmetic; this lab counts no time for turning them back.','只量化权重（4 位权重、16 位激活时叫 W4A16）：权重用更少的位存，每次相乘之前再还原成 BF16。省的是显存和读的时间，不省计算；这个 Lab 不算还原用的时间。'),
+ bits:()=>tx('The bits each weight takes, counting its share of the block’s scale: INT4 with one 16-bit scale per 128 weights takes 4 + 16/128 = 4.125 bits. A per-row scale counts as 0, because a real model’s row has thousands of weights.','每个权重占的位数，算上它分摊的那份缩放系数：INT4 每 128 个权重共用一个 16 位缩放系数，所以是 4 + 16/128 = 4.125 位。每行一个的缩放系数记作 0：真实模型的一行有几千个权重，分摊下来不到 0.01 位。'),
  wact:()=>tx('Weight-and-activation quantization (W8A8 for 8 bits each): the activations are rounded to FP8 too, so the multiply itself runs in FP8 on the GPU’s FP8 units. Only then does the H100’s FP8 arithmetic rate help.','权重和激活都量化（各 8 位时叫 W8A8）：激活也舍入成 FP8，乘法本身在 GPU 的 FP8 单元上做。只有这样，H100 的 FP8 算力才用得上。'),
  mxfp4:()=>tx(`MXFP4 (OCP Microscaling): 4-bit floats FP4 E2M1 (0, 0.5, 1, 1.5, 2, 3, 4, 6 and their negatives); every 32 values share one 8-bit scale that is a power of two, so each value takes ${M('4 + 8/32 = 4.25')} bits.`,`MXFP4（OCP Microscaling）：4 位浮点 FP4 E2M1（0、0.5、1、1.5、2、3、4、6 和它们的负数）；每 32 个值共用一个 8 位、必须是 2 的幂的缩放系数，所以每个值占 ${M('4 + 8/32 = 4.25')} 位。`),
  nvfp4:()=>tx(`NVFP4 (NVIDIA): FP4 E2M1 values; every 16 values share one FP8 E4M3 scale, and the whole tensor has one FP32 scale on top, so each value takes ${M('4 + 8/16 = 4.5')} bits.`,`NVFP4（NVIDIA）：FP4 E2M1 的数；每 16 个值共用一个 FP8 E4M3 缩放系数，整个张量再有一个 FP32 缩放系数，所以每个值占 ${M('4 + 8/16 = 4.5')} 位。`),
- usable:()=>tx('70 GiB per H100, as in the serving labs: nine tenths of 80 GiB (vLLM’s gpu_memory_utilization) minus the runtime’s overhead. It holds the weights and the KV cache; Settings has the formula.','每张 H100 按 70 GiB 算，和推理服务的几个 Lab 一样：80 GiB 的九成（vLLM 的 gpu_memory_utilization），再减去运行时的开销。权重和 KV cache 都放在这里面；算式在自由调参里。'),
+ usable:()=>tx('An H100 is sold as 80 GB, which this site counts as 80 GiB (2³⁰ bytes each). As in the serving labs, 70 GiB of it holds the weights and the KV cache: nine tenths of 80 GiB (vLLM’s gpu_memory_utilization) minus the runtime’s overhead.','H100 标称 80 GB，本站按 80 GiB（每 GiB 是 2³⁰ 字节）计。和推理服务的几个 Lab 一样，其中 70 GiB 放权重和 KV cache：80 GiB 的九成（vLLM 的 gpu_memory_utilization），再减去运行时的开销。'),
  stepm:()=>tx('A step takes the longer of its arithmetic and its memory reads, because the GPU computes while it reads. Arithmetic runs at 50% of the H100’s dense peak (989.5 TFLOP/s in BF16, 1,979 in FP8) and reads at 60% of 3.35 TB/s: both are this lab’s assumptions, as in the lab prefill-decode.','一步的耗时取计算和读显存中较长的那个，因为 GPU 一边读一边算。计算按 H100 稠密峰值的 50% 算（BF16 989.5 TFLOP/s，FP8 1,979），读显存按 3.35 TB/s 的 60% 算。两者都是这个 Lab 的假设，和 prefill-decode 那个 Lab 一样。')};
 
 /* =====================================================================
@@ -233,7 +245,10 @@ const PRED=[{v:'keep',t:{en:'They are stored about as well as in the block witho
   {v:'zero',t:{en:'Most of them become 0',zh:'大部分变成 0'}}];
 const PRED_RIGHT='zero';
 const predT=v=>L(PRED.find(o=>o.v===v).t);
-const P1=[['bf16',{en:'BF16',zh:'BF16'}],['fp8',{en:'FP8',zh:'FP8'}],['int4-128',{en:'4-bit',zh:'4 位'}]];
+/* part 1 changes the weights only (weight-only quantization: activations and multiplies stay BF16), so the prefill does not change;
+   weights and activations in FP8 come first in part 5 (round 1 polish, P1) */
+const P1=[['bf16',{en:'BF16 weights',zh:'BF16 权重'}],['int8',{en:'8-bit weights',zh:'8 位权重'}],['int4-128',{en:'4-bit weights',zh:'4 位权重'}]];
+const P1K=P1.map(p=>p[0]);
 const P4=['int4-row','int4-128','int4-32','int4-16','mx','nv'];
 const P5={bf16:{t:{en:'BF16 everywhere (initial setup)',zh:'全部 BF16（初始设置）'},d:{en:'Weights, activations and KV cache in BF16.',zh:'权重、激活和 KV cache 都是 BF16。'},s:{sch:'bf16',kv:'bf16'}},
   w4:{t:{en:'4-bit weights only',zh:'只把权重量化到 4 位'},d:{en:'INT4 with one scale per 128 weights; activations and multiplies stay BF16.',zh:'INT4，每 128 个权重一个缩放系数；激活和乘法还是 BF16。'},s:{sch:'int4',blk:'128',kv:'bf16'}},
@@ -247,41 +262,41 @@ const STEPS=[
  {id:'mission',title:{en:'Your mission',zh:'你的任务'},view:'serve',
   lead:()=>tx('Every decode step reads every weight once. Fewer bytes per weight make each step faster. What does the rounding lose?','decode 每一步都要把权重全读一遍。每个权重的字节少了，每一步就快了。舍入丢掉了什么？'),
   enter:()=>({...BASE,view:'serve'}),always:true,
-  body:()=>{const b=stepT('bf16','bf16','d1');
-   return tx(`<p>${M8} runs on one ${GPU}. In every decode step the GPU reads nearly all of its weights from memory once, whether the step makes 1 token or 64 (the lab ${labLink('prefill-decode')}).</p><p>In BF16 every weight is 2 bytes. With one request a step takes about ${ms(b.t)} ms, nearly all of it reading weights.</p><p>${DEF('Quantization',TIP.quant())} stores numbers in fewer bits: the weights, the ${DEF('activations',TIP.act())} or the KV cache. Each number is rounded to the nearest value the smaller format can hold. Fewer bytes per weight make every step faster and leave more memory for the KV cache. What the rounding loses is what this lab is about.</p><p>Pick a weight format and watch the step times in the chart. “4-bit” is INT4: each weight is stored in 4 bits, and every 128 weights also share one 16-bit scale (the next part explains it), which adds 16/128 = 0.125 bits per weight. So the “Bits per weight” card shows 4.125.</p><p>The chart has two more rows: one decode step for 64 requests together, and a prefill of 2,048 tokens at once. Each row takes the longer of reading memory and computing. Prefill spends its time computing, so the weight format does not change it; part 5 explains this.</p>`,
-             `<p>一张 ${GPU} 跑 ${M8}。decode 的每一步，GPU 都要把几乎全部权重从显存读一遍，不管这一步算 1 个 token 还是 64 个（见 ${labLink('prefill-decode')}）。</p><p>BF16 每个权重占 2 字节。只有 1 个请求时，一步大约 ${ms(b.t)} 毫秒，几乎全花在读权重上。</p><p>${DEF('量化',TIP.quant())}就是用更少的位存数：权重、${DEF('激活',TIP.act())}或 KV cache。每个值舍入到新格式能表示的最近值。每个权重的字节少了，每一步就快了，显存也多出来放 KV cache。舍入会丢掉什么，就是这个 Lab 要讲的。</p><p>选一种权重格式，看看图里每一步的耗时怎么变。“4 位”指 INT4：每个权重存 4 位，每 128 个权重再共用一个 16 位的缩放系数（下一部分讲），摊到每个权重上多 16/128 = 0.125 位。所以右边“每个权重的位数”那张卡显示 4.125。</p><p>图里还有两行：64 个请求一起 decode 的一步，和一次处理 2,048 个 token 的 prefill。每一行的耗时取读显存和计算中较长的那个。prefill 的时间花在计算上，所以换权重格式它不变，第 5 部分细讲。</p>`)+p1Ctl();},
+  body:()=>tx(`<p>${M8} runs on one ${GPU}, with one request in decode. Every decode step reads all the weights from memory once (the lab ${labLink('prefill-decode')}); in BF16 each weight takes 2 bytes.</p><p>${DEF('Quantization',TIP.quant())} stores the weights in fewer bits. The goal is faster steps and more free memory; the price is that every weight gets rounded. This lab answers: what does the rounding lose, and how much time and memory does it buy?</p><p>Pick a weight format and watch this step’s time in the chart.</p>`,
+             `<p>一张 ${GPU} 跑 ${M8}，只有 1 个请求在 decode。decode 每出一个 token，都要把全部权重从显存读一遍（见 ${labLink('prefill-decode')}）；BF16 每个权重占 2 字节。</p><p>${DEF('量化',TIP.quant())}就是用更少的位存权重，目标是让每一步更快、显存更省；代价是每个权重都要舍入。这个 Lab 回答：舍入丢掉了什么，换来多少时间和显存？</p><p>先换一种权重格式，看图里这一步的耗时。</p>`)+p1Ctl(),
   obs:()=>obsMission()},
  {id:'round',title:{en:'Rounding one block',zh:'舍入一块权重'},view:'block',
-  lead:()=>tx('Divide the block by a scale, round each weight to the grid, multiply back.','一块权重先除以缩放系数，再舍入到格子上，用的时候乘回来。'),
-  enter:()=>({...BASE,view:'block',bsel:'clean',sch:'int4',blk:'32'}),expect:()=>watched.has('clean|int4-32'),showMe:'play',label:{en:'Result',zh:'结果'},
-  body:()=>tx(`<p>Llama has far too many weights to draw one by one on the page, so from here a small model stands in: ${DEF('a small layer',TIP.small())} with 256 inputs and 128 outputs, generated by the page from a fixed seed. Take 32 weights that sit next to each other in one row of it. Together they form one ${DEF('block',TIP.block())}, to be stored in 4 bits as ${DEF('INT4',TIP.int4())}.</p><p>INT4 holds only whole numbers from −7 to 7.</p><p>These weights all lie within ±${fix(view('clean','int4-32').segs[0].amax,3)}: rounded as they are, every one would become 0.</p><p>So the block is first stretched to INT4’s range, rounded, and shrunk back. Quantization does three things:</p><ol class="qz-steps3"><li>Divide the block by a ${DEF('scale',TIP.scale())} s, chosen so the weight with the largest absolute value lands on 7 (or −7), the edge of INT4’s range.</li><li>Round each result to the nearest whole number from −7 to 7.</li><li>When the weight is used, multiply it back by s. The stored weight is w<sub>q</sub>:</li></ol><div class="fx">${M('w_q = s \\cdot \\operatorname{round}(w / s)')}</div><div class="fx">${M('s = \\max |w| \\,/\\, 7')}</div>`,
-              `<p>Llama 的权重太多，没法在页面里逐个画出来，所以下面用一个小模型代替：${DEF('小模型的一层',TIP.small())}只有 256 个输入、128 个输出，是页面按固定种子生成的。取这一层里同一行中挨着的 32 个权重，它们组成一${DEF('块',TIP.block())}，要用 4 位的 ${DEF('INT4',TIP.int4())} 存。</p><p>INT4 只能存 −7 到 7 的整数。</p><p>这些权重都在 ±${fix(view('clean','int4-32').segs[0].amax,3)} 以内，直接舍入会全部变成 0。</p><p>所以先把整块放大到 INT4 的范围，舍入以后再缩回来。量化做三件事：</p><ol class="qz-steps3"><li>把这块权重除以一个${DEF('缩放系数',TIP.scale())} s。s 选得让绝对值最大的那个权重正好落在 7（或 −7）上，也就是 INT4 的边上。</li><li>把每个结果舍入到 −7 到 7 之间最近的整数。</li><li>用这个权重的时候，再乘回 s。存下来的权重记作 w<sub>q</sub>：</li></ol><div class="fx">${M('w_q = s \\cdot \\operatorname{round}(w / s)')}</div><div class="fx">${M('s = \\max |w| \\,/\\, 7')}</div>`),
+  lead:()=>tx('Divide the block by a scale s, round to the nearest whole number, multiply back by s.','一块权重先除以缩放系数 s，舍入到最近的整数，用的时候乘回 s。'),
+  enter:()=>({...BASE,view:'block',bsel:'clean',sch:'int4',blk:'32'}),expect:()=>watched.has('clean|int4-32'),showMe:()=>phaseJump(3),label:{en:'Result',zh:'结果'},
+  body:()=>{const a=fix(view('clean','int4-32').segs[0].amax,3);
+   return tx(`<p>${DEF('INT4',TIP.int4())} holds only whole numbers from −7 to 7, and the weights of the block in the chart all lie within ±${a}: rounded as they are, every one would become 0. So the block is divided by a ${DEF('scale',TIP.scale())} s to stretch it to −7…7, rounded to the nearest whole number, and multiplied back by s when it is used.</p><p>The chart shows 32 neighbouring weights of ${DEF('a small layer',TIP.small())} (Llama is too large to draw). They form one ${DEF('block',TIP.block())} and share one s.</p><ol class="qz-steps3"><li>Divide by s: s puts the weight with the largest absolute value exactly on 7.</li><li>Round: each value moves to the nearest whole number (the dashed lines).</li><li>Multiply back by s: the stored value is a whole multiple of s.</li></ol><div class="fx">${M('w_q = s \\cdot \\operatorname{round}(w / s)')}</div><div class="fx">${M('s = \\max |w| \\,/\\, 7')}</div>`,
+              `<p>${DEF('INT4',TIP.int4())} 只能存 −7 到 7 的整数，而图里这块权重都在 ±${a} 以内，直接舍入会全变成 0。所以先除以${DEF('缩放系数',TIP.scale())} s，把这块放大到 −7…7，舍入到最近的整数，用的时候再乘回 s。</p><p>图里是${DEF('小模型的一层',TIP.small())}里挨着的 32 个权重（Llama 太大，画不下），组成一${DEF('块',TIP.block())}，共用一个 s。</p><ol class="qz-steps3"><li>除以 s：s 让绝对值最大的权重正好落在 7 上。</li><li>舍入：每个值挪到最近的整数（图里的虚线）。</li><li>乘回 s：存下的值是 s 的整数倍。</li></ol><div class="fx">${M('w_q = s \\cdot \\operatorname{round}(w / s)')}</div><div class="fx">${M('s = \\max |w| \\,/\\, 7')}</div>`);},
   obs:()=>obsRound()},
  {id:'predict',title:{en:'Predict: one large weight',zh:'先猜：一个很大的权重'},view:'block',gate:()=>predShown,
   lead:()=>tx('A block of 32 where one weight is about 50 times the others. What happens to the rest in 4 bits?','一块 32 个权重，其中一个是其他权重的 50 倍左右。用 4 位存，其他的会怎样？'),
   enter:()=>({...BASE,view:'block',bsel:'outlier',sch:'int4',blk:'32'}),
   body:()=>{const v=view('outlier','int4-32'), ch=`<div class="choices" role="group" aria-label="${esc(tx('Your prediction','你的预测'))}">${PRED.map(o=>`<button type="button" class="choice" data-pred="${o.v}" aria-pressed="${pred===o.v}">${esc(L(o.t))}</button>`).join('')}</div>`;
    const go=pred&&!predShown?`<p class="small qz-saved">${tx('Saved. You can still change it before you round the block.','已记下。舍入这块之前，还可以改。')}</p><div class="stepnav"><button type="button" class="btn sm" data-act="pred-go">${tx('Round this block','舍入这一块')}</button></div>`:'';
-   return tx(`<p>Here is another block of 32 from the same layer.</p><p>One of its weights is especially large, about ${fix(Math.round(v.ratio/10)*10,0)} times the middle-sized one of the other 31: an ${DEF('outlier',TIP.outlier())}. The chart shows the block before rounding; the outlier reaches past the top.</p><p>The scale puts the weight with the largest absolute value on 7, and every weight is rounded to a whole number in INT4’s range.</p><p><b>What happens to most of the other 31 weights?</b></p>`,
-             `<p>这是同一层里的另一块，也是 32 个权重。</p><p>其中一个权重特别大，大约是其余 31 个里中等大小那个的 ${fix(Math.round(v.ratio/10)*10,0)} 倍，这叫${DEF('离群值',TIP.outlier())}。图里是舍入之前的这一块，离群值超出了图的上沿。</p><p>缩放系数让绝对值最大的权重落在 7 上，每个权重都舍入到 INT4 范围里的整数。</p><p><b>其余 31 个权重里，大部分会怎样？</b></p>`)+ch+go;},
+   return tx(`<p>Here is another block of 32 weights from the same layer. One of them is about ${fix(Math.round(v.ratio/10)*10,0)} times the middle-sized one of the other 31: an ${DEF('outlier',TIP.outlier())}, past the top of the chart.</p><p>The block is stored in INT4 as before: s puts the largest weight on 7, and every value is rounded to a whole number.</p><p><b>What happens to most of the other 31 weights?</b></p>`,
+             `<p>这是同一层里的另一块 32 个权重。其中一个大约是其余 31 个里中等大小那个的 ${fix(Math.round(v.ratio/10)*10,0)} 倍，叫${DEF('离群值',TIP.outlier())}，在图的上沿外面。</p><p>还是用 INT4 存：s 让最大的权重落在 7 上，每个值舍入到整数。</p><p><b>其余 31 个权重里，大部分会怎样？</b></p>`)+ch+go;},
   obs:()=>predShown?obsPredict():''},
  {id:'blocks',title:{en:'Smaller blocks',zh:'块更小'},view:'block',
   lead:()=>tx('An outlier spoils only its own block. Smaller blocks cost one more scale each.','离群值只影响它自己那一块。块越小，越准，代价是每块多存一个缩放系数。'),
   enter:()=>({...BASE,view:'block',bsel:'outlier',sch:'int4',blk:'32'}),expect:()=>tried.p4&&(tried.p4.has('int4-16')||tried.p4.has('nv')),showMe:()=>setP4('int4-16'),label:{en:'Result',zh:'结果'},
-  body:()=>tx(`<p>A scale is shared only inside its block, so an outlier spoils only its own block. With 16 weights per block, the half without the outlier gets its own, much smaller scale. The cost is one more 16-bit scale per block, so each weight takes more bits:</p><div class="fx">${M('\\text{bits per weight} = 4 + \\frac{16}{\\text{weights per block}}')}</div><p>Two 4-bit float formats work the same way: they store FP4 values in small blocks, each with an 8-bit scale. Which values FP4 can hold is in the lab ${labLink('number-formats')}.</p>`,
-              `<p>缩放系数只在自己那一块里共用，所以离群值只影响它自己那一块。每 16 个权重一块时，不含离群值的那一半有自己的、小得多的缩放系数。代价是每块多存一个 16 位的缩放系数，每个权重占的位数就多了：</p><div class="fx">${M('\\text{每个权重的位数} = 4 + \\frac{16}{\\text{每块的权重数}}')}</div><p>两种 4 位浮点格式也是这样做的：它们按小块存 FP4 的值，每块配一个 8 位的缩放系数。FP4 能表示哪些值，见 ${labLink('number-formats')}。</p>`)+p4Ctl(),
+  body:()=>tx(`<p>A scale is shared only inside its block, so an outlier spoils only its own block. With 16 weights per block, the half without the outlier gets its own, much smaller scale; the cost is one more 16-bit scale per block:</p><div class="fx">${M('\\text{bits per weight} = 4 + \\frac{16}{\\text{weights per block}}')}</div><p>The 4-bit float formats MXFP4 and NVFP4 also use small blocks, with an 8-bit scale each. FP4 holds only 0, 0.5, 1, 1.5, 2, 3, 4 and 6 (and negatives), times the scale: dense near 0, sparse for large values (the lab ${labLink('number-formats')}).</p>`,
+              `<p>缩放系数只在一块里共用，所以离群值只影响它那一块。每 16 个一块时，不含离群值的那一半有自己的、小得多的缩放系数；代价是每块多存一个 16 位的缩放系数：</p><div class="fx">${M('\\text{每个权重的位数} = 4 + \\frac{16}{\\text{每块的权重数}}')}</div><p>4 位浮点格式 MXFP4 和 NVFP4 也按小块存，每块一个 8 位缩放系数。FP4 只能存 0、0.5、1、1.5、2、3、4、6（和负数），再乘以缩放系数：0 附近密，大数附近稀（见 ${labLink('number-formats')}）。</p>`)+p4Ctl(),
   obs:()=>obsBlocks()},
  {id:'compute',title:{en:'Weights only, or activations too',zh:'只量化权重，还是连激活一起'},view:'serve',
   lead:()=>tx('Weight-only saves reading time; FP8 weights and activations also halve the arithmetic time.','只量化权重省的是读显存的时间；权重和激活都用 FP8，计算时间也减半。'),
   enter:()=>{tried.p5=new Set(['bf16']); return {...BASE,view:'serve'};},expect:()=>tried.p5&&tried.p5.has('w4')&&tried.p5.has('fp8'),showMe:()=>setP5(tried.p5.has('w4')?'fp8':'w4'),label:{en:'Result',zh:'结果'},
-  body:()=>tx(`<p>${DEF('Activations',TIP.act())} are the numbers each token carries into a layer, the input the layer multiplies by its weights. ${DEF('Weight-only quantization',TIP.wonly())} stores the weights in 4 bits and turns them back into BF16 right before each multiply. It reads fewer bytes but does the same BF16 arithmetic. ${DEF('Weight-and-activation quantization',TIP.wact())} rounds the activations to FP8 too, so the multiplies run on the H100’s FP8 units, at twice the BF16 rate.</p><p>The chart shows three kinds of step for ${M8}: a decode step with 1 request, a decode step with 64 requests, and a prefill.</p><p>The prefill reads one 2,048-token prompt; every decode request already has 2,048 tokens of context.</p><p>Why one step waits on memory and another on arithmetic is in the lab ${labLink('roofline')}.</p>`,
-              `<p>${DEF('激活',TIP.act())}是每个 token 进入一层时带着的那串数，也就是这一层要和权重相乘的输入。${DEF('只量化权重',TIP.wonly())}：权重用 4 位存，每次相乘之前再还原成 BF16。读的字节少了，算的还是 BF16。${DEF('权重和激活都量化',TIP.wact())}：激活也舍入成 FP8，乘法就在 H100 的 FP8 单元上做，速度是 BF16 的两倍。</p><p>图里是 ${M8} 的三种步：1 个请求的 decode 步、64 个请求的 decode 步，以及 prefill。</p><p>prefill 处理一个 2,048 个 token 的 prompt；每个 decode 请求都已经有 2,048 个 token 的上下文。</p><p>为什么有的步在等显存、有的在等计算，见 ${labLink('roofline')}。</p>`)+p5Ctl(),
+  body:()=>tx(`<p>${DEF('Weight-only quantization',TIP.wonly())} saves the time spent reading memory. With ${DEF('weights and activations',TIP.wact())} in FP8 the multiplies run twice as fast too. ${DEF('Activations',TIP.act())} are the numbers each token carries into a layer, which the weights multiply.</p><p>The chart now shows three kinds of step: decode with 1 request, decode with 64 requests (2,048 tokens of context each), and a prefill of 2,048 tokens, which waits on arithmetic (the lab ${labLink('roofline')}).</p>`,
+              `<p>${DEF('只量化权重',TIP.wonly())}，省的是读显存的时间；${DEF('权重和激活',TIP.wact())}都用 FP8，乘法也快一倍。${DEF('激活',TIP.act())}是每个 token 进入一层时带着的那串数，要和权重相乘。</p><p>图里现在有三种步：1 个请求的 decode、64 个请求的 decode（每个请求 2,048 个 token 的上下文），和一次 2,048 个 token 的 prefill，它在等计算（见 ${labLink('roofline')}）。</p>`)+p5Ctl(),
   obs:()=>obsCompute()},
  {id:'scale',title:{en:'Real models on H100s',zh:'真实的模型放上 H100'},view:'serve',
   lead:()=>tx('How many H100s each model needs in each format, and how much room is left for the KV cache.','每个模型在每种格式下要几张 H100，还剩多少地方放 KV cache。'),
   enter:()=>{tried.p6=new Set(['8b']); return {...BASE,view:'serve',sch:'fp8'};},expect:()=>tried.p6&&tried.p6.has('405b'),showMe:()=>setModel('405b'),label:{en:'Result',zh:'结果'},
-  body:()=>tx(`<p>An ${GPU} is sold as 80 GB; this site counts it as 80 ${DEF('GiB',A.terms&&A.terms.gib?A.terms.gib():'GiB = 2³⁰ bytes')}.</p><p>As in the serving labs, ${DEF('70 GiB of each',TIP.usable())} holds the weights and the KV cache.</p><p>A model too large for one GPU is split over several with tensor parallelism: every weight matrix is cut into n pieces, and each of the n GPUs holds one piece, 1/n of the weights. What the KV cache needs per token is in the lab ${labLink('kv-cache')}.</p><p>Pick a model and see how many ${GPU}s its weights need in each format, scales included. The lines marked 1×70, 2×70 and so on are the memory that 1, 2, 4 or 8 cards have together.</p>`,
-              `<p>每张 ${GPU} 标称 80 GB，本站按 80 ${DEF('GiB',A.terms&&A.terms.gib?A.terms.gib():'GiB = 2³⁰ 字节')} 计。</p><p>和推理服务的几个 Lab 一样，每张卡有 ${DEF('70 GiB',TIP.usable())} 放权重和 KV cache。</p><p>一张卡放不下的模型，用张量并行分到几张卡上：每个权重矩阵切成 n 份，n 张卡每张存其中一份，也就是 1/n 的权重。KV cache 每个 token 占多少，见 ${labLink('kv-cache')}。</p><p>选一个模型，看看它的权重在每种格式下（算上缩放系数）要几张 ${GPU}。图里标着 1×70、2×70 等的线，是 1、2、4、8 张卡加起来能用的显存。</p>`)+p6Ctl(),
+  body:()=>tx(`<p>How many ${GPU}s each model needs in each format, and how much memory is left for the KV cache. Each ${GPU} has ${DEF('70 GiB',TIP.usable())} for the weights and the KV cache.</p><p>A model too large for one GPU is split over n GPUs with tensor parallelism: every weight matrix is cut into n pieces, one per GPU. The dashed lines 1×70, 2×70 and so on are what 1, 2, 4 or 8 GPUs hold together.</p>`,
+              `<p>每个模型在每种格式下要几张 ${GPU}，还剩多少显存放 KV cache。每张 ${GPU} 有 ${DEF('70 GiB',TIP.usable())} 放权重和 KV cache。</p><p>一张卡放不下时，用张量并行分到 n 张卡上：每个权重矩阵切成 n 份，每张卡存一份。图里 1×70、2×70 等虚线，是 1、2、4、8 张卡加起来能用的显存。</p>`)+p6Ctl(),
   obs:()=>obsScale()},
  {id:'remember',title:{en:'What to remember',zh:'要记住的'},view:'block',
   lead:()=>tx('Count the scales, keep blocks small, and know which step each scheme speeds up.','算上缩放系数，块要小，还要知道每种方案让哪种步变快。'),
@@ -289,12 +304,13 @@ const STEPS=[
   body:()=>remember()}
 ];
 const leadOf=s=>typeof s.lead==='function'?s.lead():L(s.lead);
-function p1Ctl(){const k=keyOf(); return `<div class="qz-ic" id="qz-ic-p1">`+A.ui.seg({id:'qz-ic-p1s',key:'p1',label:tx('Weight format','权重格式'),options:P1.map(([v,t])=>[v,L(t)]),value:P1.some(p=>p[0]===k)?k:'bf16',inline:true})+`</div>`;}
+function p1Ctl(){const k=keyOf(); return `<div class="qz-ic" id="qz-ic-p1">`+A.ui.seg({id:'qz-ic-p1s',key:'p1',label:tx('Weight format (weights only; the arithmetic stays BF16)','权重格式（只量化权重，计算还是 BF16）'),options:P1.map(([v,t])=>[v,L(t)]),value:P1.some(p=>p[0]===k)?k:'bf16',inline:true})+`</div>`;}
 function p4Res(k){const v=view('outlier',k); return tx(`${v.zeros} of 31 → 0`,`31 个里 ${v.zeros} 个 → 0`);}
-const P4D={'int4-row':{en:'One scale for the whole row of 256 weights. A real model’s row has thousands of weights, so the scale’s share is negligible: counted as 4 bits.',zh:'整行 256 个权重共用一个缩放系数。真实模型的一行有几千个权重，缩放系数分摊下来可以不计，这里记作 4 位。'},'int4-128':{en:'One 16-bit scale per 128 weights.',zh:'每 128 个权重一个 16 位缩放系数。'},'int4-32':{en:'One 16-bit scale per 32 weights.',zh:'每 32 个权重一个 16 位缩放系数。'},'int4-16':{en:'One 16-bit scale per 16 weights.',zh:'每 16 个权重一个 16 位缩放系数。'},mx:{en:'FP4 values; 32 share one 8-bit scale that must be a power of two.',zh:'FP4 的值；32 个共用一个 8 位、必须是 2 的幂的缩放系数。'},nv:{en:'FP4 values; 16 share one FP8 scale, plus one FP32 scale for the whole tensor.',zh:'FP4 的值；16 个共用一个 FP8 缩放系数，整个张量再加一个 FP32 缩放系数。'}};
+/* each option says only how it differs from the others (P17); the bits of a per-row scale are in the table's “bits” hover */
+const P4D={'int4-row':{en:'One scale for the whole row of 256 weights.',zh:'整行 256 个权重共用一个缩放系数。'},'int4-128':{en:'One 16-bit scale per 128 weights.',zh:'每 128 个权重一个 16 位缩放系数。'},'int4-32':{en:'One 16-bit scale per 32 weights.',zh:'每 32 个权重一个 16 位缩放系数。'},'int4-16':{en:'One 16-bit scale per 16 weights.',zh:'每 16 个权重一个 16 位缩放系数。'},mx:{en:'FP4 values; 32 share one 8-bit scale that must be a power of two.',zh:'FP4 的值；32 个共用一个 8 位、必须是 2 的幂的缩放系数。'},nv:{en:'FP4 values; 16 share one 8-bit FP8 scale.',zh:'FP4 的值；16 个共用一个 8 位的 FP8 缩放系数。'}};
 function p4Ctl(){const k=keyOf();
-  return `<p class="small qz-lead">${tx('Pick how the row is split into blocks, and watch how many of the 31 small weights survive. The table under the block lists every scheme side by side: bits per weight, output error of the whole layer, and how often it picks the same as BF16.','选一种分块方式，看看 31 个小权重还剩多少。这一块下面的表把每种方案并排列出：每个权重占几位、整层输出偏了多少、多少输入选得和 BF16 一样。')}</p><div class="qz-lv" id="qz-ic-p4">`+A.ui.levers({aria:tx('How the weights are split into blocks, pick one','权重怎么分块，选一个'),value:k,
-   options:P4.map(v=>({v,title:`${sshort(v)} · ${bitsT(SCH[v].bits)} ${tx('bits','位')}`,desc:L(P4D[v]),result:(tried.p4&&tried.p4.has(v))||v===k?p4Res(v):''}))})+`</div>`;}
+  return `<p class="small qz-lead">${tx('Pick how the row is split into blocks, and watch how many of the 31 small weights survive.','选一种分块方式，看 31 个小权重还剩多少。')}</p><div class="qz-lv" id="qz-ic-p4">`+A.ui.levers({aria:tx('How the weights are split into blocks, pick one','权重怎么分块，选一个'),value:k,
+   options:P4.map(v=>({v,title:tx(`${sshort(v)} (${bitsT(SCH[v].bits)} bits)`,`${sshort(v)}（${bitsT(SCH[v].bits)} 位）`),desc:L(P4D[v]),result:(tried.p4&&tried.p4.has(v))||v===k?p4Res(v):''}))})+`</div>`;}
 function p5Ctl(){const k=p5Now();
   return `<p class="small qz-lead">${tx('Pick a scheme and watch which of the three steps gets faster.','选一种方案，看看三种步里哪一种变快了。')}</p><div class="qz-lv" id="qz-ic-p5">`+A.ui.levers({aria:tx('What is quantized, pick one','量化什么，选一个'),value:k,
    options:P5K.map(v=>({v,title:L(P5[v].t),desc:L(P5[v].d),result:(tried.p5&&tried.p5.has(v))||v===k?p5Res(v):''}))})+`</div>`;}
@@ -307,56 +323,68 @@ function verdict(){
   return pred===PRED_RIGHT?tx(`<p><span class="okc">Your prediction, “${pt}”, was right.</span></p>`,`<p><span class="okc">你的预测“${pt}”是对的。</span></p>`)
     :tx(`<p>You predicted “${pt}”. The right answer is “${rt}”.</p>`,`<p>你预测的是“${pt}”。正确答案是“${rt}”。</p>`);
 }
-function obsMission(){const k=keyOf(), b=stepT('bf16','bf16','d1'), r=stepT(k,'bf16','d1');
-  if(k==='bf16') return tx(`<p><b>In BF16, a decode step with one request takes ${ms(b.t)} ms.</b> Reading the weights takes almost all of it; the arithmetic would take far less.</p>`,`<p><b>BF16 时，1 个请求的 decode 步要 ${ms(b.t)} 毫秒。</b>几乎全花在读权重上，计算本身用的时间少得多。</p>`);
-  return tx(`<p><b>With ${k==='fp8'?'FP8 weights':'4-bit weights'} the step takes ${ms(r.t)} ms, not ${ms(b.t)} ms.</b></p><p>The GPU reads fewer bytes per weight, so each step finishes sooner.</p><p>Every weight was rounded on the way. The next part shows what that rounding does.</p>`,
-            `<p><b>${k==='fp8'?'权重用 FP8':'权重用 4 位'}时，同样一步只要 ${ms(r.t)} 毫秒，而不是 ${ms(b.t)} 毫秒。</b></p><p>每个权重要读的字节少了，所以每一步结束得更早。</p><p>但每个权重都被舍入过。下一部分看看舍入做了什么。</p>`);}
+/* part 1's options by name: the weight format and its bits (P1K are weight-only, so only the decode row moves) */
+const p1Name=k=>k==='int8'?tx('8-bit weights (INT8)','8 位权重（INT8）'):k==='int4-128'?tx('4-bit weights (INT4)','4 位权重（INT4）'):tx('BF16 weights','BF16 权重');
+function obsMission(){const k=P1K.includes(keyOf())?keyOf():'bf16', b=stepT('bf16','bf16','d1'), r=stepT(k,'bf16','d1');
+  if(k==='bf16') return tx(`<p><b>In BF16 this step takes ${ms(b.t)} ms, nearly all of it reading memory.</b> The arithmetic takes only ${ms(b.tc)} ms.</p>`,`<p><b>BF16 时，这一步要 ${ms(b.t)} 毫秒，几乎全花在读显存上。</b>计算只要 ${ms(b.tc)} 毫秒。</p>`);
+  const half=k==='int8';
+  return tx(`<p><b>With ${p1Name(k)} the step takes ${ms(r.t)} ms, ${half?'about half':`${fix(b.t/r.t,1)} times faster than`} ${half?`of BF16’s ${ms(b.t)} ms`:`BF16’s ${ms(b.t)} ms`}.</b> ${half?'Half the bytes to read, about half the time.':'About a quarter of the bytes are left to read.'} But every weight was rounded: the next part shows what that loses.</p>`,
+            `<p><b>${p1Name(k)}时，这一步只要 ${ms(r.t)} 毫秒，${half?'约是 BF16 的一半':`快到约 ${fix(b.t/r.t,1)} 倍`}。</b>${half?'要读的字节减半，时间也跟着减半。':'要读的字节只剩约四分之一。'}但每个权重都舍入过：下一部分看丢了什么。</p>`);}
 function obsRound(){const v=view('clean','int4-32');
-  return tx(`<p><b>The grid is the set of values this block can store: whole multiples of s, from −7s to 7s, the thin lines in the chart. Every weight moved to the nearest grid value, at most half a grid step away.</b></p><p>The grid steps are smaller than most of the weights; only the ${v.zeros} smallest weights rounded to 0.</p><p>The error and pick cards on the right are for the whole layer stored this way: how far its outputs move, and on how many of 1,000 inputs its largest output is the same one as in BF16.</p>`,
-            `<p><b>格子就是这一块能存的值：s 的整数倍，从 −7s 到 7s，图里的细线。每个权重都挪到了最近的格子上，最多偏半格。</b></p><p>格子的间距比大多数权重小，只有 ${v.zeros} 个特别小的权重舍入成 0。</p><p>右边的“输出误差”和“和 BF16 选的一样”算的是整层都这样存时的结果：这一层的输出偏了多少，以及 1,000 个输入里，这一层最大的那个输出和不量化时是同一个的比例。</p>`);}
-function obsPredict(){const v=view('outlier','int4-32'), z=v.zeros;
-  return verdict()+tx(`<p><b>${z===31?'All 31':`${z} of the 31`} other weights became 0.</b></p><p>The outlier set the scale, so one grid step is about 7 times a typical weight here. A weight smaller than half a step rounds to 0, and ${z===31?'every':'almost every'} other weight in this block is that small. What those weights added to the layer’s output is gone; only the outlier survives (in red in the chart).</p>`,
-            `<p><b>其余 31 个权重${z===31?'全部':`里有 ${z} 个`}变成了 0。</b></p><p>离群值决定了缩放系数，所以这里一个格子大约是普通权重的 7 倍。比半个格子小的权重都舍入成 0，而这一块里${z===31?'每个':'几乎每个'}别的权重都这么小。这些权重对这一层输出的贡献没有了，只剩离群值（图里的红色）。</p>`);}
+  return tx(`<p><b>Every weight moved to the nearest grid value, at most half a step away; only the ${v.zeros} smallest became 0.</b></p><p>The “Output error” and “Same pick as BF16” cards are for the whole layer stored this way. The second reads the layer as the last one, which picks the next token: on how many of 1,000 inputs its largest output is the same as in BF16.</p>`,
+            `<p><b>每个权重都挪到了最近的格子上，最多偏半格；只有 ${v.zeros} 个特别小的变成 0。</b></p><p>“输出误差”和“和 BF16 选的一样”算的是整层都这样存的结果。后一张把这一层当成选下一个 token 的最后一层：1,000 个输入里，最大的输出和 BF16 是同一个的比例。</p>`);}
+/* how many blocks of 32 of the layer hold a planted outlier: about 1 in 8 (P10) */
+const oneIn32=()=>{const h=gen(SEED).hit; let n=0, nb=0; for(let b=0;b<h.length;b+=32){nb++; for(let i=b;i<b+32;i++) if(h[i]){n++; break;}} return Math.round(nb/n);};
+const medOthers=v=>{const a=v.ent.filter(e=>e.j!==v.oi).map(e=>Math.abs(e.w)).sort((x,y)=>x-y); return a[Math.floor(a.length/2)];};
+function obsPredict(){const v=view('outlier','int4-32'), z=v.zeros, s=v.segs[0].s, e=evalK(SEED,'int4-32'), x=fix(s/medOthers(v),0), n8=oneIn32();
+  return verdict()+tx(`<p><b>${z===31?'All 31':`${z} of the 31`} other weights became 0.</b></p><p>The outlier made one grid step s = ${s.toPrecision(3)}, about ${x} times a typical weight. ${z===31?'All':'Almost all'} of the other 31 weights are under half a step, so they round to 0 and only the outlier survives (in red).</p><p>“Output error” and “Same pick as BF16” are for the whole layer, where only about 1 block in ${n8} holds an outlier, so the layer’s error stays ${pc(e.oerr)}.</p>`,
+            `<p><b>其余 31 个权重${z===31?'全部':`里有 ${z} 个`}变成了 0。</b></p><p>离群值让一个格子变成 s = ${s.toPrecision(3)}，大约是普通权重的 ${x} 倍。另外 31 个权重${z===31?'都':'几乎都'}不到半个格子，所以舍入成 0，只剩离群值（红色）。</p><p>“输出误差”和“和 BF16 选的一样”算的是整层：这一层大约每 ${n8} 块才有 1 块带离群值，所以整层误差还是 ${pc(e.oerr)}。</p>`);}
 function obsBlocks(){const k=keyOf(), v=view('outlier',k);
   const so=v.segs.find(sg=>sg.hasO), sr=v.segs.filter(sg=>!sg.hasO), zr=sr.reduce((a,sg)=>a+sg.zeros,0);
   let head, why=[];
   if(k==='int4-32') head=tx(`With one scale per 32, all 31 small weights become 0.`,`每 32 个一块时，31 个小权重全部变成 0。`);
   else if(v.zeros===31) head=tx(`${sshort(k)}: all 31 small weights become 0 here too.`,`${sshort(k)}：31 个小权重也全部变成 0。`);
+  else if(v.zeros>=24) head=tx(`${sshort(k)}: ${v.zeros} of the 31 small weights round to zero.`,`${sshort(k)}：31 个小权重里有 ${v.zeros} 个变成 0。`);
   else head=tx(`${sshort(k)}: only ${v.zeros} of the 31 small weights round to zero.`,`${sshort(k)}：31 个小权重里只有 ${v.zeros} 个变成 0。`);
   if(k==='int4-16') why=[tx(`In the outlier’s block of 16, the other ${so.zeros} all become 0.`,`离群值所在的那 16 个里，另外 ${so.zeros} 个都变成了 0。`),
     tx(`The other half has its own, much smaller scale: only the ${zr} smallest become 0, and the rest keep their values.`,`另一半有自己的、小得多的缩放系数，只有 ${zr} 个特别小的变成 0，其余的都留下了值。`)];
-  else if(k==='nv') why=[tx(`In the outlier’s block of 16, ${so.zeros} become 0.`,`离群值所在的那 16 个里，有 ${so.zeros} 个变成 0。`),
-    tx(`FP4’s grid is finer near 0 than INT4’s, so ${v16o()-so.zeros} more survive there than with INT4.`,`FP4 在 0 附近的格子比 INT4 细，所以这里比 INT4 多留下 ${v16o()-so.zeros} 个。`),
-    tx(`The other half has its own scale: only the ${zr} smallest become 0.`,`另一半有自己的缩放系数，只有 ${zr} 个特别小的变成 0。`)];
-  else if(k==='mx') why=[tx('MXFP4’s scale can only be a power of two (such as 1/8 or 1/16), so it cannot be exactly what the outlier needs; it takes the nearest power of two below.','MXFP4 的缩放系数只能是 2 的幂（比如 1/8、1/16），不能正好取离群值需要的那个数，只能取比它小的、最近的那个 2 的幂。'),
-    tx('32 weights share that scale, and the outlier still sets it for the whole block, so the small weights nearly all become 0.','32 个权重共用这个缩放系数，离群值仍然决定这一整块，所以小权重还是几乎都变成 0。'),
-    tx('FP4 can store only a few values near the top, so the outlier 0.55 is stored as 0.5.','FP4 在大数附近能存的值很稀，离群值 0.55 也只能存成 0.5。')];
-  else if(k==='int4-row'||k==='int4-128') why=[tx('A bigger block shares its scale with more weights, so more of them sit next to some large weight.','块越大，共用一个缩放系数的权重越多，和某个大权重在同一块的权重也越多。')];
+  else if(k==='nv'){const g=0.5*so.s, s16=view('outlier','int4-16').segs.find(sg=>sg.hasO).s;
+    head=tx(`NVFP4: only ${v.zeros} of the 31 small weights round to zero, ${so.zeros} of them in the outlier’s block of 16.`,`NVFP4：31 个小权重里只有 ${v.zeros} 个变成 0，其中 ${so.zeros} 个在离群值所在的那 16 个里。`);
+    why=[tx(`FP4 is finer near 0: that block’s smallest step is 0.5 × s = ${g.toPrecision(2)}, finer than INT4’s ${s16.toPrecision(3)} with blocks of 16, so ${v16o()-so.zeros} more survive.`,`FP4 在 0 附近更细：这块最小的非零格子是 0.5 × s = ${g.toPrecision(2)}，比 INT4 每 16 个的 ${s16.toPrecision(3)} 细，所以多留下 ${v16o()-so.zeros} 个。`),
+    tx(`In the other half only the ${zr} smallest become 0.`,`另一半只有 ${zr} 个特别小的变成 0。`)];}
+  else if(k==='mx'){const o=v.ent[v.oi], need=so.amax/6;
+    why=[tx(`Its scale must be a power of two: here 1/${Math.round(1/so.s)} = ${so.s}, even larger than the ${need.toPrecision(2)} that would put ${fix(so.amax,3)} exactly on 6, so the grid is coarser.`,`它的缩放系数只能是 2 的幂：这里是 1/${Math.round(1/so.s)} = ${so.s}，比让 ${fix(so.amax,3)} 正好落在 6 上的 ${need.toPrecision(2)} 还大，格子更粗。`),
+    tx(`The outlier ${fix(o.w,3)} divided by ${so.s} is ${fix(o.w/so.s,1)}; FP4 stores it as ${fix(o.q/so.s,0)}, which is ${fix(o.q,2)} once multiplied back.`,`离群值 ${fix(o.w,3)} 除以 ${so.s} 是 ${fix(o.w/so.s,1)}，FP4 只能存成 ${fix(o.q/so.s,0)}，乘回去是 ${fix(o.q,2)}。`)];}
+  else if(k==='int4-row'||k==='int4-128') why=[tx('A bigger block shares its scale with more weights, so more of them sit next to some large weight.','块越大，共用一个缩放系数的权重越多，和某个大权重在同一块的权重也越多。'),
+    tx('These 32 weights sit in the outlier’s block either way, so the picture is the same as with blocks of 32; the difference is in the whole layer, in the table’s output error.','图里这 32 个都和离群值在同一块，所以图和每 32 个一块时一样；区别在整层，看表里的输出误差。')];
   return `<p><b>${head}</b></p>`+why.map(x=>`<p>${x}</p>`).join('');}
 const v16o=()=>view('outlier','int4-16').segs.find(sg=>sg.hasO).zeros;
 function obsCompute(){const k=p5Now()||'bf16', s=P5[k].s, kk=s.sch==='int4'?'int4-'+s.blk:s.sch, b={}, r={};
   KINDS.forEach(x=>{b[x]=stepT('bf16','bf16',x); r[x]=stepT(kk,s.kv,x);});
   const x=(a,c)=>a/c;
   if(k==='bf16') return tx(`<p><b>In BF16, decode waits on memory reads; the long prefill waits on arithmetic.</b></p><p>A decode step with one request takes ${ms(b.d1.t)} ms.</p><p>The 2,048-token prefill takes ${ms(b.pre.t)} ms.</p>`,`<p><b>BF16 时，decode 在等读显存，长的 prefill 在等计算。</b></p><p>1 个请求的 decode 步要 ${ms(b.d1.t)} 毫秒。</p><p>2,048 个 token 的 prefill 要 ${ms(b.pre.t)} 毫秒。</p>`);
-  if(k==='w4') return tx(`<p><b>With one request, 4-bit weights make the decode step about ${fix(x(b.d1.t,r.d1.t),1)} times as fast; the prefill does not get faster at all.</b></p><p>That is this lab’s step model, which counts memory reads and multiplies only, not the time to turn 4-bit weights back into BF16.</p><p>Decode waits on reading the weights, and about a quarter as many bytes are read. The prefill waits on arithmetic, which is still BF16. With many requests the KV cache is read too, and it did not shrink.</p>`,
-            `<p><b>1 个请求时，4 位权重让 decode 步快到约 ${fix(x(b.d1.t,r.d1.t),1)} 倍，prefill 却一点没变快。</b></p><p>这是按这个 Lab 的步耗时模型算的：它只算读显存和乘法，不算把 4 位还原成 BF16 的时间。</p><p>decode 在等读权重，要读的字节只剩四分之一左右。prefill 在等计算，而计算还是 BF16。请求多时还要读 KV cache，它没有变小。</p>`);
+  if(k==='w4') return tx(`<p><b>With one request, 4-bit weights make the decode step about ${fix(x(b.d1.t,r.d1.t),1)} times as fast; the prefill does not get faster at all.</b></p><p>Decode waits on reading the weights, and about a quarter as many bytes are read. The prefill waits on arithmetic, which is still BF16. With many requests the KV cache is read too, and it did not shrink.</p>`,
+            `<p><b>1 个请求时，4 位权重让 decode 步快到约 ${fix(x(b.d1.t,r.d1.t),1)} 倍，prefill 却一点没变快。</b></p><p>decode 在等读权重，要读的字节只剩四分之一左右。prefill 在等计算，而计算还是 BF16。请求多时还要读 KV cache，它没有变小。</p>`);
   if(k==='fp8') return tx(`<p><b>FP8 weights and activations make the one-request decode step and the prefill about twice as fast.</b></p><p>The prefill drops from ${ms(b.pre.t)} ms to ${ms(r.pre.t)} ms.</p><p>The 64-request decode step gets only about a quarter faster: most of its time goes to reading the KV cache, which is still BF16.</p>`,
             `<p><b>权重和激活都用 FP8 时，1 个请求的 decode 步和 prefill 都快到约 2 倍。</b></p><p>prefill 从 ${ms(b.pre.t)} 毫秒降到 ${ms(r.pre.t)} 毫秒。</p><p>64 个请求的 decode 步只快了约四分之一：它的时间大半花在读 KV cache 上，而 KV cache 还是 BF16。</p>`);
-  return tx(`<p><b>An FP8 KV cache makes the 64-request decode step about a third faster.</b></p><p>It drops from ${ms(stepT('fp8','bf16','d64').t)} ms to ${ms(r.d64.t)} ms.</p><p>The one-request step barely changes, because it had little KV cache to read in the first place.</p><p>With many requests and long contexts, a step reads more KV cache than weights, so halving the KV cache matters most there.</p>`,
-            `<p><b>KV cache 也用 FP8 后，64 个请求的 decode 步快了约三分之一。</b></p><p>这一步从 ${ms(stepT('fp8','bf16','d64').t)} 毫秒降到 ${ms(r.d64.t)} 毫秒。</p><p>1 个请求的步几乎没变，因为它要读的 KV cache 本来就很少。</p><p>请求多、上下文长时，一步读的 KV cache 比权重还多，所以把它减半效果最大。</p>`);}
+  return tx(`<p><b>An FP8 KV cache makes the 64-request decode step about a third faster.</b></p><p>It drops from ${ms(stepT('fp8','bf16','d64').t)} ms to ${ms(r.d64.t)} ms; the one-request step barely changes.</p><p>With many requests and long contexts, a step reads more KV cache than weights, so halving the KV cache matters most there.</p>`,
+            `<p><b>KV cache 也用 FP8 后，64 个请求的 decode 步快了约三分之一。</b></p><p>这一步从 ${ms(stepT('fp8','bf16','d64').t)} 毫秒降到 ${ms(r.d64.t)} 毫秒；1 个请求的步几乎没变。</p><p>请求多、上下文长时，一步读的 KV cache 比权重还多，所以把它减半效果最大。</p>`);}
 function obsScale(){const m=S.model, P=MOD[m], b=gpus(m,'bf16'), f=gpus(m,'fp8'), n=gpus(m,'nv');
-  if(m==='8b') return tx(`<p><b>${P.n}’s weights fit on one ${GPU} in BF16, FP8 and NVFP4 alike.</b></p><p>What quantization buys here is room: with FP8 weights one ${GPU} holds the KV cache of ${A.fmt.int(kvTok8('fp8','bf16'))} tokens instead of ${A.fmt.int(kvTok8('bf16','bf16'))}.</p>`,
-    `<p><b>${P.n} 的权重不管用 BF16、FP8 还是 NVFP4，都放得进一张 ${GPU}。</b></p><p>量化在这里换来的是空间：FP8 权重时，一张 ${GPU} 能放 ${A.fmt.int(kvTok8('fp8','bf16'))} 个 token 的 KV cache，而不是 ${A.fmt.int(kvTok8('bf16','bf16'))} 个。</p>`);
+  /* the numbers the memory chart shows (P24): GiB left per GPU, not token counts */
+  if(m==='8b') return tx(`<p><b>${P.n}’s weights fit on one ${GPU} in BF16, FP8 and NVFP4 alike.</b></p><p>What quantization buys here is room: with FP8 weights the GPU has ${gib(f.room)} left for the KV cache, against ${gib(b.room)} in BF16.</p>`,
+    `<p><b>${P.n} 的权重不管用 BF16、FP8 还是 NVFP4，都放得进一张 ${GPU}。</b></p><p>量化在这里换来的是空间：FP8 时这张卡还剩 ${gib(f.room)} 放 KV cache，BF16 时只剩 ${gib(b.room)}。</p>`);
   if(m==='70b') return tx(`<p><b>${P.n}’s weights need ${b.n} ${GPU}s in BF16, but fit on one in FP8 or NVFP4.</b></p><p>In FP8 only ${gib(f.room)} is left for the KV cache. In 4 bits about half of the GPU is free for it.</p>`,
     `<p><b>${P.n} 的权重用 BF16 要 ${b.n} 张 ${GPU}，用 FP8 或 NVFP4 一张就放得下。</b></p><p>FP8 时只剩 ${gib(f.room)} 放 KV cache。4 位时大约一半的显存都能放 KV cache。</p>`);
-  return tx(`<p><b>In BF16, ${P.n}’s weights do not fit even on 8 ${GPU}s.</b></p><p>NVFP4 needs ${n.n} ${GPU}s; FP8 just fits on one machine with ${f.n}.</p><p>Meta’s own FP8 release quantizes only the MLP weights of all but the first and last layers (${cite(SRC.meta,'Meta’s FP8 loader')}), and keeps 81.3B parameters in BF16.</p><p>So with Meta’s release each of the 8 GPUs holds 56.7 GiB; with every weight in FP8, as in this chart, it would be ${gib(f.w/8)}.</p>`,
-    `<p><b>${P.n} 的权重用 BF16 时 8 张 ${GPU} 也放不下。</b></p><p>NVFP4 要 ${n.n} 张，FP8 正好放得进一台 ${f.n} 卡机器。</p><p>Meta 自己发布的 FP8 版本只量化除第一层和最后一层以外的 MLP 权重（${cite(SRC.meta,'Meta 的 FP8 加载代码')}），有 81.3B 个参数留在 BF16。</p><p>所以用 Meta 的版本，8 张卡每张存 56.7 GiB；如果像图里这样全部权重都用 FP8，每张是 ${gib(f.w/8)}。</p>`);}
+  return tx(`<p><b>In BF16, ${P.n}’s weights do not fit even on 8 ${GPU}s.</b></p><p>FP8 just fits on one machine with ${f.n} ${GPU}s, each with ${gib(f.room)} left for the KV cache. A 4-bit format such as NVFP4 needs ${n.n}.</p>`,
+    `<p><b>${P.n} 的权重用 BF16 时 8 张 ${GPU} 也放不下。</b></p><p>FP8 正好放进一台 ${f.n} 卡机器，每张还剩 ${gib(f.room)} 放 KV cache。NVFP4 这样的 4 位格式要 ${n.n} 张。</p>`);}
 function remember(){
-  const nv70=wGiB('70b','nv'), r70=wGiB('70b','int4-row'), dd=(+fix(nv70,1)-(+fix(r70,1))).toFixed(1);
-  return tx(`<ol class="qz-rem"><li><b>Count the scales.</b> Besides its 4-bit value, each NVFP4 weight carries a share of its block’s scale: 4.5 bits in all.</li><li><b>One large weight sets its block’s scale.</b> When a block holds a weight dozens of times larger than the rest, INT4 rounds nearly all the others to 0. With smaller blocks, the part without it gets its own scale and most values survive. That is why common 4-bit formats use small blocks.</li><li><b>Weight-only 4-bit speeds up decode, not prefill.</b> Decode waits on reading the weights, so fewer bytes make it faster. Prefill waits on arithmetic, and the multiplies are still BF16. FP8 weights and activations speed up both.</li></ol>`+
-    `<div class="obs"><div class="eyebrow">Common misconceptions</div><p>✗ “4 bits is 4 bits.” The scales are stored too, so each weight takes a little more.</p><p>In NVFP4, ${M70} takes ${gib(nv70)}: ${dd} GiB more than its values alone.</p><p>✗ “Quantization only saves memory.” Decode reads every weight once per step, so fewer bytes per weight make decode faster too.</p><p>✗ “Fewer bits is always fine.” In this lab, INT4 with one scale per row changes the layer’s pick for ${pc(1-evalK(SEED,'int4-row').agree)} of the inputs; NVFP4 for ${pc(1-evalK(SEED,'nv').agree)}. Before a real deployment, an eval set must confirm that the answers did not get noticeably worse.</p></div>${A.shell.toScenarios()}`,
-    `<ol class="qz-rem"><li><b>要算上缩放系数。</b>NVFP4 每个权重除了 4 位的值，还分摊一份缩放系数，一共 4.5 位。</li><li><b>一个大权重决定它那一块的缩放系数。</b>一块里有一个大几十倍的权重时，用 INT4 存，其余权重几乎全部舍入成 0。块小一些，不含它的那部分有自己的缩放系数，大部分值留了下来。所以常用的 4 位格式都用小块。</li><li><b>只把权重量化到 4 位，decode 变快，prefill 不变。</b>decode 在等读权重，字节少了就快。prefill 在等计算，而乘法还是 BF16。权重和激活都用 FP8 时，decode 和 prefill 都会变快。</li></ol>`+
-    `<div class="obs"><div class="eyebrow">常见误解</div><p>✗ “4 位就是 4 位。”缩放系数也要存，每个权重要多占一点。</p><p>${M70} 用 NVFP4 是 ${gib(nv70)}，比只算值的 ${gib(r70)} 多出 ${dd} GiB。</p><p>✗ “量化只省显存。”decode 每一步都要把每个权重读一遍，所以每个权重的字节少了，decode 也会变快。</p><p>✗ “位数越少越好，没有代价。”在这个 Lab 里，INT4 每行一个缩放系数时，这一层有 ${pc(1-evalK(SEED,'int4-row').agree)} 的输入选得和 BF16 不一样；NVFP4 是 ${pc(1-evalK(SEED,'nv').agree)}。真实部署前，要在评测集上确认量化后的回答质量没有明显下降。</p></div>${A.shell.toScenarios()}`);}
+  const nv70=wGiB('70b','nv'), r70=wGiB('70b','int4-row'), same=DEF(tx('picks like BF16','选得和 BF16 一样'),TIP.same());
+  /* three points, each with its concrete case (R6.23). The design's misconception “4 bits is 4 bits” is the first point with its 70B
+     numbers; the other two stay as misconceptions, the last in the measure the whole lab uses, same pick as BF16 (P26) */
+  return tx(`<ol class="qz-rem"><li><b>Count the scales.</b> Each NVFP4 weight also carries a share of its block’s scale, 4.5 bits in all, so the weights of ${M70} take ${gib(nv70)}, not the ${gib(r70)} that 4 bits would give.</li><li><b>One large weight sets its block’s scale.</b> When it is dozens of times larger, INT4 rounds nearly all the other weights of its block to 0; with smaller blocks most values survive.</li><li><b>Weight-only 4-bit speeds up decode, not prefill.</b> Decode waits on reading the weights; prefill waits on arithmetic, and the multiplies are still BF16. FP8 weights and activations speed up both.</li></ol>`+
+    `<div class="obs"><div class="eyebrow">Common misconceptions</div><p>✗ “Quantization only saves memory.” With fewer bytes to read, decode is faster too.</p><p>✗ “Fewer bits cost nothing.” With INT4 and one scale per row the layer ${same} on only ${pc(evalK(SEED,'int4-row').agree)} of the inputs; with NVFP4 on ${pc(evalK(SEED,'nv').agree)}.</p></div>${A.shell.toScenarios()}`,
+    `<ol class="qz-rem"><li><b>要算上缩放系数。</b>NVFP4 每个权重还分摊缩放系数，一共 4.5 位，所以 ${M70} 的权重是 ${gib(nv70)}，不是按 4 位算的 ${gib(r70)}。</li><li><b>一个大权重决定它那一块的缩放系数。</b>它大几十倍时，INT4 会把同一块的其余权重几乎全舍入成 0；块小一些，大部分就留得下。</li><li><b>只把权重量化到 4 位，decode 变快，prefill 不变。</b>decode 在等读权重；prefill 在等计算，乘法还是 BF16。FP8 权重和激活让两种步都变快。</li></ol>`+
+    `<div class="obs"><div class="eyebrow">常见误解</div><p>✗ “量化只省显存。”要读的字节少了，decode 也更快。</p><p>✗ “位数少了没有代价。”INT4 每行一个缩放系数时，这一层只有 ${pc(evalK(SEED,'int4-row').agree)} 的输入${same}；NVFP4 是 ${pc(evalK(SEED,'nv').agree)}。</p></div>${A.shell.toScenarios()}`);}
 
 /* =====================================================================
    scenarios, header texts, capability layer
@@ -364,24 +392,25 @@ function remember(){
 const PRESETS=[
  {id:'init',t:{en:`${M8} in BF16`,zh:`${M8}，BF16`},d:{en:'The initial setup: nothing quantized',zh:'初始设置：什么都不量化'},s:{sch:'bf16',kv:'bf16',model:'8b',view:'serve'}},
  {id:'vfp8',t:{en:'FP8 weights and activations',zh:'FP8 权重和激活'},d:{en:'Weights: one scale per tensor; activations: one per token',zh:'权重每个张量一个缩放系数，激活每个 token 一个'},s:{sch:'fp8',kv:'bf16',model:'8b',view:'block'}},
- {id:'g128',t:{en:'4-bit weights in groups of 128',zh:'4 位权重，每 128 个一组'},d:{en:'INT4 as AWQ’s examples run it; activations stay BF16',zh:'AWQ 示例里用的 INT4；激活还是 BF16'},s:{sch:'int4',blk:'128',kv:'bf16',model:'8b',view:'block'}},
+ {id:'g128',t:{en:'4-bit weights in groups of 128',zh:'4 位权重，每 128 个一组'},d:{en:'INT4 in groups of 128, the grouping AWQ and GPTQ often use; activations stay BF16',zh:'INT4，每 128 个一组（AWQ、GPTQ 常用的分组）；激活还是 BF16'},s:{sch:'int4',blk:'128',kv:'bf16',model:'8b',view:'block'}},
  {id:'nvfp4',t:{en:'NVFP4 weights',zh:'NVFP4 权重'},d:{en:'FP4 in blocks of 16 with an FP8 scale',zh:'FP4，每 16 个一块，配 FP8 缩放系数'},s:{sch:'nv',kv:'bf16',model:'8b',view:'block'}},
  {id:'kv8',t:{en:'Many long chats: FP8 KV cache',zh:'很多长对话：KV cache 用 FP8'},d:{en:`${M8}, FP8 weights and KV cache, 64 requests`,zh:`${M8}，权重和 KV cache 都用 FP8，64 个请求`},s:{sch:'fp8',kv:'fp8',model:'8b',view:'serve'}},
- {id:'405',t:{en:`${M405} on one machine`,zh:`一台机器跑 ${M405}`},d:{en:'8 H100s, FP8 weights',zh:'8 张 H100，FP8 权重'},s:{sch:'fp8',kv:'fp8',model:'405b',view:'serve'}}];
+ {id:'405',t:{en:`${M405} on one machine`,zh:`一台机器跑 ${M405}`},d:{en:'8 H100s, FP8 weights, KV cache in FP8 too',zh:'8 张 H100，FP8 权重，KV cache 也用 FP8'},s:{sch:'fp8',kv:'fp8',model:'405b',view:'serve'}}];
 const presetNow=()=>PRESETS.findIndex(p=>Object.keys(p.s).every(k=>S[k]===p.s[k])&&(p.s.sch!=='int4'||S.blk===p.s.blk));
 function scenHTML(i){const p=PRESETS[i], k=keyOf(), e=evalK(SEED,k), b=stepT('bf16','bf16','d1'), r=stepT(k,S.kv,'d1');
   if(p.id==='init') return tx(`<p><b>Nothing is rounded: the layer’s output is the reference.</b></p><p>A one-request decode step of ${M8} takes ${ms(b.t)} ms. Pick another scenario to see what quantization changes.</p>`,`<p><b>什么都没舍入：这一层的输出就是参照。</b></p><p>${M8} 1 个请求的 decode 步要 ${ms(b.t)} 毫秒。选别的场景，看看量化改变了什么。</p>`);
-  if(p.id==='vfp8') return tx(`<p><b>FP8 with one scale per tensor for the weights and one per token for the activations: output error ${pc(e.oerr)}, same pick on ${pc(e.agree)} of the inputs.</b></p><p>FP8 is a floating-point format: the closer a value is to 0, the denser the values it can store. So even with a large outlier in the tensor, the small weights still have a fine grid near them and do not all become 0.</p><p>This combination is the lab’s own choice. vLLM’s docs say FP8 quantization gives “a 2x reduction in model memory requirements and up to a 1.6x improvement in throughput with minimal impact on accuracy”. vLLM’s online mode (<code>--quantization fp8</code>) gives the activations one scale per tensor too, and the same docs say “latency improvements are limited in this mode” (${cite(SRC.vfp8,'vLLM’s FP8 docs')}).</p>`,
-    `<p><b>权重每个张量一个缩放系数、激活每个 token 一个的 FP8：输出误差 ${pc(e.oerr)}，${pc(e.agree)} 的输入选得和 BF16 一样。</b></p><p>FP8 是浮点格式：数越接近 0，能存的值排得越密。所以即使张量里有很大的离群值，小权重附近的格子照样很细，不会都变成 0。</p><p>这种组合是这个 Lab 自己选的。vLLM 的文档说，把模型量化成 FP8，显存需求减半，吞吐最多提高到 1.6 倍，对准确率的影响很小。vLLM 的在线模式（<code>--quantization fp8</code>）给激活也只用每个张量一个缩放系数，同一份文档说这种模式的延迟改善有限（${cite(SRC.vfp8,'vLLM 的 FP8 文档')}）。</p>`);
-  if(p.id==='g128') return tx(`<p><b>Output error ${pc(e.oerr)}; the layer keeps its pick on ${pc(e.agree)} of the inputs.</b></p><p>This lab plants a few very large weights (outliers) in the layer on purpose; with 128 weights per group, about 2 in 5 groups contain one.</p><p>AWQ and GPTQ are post-training quantization methods: they first run the model on a small batch of text (calibration data), then use it to choose the scales (AWQ) or correct the rounding (GPTQ). This lab leaves that step out (${cite(SRC.pAwq,'AWQ')}, ${cite(SRC.pGptq,'GPTQ')}).</p>`,
-    `<p><b>INT4 每 128 个一组：输出误差 ${pc(e.oerr)}，${pc(e.agree)} 的输入选得和 BF16 一样。</b></p><p>这个 Lab 故意在这一层里放了一些特别大的权重（离群值）。每 128 个一组时，大约四成的组里有一个。</p><p>AWQ 和 GPTQ 是训练后量化方法：先用一小批文本（校准数据）跑一遍模型，再据此挑缩放系数（AWQ）或修正舍入（GPTQ）。这个 Lab 没有做这一步（${cite(SRC.pAwq,'AWQ 论文')}、${cite(SRC.pGptq,'GPTQ 论文')}）。</p>`);
-  if(p.id==='nvfp4') return tx(`<p><b>NVFP4: output error ${pc(e.oerr)}, same pick on ${pc(e.agree)} of the inputs.</b></p><p>With blocks of 16, an outlier affects at most the 15 others in its block.</p><p>An ${GPU} has no FP4 arithmetic, so here it is weight-only: a decode step with one request takes ${ms(r.t)} ms.</p>`,
-    `<p><b>NVFP4：输出误差 ${pc(e.oerr)}，${pc(e.agree)} 的输入选得和 BF16 一样。</b></p><p>每 16 个一块，一个离群值最多影响同一块的另外 15 个。</p><p>${GPU} 没有 FP4 的计算单元，所以这里只量化权重：1 个请求的 decode 步要 ${ms(r.t)} 毫秒。</p>`);
-  if(p.id==='kv8') {const a=stepT('fp8','bf16','d64'), c=stepT('fp8','fp8','d64'); return tx(`<p><b>With weights and activations already in FP8, an FP8 KV cache as well makes the decode step of 64 requests with 2,048 tokens each about a third faster.</b></p><p>It drops from ${ms(a.t)} ms to ${ms(c.t)} ms.</p><p>One ${GPU} also holds twice as many KV cache tokens. vLLM turns it on with <code>kv_cache_dtype="fp8"</code> (${cite(SRC.vkv,'vLLM’s KV cache docs')}).</p>`,
-    `<p><b>权重和激活已经是 FP8 时，再把 KV cache 也改成 FP8，64 个请求、每个 2,048 个 token 的 decode 步快了约三分之一。</b></p><p>这一步从 ${ms(a.t)} 毫秒降到 ${ms(c.t)} 毫秒。</p><p>一张 ${GPU} 能放的 KV cache token 数也翻倍。vLLM 用 <code>kv_cache_dtype="fp8"</code> 打开它（${cite(SRC.vkv,'vLLM 的 KV cache 量化文档')}）。</p>`);}
+  if(p.id==='vfp8'){const f=fp8Near(view(S.bsel,'fp8')), s4=view(S.bsel,'int4-row').segs[0].s;
+    return tx(`<p><b>FP8 with one scale per tensor for the weights and one per token for the activations: output error ${pc(e.oerr)}, same pick on ${pc(e.agree)} of the inputs.</b></p><p>FP8 is a floating-point format: the closer a value is to 0, the denser the values it can store. Near the small weights of this block two neighbouring FP8 values are only about ${f} apart, against ${s4.toPrecision(3)} with INT4 and one scale per row, so the small weights do not become 0.</p>`,
+    `<p><b>权重每个张量一个缩放系数、激活每个 token 一个的 FP8：输出误差 ${pc(e.oerr)}，${pc(e.agree)} 的输入选得和 BF16 一样。</b></p><p>FP8 是浮点格式：数越接近 0，能存的值排得越密。在这一块的小权重附近，相邻两个 FP8 值只差约 ${f}，INT4 每行一个缩放系数时差 ${s4.toPrecision(3)}，所以小权重不会变成 0。</p>`);}
+  if(p.id==='g128') return tx(`<p><b>INT4 in groups of 128: output error ${pc(e.oerr)}; the layer keeps its pick on ${pc(e.agree)} of the inputs.</b></p><p>This is plain rounding without calibration. This lab plants a few very large weights (outliers) in the layer on purpose; with 128 weights per group, about 2 in 5 groups contain one.</p><p>AWQ and GPTQ add a step to bring such errors down: they first run the model on a small batch of text (calibration data), then use it to choose the scales (AWQ) or correct the rounding (GPTQ) (${cite(SRC.pAwq,'AWQ')}, ${cite(SRC.pGptq,'GPTQ')}).</p>`,
+    `<p><b>INT4 每 128 个一组：输出误差 ${pc(e.oerr)}，${pc(e.agree)} 的输入选得和 BF16 一样。</b></p><p>这里只做最简单的舍入，没有校准。这个 Lab 故意在这一层里放了一些特别大的权重（离群值），每 128 个一组时，大约四成的组里有一个。</p><p>AWQ 和 GPTQ 多做一步来减小这种误差：先用一小批文本（校准数据）跑一遍模型，再据此挑缩放系数（AWQ）或修正舍入（GPTQ）（${cite(SRC.pAwq,'AWQ 论文')}、${cite(SRC.pGptq,'GPTQ 论文')}）。</p>`);
+  if(p.id==='nvfp4') return tx(`<p><b>NVFP4: output error ${pc(e.oerr)}, same pick on ${pc(e.agree)} of the inputs.</b></p><p>With blocks of 16, an outlier affects at most the 15 others in its block.</p><p>An ${GPU} has no FP4 arithmetic, so here it is weight-only: it saves memory and the time to read the weights.</p>`,
+    `<p><b>NVFP4：输出误差 ${pc(e.oerr)}，${pc(e.agree)} 的输入选得和 BF16 一样。</b></p><p>每 16 个一块，一个离群值最多影响同一块的另外 15 个。</p><p>${GPU} 没有 FP4 的计算单元，所以这里只量化权重：省的是显存和读权重的时间。</p>`);
+  if(p.id==='kv8') {const a=stepT('fp8','bf16','d64'), c=stepT('fp8','fp8','d64'), f=gpus('8b','fp8'); return tx(`<p><b>With weights and activations already in FP8, an FP8 KV cache as well makes the decode step of 64 requests with 2,048 tokens each about a third faster.</b></p><p>It drops from ${ms(a.t)} ms to ${ms(c.t)} ms.</p><p>Each token’s KV cache shrinks from 128 KiB to 64 KiB, so the ${gib(f.room)} left after the weights holds twice as many tokens. vLLM turns it on with <code>kv_cache_dtype="fp8"</code> (${cite(SRC.vkv,'vLLM’s KV cache docs')}).</p>`,
+    `<p><b>权重和激活已经是 FP8 时，再把 KV cache 也改成 FP8，64 个请求、每个 2,048 个 token 的 decode 步快了约三分之一。</b></p><p>这一步从 ${ms(a.t)} 毫秒降到 ${ms(c.t)} 毫秒。</p><p>每个 token 的 KV cache 从 128 KiB 变成 64 KiB，所以权重放下后剩的 ${gib(f.room)} 能放两倍的 token。vLLM 用 <code>kv_cache_dtype="fp8"</code> 打开它（${cite(SRC.vkv,'vLLM 的 KV cache 量化文档')}）。</p>`);}
   const g=gpus('405b','fp8'), gb=gpus('405b','bf16');
-  return tx(`<p><b>In FP8, ${M405}’s weights fit on one machine with 8 ${GPU}s.</b></p><p>The chart assumes every weight is FP8: ${gib(g.w)} in all, ${gib(g.w/8)} on each GPU.</p><p>Each GPU has ${gib(g.room)} left for the KV cache.</p><p>In BF16 the weights take ${gib(gb.w)}, more than 8 GPUs hold.</p><p>Meta’s actual FP8 release keeps 81.3B parameters in BF16; with it, each GPU holds 56.7 GiB (${cite(SRC.meta,'Meta’s FP8 loader')}).</p>`,
-    `<p><b>FP8 时，${M405} 的权重放得进一台 8 卡机器。</b></p><p>图里假设全部权重都用 FP8：一共 ${gib(g.w)}，分到 8 张卡上每张 ${gib(g.w/8)}。</p><p>每张卡还剩 ${gib(g.room)} 放 KV cache。</p><p>BF16 时权重要 ${gib(gb.w)}，8 张卡放不下。</p><p>Meta 真正发布的 FP8 版本有 81.3B 个参数留在 BF16，用它的话每张卡存 56.7 GiB（${cite(SRC.meta,'Meta 的 FP8 加载代码')}）。</p>`);}
+  return tx(`<p><b>In FP8, ${M405}’s weights fit on one machine with 8 ${GPU}s.</b></p><p>The chart assumes every weight is FP8: ${gib(g.w)} in all, ${gib(g.w/8)} on each GPU, with ${gib(g.room)} left on each for the KV cache.</p><p>In BF16 the weights take ${gib(gb.w)}, more than 8 GPUs hold.</p>`,
+    `<p><b>FP8 时，${M405} 的权重放得进一台 8 卡机器。</b></p><p>图里假设全部权重都用 FP8：一共 ${gib(g.w)}，分到 8 张卡上每张 ${gib(g.w/8)}，每张还剩 ${gib(g.room)} 放 KV cache。</p><p>BF16 时权重要 ${gib(gb.w)}，8 张卡放不下。</p>`);}
 const DESCS=()=>({
  guided:tx('Seven parts: why fewer bits speed up decode, how a block of weights is rounded, what one large weight does, smaller blocks, weights only or activations too, and real models on H100s.','七个部分，依次讲为什么位数少了 decode 会变快，一块权重怎么舍入，一个很大的权重会怎样，更小的块，只量化权重还是连激活一起，以及真实的模型放上 H100。'),
  sandbox:tx('Pick a common scheme and see what it does to the small layer and to the step times.','选一种常见的方案，看看它对小模型这一层和每一步的耗时有什么影响。'),
@@ -431,7 +460,9 @@ function chResultHTML(){
     h=tx(`<p class="badline"><b>Not met: ${why}.</b></p>`,`<p class="badline"><b>没达标：${why}。</b></p>`);
     if(!chReveal) h+=tx(`<p>Hint: both the weights and the KV cache must shrink, and the weight format must keep an outlier from wiping out many neighbours.</p><p><button type="button" class="linkbtn" data-act="reveal">Show the answer</button></p>`,`<p>提示：权重和 KV cache 都要变小，而且权重格式要让一个离群值影响不到太多邻居。</p><p><button type="button" class="linkbtn" data-act="reveal">直接看答案</button></p>`);}
   if(e.ok||chReveal){
-    const rows=all.map(x=>({label:lab(x),value:x.need,text:tx(`${gib(x.need)}, same pick ${pc(x.agree)}`,`${gib(x.need)}，选得一样 ${pc(x.agree)}`),ok:x.ok,me:x.k===chW&&x.kv===chKV,tags:x.k==='bf16'&&x.kv==='bf16'?[{text:tx('initial setup','初始设置')}]:[]}));
+    /* the outlined row is the reader's own setup: the kit's “your pick” tag names it (P34) */
+    const rows=all.map(x=>{const me=x.k===chW&&x.kv===chKV; return {label:lab(x),value:x.need,text:tx(`${gib(x.need)}, same pick ${pc(x.agree)}`,`${gib(x.need)}，选得一样 ${pc(x.agree)}`),ok:x.ok,me,
+      tags:[...(x.k==='bf16'&&x.kv==='bf16'?[{text:tx('initial setup','初始设置')}]:[]),...(me?[{text:tx('your pick','你的选择'),me:true}]:[])]};});
     h+=A.ui.cmpChart({title:tx(`Memory on one ${GPU} for ${M70} and 16 users × 8K tokens`,`${M70} 加 16 个用户 × 8K 个 token，一张 ${GPU} 上要的显存`),aria:tx('Memory per setup','每种设置要的显存'),rows,goal:UGPU,goalLabel:tx('70 GiB usable','可用 70 GiB'),max:180,brief:true,okText:tx('fits and keeps the pick','放得下，选得也一样'),noText:tx('misses a condition','差一个条件')});
     const best=pass[0];
     if(best) h+=tx(`<p><b>Answer: ${lab(best)}.</b></p><p>In FP8 the KV cache of the 16 users takes ${gib(best.kvg)}, twice that in BF16.</p><p>So the weights must be 4-bit to fit next to it.</p><p>Of those formats, only NVFP4’s blocks of 16 keep the pick at ${pc(best.agree)}.</p><p>MXFP4 and INT4 per 128 fit too, but their larger blocks let one outlier zero out more weights, and they stay below 90%.</p><p class="small muted">Caveat: the 90% bar is this lab’s stand-in. On an H100, NVFP4 runs weight-only (no FP4 arithmetic), and a real deployment would check quality on an eval set.</p>`,
@@ -447,7 +478,7 @@ function challengeHTML(){
    `<p class="small qz-lead">${tx('Pick a weight format and a KV cache format, then submit.','选一种权重格式和一种 KV cache 格式，再提交。')}</p>`+
    `<div class="qz-lv" id="qz-ic-chw">`+A.ui.levers({aria:tx('Weight format, pick one','权重格式，选一个'),value:chW,options:CHK.map(v=>({v,title:sname(v),desc:'',result:`${bitsT(RBITS[v])} ${tx('bits','位')}`}))})+`</div>`+
    A.ui.seg({id:'qz-ic-chkv',key:'chkv',label:tx('KV cache','KV cache'),options:[['bf16','BF16'],['fp8','FP8']],value:chKV,inline:true})+
-   `<div class="goal mono qz-goal" id="qz-ch-g1"><span>${tx('Memory on the GPU','这张卡上的显存')}</span><span><b id="qz-ch-mem"></b>${tx(' of 70 GiB',' / 70 GiB')}</span></div>`+
+   `<div class="goal mono qz-goal" id="qz-ch-g1"><span>${tx('Memory needed','需要的显存')}</span><span><b id="qz-ch-mem"></b>${tx(' of 70 GiB',' / 70 GiB')}</span></div>`+
    `<div class="qz-ch-sub">${submit}<p class="small muted">${tx('Submitting runs the other layer with your weight format and says whether both conditions hold.','提交后会用你选的权重格式跑另一层，并告诉你两个条件是否都满足。')}</p></div>`+
    `<div id="qz-ch-res" class="qz-ch-res" aria-live="polite"></div></div>`;
 }
@@ -556,7 +587,7 @@ function viewHTML(){return `<div class="qz-app m2" id="qz-app">`+headerHTML()+`<
    rail
    ===================================================================== */
 function isNextDisabled(){const s=STEPS[step]; return (!!s.expect&&!observed[step])||(!!s.gate&&!s.gate());}
-const WHY={round:{en:'Watch the three steps play to continue, or press Show me.',zh:'看完三步演示才能继续，或者点“演示给我看”。'},predict:{en:'Pick an answer and round the block to continue.',zh:'选一个答案，再舍入这一块，才能继续。'},
+const WHY={round:{en:'Watch it play to continue, or press Show me for the result.',zh:'看完三步演示才能继续，或者点“演示给我看”直接看结果。'},predict:{en:'Pick an answer and round the block to continue.',zh:'选一个答案，再舍入这一块，才能继续。'},
   blocks:{en:'Try blocks of 16 or NVFP4 to continue.',zh:'试一下每 16 个一块或 NVFP4，才能继续。'},compute:{en:'Try 4-bit weights only and FP8 weights and activations to continue.',zh:'试一下“只把权重量化到 4 位”和“权重和激活都用 FP8”，才能继续。'},scale:{en:`Look at ${M405} to continue.`,zh:`看一下 ${M405} 才能继续。`}};
 const nextWhy=()=>{const w=WHY[STEPS[step].id]; return w?L(w):'';};
 function railHTML(){
@@ -603,75 +634,244 @@ function updateRail(){
 const curStep=()=>mode==='guided'?STEPS[step].id:'';
 const viewNow=()=>mode==='challenge'?'serve':(mode==='guided'?STEPS[step].view:S.view);
 const SVGNS='http://www.w3.org/2000/svg';
-/* the phase the block picture shows, and how far phase 2 has moved (0…1) */
-function dispPhase(){if(hidePred()) return {ph:0,t:0}; if(AN.on||AN.paused) return {ph:AN.ph,t:AN.t}; return watched.has(animKey())?{ph:3,t:1}:{ph:0,t:0};}
+/* the phase the block picture shows, and how far into it it is (0…1) */
+function dispPhase(){if(hidePred()) return {ph:0,t:0}; if(AN.on||AN.paused) return {ph:AN.ph,t:AN.t}; return seen(animKey())?{ph:3,t:1}:{ph:0,t:0};}
+/* ---------- the rounding picture (round 1 polish, P6, P9, P12, P16, P28) ----------
+   Frame A is in weight units. Frame B is in units of each block's own scale, w ÷ s: there the grid is the same for every block, the
+   whole numbers −7…7 (INT4; −127…127 for INT8), the FP4 values or the FP8 values. Phase 1 moves each weight from A to B (÷ s), phase 2
+   rounds it to the nearest grid value in B, phase 3 multiplies back (× s): the grid, the weights and the stored values return to A,
+   where a grid step is s. Each phase moves during its first 70% and then holds; one clock (AN.t) moves the points, the grid, the axis
+   and the callouts together. */
+const ease=x=>x<=0?0:x>=1?1:(x<0.5?2*x*x:1-2*(1-x)*(1-x));
+const MOVE=0.7, prog=t=>ease(t/MOVE), lerp=(a,b,e)=>a+(b-a)*e, clamp01=x=>Math.max(0,Math.min(1,x));
+/* every non-negative FP8 E4M3 value (subnormals k/8 × 2^−6, then the normal values up to 448): FP8's grid in units of s */
+const E4M3V=(()=>{const v=new Set(); for(let m=1;m<8;m++) v.add(m*2**-9); for(let e=-6;e<=8;e++) for(let m=0;m<8;m++){const x=(1+m/8)*2**e; if(x<=448) v.add(x);} return [0,...[...v].sort((a,b)=>a-b)];})();
+let TAMAX=0;
+const tensorAmax=()=>{if(!TAMAX){const W=gen(SEED).W; for(let i=0;i<W.length;i++) TAMAX=Math.max(TAMAX,Math.abs(W[i]));} return TAMAX;};
+/* the blocks that share a scale in the picture; FP8 has one scale for the whole tensor (view() leaves FP8 without blocks) */
+function segsOf(v,k){
+  if(k==='bf16') return [];
+  if(k==='fp8'){const a=tensorAmax(); return [{from:0,to:32,s:a/448,lv:E4M3V,amax:a,setter:-1,size:0,zeros:v.zeros,hasO:v.oi>=0,tensor:true}];}
+  return v.segs;}
+const lvTop=sg=>sg.lv[sg.lv.length-1], lv1=sg=>sg.lv[1];
+/* FP8 near the small weights of a block (P28): the gap between two neighbouring stored values at the middle-sized weight */
+function fp8Near(v){const s=tensorAmax()/448, ex=Math.max(fl2(medOthers(v)/s),-6); return String(+(2**(ex-3)*s).toPrecision(2));}
+/* the picture's geometry: frame A spans ±YA weight units, frame B ±KB units of s */
+function blockGeo(v,segs,Wd,H){
+  const ml=46, mr=8, mt=34, mb=30, cw=(Wd-ml-mr)/32, ph0=mt, ph1=H-mb, hh=(ph1-ph0)/2, yc=ph0+hh;
+  const maxO=Math.max(...v.ent.filter(e=>e.j!==v.oi).map(e=>Math.abs(e.w)))||0.05;
+  let YA=maxO*1.3; const so=segs.find(sg=>sg.hasO);
+  /* the outlier's block: its first grid line ±s comes into the picture, so “a step is about 7 times a typical weight” shows (P9) */
+  if(so&&!so.tensor){const g1=lv1(so)*so.s; if(g1*1.25>YA&&g1<6*maxO) YA=g1*1.25;}
+  const seg=j=>segs.find(sg=>j>=sg.from&&j<sg.to)||segs[0];
+  let KB=1;
+  if(segs.length){if(lvTop(segs[0])<=7) KB=lvTop(segs[0])+0.6;
+    else {let m=0; v.ent.forEach(e=>{if(e.j!==v.oi) m=Math.max(m,Math.abs(e.w/seg(e.j).s));}); KB=Math.max(1.25*m,2*lv1(segs[0]));}}
+  return {ml,mr,mt,mb,cw,ph0,ph1,hh,yc,YA,KB,seg,X:j=>ml+cw*(j+0.5),
+    yA:w=>yc-hh*Math.max(-1,Math.min(1,w/YA)), yB:u=>yc-hh*Math.max(-1,Math.min(1,u/KB)), dA:w=>hh*w/YA, dB:u=>hh*u/KB};
+}
+/* one block's grid at this moment, in pixels above the centre: the lines at least 3 px apart, the part below them too dense to draw,
+   and the half step around 0 that rounds to 0 */
+function gridOf(sg,G,e3){
+  const d=L=>lerp(G.dB(L),G.dA(L*sg.s),e3), ds=sg.lv.filter(L=>L>0).map(d);
+  let i=ds.length-1; while(i>=0&&ds[i]-(i?ds[i-1]:0)>=3) i--;
+  return {lines:ds.slice(i+1), dense:i>=0?ds[i]:0, zb:d(lv1(sg)/2)};
+}
+/* a value u stored as the grid value r: how far it moved and how far it sat from the half-way line to the next grid value, both in
+   steps of the grid there (the second is 0 to 0.5: near 0 it was a close call) */
+function rnd(sg,u,r){const a=Math.abs(u), b=Math.abs(r), L=sg.lv; let n=null;
+  if(a>b) n=L.find(x=>x>b+1e-12); else if(a<b){for(let i=L.length-1;i>=0;i--) if(L[i]<b-1e-12){n=L[i]; break;}}
+  if(n==null) return {mv:0,edge:0.5};
+  const st=Math.abs(n-b); return {mv:Math.abs(a-b)/st, edge:Math.abs(a-(b+n)/2)/st};}
 function drawBlock(){
   const svg=$('#qz-svg',app), box=$('#qz-blockv',app); if(!svg||box.hidden) return;
-  const k=keyOf(), v=view(S.bsel,k), {ph,t}=dispPhase();
-  const Wd=Math.max(280,Math.round(svg.clientWidth||box.clientWidth||520)), H=innerWidth<=480?210:236, ml=46, mr=8, mt=30, mb=30;
-  const others=v.ent.filter(e=>e.j!==v.oi).map(e=>Math.abs(e.w)), ymax=Math.max(...others)*1.3||0.05;
-  const cw=(Wd-ml-mr)/32, X=j=>ml+cw*(j+0.5), Y=y=>mt+(H-mt-mb)*(0.5-Math.max(-ymax,Math.min(ymax,y))/(2*ymax));
-  let g=`<rect x="${ml}" y="${mt}" width="${Wd-ml-mr}" height="${H-mt-mb}" class="qz-plot"/>`;
-  // y axis
-  const tk=+(ymax*0.8).toPrecision(1); [-tk,0,tk].forEach(y=>{g+=`<line x1="${ml}" x2="${Wd-mr}" y1="${Y(y)}" y2="${Y(y)}" class="${y===0?'qz-zero':'qz-ax'}"/><text x="${ml-4}" y="${Y(y)+4}" class="qz-yl" text-anchor="end">${y===0?'0':(y>0?'':'−')+Math.abs(y)}</text>`;});
-  // block segments and their grids
-  const showGrid=ph>=1&&k!=='bf16';
-  v.segs.forEach((sg,i)=>{const x0=ml+cw*sg.from, x1=ml+cw*sg.to;
-    if(v.segs.length>1||sg.size<=32) g+=`<rect x="${x0+1}" y="${mt-14}" width="${x1-x0-2}" height="10" class="qz-seg${i%2?' qz-seg2':''}"/>`;
-    if(showGrid){const vals=[]; sg.lv.forEach(l=>{vals.push(l*sg.s); if(l) vals.push(-l*sg.s);});
-      const gap=vals.length>1?Math.min(...vals.filter(x=>x>0))/(2*ymax)*(H-mt-mb):99;
-      if(gap>=3) vals.forEach(y=>{if(Math.abs(y)<=ymax) g+=`<line x1="${x0+1}" x2="${x1-1}" y1="${Y(y)}" y2="${Y(y)}" class="qz-grid"/>`;});}
+  const k=keyOf(), v=view(S.bsel,k), segs=segsOf(v,k), {ph,t}=dispPhase(), live=AN.on||AN.paused;
+  const tbl=!$('#qz-chart',app).hidden, Wd=Math.max(280,Math.round(svg.clientWidth||box.clientWidth||520)), H=innerWidth<=480?246:(tbl?206:240);
+  const G=blockGeo(v,segs,Wd,H), {ml,ph0,ph1,cw,yc,hh}=G, W1=Wd-G.mr;
+  const e1=ph===1?prog(t):(ph>1?1:0), e2=ph===2?prog(t):(ph>2?1:0), e3=ph===3?prog(t):0;
+  const wB=ph===1?e1:(ph===2?1:(ph===3?1-e3:0));   // 1 in frame B (w ÷ s), 0 in frame A (weights)
+  const gOp=ph===1?e1:(ph>=2?1:0), bOp=ph===2?clamp01(t/0.15):(ph===3?1:0), f1=x=>x.toFixed(1);
+  let g=`<defs><clipPath id="qz-clip"><rect x="${ml}" y="${ph0}" width="${W1-ml}" height="${ph1-ph0}"/></clipPath><pattern id="qz-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" class="qz-hl"/></pattern></defs>`+
+    `<rect x="${ml}" y="${ph0}" width="${W1-ml}" height="${ph1-ph0}" class="qz-plot"/>`;
+  // the axis: weight units in frame A, units of s in frame B (the labels cross-fade with the move)
+  /* frame A's ticks stay clear of a block's first grid line (the outlier's s), which is labelled itself (P9) */
+  const g1s=segs.filter(sg=>!sg.tensor).map(sg=>lv1(sg)*sg.s); let tkA=+(G.YA*0.8).toPrecision(1); if(g1s.some(x=>Math.abs(x-tkA)<0.2*tkA)) tkA=+(G.YA*0.45).toPrecision(1);
+  const tkB=!segs.length?0:(lvTop(segs[0])<=7?lvTop(segs[0]):+(G.KB*0.8).toPrecision(1)), sgn=x=>(x<0?'−':'')+Math.abs(x);
+  const tick=(y,lab,op)=>op<0.02?'':`<g opacity="${op.toFixed(3)}"><line x1="${ml}" x2="${W1}" y1="${f1(y)}" y2="${f1(y)}" class="qz-ax"/><text x="${ml-4}" y="${f1(y+4)}" class="qz-yl" text-anchor="end">${lab}</text></g>`;
+  /* the old labels are gone before the new ones come, so the two scales never sit on top of each other */
+  const oA=clamp01(1-2*wB), oB=clamp01(2*wB-1);
+  [tkA,-tkA].forEach(y=>{g+=tick(G.yA(y),sgn(y),oA);});
+  if(segs.length) [tkB,-tkB].forEach(u=>{g+=tick(G.yB(u),sgn(u),oB);});
+  g+=`<line x1="${ml}" x2="${W1}" y1="${yc}" y2="${yc}" class="qz-zero"/><text x="${ml-4}" y="${yc+4}" class="qz-yl" text-anchor="end">0</text>`;
+  if(oA>=0.02) g+=`<text x="2" y="${ph0-6}" class="qz-yt" opacity="${oA.toFixed(3)}">${esc(tx('weight','权重'))}</text>`;
+  if(oB>=0.02) g+=`<text x="2" y="${ph0-6}" class="qz-yt" opacity="${oB.toFixed(3)}">w ÷ s</text>`;
+  // each block's grid: the band that rounds to 0, the part too dense to draw, the lines; clipped to the plot
+  let bands='', grid='';
+  if(gOp>0) segs.forEach(sg=>{const x0=f1(ml+cw*sg.from+1), wd=f1(cw*(sg.to-sg.from)-2), q=gridOf(sg,G,e3);
+    if(bOp>0&&!sg.tensor&&q.zb>=0.75){const b=Math.min(q.zb,hh); bands+=`<rect x="${x0}" y="${f1(yc-b)}" width="${wd}" height="${f1(2*b)}" class="qz-band"/>`;}
+    if(q.dense>0){const b=Math.min(q.dense,hh); grid+=`<rect x="${x0}" y="${f1(yc-b)}" width="${wd}" height="${f1(2*b)}" fill="url(#qz-hatch)" class="qz-dense"/>`;}
+    q.lines.forEach(dy=>{if(dy>hh+0.5) return; [yc-dy,yc+dy].forEach(y=>{grid+=`<line x1="${x0}" x2="${f1(ml+cw*sg.to-1)}" y1="${f1(y)}" y2="${f1(y)}" class="qz-grid"/>`;});});
   });
-  // weights
-  v.ent.forEach(e=>{const x=X(e.j), isO=e.j===v.oi, setter=v.segs.some(sg=>sg.setter===e.j);
-    const big=Math.abs(e.w)>ymax, y0=Y(e.w), qv=ph>=2?(ph===2?e.w+(e.q-e.w)*t:e.q):e.w, y1=Y(qv);
-    const red=isO&&ph>=1&&v.zeros>=8, zero=ph>=3&&e.q===0&&e.w!==0&&!isO;
-    if(ph>=2&&Math.abs(y1-y0)>0.5) g+=`<line x1="${x}" x2="${x}" y1="${y0}" y2="${y1}" class="qz-mv${red?' qz-red':''}"/>`;
-    g+=`<circle cx="${x}" cy="${y0}" r="${Math.min(4.2,cw*0.3)}" class="qz-orig${red?' qz-red':''}${setter&&ph>=1?' qz-set':''}"/>`;
-    if(ph>=2) g+=zero?`<path d="M${x-3.5} ${y1-3.5}L${x+3.5} ${y1+3.5}M${x-3.5} ${y1+3.5}L${x+3.5} ${y1-3.5}" class="qz-x"/>`:`<circle cx="${x}" cy="${y1}" r="${Math.min(3.2,cw*0.24)}" class="qz-q${red?' qz-red':''}"/>`;
-    if(big) g+=`<text x="${x}" y="${mt-18}" text-anchor="middle" class="qz-ol${red?' qz-redt':''}">↑ ${fix(e.w,2)}</text>`;
+  if(bands||grid) g+=`<g clip-path="url(#qz-clip)"><g opacity="${bOp.toFixed(3)}">${bands}</g><g opacity="${gOp.toFixed(3)}">${grid}</g></g>`;
+  // back in weights, a block's first grid line far enough from 0 is labelled with its value: one step s (INT4), 0.5 × s (FP4) (P9)
+  const gl=ph===3?clamp01((e3-0.6)/0.3):0;
+  if(gl>0) segs.forEach(sg=>{if(sg.tensor) return; const dy=G.dA(lv1(sg)*sg.s); if(dy<26||dy>hh-4) return;
+    const fp4=lv1(sg)<1, g1=lv1(sg)*sg.s, gv=!fp4?g1.toPrecision(3):(k==='nv'?g1.toPrecision(2):String(+g1.toPrecision(3))), t=fp4?tx(`smallest step 0.5 × s = ${gv}`,`最小的格子 0.5 × s = ${gv}`):tx(`one step s = ${gv}`,`一个格子 s = ${gv}`);
+    const left=sg.hasO&&v.oi>=(sg.from+sg.to)/2, x=left?ml+cw*sg.from+4:Math.max(ml+t.length*6.2+4,ml+cw*sg.to-4);
+    g+=`<text x="${f1(x)}" y="${f1(yc-dy-4)}" text-anchor="${left?'start':'end'}" class="qz-gtl" opacity="${gl.toFixed(3)}">${esc(t)}</text>`;});
+  // the weights that share one scale
+  segs.forEach((sg,i)=>{if(sg.tensor||!(segs.length>1||sg.size<=32)) return;
+    g+=`<rect x="${f1(ml+cw*sg.from+1)}" y="${ph0-14}" width="${f1(cw*(sg.to-sg.from)-2)}" height="10" class="qz-seg${i%2?' qz-seg2':''}"/>`;});
+  // the weights: hollow before rounding, solid once stored (an ✕ when it became 0), a line for how far rounding moved it
+  const red=v.oi>=0&&ph>=1&&v.zeros>=8, setters=new Set(segs.map(sg=>sg.setter)), ro=Math.min(4.2,cw*0.3), rq=Math.min(3.2,cw*0.24), hx=Math.min(3.5,cw*0.25), xs=cw<12?' qz-xs':'';
+  let mv='', pts='', labs='';
+  const neg=s=>s.replace(/-(?=\d)/g,'−');   // a true minus sign in the picture's numbers, as on the axis
+  const lab=(x,top,s,cls)=>{s=neg(s); const w=s.length*6.3; x=Math.max(ml+w/2,Math.min(W1-w/2,x));
+    labs+=`<text x="${f1(x)}" y="${top?ph0-20:ph1+12}" text-anchor="middle" class="qz-ol${cls?' '+cls:''}">${esc(s)}</text>`;};
+  const P=[];
+  v.ent.forEach(e=>{const sg=segs.length?G.seg(e.j):null, x=G.X(e.j), isO=e.j===v.oi, rd=isO&&red;
+    const u=sg?e.w/sg.s:0, r=sg?e.q/sg.s:0, A0=G.yA(e.w), B0=sg?G.yB(u):A0, Aq=G.yA(e.q), Bq=sg?G.yB(r):Aq;
+    let yo=A0, ys=null;
+    if(ph===1) yo=lerp(A0,B0,e1); else if(ph===2){yo=B0; ys=lerp(B0,Bq,e2);} else if(ph===3){yo=lerp(B0,A0,e3); ys=lerp(Bq,Aq,e3);}
+    const showX=e.w!==0&&e.q===0&&!isO&&ys!=null&&(ph===3||e2>=0.999);
+    if(ys!=null&&Math.abs(ys-yo)>0.5) mv+=`<line x1="${f1(x)}" x2="${f1(x)}" y1="${f1(yo)}" y2="${f1(ys)}" class="qz-mv${rd?' qz-red':''}"/>`;
+    pts+=`<circle cx="${f1(x)}" cy="${f1(yo)}" r="${ro.toFixed(2)}" class="qz-orig${rd?' qz-red':''}${setters.has(e.j)&&ph>=1?' qz-set':''}"/>`;
+    if(ys!=null) pts+=showX?`<path d="M${f1(x-hx)} ${f1(ys-hx)}L${f1(x+hx)} ${f1(ys+hx)}M${f1(x-hx)} ${f1(ys+hx)}L${f1(x+hx)} ${f1(ys-hx)}" class="qz-x${xs}"/>`:`<circle cx="${f1(x)}" cy="${f1(ys)}" r="${rq.toFixed(2)}" class="qz-q${rd?' qz-red':''}"/>`;
+    // a value past the edge of the picture: an arrow and the value, and what it was stored as when that differs (P16)
+    const inB=wB>=0.5, val=inB?u:e.w, lim=inB?G.KB:G.YA;
+    if(sg||!inB){if(Math.abs(val)>lim){let s=`${val>0?'↑':'↓'} ${inB?(Math.abs(u)>=10?fix(u,0):fix(u,1)):fix(e.w,2)}`;
+        if(!inB&&ph===3&&e3>=0.5&&Math.abs(e.q-e.w)>=0.005) s+=` → ${fix(e.q,2)}`;
+        lab(x,val>0,s,rd?'qz-redt':'');}
+      else if(!inB&&ph===3&&e3>=0.5&&Math.abs(e.q)>G.YA) lab(x,e.q>0,`${e.q>0?'↑':'↓'} ${fix(e.q,2)}`,'');}
+    P.push({e,sg,u,r,x,yo,ys,isO});
   });
-  g+=`<text x="${ml}" y="${H-10}" class="qz-xl">${esc(tx('32 weights next to each other in one row','同一行里挨着的 32 个权重'))}</text>`;
+  // while it plays, one weight carries the sum of its step: ÷ s, the rounding, × s; on a backing of its own, so no point shows through
+  let calls='';
+  if(live&&segs.length){
+    const call=(p,y,s,op)=>{if(op<0.02) return; s=neg(s); const w=s.length*6.7+8; let ax=p.x+9, anc='start';
+      if(ax+w>W1-2){ax=p.x-9; anc='end'; if(ax-w<ml+2) ax=Math.min(W1-2,ml+2+w);}
+      const ty=Math.max(ph0+13,Math.min(ph1-5,y-8));
+      calls+=`<g class="qz-callg" opacity="${op.toFixed(3)}"><rect x="${f1(anc==='start'?ax-4:ax-w+4)}" y="${f1(ty-12)}" width="${f1(w)}" height="16" rx="3" class="qz-callbg"/><text x="${f1(ax)}" y="${f1(ty)}" text-anchor="${anc}" class="qz-call">${esc(s)}</text></g>`;};
+    const inKB=p=>Math.abs(p.u)<=G.KB+1e-9, s3=p=>p.sg.s.toPrecision(3), rf=r=>String(+r.toPrecision(4));
+    if(ph===1){const c=P.filter(inKB).sort((a,b)=>Math.abs(b.u)-Math.abs(a.u)||(b.isO-a.isO))[0];
+      if(c) call(c,c.yo,`${fix(c.e.w,3)} ÷ ${s3(c)} = ${Math.abs(c.u)>=10?fix(c.u,0):fix(c.u,1)}`,clamp01((e1-0.35)/0.35));}
+    else if(ph===2){
+      /* the rounding's example moves visibly and sits clearly on one side of the half-way line (round 1 polish check, N3): best a
+         value of 1 or more, away from the band around 0, such as 2.35 → 2; else any that lands on a grid value other than 0; else the
+         largest that becomes 0 well inside the band; else one with 3 digits */
+      const ex=P.filter(p=>inKB(p)&&p.sg).map(p=>({p,...rnd(p.sg,p.u,p.r)})).filter(x=>x.mv>=0.1), by=(a,b)=>b.mv-a.mv, nz=x=>x.p.r!==0&&x.edge>=0.15;
+      const c1=ex.filter(x=>nz(x)&&Math.abs(x.p.u)>=1).sort(by)[0]||ex.filter(nz).sort(by)[0]||ex.filter(x=>x.p.r===0&&x.edge>=0.03).sort(by)[0], c=(c1||ex.sort(by)[0]||{}).p;
+      if(c) call(c,c.ys,`${fix(c.u,c1?2:3)} → ${rf(c.r)}`,clamp01(t/0.12));}
+    else if(ph===3){const c=P.filter(p=>!p.isO&&p.e.q!==0&&Math.abs(p.e.q)<=G.YA).sort((a,b)=>Math.abs(b.e.q)-Math.abs(a.e.q))[0];
+      if(c) call(c,c.ys,`${rf(c.r)} × ${s3(c)} = ${fix(c.e.q,3)}`,clamp01(t/0.12));}
+  }
+  g+=`<g>${mv}</g>${pts}${labs}${calls}<text x="${ml}" y="${H-4}" class="qz-xl">${esc(tx('32 weights next to each other in one row','同一行里挨着的 32 个权重'))}</text>`;
   svg.setAttribute('viewBox',`0 0 ${Wd} ${H}`); svg.setAttribute('width',Wd); svg.setAttribute('height',H); svg.innerHTML=g;
+  {const cg=svg.querySelector('.qz-callg'); if(cg){const tb=cg.lastChild.getBBox(), r=cg.firstChild; if(tb.width>0){r.setAttribute('x',(tb.x-4).toFixed(1)); r.setAttribute('width',(tb.width+8).toFixed(1));}}}
   svg.setAttribute('aria-label',tx('A block of 32 weights before and after rounding','一块 32 个权重舍入前后'));
-  // caption, phases, legend, note
-  const cap=$('#qz-b-cap',app), sgs=v.segs, s0=sgs.find(sg=>sg.from<=(v.oi>=0?v.oi:0)&&sg.to>(v.oi>=0?v.oi:0))||sgs[0];
-  cap.textContent=hidePred()?tx('The block before rounding: which weights survive 4 bits?','舍入之前的这一块：用 4 位存，哪些权重留得下？'):(k==='bf16'?tx('The block in BF16: nothing is rounded yet','BF16 的这一块：还没有舍入'):tx(`The block in ${sname(k)}: where does each weight end up?`,`用“${sname(k)}”存这一块：每个权重落到哪里？`));
-  const leg=$('#qz-b-leg',app), lh=`<span class="lg"><i class="qz-sw qz-sw-o"></i>${tx('weight before rounding','舍入前的权重')}</span><span class="lg"><i class="qz-sw qz-sw-q"></i>${tx('stored after rounding','舍入后存下的值')}</span><span class="lg"><i class="qz-sw qz-sw-x">×</i>${tx('rounded to 0','舍入成 0')}</span><span class="lg"><i class="qz-sw qz-sw-g"></i>${tx('grid: values the block can store','格子：这一块能存的值')}</span><span class="lg"><i class="qz-sw qz-sw-r"></i>${tx('the outlier that sets the scale','决定缩放系数的离群值')}</span><span class="lg"><i class="qz-sw qz-sw-b"></i>${tx('blocks that share one scale','共用一个缩放系数的块')}</span>`;
+  // caption, legend (the same through the replay: R7.9), and the note of each phase stacked in one cell, the current one shown
+  const cap=$('#qz-b-cap',app);
+  cap.textContent=hidePred()?tx('In 4 bits, which weights of this block survive?','用 4 位存，这一块里哪些权重留得下？'):(k==='bf16'?tx('The block in BF16: nothing is rounded','BF16 的这一块：没有舍入'):tx('Where does each of the 32 weights land after rounding?','这一块的 32 个权重，舍入后落到哪里？'));
+  const leg=$('#qz-b-leg',app), lh=legendHTML(k,v,segs,G);
   if(leg._h!==lh){leg.innerHTML=lh; leg._h=lh;}
-  const note=$('#qz-b-note',app); let nt='';
-  if(!hidePred()&&k!=='bf16'&&ph>=1&&s0){const inView=s0.setter>=0&&s0.setter<32;
-    nt=tx(`Scale of the block${sgs.length>1?' with the outlier':''}: ${s0.s.toPrecision(3)} (${s0.size===D?'the whole row':`${s0.size} weights`}, set by its largest weight, ${fix(s0.amax,3)}${inView?'':', outside this view'}).`,`${sgs.length>1?'含离群值那块的':'这一块的'}缩放系数：${s0.s.toPrecision(3)}（${s0.size===D?'整行':`${s0.size} 个权重`}，由其中最大的权重 ${fix(s0.amax,3)} 决定${inView?'':'，它不在图里这 32 个之中'}）。`);
-    if(ph>=3) nt+=tx(` ${v.zeros} of the ${v.oi>=0?31:32} ${v.oi>=0?'other ':''}weights became 0.`,`${v.oi>=0?'其余 31 个':'32 个'}权重里有 ${v.zeros} 个变成 0。`);
-    if(k==='fp8'||k==='int8') nt+=tx(' The grid is too fine to draw at this size.','格子太细，这个尺寸下画不出来。');}
-  if(note.textContent!==nt) note.textContent=nt;
+  const note=$('#qz-b-note',app), hp=hidePred(), nk=[k,S.bsel,hp,A.lang()].join('|'), cur=hp?0:ph;
+  if(note._k!==nk){const ns=noteTexts(k,v,segs), list=hp?[ns[0]]:ns; note.innerHTML=list.map((x,i)=>`<div class="qz-nt" data-i="${i}">${esc(x)}</div>`).join(''); note._k=nk; note._cur=-1;}
+  if(note._cur!==cur){$$('.qz-nt',note).forEach(d=>{const on=+d.dataset.i===cur; d.classList.toggle('off',!on); if(on) d.removeAttribute('aria-hidden'); else d.setAttribute('aria-hidden','true');}); note._cur=cur;}
   drawTransport();
 }
-const PHN=[{en:'1 Find the scale',zh:'1 定缩放系数'},{en:'2 Round to the grid',zh:'2 舍入到格子'},{en:'3 What is lost',zh:'3 丢了什么'}];
+/* every mark the picture of this setting draws at some point of the replay, so the legend does not change while it plays (R5.12) */
+function legendHTML(k,v,segs,G){
+  const it=(cls,t,inner)=>`<span class="lg"><i class="qz-sw ${cls}">${inner||''}</i>${t}</span>`;
+  if(k==='bf16') return it('qz-sw-o',tx('weight in BF16, not rounded','权重（BF16，没有舍入）'));
+  const red=v.oi>=0&&v.zeros>=8, setIn=segs.some(sg=>sg.setter>=0&&sg.setter<32&&!(red&&sg.setter===v.oi));
+  const bars=segs.some(sg=>!sg.tensor&&(segs.length>1||sg.size<=32)), band=segs.some(sg=>!sg.tensor);
+  /* before the prediction the picture shows only the weights (and the blocks): the legend names no result yet (R3.8) */
+  if(hidePred()) return it('qz-sw-o',tx('before rounding','舍入前的权重'))+(bars?it('qz-sw-b',tx('weights that share one scale','共用一个缩放系数的块')):'');
+  const dense=segs.some(sg=>gridOf(sg,G,0).dense>0||gridOf(sg,G,1).dense>0);
+  let h=it('qz-sw-o',tx('before rounding','舍入前的权重'))+it('qz-sw-q',tx('stored value','舍入后存下的值'))+it('qz-sw-mv',tx('change by rounding','舍入改变的量'));
+  if(v.zeros) h+=it('qz-sw-x',tx('rounded to 0','舍入成 0'),'×');
+  h+=it('qz-sw-g',tx('grid: values it can store','格子：能存下的值'));
+  if(band) h+=it('qz-sw-band',tx('under half a step: 0','离 0 不到半格：舍入成 0'));
+  if(dense) h+=it('qz-sw-hatch',tx('grid too dense to draw','格子太密，画不出来'));
+  if(setIn) h+=it('qz-sw-set',tx('thick: sets the scale','粗圈：决定缩放系数'));
+  if(red) h+=it('qz-sw-r',tx('outlier that sets the scale','决定缩放系数的离群值'));
+  if(bars) h+=it('qz-sw-b',tx('weights that share one scale','共用一个缩放系数的块'));
+  return h;}
+/* the note under the picture, one per phase: [before, ÷ s, round, × s] */
+function noteTexts(k,v,segs){
+  const n0=hidePred()?tx('Pick an answer in the card, then round this block.','先在卡片里选一个答案，再舍入这一块。'):'';
+  if(k==='bf16'){const n=tx('BF16 is the reference: nothing is rounded.','BF16 是参照：没有舍入，每个权重原样存下。'); return [n,n,n,n];}
+  const P3=x=>x.toPrecision(3), O=v.oi>=0, z=v.zeros;
+  const Z=O?(z>=31?tx('All 31 other weights became 0.','其余 31 个权重全部变成 0。'):z?tx(`${z} of the other 31 weights became 0.`,`其余 31 个权重里有 ${z} 个变成 0。`):tx('None of the other 31 weights became 0.','其余 31 个权重没有一个变成 0。'))
+           :(z>=32?tx('All 32 weights became 0.','32 个权重全部变成 0。'):z?tx(`${z} of the 32 weights became 0.`,`32 个权重里有 ${z} 个变成 0。`):tx('None of the 32 weights became 0.','32 个权重没有一个变成 0。'));
+  const two=segs.length>1, so=segs.find(sg=>sg.hasO)||segs[0], sr=two?segs.find(sg=>sg!==so):null;
+  const nm=i=>O?[tx('the block with the outlier','含离群值那块'),tx('the other block','另一块')][i]:[tx('the left block','左边那块'),tx('the right block','右边那块')][i];
+  const s4=()=>view(S.bsel,'int4-row').segs[0].s;
+  let n1, n2, n3;
+  if(k==='fp8'){
+    n1=tx(`Divide by s: the whole tensor shares one s, its largest weight ${P3(so.amax)} ÷ 448 ≈ ${P3(so.s)}.`,`除以 s：整个张量共用一个 s，等于张量里最大的权重 ${P3(so.amax)} ÷ 448 ≈ ${P3(so.s)}。`);
+    n2=tx('Round: each value moves to the nearest FP8 value. Near 0 the FP8 grid is very dense (hatched), so each value moves only a little.','舍入：每个值挪到最近的 FP8 值。FP8 的格子在 0 附近很密（斜纹），每个值只挪了一点。');
+    n3=tx(`Multiply back: near these small weights two neighbouring FP8 values are only about ${fp8Near(v)} apart; with INT4 and one scale per row they are ${P3(s4())} apart. ${Z}`,`乘回 s：在这些小权重附近，FP8 相邻两个能存的值只差约 ${fp8Near(v)}；INT4 每行一个缩放系数时差 ${P3(s4())}。${Z}`);}
+  else if(k==='int8'){
+    n1=tx(`Divide by s: the whole row shares one s, its largest weight ${P3(so.amax)} ÷ 127 ≈ ${P3(so.s)}.`,`除以 s：整行共用一个 s，等于这一行最大的权重 ${P3(so.amax)} ÷ 127 ≈ ${P3(so.s)}。`);
+    n2=tx('Round: each value moves to the nearest whole number from −127 to 127, at most half a step.','舍入：每个值挪到 −127 到 127 之间最近的整数，最多挪半格。');
+    n3=tx(`Multiply back: one grid step is s = ${P3(so.s)}, much finer than INT4 per row (${P3(s4())}). ${Z}`,`乘回 s：一个格子就是 s = ${P3(so.s)}，比 INT4 每行的 ${P3(s4())} 细得多。${Z}`);}
+  else if(k==='mx'||k==='nv'){
+    n2=tx('Round: each value moves to the nearest FP4 value (dashed lines), that is 0, 0.5, 1, 1.5, 2, 3, 4 or 6. Between −0.25 and 0.25 (the shaded band) it becomes 0.','舍入：每个值挪到最近的 FP4 值（虚线），也就是 0、0.5、1、1.5、2、3、4、6。−0.25 到 0.25 之间的（阴影带）变成 0。');
+    if(k==='mx'){const p=+(2**fl2(so.amax)).toPrecision(3), o=O?v.ent[v.oi]:null, need=(so.amax/6).toPrecision(2);
+      n1=tx(`Divide by s: MXFP4’s s must be a power of two. The largest weight ${P3(so.amax)} rounds down to the power of two ${p}; divided by 4, the largest power of two in FP4, that gives s = ${P3(so.s)}. To put ${P3(so.amax)} exactly on 6, s would be ${P3(so.amax)} ÷ 6 ≈ ${need}.`,
+            `除以 s：MXFP4 的 s 只能是 2 的幂。最大的权重 ${P3(so.amax)} 往下取 2 的幂是 ${p}，再除以 FP4 里最大的 2 的幂 4，得 s = ${P3(so.s)}。要让 ${P3(so.amax)} 正好落在 6 上，s 应是 ${P3(so.amax)} ÷ 6 ≈ ${need}。`);
+      n3=tx(`Multiply back: the smallest step above 0 is 0.5 × ${P3(so.s)} = ${+(0.5*so.s).toPrecision(3)}${o?`, and the outlier ${fix(o.w,3)} is stored as ${fix(o.q/so.s,0)} × ${P3(so.s)} = ${fix(o.q,2)}`:''}. ${Z}`,
+            `乘回 s：最小的非零格子是 0.5 × ${P3(so.s)} = ${+(0.5*so.s).toPrecision(3)}${o?`，离群值 ${fix(o.w,3)} 存成 ${fix(o.q/so.s,0)} × ${P3(so.s)} = ${fix(o.q,2)}`:''}。${Z}`);}
+    else {const s16=O?view('outlier','int4-16').segs.find(sg=>sg.hasO).s:0;
+      n1=tx(`Divide by s: each block of 16 has its own s, its largest weight ÷ 6, stored in FP8: about ${P3(so.s)} for ${nm(0)} and ${P3(sr.s)} for ${nm(1)}.`,`除以 s：每 16 个一块，各有自己的 s，等于这块最大的权重 ÷ 6，再存成 FP8。${nm(0)}的 s ≈ ${P3(so.s)}，${nm(1)}的 s ≈ ${P3(sr.s)}。`);
+      n3=O?tx(`Multiply back: in the block with the outlier the smallest step above 0 is 0.5 × ${P3(so.s)} ≈ ${(0.5*so.s).toPrecision(2)}, finer than INT4’s step of ${P3(s16)}. ${Z}`,`乘回 s：含离群值那块最小的非零格子是 0.5 × ${P3(so.s)} ≈ ${(0.5*so.s).toPrecision(2)}，比 INT4 的一个格子 ${P3(s16)} 细。${Z}`)
+         :tx(`Multiply back: each block stores its s times 0, 0.5, 1, 1.5, 2, 3, 4 or 6. ${Z}`,`乘回 s：每块存下的值是它的 s 乘以 0、0.5、1、1.5、2、3、4、6。${Z}`);}}
+  else {   // INT4
+    n2=tx('Round: each value moves to the nearest whole number (dashed lines), at most half a step. Everything between −0.5 and 0.5 (the shaded band) becomes 0.','舍入：每个值挪到最近的整数（虚线），最多挪半格。−0.5 到 0.5 之间的（阴影带）都变成 0。');
+    if(two){n1=tx(`Divide by s: each block of 16 uses its own s, its largest weight ÷ 7: about ${P3(so.s)} for ${nm(0)} and ${P3(sr.s)} for ${nm(1)}.`,`除以 s：每 16 个一块，各用自己的 s，等于这块最大的权重 ÷ 7。${nm(0)}的 s ≈ ${P3(so.s)}，${nm(1)}的 s ≈ ${P3(sr.s)}。`);
+      n3=tx(`Multiply back: each block’s grid step is its own s, ${P3(so.s)} for ${nm(0)} and ${P3(sr.s)} for ${nm(1)}. ${Z}`,`乘回 s：每块的格子等于自己的 s，${nm(0)}是 ${P3(so.s)}，${nm(1)}是 ${P3(sr.s)}。${Z}`);}
+    else {const inView=so.setter>=0&&so.setter<32, big=so.size>32;
+      const top=so.size===D?tx('the whole row','整行'):(so.size===128?tx('these 128 weights','这 128 个'):tx('this block','这一块'));
+      /* how the others move (round 1 polish check, N5): when the largest weight is an outlier they all stay under half a step, near 0 */
+      const oth=v.ent.filter(e=>e.j!==so.setter), um=Math.max(...oth.map(e=>Math.abs(e.w/so.s))), lo=um<0.5?'0.5':(um<1?'1':'');
+      const rest=lo?tx(`That weight lands on 7; divided by the same s, the other ${oth.length} all stay under ${lo}, crowded near 0.`,`这个权重落在 7 上；其余 ${oth.length} 个除以同一个 s 后都不到 ${lo}，挤在 0 附近。`)
+                   :tx('That weight lands on 7, and the others stretch with it.','这个权重落在 7 上，其余的按比例拉开。');
+      n1=inView?tx(`Divide by s: s = the largest weight of ${top} ÷ 7 = ${P3(so.amax)} ÷ 7 ≈ ${P3(so.s)}. `,`除以 s：s = ${top}${so.size===128?'里':''}最大的权重 ÷ 7 = ${P3(so.amax)} ÷ 7 ≈ ${P3(so.s)}。`)+rest
+        :tx(`Divide by s: ${top} share one s, set by their largest weight ${P3(so.amax)}, which is not among these 32; s = ${P3(so.amax)} ÷ 7 ≈ ${P3(so.s)}.`,`除以 s：${top}共用一个 s，由其中最大的权重 ${P3(so.amax)} 决定（它不在图里这 32 个之中），s = ${P3(so.amax)} ÷ 7 ≈ ${P3(so.s)}。`);
+      n3=tx(`Multiply back: every stored value is a whole multiple of s, so one grid step is s = ${P3(so.s)}. ${Z}`,`乘回 s：存下的值都是 s 的整数倍，一个格子就是 s = ${P3(so.s)}。${Z}`)+
+        (O&&so.hasO&&big?tx(' These 32 share the outlier’s block, so the picture matches blocks of 32; the table shows the difference.','这 32 个和离群值在同一块，图和每 32 个一块时一样；区别在表里。'):'');}}
+  return [n0,n1,n2,n3];
+}
+const PHN=[{en:'1 Divide by s',zh:'1 除以 s'},{en:'2 Round to the grid',zh:'2 舍入到格子'},{en:'3 Multiply back: what is lost',zh:'3 乘回 s：丢了什么'}];
 function drawTransport(){
   const el=$('#qz-tp',app); if(!el) return;
   const k=keyOf(), off=k==='bf16'||hidePred(), {ph}=dispPhase();
-  const btn=AN.on?tx('❚❚ Pause','❚❚ 暂停'):(AN.paused?tx('▶ Continue','▶ 继续'):(watched.has(animKey())?tx('▶ Play again','▶ 再放一遍'):tx('▶ Play','▶ 播放')));
-  const h=off?'':`<div class="qz-phs" role="group" aria-label="${esc(tx('Steps of the rounding','舍入的步骤'))}">${PHN.map((p,i)=>`<button type="button" class="qz-ph${ph===i+1?' on':''}" data-ph="${i+1}" aria-pressed="${ph===i+1}" data-tipx="${esc(tx('Shows this step.','显示这一步。'))}">${esc(L(p))}</button>`).join('')}</div>`+
+  const btn=AN.on?tx('❚❚ Pause','❚❚ 暂停'):(AN.paused?tx('▶ Continue','▶ 继续'):(seen(animKey())?tx('▶ Play again','▶ 再放一遍'):tx('▶ Play','▶ 播放')));
+  const h=off?'':`<div class="qz-phs" role="group" aria-label="${esc(tx('Steps of the rounding','舍入的步骤'))}">${PHN.map((p,i)=>`<button type="button" class="qz-ph${ph===i+1?' on':''}" data-ph="${i+1}" aria-pressed="${ph===i+1}" data-tipx="${esc(tx('Shows the end of this step.','显示这一步结束时的样子。'))}">${esc(L(p))}</button>`).join('')}</div>`+
     `<div class="qz-tbtns"><button type="button" class="btn sm" data-act="play" id="qz-play" data-tipx="${esc(tx('Plays the three steps of the rounding on this block.','把这一块的三步舍入播放一遍。'))}">${btn}</button><button type="button" class="btn ghost sm" data-act="replay" id="qz-replay" data-tipx="${esc(tx('Plays the rounding again from the start.','从头再播放一遍舍入。'))}">${tx('Replay','重放')}</button><div class="qz-speed"><span class="qz-speed-l">${tx('Speed','速度')}</span>${`<div class="seg-ctl" role="group" aria-label="${esc(tx('Playback speed','播放速度'))}" data-key="speed">${[['slow',tx('Slow','慢')],['med',tx('Medium','中')],['fast',tx('Fast','快')]].map(([v,x])=>`<button type="button" data-v="${v}" aria-pressed="${speed===v}">${x}</button>`).join('')}</div>`}</div></div>`;
   if(el._h!==h){el.innerHTML=h; el._h=h;}
 }
 function drawChart(){
   const el=$('#qz-chart',app); if(!el||el.hidden) return;
   const k=keyOf(), rows=ALLK.map(x=>evalK(SEED,x)), mx=Math.max(...rows.map(r=>r.oerr))*1.08;
+  /* the columns are named in a header row (P13); what a per-row scale counts as is in the “Bits” hover */
   const h=`<div class="qz-cap">${tx('How far does each scheme move the small layer’s output, and how many bits does it store per weight?','每种方案让小模型这一层的输出偏多少，每个权重又占几位？')}</div>`+
+   `<div class="qz-chdr"><span>${tx('Scheme','方案')}</span><span>${DEF(tx('Bits','位数'),TIP.bits())}</span><span>${DEF(tx('Output error','输出误差'),TIP.oerr())}</span><span>${DEF(tx('Same pick','选得一样'),TIP.same())}</span></div>`+
    `<div class="qz-crows" role="list">`+rows.map(r=>`<div class="qz-crow${r.k===k?' me':''}" role="listitem" data-tipx="${esc(tx(`${sname(r.k)}: ${bitsT(r.bits)} bits per weight; output error ${pc(r.oerr)}; weights off by ${pc(r.werr)}; same pick as BF16 on ${pc(r.agree)} of 1,000 inputs.`,`${sname(r.k)}：每个权重 ${bitsT(r.bits)} 位；输出误差 ${pc(r.oerr)}；权重偏了 ${pc(r.werr)}；1,000 个输入里 ${pc(r.agree)} 选得和 BF16 一样。`))}">`+
-     `<span class="qz-cl">${esc(sshort(r.k))}${r.k===k?` <em>${tx('your pick','你的选择')}</em>`:''}</span><span class="qz-cb">${esc(bitsT(r.bits))}</span><span class="qz-ct"><i style="width:${(r.oerr/mx*100).toFixed(1)}%"></i></span><span class="qz-cv">${pc(r.oerr)}</span><span class="qz-ca">${pc(r.agree)}</span></div>`).join('')+`</div>`+
-   `<div class="qz-chead small muted"><span>${tx('Columns: scheme, bits per weight with scales, output error (bar), same pick as BF16. Per-row schemes count as 4 and 8 bits: a real model’s row has thousands of weights, so its scale adds under 0.01 bit.','各列：方案、算上缩放系数后每个权重的位数、输出误差（条）、和 BF16 选的一样的比例。每行一个缩放系数的方案记作 4 位、8 位：真实模型的一行有几千个权重，缩放系数分摊下来不到 0.01 位。')}</span></div>`;
+     `<span class="qz-cl">${esc(sshort(r.k))}${r.k===k?` <em>${tx('your pick','你的选择')}</em>`:''}</span><span class="qz-cb">${esc(bitsT(r.bits))}</span><span class="qz-ct"><i style="width:${(r.oerr/mx*100).toFixed(1)}%"></i></span><span class="qz-cv">${pc(r.oerr)}</span><span class="qz-ca">${pc(r.agree)}</span></div>`).join('')+`</div>`;
   if(el._h!==h){el.innerHTML=h; el._h=h;}
 }
 const KN={d1:{en:'Decode, 1 request',zh:'decode，1 个请求'},d64:{en:'Decode, 64 requests',zh:'decode，64 个请求'},pre:{en:'Prefill, 2,048 tokens',zh:'prefill，2,048 个 token'}};
 function drawSteps(){
   const el=$('#qz-steps',app); if(!el) return;
-  const k=keyOf(), kv=S.kv;
-  const h=`<div class="qz-cap">${tx(`How long does one step of ${M8} take on one ${GPU}, and what is it waiting on?`,`一张 ${GPU} 跑 ${M8}，一步要多久，在等什么？`)}</div>`+KINDS.map(x=>{const b=stepT('bf16','bf16',x), r=stepT(k,kv,x), mx=Math.max(b.tm,b.tc)*1.05;
+  /* part 1 shows only the decode step it talks about (P2); the other two steps come in part 5 */
+  const k=keyOf(), kv=S.kv, p1=isP('mission'), kinds=p1?['d1']:KINDS;
+  const cap=p1?tx(`How long does one decode step of ${M8} take on one ${GPU}, and what is it waiting on?`,`一张 ${GPU} 跑 ${M8}，decode 一步要多久，在等什么？`):tx(`How long does one step of ${M8} take on one ${GPU}, and what is it waiting on?`,`一张 ${GPU} 跑 ${M8}，一步要多久，在等什么？`);
+  const h=`<div class="qz-cap">${cap}</div>`+kinds.map(x=>{const b=stepT('bf16','bf16',x), r=stepT(k,kv,x), mx=Math.max(b.tm,b.tc)*1.05;
     const w=v=>(v/mx*100).toFixed(1)+'%';
-    return `<div class="qz-sk"><div class="qz-skh"><b>${esc(L(KN[x]))}</b><span>${tx(`${ms(r.t)} ms`,`${ms(r.t)} ms`)}${k==='bf16'&&kv==='bf16'?'':`<em>${tx(`BF16: ${ms(b.t)} ms`,`BF16：${ms(b.t)} ms`)}</em>`}</span></div>`+
+    let kb=kv==='fp8'&&k!=='bf16'?stepT(k,'bf16',x):null; if(kb&&ms(kb.t)===ms(r.t)) kb=null;   // with an FP8 KV cache, the same weights with a BF16 one, where that differs (P20)
+    return `<div class="qz-sk"><div class="qz-skh"><b>${esc(L(KN[x]))}</b><span>${ms(r.t)} ms${k==='bf16'&&kv==='bf16'?'':`<em>${tx(`BF16: ${ms(b.t)} ms`,`BF16：${ms(b.t)} ms`)}</em>`}${kb?`<em>${tx(`with a BF16 KV cache ${ms(kb.t)} ms`,`KV cache 用 BF16 时 ${ms(kb.t)} ms`)}</em>`:''}</span></div>`+
      `<div class="qz-skr${r.mem?' long':''}"><span class="qz-skl">${tx('read memory','读显存')}</span><span class="qz-skt"><i class="qz-w" style="width:${w(r.tw)}"></i><i class="qz-kv" style="width:${w(r.tkv)}"></i></span><span class="qz-skv">${ms(r.tm)}</span></div>`+
      `<div class="qz-skr${r.mem?'':' long'}"><span class="qz-skl">${tx('compute','计算')}</span><span class="qz-skt"><i class="qz-c" style="width:${w(r.tc)}"></i></span><span class="qz-skv">${ms(r.tc)}</span></div></div>`;}).join('')+
    `<div class="legend-row qz-legend"><span class="lg" data-tipx="${esc(tx('Time to read the weights once.','把权重读一遍的时间。'))}"><i class="qz-sw qz-sw-w"></i>${tx('reading weights','读权重')}</span><span class="lg" data-tipx="${esc(tx('Time to read the KV cache of every request in the step.','读这一步里每个请求的 KV cache 的时间。'))}"><i class="qz-sw qz-sw-kv"></i>${tx('reading the KV cache','读 KV cache')}</span><span class="lg" data-tipx="${esc(TIP.stepm())}"><i class="qz-sw qz-sw-c"></i>${tx('arithmetic','计算')}</span><span class="lg"><i class="qz-sw qz-sw-long"></i>${tx('the longer one sets the step time','较长的那个决定一步的耗时')}</span></div>`;
@@ -680,12 +880,21 @@ function drawSteps(){
 const MEMK=['bf16','fp8','int4-128','mx','nv'];
 function drawMem(){
   const el=$('#qz-mem',app); if(!el) return;
-  const m=mode==='challenge'?'70b':S.model, P=MOD[m], bw=wGiB(m,'bf16'), mx=Math.max(bw,UGPU*(m==='8b'?1:m==='70b'?2:8))*1.04, k=mode==='challenge'?chW:keyOf();
-  const lines=(m==='8b'?[1]:m==='70b'?[1,2]:[1,2,4,8]).filter(n=>UGPU*n<=mx);
-  const h=`<div class="qz-cap">${tx(`How many ${GPU}s do ${P.n}’s weights need in each format?`,`${P.n} 的权重在每种格式下要几张 ${GPU}？`)}</div><div class="qz-mrows">`+MEMK.map(x=>{const g=gpus(m,x);
-    return `<div class="qz-mrow${x===k?' me':''}"><span class="qz-ml">${esc(sshort(x))}</span><span class="qz-mt">${lines.map(n=>`<b class="qz-gl" style="left:${(UGPU*n/mx*100).toFixed(2)}%"></b>`).join('')}<i style="width:${(g.w/mx*100).toFixed(1)}%"></i></span><span class="qz-mv2">${gib(g.w)}</span><span class="qz-mn">${g.n?tx(`${g.n} GPU${g.n>1?'s':''}, ${gib(g.room)} left each`,`${g.n} 张卡，每张剩 ${gib(g.room)}`):tx('over 8 GPUs','8 张卡放不下')}</span></div>`;}).join('')+`</div>`+
-   `<div class="qz-gls small muted">${lines.map(n=>`<span style="left:${(UGPU*n/mx*100).toFixed(2)}%">${n}×70</span>`).join('')}</div>`+
-   `<div class="legend-row qz-legend"><span class="lg"><i class="qz-sw qz-sw-w"></i>${tx('weights, all GPUs together','权重，所有卡加起来')}</span><span class="lg" data-tipx="${esc(TIP.usable())}"><i class="qz-sw qz-sw-gl"></i>${tx('usable memory of 1, 2, 4 or 8 H100s (70 GiB each)','1、2、4、8 张 H100 能用的显存（每张 70 GiB）')}</span></div>`;
+  /* the challenge: every weight format it offers, each with the KV cache of its 16 users in the KV format picked, against one H100 (P33) */
+  const ch=mode==='challenge', m=ch?'70b':S.model, P=MOD[m], k=ch?chW:keyOf(), keys=ch?CHK:MEMK;
+  const kvg=ch?CH_USERS*CH_CTX*MOD['70b'].kv*KVB[chKV]/GiB:0, tot=x=>wGiB(m,x)+kvg;
+  const mx=ch?Math.max(UGPU,...keys.map(tot))*1.04:Math.max(wGiB(m,'bf16'),UGPU*(m==='8b'?1:m==='70b'?2:8))*1.04, pct=v=>(v/mx*100).toFixed(2)+'%';
+  const lines=ch?[1]:(m==='8b'?[1]:m==='70b'?[1,2]:[1,2,4,8]).filter(n=>UGPU*n<=mx);
+  const cap=ch?tx(`Do ${P.n}’s weights and the KV cache of 16 users fit in one ${GPU}’s 70 GiB?`,`${P.n} 的权重加 16 个用户的 KV cache，放得进一张 ${GPU} 的 70 GiB 吗？`):tx(`How many ${GPU}s do ${P.n}’s weights need in each format?`,`${P.n} 的权重在每种格式下要几张 ${GPU}？`);
+  const row=x=>{const g=gpus(m,x), t=tot(x);
+    const n=ch?(t<=UGPU?tx(`fits, ${gib(UGPU-t)} to spare`,`放得下，还剩 ${gib(UGPU-t)}`):tx(`${gib(t-UGPU)} over 70 GiB`,`比 70 GiB 多 ${gib(t-UGPU)}`))
+      :(g.n?tx(`${g.n} GPU${g.n>1?'s':''}, ${gib(g.room)} left each`,`${g.n} 张卡，每张剩 ${gib(g.room)}`):tx('over 8 GPUs','8 张卡放不下'));
+    return `<div class="qz-mrow${x===k?' me':''}"><span class="qz-ml">${esc(sshort(x))}</span><span class="qz-mt">${lines.map(n=>`<b class="qz-gl" style="left:${pct(UGPU*n)}"></b>`).join('')}<i style="width:${pct(g.w)}"></i>${ch?`<i class="qz-kv" style="left:${pct(g.w)};width:${pct(kvg)}"></i>`:''}</span><span class="qz-mv2">${gib(ch?t:g.w)}</span><span class="qz-mn">${n}</span></div>`;};
+  const h=`<div class="qz-cap">${cap}</div><div class="qz-mrows">`+keys.map(row).join('')+`</div>`+
+   `<div class="qz-gls small muted">${lines.map(n=>`<span style="left:${pct(UGPU*n)}">${ch?'70 GiB':`${n}×70`}</span>`).join('')}</div>`+
+   `<div class="legend-row qz-legend"><span class="lg"><i class="qz-sw qz-sw-w"></i>${ch?tx('weights','权重'):tx('weights, all GPUs together','权重，所有卡加起来')}</span>`+
+   (ch?`<span class="lg"><i class="qz-sw qz-sw-kv"></i>${tx(`KV cache of 16 users × 8K tokens in ${chKV==='fp8'?'FP8':'BF16'}`,`16 个用户 × 8K 个 token 的 KV cache（${chKV==='fp8'?'FP8':'BF16'}）`)}</span>`:'')+
+   `<span class="lg" data-tipx="${esc(TIP.usable())}"><i class="qz-sw qz-sw-gl"></i>${ch?tx('usable memory of one H100, 70 GiB','一张 H100 能用的显存，70 GiB'):tx('usable memory of 1, 2, 4 or 8 H100s (70 GiB each)','1、2、4、8 张 H100 能用的显存（每张 70 GiB）')}</span></div>`;
   if(el._h!==h){el.innerHTML=h; el._h=h;}
 }
 const memOnly=()=>mode!=='challenge'&&viewNow()==='serve'&&(isP('scale')||(mode==='sandbox'&&S.model!=='8b'));
@@ -697,33 +906,52 @@ function statusOf(){
   if(viewNow()==='serve'){const r=stepT(k,S.kv,'d1'); return {cls:'',short:tx(`Decode (1 request) ${ms(r.t)} ms`,`decode 一步（1 个请求）${ms(r.t)} ms`),txt:tx(`Decode step with one request: ${ms(r.t)} ms`,`1 个请求的 decode 步：${ms(r.t)} ms`)};}
   const e=evalK(SEED,k); return {cls:'',short:tx(`layer output error ${pc(e.oerr)}`,`整层输出误差 ${pc(e.oerr)}`),txt:tx(`${sname(k)}: the layer’s output error ${pc(e.oerr)}`,`${sname(k)}：整层输出误差 ${pc(e.oerr)}`)};
 }
+/* what a step-time picture is showing: BF16, weights only, or weights and activations (P1) */
+const fmtName=k=>k==='bf16'?tx('BF16 (no quantization)','BF16（不量化）'):(ACT8(k)?tx('FP8 weights and activations','权重和激活都用 FP8'):tx(`weights only, ${sshort(k)}`,`只量化权重，${sshort(k)}`));
 function drawHead(){
   const v=viewNow(), t=$('#qz-st-title',app), sub=$('#qz-st-sub',app), st=$('#qz-status',app), s=statusOf();
-  const k=keyOf();
+  const k=keyOf(), {ph}=dispPhase();
   let tt, ss;
-  if(v==='block'){tt=AN.on?tx('Playing: rounding one block of 32 weights','正在播放：舍入一块 32 个权重'):tx('One block of the small layer, rounded','小模型这一层的一块权重，舍入之后'); ss=hidePred()?tx('INT4, one scale per 32 weights: not rounded yet','INT4，每 32 个权重一个缩放系数：还没舍入'):sname(k);}
-  else if(mode==='challenge'){tt=tx(`${M70} on one ${GPU}`,`一张 ${GPU} 跑 ${M70}`); ss=tx('Weights in each format; the KV cache of 16 users × 8K comes on top','每种格式的权重；16 个用户 × 8K 的 KV cache 另外再加');}
+  /* before the rounding the title says so (P8) */
+  if(v==='block'){tt=k==='bf16'?tx('One block of the small layer, in BF16','小模型这一层的一块权重，BF16'):(AN.on?tx('Playing: rounding one block of 32 weights','正在播放：舍入一块 32 个权重'):(AN.paused?tx('Paused: rounding one block of 32 weights','暂停：舍入一块 32 个权重'):(ph===0?tx('One block of the small layer, before rounding','小模型这一层的一块权重，舍入之前'):tx('One block of the small layer, rounded','小模型这一层的一块权重，舍入之后')))); ss=sname(k);}
+  else if(mode==='challenge'){tt=tx(`${M70} on one ${GPU}`,`一张 ${GPU} 跑 ${M70}`); ss=tx('Weights plus the KV cache of 16 users × 8K tokens, in the formats you pick','权重加 16 个用户 × 8K 个 token 的 KV cache，格式按你选的');}
   else if(memOnly()){const P=MOD[S.model]; tt=tx(`${P.n}’s weights: how many ${GPU}s each format needs`,`${P.n} 的权重：每种格式要几张 ${GPU}`); ss=tx(`Scales included; 70 GiB usable per ${GPU}`,`算上缩放系数；每张 ${GPU} 能用 70 GiB`);}
-  else {const f=sshort(k)+(ACT8(k)?tx(' (weights and activations)','（权重和激活）'):''), withMem=mode==='sandbox';
+  else if(isP('mission')){tt=tx(`Decode step time: ${p1Name(k)}`,`decode 一步的耗时：${p1Name(k)}`); ss=tx('1 request with 2,048 tokens of context; activations and arithmetic stay BF16','1 个请求，上下文 2,048 个 token；激活和计算还是 BF16');}
+  else {const f=fmtName(k), withMem=mode==='sandbox';
     tt=withMem?tx(`Step time and memory: ${f}`,`每一步的耗时和显存：${f}`):tx(`Step time: ${f}`,`每一步的耗时：${f}`); ss=tx(`KV cache in ${S.kv==='fp8'?'FP8':'BF16'}; decode requests have 2,048 tokens of context`,`KV cache 用 ${S.kv==='fp8'?'FP8':'BF16'}；decode 请求都有 2,048 个 token 的上下文`);}
   if(t.textContent!==tt) t.textContent=tt; if(sub.textContent!==ss) sub.textContent=ss;
   st.className='status '+s.cls; st.textContent=s.short; st.hidden=!s.short;
 }
+/* which cards the stage shows (P3, P31, P32, P35): part 1 the bits and its decode step; a block without the table of schemes the small
+   layer's three cards (with the table, none: the table holds them); the 8B step times only for the 8B; the challenge its conditions */
+const tableOn=()=>viewNow()==='block'&&!(mode==='guided'&&step<SIX('blocks'));
+function metricIds(){
+  if(mode==='challenge') return ['bits','mem','same','oerr'];
+  if(isP('mission')) return ['bits','d1'];
+  if(isP('scale')) return [];
+  if(viewNow()==='block') return tableOn()?[]:['bits','oerr','same'];
+  return mode==='sandbox'&&S.model!=='8b'?['bits','oerr','same']:['bits','oerr','same','d1','d64'];
+}
 function metricsDef(){
-  const ch=mode==='challenge', k=ch?chW:keyOf(), kv=ch?chKV:S.kv, e=evalK(ch?CH_SEED:SEED,k), r1=stepT(k,kv,'d1'), r64=stepT(k,kv,'d64'), p1=isP('mission'), hide=ch?!chSubmitted:(hidePred()||p1);
+  const ch=mode==='challenge', k=ch?chW:keyOf(), kv=ch?chKV:S.kv, e=evalK(ch?CH_SEED:SEED,k), r1=stepT(k,kv,'d1'), r64=stepT(k,kv,'d64'), hide=ch?!chSubmitted:hidePred(), c=chEval(chW,chKV);
   return [
-   {id:'bits',lab:tx('Bits per weight','每个权重的位数'),v:SCH[k].bits,txt:bitsT(SCH[k].bits),dp:3,sub:tx('scales included','算上缩放系数'),tip:tx('The bits each weight takes, counting its share of the block’s scale.','每个权重占的位数，算上它分摊的那份缩放系数。')},
-   {id:'oerr',lab:tx('Output error','输出误差'),v:e.oerr*100,txt:hide?'—':pc(e.oerr),dp:1,pts:true,sub:ch?tx('the other layer (challenge)','另一层（挑战题）'):p1?tx('a small layer: next part','小模型的一层，下一部分讲'):tx('small layer, 1,000 inputs','小模型这一层，1,000 个输入'),tip:TIP.oerr(),hide},
-   {id:'same',lab:tx('Same pick as BF16','和 BF16 选的一样'),v:e.agree*100,txt:hide?'—':pc(e.agree),dp:1,pts:true,sub:tx('in this lab','在这个 Lab 里'),tip:TIP.same(),hide},
-   {id:'d1',lab:tx('Decode step, 1 request','decode 一步，1 个请求'),v:r1.t*1e3,txt:ms(r1.t)+' ms',dp:2,sub:ch?tx('8B timing, not part of the challenge','8B 的耗时，挑战不看'):M8,tip:TIP.stepm()},
-   {id:'d64',lab:tx('Decode step, 64 requests','decode 一步，64 个请求'),v:r64.t*1e3,txt:ms(r64.t)+' ms',dp:1,sub:ch?tx('8B timing, not part of the challenge','8B 的耗时，挑战不看'):M8,tip:tx('64 requests with 2,048 tokens of context each: the step reads the weights once and every request’s KV cache.','64 个请求，每个有 2,048 个 token 的上下文：这一步把权重读一遍，再读每个请求的 KV cache。')}];
+   {id:'bits',lab:tx('Bits per weight','每个权重的位数'),v:SCH[k].bits,txt:bitsT(SCH[k].bits),dp:3,sub:tx('scales included','算上缩放系数'),tip:TIP.bits()},
+   {id:'mem',lab:tx('Memory needed','需要的显存'),v:c.need,txt:gib(c.need),dp:1,sub:tx('weights + KV cache; 70 GiB usable','权重加 KV cache，能用 70 GiB'),tip:tx(`The ${M70}’s weights in your format plus the KV cache of 16 users × 8,192 tokens; one H100 has 70 GiB for both.`,`你选的格式下 ${M70} 的权重，加上 16 个用户 × 8,192 个 token 的 KV cache；一张 H100 有 70 GiB 放这两样。`)},
+   {id:'oerr',lab:tx('Output error','输出误差'),v:e.oerr*100,txt:hide?'—':pc(e.oerr),dp:1,pts:true,sub:ch?tx('the other layer, 1,000 inputs','另一层，1,000 个输入'):tx('whole layer, 1,000 inputs','整层，1,000 个输入'),tip:TIP.oerr(),hide},
+   {id:'same',lab:tx('Same pick as BF16','和 BF16 选的一样'),v:e.agree*100,txt:hide?'—':pc(e.agree),dp:1,pts:true,sub:ch?tx('the other layer; needs 90%','另一层，至少要 90%'):tx('1,000 inputs','1,000 个输入'),tip:TIP.same(),hide},
+   {id:'d1',lab:tx('Decode, 1 request','decode，1 个请求'),v:r1.t*1e3,txt:ms(r1.t)+' ms',dp:2,sub:tx(`one step, ${M8}`,`一步，${M8}`),tip:TIP.stepm()},
+   {id:'d64',lab:tx('Decode, 64 requests','decode，64 个请求'),v:r64.t*1e3,txt:ms(r64.t)+' ms',dp:1,sub:tx(`one step, ${M8}`,`一步，${M8}`),tip:tx('64 requests with 2,048 tokens of context each: the step reads the weights once and every request’s KV cache.','64 个请求，每个有 2,048 个 token 的上下文：这一步把权重读一遍，再读每个请求的 KV cache。')}];
 }
 function drawMetrics(){
-  const el=$('#qz-metrics',app), ms_=metricsDef();
-  if(!el._built){el.innerHTML=ms_.map(m=>`<div class="metric" id="qz-m-${m.id}" data-tipx=""><div class="k"></div><div class="v mono qz-mval"></div><div class="sub"></div><div class="d mono"></div></div>`).join(''); el._built=true;}
+  const el=$('#qz-metrics',app), ids=metricIds(), all=metricsDef();
+  if(!el._built){el.innerHTML=all.map(m=>`<div class="metric" id="qz-m-${m.id}" data-tipx=""><div class="k"></div><div class="v mono qz-mval"></div><div class="sub"></div><div class="d mono"></div></div>`).join(''); el._built=true;}
+  el.hidden=!ids.length; el.dataset.n=String(ids.length);
   const last=lastM; lastM={};
-  ms_.forEach(m=>{const c=$('#qz-m-'+m.id,app); c.dataset.tipx=m.tip; c.querySelector('.k').textContent=m.lab; c.querySelector('.qz-mval').textContent=m.txt; c.querySelector('.sub').textContent=m.sub;
-    const d=c.querySelector('.d'); let dt='';
+  all.forEach(m=>{const c=$('#qz-m-'+m.id,app), on=ids.includes(m.id), d=c.querySelector('.d');
+    c.hidden=!on; c.style.order=on?String(ids.indexOf(m.id)):'';
+    if(!on){c.querySelector('.qz-mval').textContent=''; clearTimeout(d._t); clearTimeout(d._t2); d.classList.remove('on'); d.textContent=''; d._n=0; return;}
+    c.dataset.tipx=m.tip; c.querySelector('.k').textContent=m.lab; c.querySelector('.qz-mval').textContent=m.txt; c.querySelector('.sub').textContent=m.sub;
+    let dt='';
     if(userAct&&last&&last[m.id]!=null&&!m.hide&&last[m.id]!==m.v) dt=A.fmt.delta(last[m.id],m.v,{dp:m.dp,pts:!!m.pts})||'';
     if(dt){clearTimeout(d._t); clearTimeout(d._t2); d.textContent=dt; d._n=actN; d.classList.add('on'); d._t=setTimeout(()=>{d.classList.remove('on'); d._t2=setTimeout(()=>{d.textContent='';},400);},2600);}
     else if(!last||m.hide||(userAct&&d._n!==actN)){clearTimeout(d._t); clearTimeout(d._t2); d.classList.remove('on'); d.textContent=''; d._n=0;}
@@ -758,13 +986,12 @@ function render(){
   if(mode==='guided'){const s=STEPS[step]; if(s&&s.expect&&s.expect()) observed[step]=true;}
   const v=viewNow(), bv=$('#qz-blockv',app), ch=$('#qz-chart',app), sv=$('#qz-serve',app);
   bv.hidden=v!=='block'; sv.hidden=v!=='serve';
-  ch.hidden=v!=='block'||(mode==='guided'&&step<SIX('blocks'));
+  ch.hidden=!tableOn();
   const memFirst=mode==='challenge'||isP('scale')||(mode==='sandbox'&&S.model!=='8b');
   sv.classList.toggle('qz-memfirst',memFirst);
   $('#qz-mem',app).hidden=mode==='guided'&&(isP('mission')||isP('compute'));
   $('#qz-steps',app).hidden=mode==='challenge'||memOnly();
-  $('#qz-metrics',app).hidden=isP('scale');
-  drawHead(); drawBlock(); drawChart(); if(v==='serve'){drawSteps(); drawMem();} drawMetrics();
+  drawHead(); drawBlock(); drawChart(); if(v==='serve'){drawSteps(); drawMem();} drawMetrics(); renderPhone();
   const mb=$('#qz-mathbody',app), mh=mathHTML(); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}
   syncControls(); updateRail();
   {const ht=mode+'|'+token(); if(ht!==lastHash){lastHash=ht; A.hash.write(token());}} A.dock.refresh(); announce();
@@ -802,27 +1029,51 @@ function announce(){clearTimeout(annT); annT=setTimeout(()=>{if(!app) return; co
    the rounding replay (R3.9, R3.20)
    ===================================================================== */
 function stopAnim(){if(AN.raf) cancelAnimationFrame(AN.raf); AN.on=false; AN.raf=0;}
-function playAnim(from){
-  stopAnim(); const key=animKey(); if(keyOf()==='bf16') return;
-  if(A.reduceMotion()){watched.add(key); AN={on:false,raf:0,start:0,ph:3,t:1,key,paused:false,acc:0}; render(); return;}
-  nPlays++; AN={on:true,raf:0,start:0,ph:from||1,t:0,key,paused:false,acc:((from||1)-1)*SPEEDS[speed]*1000};
+const perOf=quick=>quick?QUICK:SPEEDS[speed]*1000;
+/* play from the start of phase `from`, or resume at `acc0` ms; `quick` is the 1.5-second run of Scenarios and Settings (R3.9) */
+function playAnim(from,quick,acc0){
+  stopAnim(); clearTimeout(pendT); AN.pend=''; const key=animKey(); if(keyOf()==='bf16') return;
+  if(A.reduceMotion()){watched.add(key); AN={...AN,on:false,raf:0,ph:3,t:1,key,paused:false,acc:0,quick:false}; render(); return;}
+  from=from||1; quick=!!quick; if(acc0==null) nPlays++;
+  AN={...AN,on:true,raf:0,ph:from,t:0,key,paused:false,quick,acc:acc0!=null?acc0:(from-1)*perOf(quick)};
   let last=0;
   const tick=ts=>{if(!AN.on||!app){AN.raf=0; return;}
     if(last) AN.acc+=Math.min(100,ts-last); last=ts;
-    const per=SPEEDS[speed]*1000, p=AN.acc/per, ph=1+Math.floor(p);
-    if(ph>3){AN.on=false; AN.raf=0; AN.ph=3; AN.t=1; watched.add(AN.key); render(); return;}
-    const t=p-Math.floor(p), changed=ph!==AN.ph; AN.ph=ph; AN.t=ph===2?t:(ph>2?1:0);
+    const p=AN.acc/perOf(AN.quick);
+    if(p>=3){AN.on=false; AN.raf=0; AN.ph=3; AN.t=1; watched.add(AN.key); render(); return;}
+    const ph=1+Math.floor(p), changed=ph!==AN.ph; AN.ph=ph; AN.t=p-Math.floor(p);
     if(changed) render(); else drawBlock();
     AN.raf=requestAnimationFrame(tick);};
   AN.raf=requestAnimationFrame(tick); render();
 }
-/* show a setting: play when its picture was never watched, else show the end at once (R3.20) */
-function showKey(){const key=animKey(); if(viewNow()!=='block'||keyOf()==='bf16'||hidePred()){stopAnim(); AN.paused=false; return;}
+/* phones (≤ 760 px): the stage sits above the card (P36). Most of the picture on screen, below the top bar */
+const phone=()=>innerWidth<=760;
+function stageInView(){const s=$('#qz-svg',app); if(!s||!s.getClientRects().length) return false; const bar=document.querySelector('.topbar'), top=bar?bar.offsetHeight:56, r=s.getBoundingClientRect();
+  return Math.min(r.bottom,innerHeight)-Math.max(r.top,top)>=0.7*r.height;}
+/* bring the stage's head under the top bar, so a replay a click in the card started is seen */
+function bringStage(){const st=$('#qz-stage',app); if(!st) return; const bar=document.querySelector('.topbar'), dy=st.getBoundingClientRect().top-((bar?bar.offsetHeight:56)+8);
+  if(Math.abs(dy)>4) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
+/* a guided replay waiting for its picture: it starts once the reader has scrolled the picture on screen */
+function pendCheck(){clearTimeout(pendT); pendT=setTimeout(()=>{pendT=0; if(app&&AN.pend&&AN.pend===animKey()&&!AN.on&&!AN.paused&&viewNow()==='block'&&stageInView()) playAnim(1,AN.pendQ);},250);}
+const onScroll=()=>{if(AN.pend) pendCheck();};
+/* show a setting: play when its picture was never watched, else show the end at once (R3.20). Only parts 2 and 3 play the mechanism
+   slowly; anywhere else a new picture is a result to compare and plays in 1.5 s (R3.9, round 1 polish check N6), and Replay plays it
+   at the chosen speed. Scenarios and Settings show the end when the picture is off screen. On a phone a guided replay waits for its
+   picture; a click in the card that starts the slow one brings the stage on screen while it plays, the 1.5-s one once it is there */
+function showKey(){const key=animKey(); AN.pend=''; clearTimeout(pendT);
+  if(viewNow()!=='block'||keyOf()==='bf16'||hidePred()){stopAnim(); AN.paused=false; return;}
   if(AN.key===key&&(AN.on||AN.paused)) return;
-  stopAnim(); AN.paused=false;
-  if(watched.has(key)){AN.ph=3; AN.t=1; AN.key=key; return;}
-  playAnim(1);}
-function phaseJump(ph){stopAnim(); AN={...AN,on:false,paused:true,ph,t:ph>=2?1:0,key:animKey()}; if(ph===3){watched.add(animKey()); AN.paused=false;} render();}
+  stopAnim(); AN.paused=false; AN.key=key;
+  if(seen(key)||A.reduceMotion()){watched.add(key); AN.ph=3; AN.t=1; return;}
+  if(mode!=='guided'){if(phone()&&!stageInView()){watched.add(key); AN.ph=3; AN.t=1; return;} playAnim(1,true); return;}
+  const quick=!['round','predict'].includes(curStep());
+  if(phone()&&(!cardAct||quick)){AN.pend=key; AN.pendQ=quick; AN.ph=0; AN.t=0; pendCheck(); return;}
+  playAnim(1,quick);}
+/* a phase button shows the end of that phase; 1 and 2 pause there, 3 is the end of the replay */
+function phaseJump(ph){stopAnim(); clearTimeout(pendT); AN={...AN,on:false,paused:ph<3,ph,t:1,acc:ph*perOf(AN.quick),key:animKey(),pend:''}; if(ph===3) watched.add(AN.key); render();}
+/* a click in the card that may start a replay (P36): on a phone the stage comes on screen while it plays; otherwise the result box
+   (on a phone only when `rv`: a lever keeps its place there) */
+function fromCard(f,rv){cardAct=true; try{f();} finally{cardAct=false;} if(phone()&&(AN.on||AN.pend)) bringStage(); else if(rv||!phone()) revealSoon();}
 
 /* =====================================================================
    state changes, parts, modes, hash
@@ -842,6 +1093,9 @@ function phoneHTML(){
   const id=STEPS[step].id;
   if(id==='predict'&&!predShown) return `<button type="button" class="btn ghost sm" data-act="to-q" data-tipx="${esc(tx('Scrolls down to the three answers in the card.','向下滚到卡片里的三个答案。'))}">${tx('Answer below ↓','在下面作答 ↓')}</button>`;
   if(id==='blocks'||id==='compute') return `<button type="button" class="btn ghost sm" data-act="to-lv" data-tipx="${esc(tx('Scrolls down to the options in the card.','向下滚到卡片里的选项。'))}">${tx('Pick below ↓','在下面选 ↓')}</button>`;
+  /* the place stays taken while the block is rounded, so the picture does not jump when the button comes */
+  if(id==='round'||id==='predict'){const on=seen(animKey());
+    return `<button type="button" class="btn ghost sm" data-act="to-obs"${on?'':' tabindex="-1" aria-hidden="true" style="visibility:hidden"'} data-tipx="${esc(tx('Scrolls down to the result in the card.','向下滚到卡片里的结果。'))}">${tx('Result below ↓','结果在下面 ↓')}</button>`;}
   return '';
 }
 function renderPhone(){const el=$('#qz-phone',app); if(!el) return; const h=phoneHTML(); if(el._h!==h){el.innerHTML=h; el._h=h;}}
@@ -940,13 +1194,14 @@ function jump(k,src){
    ===================================================================== */
 function act(a,btn){
   if(a==='reset'){lastM=null; bySettings(btn,()=>setState({...BASE})); return;}
-  if(a==='pred-go'){predShown=true; observed[step]=true; byLearner(()=>{renderRail(); showKey(); render();}); revealSoon(); return;}
-  if(a==='play'){if(AN.on){stopAnim(); AN.paused=true; render(); return;} if(AN.paused){const from=AN.ph; playAnim(from); return;} playAnim(1); return;}
+  if(a==='pred-go'){predShown=true; observed[step]=true; fromCard(()=>byLearner(()=>{renderRail(); showKey(); render();}),true); return;}
+  if(a==='play'){if(AN.on){stopAnim(); AN.paused=true; render(); return;} if(AN.paused){playAnim(AN.ph,AN.quick,AN.acc); return;} playAnim(1); return;}
   if(a==='replay'){playAnim(1); return;}
   if(a==='submit'){chSubmitted=true; if(chEval(chW,chKV).ok) chReveal=true; renderRail(); revealSoon(); return;}
   if(a==='reveal'){chReveal=true; render(); return;}
   if(a==='to-q'){const q=$('#qz-rail .step.current .choices',app); if(q) A.ui.jumpToEl(q); return;}
   if(a==='to-lv'){const q=$('#qz-rail .step.current .qz-lv',app); if(q) A.ui.jumpToEl(q); return;}
+  if(a==='to-obs'){revealObs(); return;}
   if(a==='drill-new'){drillSeed++; drillOpen=false; renderDrill(); return;}
   if(a==='drill-reveal'){drillOpen=true; renderDrill(); return;}
   if(a==='copy'){const pre=$('#qz-code',app), done=()=>flashBtn(btn,tx('Copied','已复制'),A.t('copyCode'));
@@ -969,17 +1224,17 @@ function bind(el){
     if(d.go!=null){enterStep(+d.go); revealStep(); return;}
     if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); return;}
     if(d.nav==='back'){enterStep(step-1); revealStep(); return;}
-    if(d.nav==='showme'){const s=STEPS[step]; if(s.showMe){wantObs=true; lastM=null; byLearner(()=>{if(s.showMe==='play'){const sp=speed; playAnim(1); speed=sp;} else s.showMe();}); revealSoon(); wantObs=false;} return;}
+    if(d.nav==='showme'){const s=STEPS[step]; if(s.showMe){wantObs=true; lastM=null; fromCard(()=>byLearner(()=>s.showMe()),true); wantObs=false;} return;}
     if(d.pred){if(predShown) return; pred=d.pred; renderRail(); const fb=$(`#qz-rail [data-pred="${pred}"]`,app); if(fb) fb.focus({preventScroll:true}); return;}
     if(d.ph){phaseJump(+d.ph); return;}
     if(d.lever!=null){
-      if(b.closest('#qz-ic-p4')){const f=()=>byLearner(()=>setP4(d.lever)); if(innerWidth<=760) holdPlace(b,f); else {f(); revealSoon();} return;}
+      if(b.closest('#qz-ic-p4')){const f=()=>byLearner(()=>setP4(d.lever)); fromCard(()=>{if(phone()) holdPlace(b,f); else f();}); return;}
       if(b.closest('#qz-ic-p5')){const f=()=>byLearner(()=>setP5(d.lever)); if(innerWidth<=760) holdPlace(b,f); else {f(); revealSoon();} return;}
       if(b.closest('#qz-ic-chw')){if(chW!==d.lever){chW=d.lever; chSubmitted=false; chReveal=false;} byLearner(()=>render()); return;}
     }
     const seg=b.closest('.seg-ctl[data-key]');
     if(seg&&d.v!=null){const k=seg.dataset.key;
-      if(k==='speed'){speed=d.v; render(); return;}
+      if(k==='speed'){const was=speed; speed=d.v; if((AN.on||AN.paused)&&!AN.quick&&SPEEDS[was]) AN.acc*=SPEEDS[speed]/SPEEDS[was]; render(); return;}
       if(k==='p1'){byLearner(()=>setP1(d.v)); revealSoon(); return;}
       if(k==='p6'){byLearner(()=>setModel(d.v)); revealSoon(); return;}
       if(k==='chkv'){if(chKV!==d.v){chKV=d.v; chSubmitted=false; chReveal=false;} byLearner(()=>render()); return;}
@@ -1023,14 +1278,14 @@ A.registerLab({
     if(mode==='guided'&&!p&&step===0) Object.assign(S,STEPS[0].enter());
     el.innerHTML=viewHTML(); app=$('#qz-app',el); lastM=null; lastHash='';
     A.shell.bindHeader(app,{id:ID,onMode:m=>{setMode(m); A.ui.reveal($('#qz-rail',app)); keepStage();},token});
-    bind(app);
+    bind(app); removeEventListener('scroll',onScroll); addEventListener('scroll',onScroll,{passive:true});
     renderDrill();
     fillRail();
     showKey();
     render();
   },
-  leave(){clearTimeout(annT); stageStop(); stopAnim(); root=null; app=null;},
-  onLang(){if(root){const d=$('#qz-math',app), open=d&&d.open; const an={...AN}; this.mount(root,null); if(open) $('#qz-math',app).open=true; if(an.on&&!AN.on) playAnim(an.ph);}},
+  leave(){clearTimeout(annT); clearTimeout(pendT); removeEventListener('scroll',onScroll); stageStop(); stopAnim(); root=null; app=null;},
+  onLang(){if(root){const d=$('#qz-math',app), open=d&&d.open; const an={...AN}; this.mount(root,null); if(open) $('#qz-math',app).open=true; if(an.on&&!AN.on) playAnim(an.ph,an.quick,an.acc);}},
   onResize(){if(app){drawBlock();}},
   termTip(k){return termTipHTML(k);},
   jump, jumpAct,
@@ -1045,8 +1300,11 @@ A.registerLab({
       if(memOnly()){const P=MOD[S.model], g=gpus(S.model,'fp8'); vis.innerHTML='';
         read.innerHTML=esc(tx(`${P.n}’s weights in FP8: ${g.n?`${g.n} ${GPU}${g.n>1?'s':''}`:`more than 8 ${GPU}s`}`,`${P.n} 的权重用 FP8：${g.n?`${g.n} 张 ${GPU}`:`8 张 ${GPU} 也不够`}`)); return;}
       if(viewNow()==='serve'){const r=stepT(k,S.kv,'d1'), b=stepT('bf16','bf16','d1'); vis.innerHTML=`<div class="qz-dk"><i style="width:${(r.t/b.t*100).toFixed(1)}%"></i></div>`; status.textContent=`${ms(r.t)} ms`;
-        read.innerHTML=esc(tx(`${sshort(k)} weights: decode step, 1 request (BF16: ${ms(b.t)} ms)`,`${sshort(k)} 权重：1 个请求的 decode 步（BF16 是 ${ms(b.t)} ms）`)); return;}
+        /* the setting by the name the stage title gives it: part 1's option names, elsewhere what is stored in which format (N1) */
+        const nm=isP('mission')?p1Name(k):(ACT8(k)?tx('Weights and activations in FP8','权重和激活用 FP8'):tx(`Weights in ${sshort(k)}`,`权重用 ${sshort(k)}`));
+        read.innerHTML=esc(tx(`${nm}: decode step, 1 request (BF16: ${ms(b.t)} ms)`,`${nm}：1 个请求的 decode 步（BF16 是 ${ms(b.t)} ms）`)); return;}
       const e=evalK(SEED,k), v=view(S.bsel,k);
+      if(k!=='bf16'&&dispPhase().ph<3){vis.innerHTML=''; read.innerHTML=esc(AN.on||AN.paused?tx(`${sshort(k)}: rounding the block`,`${sshort(k)}：正在舍入这一块`):tx(`${sshort(k)}: the block is not rounded yet`,`${sshort(k)}：这一块还没舍入`)); return;}
       vis.innerHTML=`<div class="qz-dk"><i style="width:${Math.min(100,e.oerr/0.3*100).toFixed(1)}%"></i></div>`;
       read.innerHTML=esc(tx(`${sshort(k)}: ${v.zeros} weights of the block become 0`,`${sshort(k)}：这一块有 ${v.zeros} 个权重变成 0`));}
   }
@@ -1062,7 +1320,7 @@ window.__qz=Object.freeze({
   qsum:(seed,k)=>{const q=quantW(seed,k); let s=0, s2=0; for(let i=0;i<q.length;i++){s+=q[i]; s2+=Math.abs(q[i]);} return [s,s2];},
   step:(k,kv,kind)=>deep(stepT(k,kv,kind)), wGiB, gpus:(m,k)=>deep(gpus(m,k)), kvTok8, chEval:(k,kv)=>deep(chEval(k,kv)), chAll:()=>deep(chAll()), drill:s=>deep(makeDrill(s)),
   exits:()=>{const e=EXITS(); return deep({transfer:e.transfer.map(q=>({q:q.q,o:q.o,a:q.a,why:q.why}))});},
-  consts:Object.freeze({O,D,NX,NU,POUT,OLO,OHI,NCH,CHF,SIG,SEED,CH_SEED,UGPU,CH_BAR,CH_USERS,CH_CTX,RBITS:{...RBITS},STEP_IDS:STEPS.map(s=>s.id),PRED_RIGHT,BASE:{...BASE},PRESETS:PRESETS.map(p=>p.id),ALLK:ALLK.slice(),CHK:CHK.slice()}),
-  state:()=>({...S,key:keyOf(),mode,step,pred,predShown,observed:{...observed},anim:{on:AN.on,ph:AN.ph,paused:AN.paused,key:AN.key},watched:[...watched],plays:nPlays,speed,chW,chKV,chSubmitted,chReveal,stageBusy:stageT!==0})
+  consts:Object.freeze({O,D,NX,NU,POUT,OLO,OHI,NCH,CHF,SIG,SEED,CH_SEED,UGPU,CH_BAR,CH_USERS,CH_CTX,RBITS:{...RBITS},STEP_IDS:STEPS.map(s=>s.id),PRED_RIGHT,BASE:{...BASE},PRESETS:PRESETS.map(p=>p.id),ALLK:ALLK.slice(),CHK:CHK.slice(),P1K:P1K.slice(),SPEEDS:{...SPEEDS},QUICK}),
+  state:()=>({...S,key:keyOf(),mode,step,pred,predShown,observed:{...observed},anim:{on:AN.on,ph:AN.ph,t:AN.t,paused:AN.paused,key:AN.key,quick:AN.quick,pend:AN.pend},watched:[...watched],plays:nPlays,speed,chW,chKV,chSubmitted,chReveal,stageBusy:stageT!==0})
 });
 })();
