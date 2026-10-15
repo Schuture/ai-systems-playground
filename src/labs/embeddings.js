@@ -58,25 +58,29 @@ function built(lang){
   const li=LI(lang), vocab=new Map(), add=s=>tokens(s,lang).map(t=>{if(!vocab.has(t)) vocab.set(t,vocab.size); return vocab.get(t);});
   const Pi=DATA.map(x=>add(x[2][li])), Ti=[]; DATA.forEach(x=>x[3].forEach(q=>Ti.push(add(q[li]))));
   const known=s=>tokens(s,lang).filter(t=>vocab.has(t)).map(t=>vocab.get(t));
-  const Hi=DATA.map(x=>known(x[4][li]));
-  return (builtC[lang]={V:vocab.size,vocab,Pi,Ti,Hi,known});}
+  const Hi=DATA.map(x=>known(x[4][li])), Hu=Hi.map(ids=>[...new Set(ids)]), Ho=[]; let o=0; Hu.forEach(u=>{Ho.push(o); o+=u.length;});
+  return (builtC[lang]={V:vocab.size,vocab,Pi,Ti,Hi,Hu,Ho,Hn:o,known});}
 function encode(E,d,ids,out,o){   // mean of the rows, then scaled to length 1; returns the length before scaling
   const n=ids.length; for(let k=0;k<d;k++) out[o+k]=0;
   for(const t of ids) for(let k=0;k<d;k++) out[o+k]+=E[t*d+k];
   let s=0; for(let k=0;k<d;k++){out[o+k]/=n; s+=out[o+k]*out[o+k];} const nr=Math.sqrt(s); for(let k=0;k<d;k++) out[o+k]/=nr; return nr;}
 const dot=(a,ao,b,bo,d)=>{let s=0; for(let k=0;k<d;k++) s+=a[ao+k]*b[bo+k]; return s;};
 /* one training run: MAXS steps of the in-batch-negatives loss with Adam. State t (0…MAXS) keeps the held-out questions' and the passages'
-   unit vectors, recall@1 and @5, and the batch of step t+1 scored by the encoder as it is at t (its similarities, softmax and loss). */
+   unit vectors, recall@1 and @5, and the batch of step t+1 scored by the encoder as it is at t (its similarities, softmax and loss).
+   A full run also keeps, for the slow replay of the first steps, that batch scored again right after its own update (Sa, Pra: the same
+   cells at t+1), and the cosine of every table row of a held-out question's known tokens with its own passage's vector (rows). */
+function softRow(S,Pr,B,tau,i){let mx=-Infinity; for(let j=0;j<B;j++) mx=Math.max(mx,S[i*B+j]/tau); let z=0; for(let j=0;j<B;j++){Pr[i*B+j]=Math.exp(S[i*B+j]/tau-mx); z+=Pr[i*B+j];} for(let j=0;j<B;j++) Pr[i*B+j]/=z;}
 function train(lang,B,tau,d,seed=SEED,maxs=MAXS,light=false){
   const b=built(lang), V=b.V, r=mulberry(seed), E=new Float64Array(V*d);
   for(let i=0;i<V*d;i++) E[i]=r()*2-1;
   const m=new Float64Array(V*d), v=new Float64Array(V*d), G=new Float64Array(V*d), rb=mulberry(seed+1);
-  const T={lang,B,tau,d,P:[],H:[],r1:[],r5:[],rank:[],batch:[],S:[],Pr:[],loss:[]};
-  const q=new Float64Array(B*d), p=new Float64Array(B*d), nq=new Float64Array(B), npn=new Float64Array(B);
+  const T={lang,B,tau,d,P:[],H:[],r1:[],r5:[],rank:[],batch:[],S:[],Pr:[],loss:[],Sa:[],Pra:[],rows:[]};
+  const q=new Float64Array(B*d), p=new Float64Array(B*d), nq=new Float64Array(B), npn=new Float64Array(B), qa=new Float64Array(B*d), pa=new Float64Array(B*d);
   for(let s=0;s<=maxs;s++){
     /* evaluate state s: every held-out question against every passage */
     const Pv=new Float64Array(NP*d), Hv=new Float64Array(NP*d);
     for(let i=0;i<NP;i++){encode(E,d,b.Pi[i],Pv,i*d); encode(E,d,b.Hi[i],Hv,i*d);}
+    if(!light){const rw=new Float64Array(b.Hn); for(let i=0;i<NP;i++) b.Hu[i].forEach((t,k)=>{let n=0,c=0; for(let z=0;z<d;z++){n+=E[t*d+z]*E[t*d+z]; c+=E[t*d+z]*Pv[i*d+z];} rw[b.Ho[i]+k]=c/Math.sqrt(n);}); T.rows.push(rw);}
     const rk=[]; let c1=0, c5=0;
     for(let i=0;i<NP;i++){const own=dot(Hv,i*d,Pv,i*d,d); let k=0; for(let j=0;j<NP;j++) if(j!==i&&dot(Hv,i*d,Pv,j*d,d)>own) k++; rk.push(k); if(k<1) c1++; if(k<5) c5++;}
     if(!light){T.P.push(Pv); T.H.push(Hv); T.rank.push(rk);} T.r1.push(c1/NP); T.r5.push(c5/NP);
@@ -99,6 +103,8 @@ function train(lang,B,tau,d,seed=SEED,maxs=MAXS,light=false){
       const c=dot(p,j*d,dp,0,d), ids=b.Pi[ps[j]]; for(const t of ids) for(let k=0;k<d;k++) G[t*d+k]+=(dp[k]-p[j*d+k]*c)/npn[j]/ids.length;}
     const st=s+1, bc1=1-Math.pow(AB1,st), bc2=1-Math.pow(AB2,st);
     for(let i=0;i<V*d;i++){m[i]=AB1*m[i]+(1-AB1)*G[i]; v[i]=AB2*v[i]+(1-AB2)*G[i]*G[i]; E[i]-=LR*(m[i]/bc1)/(Math.sqrt(v[i]/bc2)+AEPS);}
+    if(!light){for(let i=0;i<B;i++){encode(E,d,b.Ti[qs[i]],qa,i*d); encode(E,d,b.Pi[ps[i]],pa,i*d);}
+      const Sa=new Float64Array(B*B), Pra=new Float64Array(B*B); for(let i=0;i<B;i++){for(let j=0;j<B;j++) Sa[i*B+j]=dot(qa,i*d,pa,j*d,d); softRow(Sa,Pra,B,tau,i);} T.Sa.push(Sa); T.Pra.push(Pra);}
   }
   T.E=E; if(!light) T.pca=pca(T); return T;}
 /* the map: the two directions in which the vectors of the last step (passages and held-out questions) spread most (PCA, Jacobi), used
@@ -168,17 +174,27 @@ const D_EMB=()=>tx('An embedding is the vector a model makes from a piece of tex
 const D_SIM=()=>tx('Cosine similarity measures how close two vectors point: with both scaled to length 1 it is their dot product. 1 means the same direction, 0 unrelated, −1 opposite.','余弦相似度量两个向量的方向有多近：两个向量都缩放成长度 1 以后，它就是两者的点积。1 是同一个方向，0 是不相关，−1 是相反。');
 const D_TOK=()=>tx('Here a token is an English word (codes such as E-104 count as one word). Chinese is cut into pairs of adjacent characters: “暖和一点” gives 暖和, 和一, 一点.','这里的 token，英文是一个词（E-104 这类代码算一个词）；中文按相邻两个字切成字对：“暖和一点”切成 暖和、和一、一点。');
 const D_POS=()=>tx('A positive is the text paired with a question in training: here the passage that answers it. A negative is a passage it should not be paired with. In-batch negatives are the other questions’ positives in the same batch, used as negatives at no extra cost.','正例是训练时和一个问题配对的文字，这里是能回答它的那段说明。负例是不该和它配对的段落。batch 内负例就是同一个 batch 里别的问题的正例，直接拿来当负例，不用另外找。');
-const D_HELD=()=>tx('24 more questions, one per passage, that training never sees. Each rewords the training questions of its passage, so they check whether what the encoder learns from the training pairs carries over to new wording.','另外写的 24 个问题，每段一个，训练时不给模型看。它们是同一段训练问题的另一种问法，用来检查模型从训练配对学到的东西，能不能用到换了说法的问题上。');
-const D_REC=()=>tx('Recall@k here: the share of the 24 held-out questions whose own passage is among the k passages most similar to them (out of 24).','这里的 recall@k：24 个新问题里，正确段落排在相似度前 k 名（共 24 段）的占多少。');
+const D_HELD=()=>tx('24 more questions, one per passage, never shown in training: they check whether what the encoder learns carries over to new wording. Each asks the same thing as the training questions of its passage, in other words, and most of its words appear in those training questions.','另外写的 24 个问题，每段一个，训练时不给模型看，用来检查模型学到的东西能不能用到新的说法上。每个新问题问的事，和这一段说明的训练问题一样，只是换了一种说法；它的大部分字词，在这一段的训练问题里出现过。');
 const D_TAU=()=>tx('The temperature τ divides every similarity before the softmax. Small τ makes the softmax sharp: the most similar passage takes almost all the probability. Large τ makes it flat. sentence-transformers calls 1/τ the scale; its default scale 20 is τ = 0.05.','温度 τ：softmax 之前，每个相似度都先除以它。τ 小，softmax 尖，最相近的那段几乎拿走全部概率；τ 大，softmax 平。sentence-transformers 把 1/τ 叫 scale，默认 scale 20，也就是 τ = 0.05。');
 const D_ADAM=()=>tx('Adam is the optimizer used here: it keeps a running average of each parameter’s gradient and of its square, and uses their ratio to decide which way to move each parameter and how far; a step usually moves a parameter by no more than about the learning rate. Learning rate 0.05 is this lab’s choice.','Adam 是这里用的优化器：它为每个参数记着梯度的滑动平均和梯度平方的滑动平均，用两者的比值决定往哪挪、挪多少；每一步挪动的幅度通常不超过一个学习率。学习率 0.05 是这个 Lab 自己定的。');
 const D_PCA=()=>tx('PCA finds the two directions in which the 48 vectors (24 passages, 24 held-out questions) differ most after the last training step; the map shows each vector’s position along them. The same two directions are used at every step, so the points move smoothly. A flat map cannot keep every distance of 16 dimensions.','PCA 找出训练最后一步时 48 个向量（24 段说明、24 个新问题）差别最大的两个方向，图上画的是每个向量在这两个方向上的位置。每一步都用这两个方向，所以点是连续移动的。16 维的距离，平面图不可能全部保留。');
+const D_ETAB=()=>tx('The embedding table: one row per token, d numbers per row, where d is the vector’s dimension (16 here). Before training the numbers are random; training changes them.','embedding 表：每个 token 一行，每行 d 个数值，d 是向量的维数（这里是 16）。训练前这些数是随机的，训练改的就是它们。');
+const D_LOSS=()=>tx('The loss measures how wrong the model is, and training lowers it. Training that pulls pairs together and pushes the rest apart is called contrastive learning; this loss is known as InfoNCE, and sentence-transformers calls it MultipleNegativesRankingLoss.','loss 量模型错了多少，训练就是把它降下去。这种把配对拉近、不配对推开的训练叫对比学习（contrastive learning），这个 loss 叫 InfoNCE，sentence-transformers 里叫 MultipleNegativesRankingLoss。');
+const D_PUSH=()=>tx('An arrow is the push this step’s loss gives a cell: the diagonal is pushed up by 1 − p, every other cell of the row down by its own p (p is the probability the softmax gives that cell), so the pushes down add up to the push up. What training actually changes are the numbers in the embedding table, and the cells follow.','箭头是这一步的 loss 对每一格的推力：对角线往上推 1 − p，同一行其他格往下推各自的 p（p 是 softmax 给这一格的概率），往下推的加起来正好等于往上推的。训练真正改的是 embedding 表里的数，格子跟着变。');
+const D_ROWS=n=>tx(`The question’s vector is the average of these ${n} rows, one per token that appears in the training data (the others are skipped); in the average, the parts of the rows that point elsewhere partly cancel, so the question’s cosine can be higher than every row’s.`,`问题的向量是这 ${n} 行的平均，每行是一个在训练数据里出现过的字对（其余的跳过）；取平均时，各行指向别处的部分会互相抵消一些，所以问题向量的余弦可以比每一行的都高。`)+
+  (mode==='guided'&&STEPS[step].id==='train'?tx(' A row without ◆ can move too: the passage’s own vector changes, and Adam keeps momentum, so a row that was pushed keeps moving the same way for a few more steps.','没带 ◆ 的行也会变：正确段落的向量本身在动；Adam 还带着惯性，一行被推过以后，后面几步还会接着往同一个方向走。'):'');
+/* why the question's vector keeps turning in slow steps that do not train its pair (the training step's observation, N3) */
+const D_KEEP=()=>tx('The passage’s own vector changes too, whenever a batch trains it. And Adam keeps momentum: a row that was pushed keeps moving the same way for a few more steps, even in steps whose batch does not hold it.','正确段落的向量本身也在变：哪个 batch 训练到它，它就动一点。Adam 还带着惯性：一行被推过以后，后面几步即使 batch 里没有它，也还会接着往同一个方向走。');
 
 /* ---------- state ---------- */
 let S={...DEFAULT}, mode='guided', step=0, pred=null, observed={}, root=null, app=null, saved=null;
 let chSubmitted=false, chReveal=false, drillSeed=1, drillOpen=false, userAct=false, annT=0, view='r1', trap=null;
 const seenRun=new Set(), shownPrev={}, triedB=new Set(), triedT=new Set(), triedQ=new Set();
-let runSpeed='mid', anim=null, raf=0, lastTs=0;
+let runSpeed='mid', anim=null, raf=0, lastTs=0, xmode='steps';
+/* part 4 plays its first SLOW_N steps slowly, step by step (R3.9: a mechanism replays slowly; R7.11: the table holds each step): a step shows
+   its batch with the push of its loss (until MORPH0 of the step's time), then its scores turn into those after the update (until MORPH1),
+   then holds. The rest of the run plays as a result (RUN_SPEEDS) with the table and the rows held still. */
+const SLOW_N=10, SLOW_SEC={slow:3.2,mid:1.6,fast:0.8}, MORPH0=0.4, MORPH1=0.7;
 const RUN_SPEEDS={slow:200/6,mid:200/3,fast:200/1.5};   // training steps per second: 200 steps take 6 s, 3 s or 1.5 s (R3.9)
 const SPEED_N={slow:{en:'Slow',zh:'慢'},mid:{en:'Medium',zh:'中'},fast:{en:'Fast',zh:'快'}};
 const runKey=s=>[LG(),s.B,s.tau,s.d].join('|');
@@ -202,61 +218,70 @@ const PRED=[{v:'both'},{v:'pos'},{v:'all'}];
 const predTxt=v=>({both:tx('Raise each question’s similarity with its own passage, and lower it with the other passages of the batch','把每个问题和它自己那段的相似度往上推，和 batch 里其他段落的往下压'),
   pos:tx('Raise only the similarity with its own passage; leave the other cells alone','只把和它自己那段的相似度往上推，其他格子不管'),
   all:tx('Raise every similarity in the batch, since all of them are help-center texts about the same products','因为都是讲同一批产品的帮助说明，所以把 batch 里所有相似度都往上推')})[v];
+/* on a phone the stage sits above the card: a pick in the card is followed by a link back up to the picture it changed (R7.12) */
+const seeStage=()=>`<p class="emb-see"><button type="button" class="linkbtn" data-jump="stage">${tx('See the chart ↑','看图 ↑')}</button></p>`;
 function inRun(){return `<div class="emb-ib"><button type="button" class="btn sm" data-act="play" data-play>${playLabel()}</button></div>`;}
-function inPick(){return A.ui.seg({id:'emb-ic-q',key:'q',label:tx('A held-out question','一个新问题'),options:PICKS.map(i=>[String(i),esc(qText(i))]),value:String(S.q),inline:true});}
-function inB(){return A.ui.seg({id:'emb-ic-B',key:'B',label:tx('Pairs per batch, B','每个 batch 的配对数 B'),options:BS.map(b=>[String(b),String(b)]),value:String(S.B),inline:true});}
-function inTau(){return A.ui.seg({id:'emb-ic-tau',key:'tau',label:tx('Temperature τ','温度 τ'),options:TAUS.map(t=>[String(t),tauTxt(t)]),value:String(S.tau),inline:true});}
+function inPick(){return A.ui.seg({id:'emb-ic-q',key:'q',label:tx('A held-out question','一个新问题'),options:PICKS.map(i=>[String(i),esc(qText(i))]),value:String(S.q),inline:true})+seeStage();}
+function inB(){return A.ui.seg({id:'emb-ic-B',key:'B',label:tx('Pairs per batch, B','每个 batch 的配对数 B'),options:BS.map(b=>[String(b),String(b)]),value:String(S.B),inline:true})+seeStage();}
+function inTau(){return A.ui.seg({id:'emb-ic-tau',key:'tau',label:tx('Temperature τ','温度 τ'),options:TAUS.map(t=>[String(t),tauTxt(t)]),value:String(S.tau),inline:true})+seeStage();}
 const LOSS_TEX=nm=>`\\text{${nm}}\\,\\,\\ell_i = -\\log \\frac{e^{s_{ii}/\\tau}}{\\sum_{j=1}^{B} e^{s_{ij}/\\tau}}`;
 const ENC_TEX=nm=>`\\text{${nm}}\\,\\,e(x) = \\frac{v}{\\lVert v \\rVert}`, AVG_TEX=`v = \\frac{1}{n}\\sum_{k=1}^{n} E[w_k]`;   // two lines: one does not fit the card at 1440 and 900 (R6.37)
 const COS_TEX=nm=>`\\text{${nm}}\\,\\,\\cos(a, b) = a \\cdot b = \\sum_{k} a_k b_k`;
+/* the known tokens of held-out question i (each once, in order) and the steps among the first n whose batch trained its passage's
+   training question that holds the most of them */
+const knownToks=i=>{const b=built(LG()), names=[...b.vocab.keys()]; return b.Hu[i].map(t=>names[t]);};
+function linkSteps(T,i,n){const k=trainLink(i), qi=DATA[i][3].findIndex(x=>x[LI(T.lang)]===k.s), out=[]; for(let s=0;s<Math.min(n,MAXS);s++) if(T.batch[s].qs.includes(2*i+qi)) out.push(s+1); return out;}
+const listTxt=a=>tx(a.length<2?String(a[0]):a.slice(0,-1).join(', ')+' and '+a[a.length-1],a.join('、'));
 const STEPS=[
  {id:'mission',title:{en:'Your mission',zh:'你的任务'},lead:{en:'Search a help center by meaning, not by shared words.',zh:'按意思搜帮助中心，而不是按共同的词。'},
   panels:['pair'],enter:()=>({...DEFAULT}),
   body:()=>{const k=kwRank(LG(),0), ahead=k.sc.filter((v,j)=>j!==0&&v>k.sc[0]).length;
-   return tx(`<p>The help center of Lumo Home, a smart-home company made up for this lab, has 24 short passages: the thermostat, the smart lock, the robot vacuum, the app, error codes and the warranty. A customer asks a question; search has to find the passage that answers it.</p><p>A customer asks ${quote(qText(0))} The passage that answers it begins ${quote(pText(0).split(',')[0]+' …')} The two share no word, so a keyword search that ranks passages by shared words puts ${ahead} other passages first (${J('pair','in the chart')}).</p><p>An ${DEF('embedding',D_EMB())} model works differently. It turns every text into a list of numbers, a vector, and a trained model gives texts with similar meanings vectors that point in similar directions. Search then compares the question’s vector with every passage’s and returns the closest. In this lab your browser trains a small embedding model and you watch how it learns that. Next comes the vector index: finding the closest vectors fast among 1M or more.</p>`,
-             `<p>小鹿家居是为这个 Lab 编的一家智能家居公司。它的帮助中心有 24 段简短的说明，讲恒温器、智能门锁、扫地机器人、App、错误码和保修。用户来问问题，搜索要找出能回答它的那一段。</p><p>用户问${quote(qText(0))}，能回答它的那一段是${quote(pText(0).split('，')[0]+'……')}。这里的关键词搜索把中文切成相邻的两个字（字对）来比，这两句话没有一个共同的字对。所以按共同字对数排序的关键词搜索，会先给出另外 ${ahead} 段（${J('pair','见图')}）。</p><p>${DEF('embedding',D_EMB())} 模型换一种办法：它把每段文字变成一串数，也就是一个向量。训练好的模型让意思相近的文字，向量的方向也相近。搜索时，拿问题的向量和每一段的向量比，最相近的那段就是答案。这个 Lab 在你的浏览器里训练一个小的 embedding 模型，看它是怎么学会的。之后是向量索引：在 1M 个以上的向量里快速找到最近的那几个。</p>`);}},
+   return tx(`<p>A customer asks ${quote(qText(0))} The passage that answers it begins ${quote(pText(0).split(',')[0]+' …')}. The two share no word, so a keyword search that ranks passages by shared words puts ${ahead} other passages first (${J('pair','in the chart')}).</p><p>The help center is made up for this lab: 24 short passages from Lumo Home, a smart-home company.</p><p>An ${DEF('embedding',D_EMB())} model works differently: it turns every text into a vector, a list of numbers, and a trained model gives texts with similar meanings vectors that point in similar directions. In this lab your browser trains a small embedding model, and you watch how it learns to find this passage by meaning.</p>`,
+             `<p>用户问${quote(qText(0))}，帮助中心里能回答它的是${quote(pText(0).split('，')[0]+'……')}这一段。两句话没有一个共同的字对（相邻的两个字），所以按共同字对排序的关键词搜索，会先给出另外 ${ahead} 段（${J('pair','见图')}）。</p><p>这个帮助中心是为这个 Lab 编的：智能家居公司小鹿家居的 24 段说明。</p><p>${DEF('embedding',D_EMB())} 模型换一种办法：把每段文字变成一个向量，也就是一串数；训练好的模型让意思相近的文字，向量的方向也相近。这个 Lab 在你的浏览器里训练一个小的 embedding 模型，看它怎么学会按意思找到这一段。</p>`);}},
  {id:'encoder',title:{en:'A small encoder, untrained',zh:'训练前的小编码器'},lead:{en:'Average the words’ vectors; compare directions.',zh:'把词的向量取平均，再比较方向。'},
   panels:['map','metrics'],enter:()=>({...DEFAULT}),target:'q',expect:()=>triedQ.size>1,showMe:{q:9},label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Pick another question to continue.',zh:'换一个问题再继续。'},
-  body:()=>tx(`<p>This lab’s embedding model is a 16-dimensional small encoder. It has an ${DEF('embedding table',A.terms.embedding())} with one row of 16 numbers for every ${DEF('token',D_TOK())} (see ${LL('tokenization-cost')} for how text is cut into tokens). A text’s vector is the average of its tokens’ rows, scaled to length 1:</p>${M(ENC_TEX('text vector'))}${M(AVG_TEX)}<p>${MI('E[w_k]')} is the row of the k-th token, ${MI('n')} the number of tokens. How close two vectors are is their ${DEF('cosine similarity',D_SIM())}; for vectors of length 1 it is the dot product:</p>${M(COS_TEX('similarity'))}<p>Before training, the table holds random numbers, so the directions are random too.</p><p>The map also shows 24 ${DEF('held-out questions',D_HELD())}, one per passage. Training never uses them, but each asks the same thing as the training questions of its passage, in other words, and most of its words appear in those training questions. (The next part shows the training questions.) These questions give two numbers: recall@1 is the share of them whose correct passage ranks first, and recall@5 the share whose correct passage is in the top 5. Both measure whether what the small encoder learns from the training pairs carries over to a reworded question. Pick one and look at its closest passages in the map.</p>`,
-              `<p>这个 Lab 的 embedding 模型是一个 16 维的小编码器。它有一张 ${DEF('embedding 表',A.terms.embedding())}，每个 ${DEF('token',D_TOK())} 一行（文字怎么切成 token，见 ${LL('tokenization-cost')}），每行 16 个数值。一段文字的向量，就是它所有 token 的那几行取平均，再缩放成长度 1：</p>${M(ENC_TEX('文字的向量'))}${M(AVG_TEX)}<p>${MI('E[w_k]')} 是第 k 个 token 的那一行，${MI('n')} 是 token 数。两个向量有多近，用${DEF('余弦相似度',D_SIM())}量；长度都是 1 时，它就是点积：</p>${M(COS_TEX('相似度'))}<p>训练前，表里都是随机数，向量的方向也是随机的。</p><p>图里还有 24 个${DEF('新问题',D_HELD())}，每段一个。训练时不会用到它们，每个新问题问的事，和这一段说明的训练问题一样，只是换了一种说法；新问题里的大部分字词，在这一段的训练问题里出现过。（训练问题下一部分会讲。）这些新问题用来算两个数：recall@1 是正确段落排在第一的问题占多少，recall@5 是正确段落排进前 5 的问题占多少。它们量的是小编码器从训练配对学到的联系，能不能用到换了说法的问题上。选一个新问题，看看图里离它最近的是哪几段。</p>`)+inPick(),
+  body:()=>{const rk=run(LG(),8,0.05,16).rank[0][0];
+   return tx(`<p>The small encoder averages the vectors of a text’s ${DEF('tokens',D_TOK())} and scales the result to length 1: that is the text’s vector, and two texts are as close as the directions of their vectors, measured by ${DEF('cosine similarity',D_SIM())}. Before training the vectors are random numbers, so for ${quote(qText(0))} the right passage ranks only ${rk+1}.</p><p>The vectors are the rows of an ${DEF('embedding table',D_ETAB())}: one row of 16 numbers per token, hence 16 dimensions.</p><p>The hollow circles in the map are 24 ${DEF('held-out questions',D_HELD())}, one per passage, never shown in training. Recall@1 is the share of them whose right passage ranks first.</p><p>Pick a held-out question and look at the 3 passages its dashed lines lead to. Distances in the map are only a sketch; the search list gives the ranks.</p>`,
+              `<p>小编码器把一段文字里各个 ${DEF('token',D_TOK())} 的向量取平均，再缩放成长度 1，就是这段文字的向量；两段文字近不近，看两个向量的方向，用${DEF('余弦相似度',D_SIM())}量。训练前这些向量都是随机数，所以${quote(qText(0))}的正确段落只排第 ${rk+1}。</p><p>这些向量存在 ${DEF('embedding 表',D_ETAB())}里：每个 token 一行，每行 16 个数值，所以叫 16 维。</p><p>图里的空心圈是 24 个${DEF('新问题',D_HELD())}，每段一个，训练时不给模型看。recall@1 是它们里正确段落排第一的占多少。</p><p>选一个新问题，看虚线连到的前 3 名。图上的远近只是示意，名次以搜索列表为准。</p>`)+inPick();},
   obs:r=>obsEnc(r)},
  {id:'predict',title:{en:'Predict first',zh:'先预测'},lead:{en:'A batch of 8 pairs: what should training do to the table?',zh:'一个 batch 有 8 对：训练该怎么改这张表？'},
   panels:['heat'],enter:()=>({...DEFAULT}),gate:()=>!!pred,skip:true,nextWhy:{en:'Pick an answer to continue, or Skip.',zh:'选一个答案再继续，或点“跳过”。'},
   body:()=>{const ch=`<div class="choices" role="group" aria-label="${esc(tx('Your prediction','你的预测'))}">${PRED.map(o=>`<button type="button" class="choice" data-pred="${o.v}" aria-pressed="${pred===o.v}">${esc(predTxt(o.v))}</button>`).join('')}</div>`;
-   return tx(`<p>Training needs pairs. Each passage gets two questions it answers: 48 pairs in all, each question with its ${DEF('positive',D_POS())}. One training step takes a batch: 8 different passages, each with one of its questions.</p><p>${J('heat','The table in the chart')} is that batch: row i is question i, column j is passage j, and the darker a cell, the higher their cosine similarity. The true pairs sit on the diagonal. After training, each question’s own passage should be the closest of all. What should one training step do to the table?</p>${ch}${pred?'<p class="muted small">Saved. You can still change it before the next part shows the result.</p>':''}`,
-             `<p>训练要用成对的数据。每段说明配两个它能回答的问题，一共 48 对；和问题配对的那段说明叫它的${DEF('正例',D_POS())}。训练的每一步取一个 batch：8 段不同的说明，各配一个问题。</p><p>${J('heat','图里的表格')}就是这个 batch：第 i 行是第 i 个问题，第 j 列是第 j 段说明，格子越深，两者的余弦相似度越高。对角线上是真正配对的格子。训练好以后，每个问题自己那段应该比其他段都近。训练的一步，应该怎么改这张表？</p>${ch}${pred?'<p class="muted small">已记下。下一部分给出结果之前，还可以改。</p>':''}`);}},
+   return tx(`<p>Each training step takes a batch: 8 different passages, each with a training question it answers. What should one training step do to the batch’s similarity table?</p><p>${J('heat','The table in the chart')} is the batch of step 1: row i is training question i, column j is passage j, and the darker a cell, the higher their cosine. The framed diagonal holds the true pairs; the passage paired with a question is its ${DEF('positive',D_POS())}. Each passage has two training questions, 48 pairs in all. After training, each question’s own passage should be the closest of all.</p>${ch}${pred?'<p class="muted small">Saved. You can still change it before the next part shows the result.</p>':''}`,
+             `<p>训练的每一步取一个 batch：8 段不同的说明，各配一个它能回答的训练问题。训练的一步，应该怎么改这个 batch 的相似度表？</p><p>${J('heat','图里的表格')}就是第 1 步要训练的 batch：第 i 行是第 i 个训练问题，第 j 列是第 j 段说明，格子越深，余弦越高。带框的对角线是真正的配对，和问题配对的那段说明叫它的${DEF('正例',D_POS())}。每段说明配两个训练问题，一共 48 对。训练好以后，每个问题自己那段应该比其他段都近。</p>${ch}${pred?'<p class="muted small">已记下。下一部分给出结果之前，还可以改。</p>':''}`);}},
  {id:'train',title:{en:'Train with in-batch negatives',zh:'用 batch 内负例训练'},lead:{en:'Pull each pair together, push the rest of the row apart.',zh:'把每一对拉近，把同一行其他的推开。'},
-  panels:['heat','map','chart','metrics'],view:'r1',enter:()=>({...DEFAULT,steps:seenRun.has(runKey(DEFAULT))?MAXS:0}),target:'steps',expect:()=>S.steps>=50,showMe:{steps:MAXS},label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Train at least 50 steps to continue.',zh:'至少训练 50 步再继续。'},
-  body:()=>{const ok=pred==='both', l0=run(LG(),8,0.05,16).loss[0], v=pred?tx(`<p class="${ok?'okline':'badline'}"><b>${ok?'Right.':'Not quite.'}</b> ${ok?'':`You predicted “${esc(predTxt(pred))}”. `}A step raises each true pair and lowers the rest of its row.</p>`,`<p class="${ok?'okline':'badline'}"><b>${ok?'对了。':'不对。'}</b>${ok?'':`你预测的是“${esc(predTxt(pred))}”。`}训练的一步把每个真正的配对往上推，把同一行其余的往下压。</p>`):tx(`<p>The answer: a step raises each true pair and lowers the rest of its row.</p>`,`<p>答案：训练的一步把每个真正的配对往上推，把同一行其余的往下压。</p>`);
-   return v+tx(`<p>Raising only the diagonal is not enough. If all vectors point the same way, the diagonal is all 1, but so is every other cell, and a question can no longer tell which passage is its own. So the other cells of each row must go down too. The other passages of a row are the other questions’ positives; used as negatives they are called ${DEF('in-batch negatives',D_POS())} and cost nothing extra. The loss of question i takes two steps: a softmax turns its row of similarities into probabilities (see ${LL('softmax-numerics')}), then the loss is minus the log of its own passage’s probability, the cross-entropy.</p>${M(LOSS_TEX('loss'))}<p>${MI('s_{ij}')} is the cosine of question i and passage j, and log is the natural logarithm. ${MI('\\tau')} = 0.05 is the ${DEF('temperature',D_TAU())}: every similarity is divided by it first, which makes the gaps 20 times larger (a later part shows what that changes). Lowering this loss raises ${MI('s_{ii}')} and lowers the rest of the row. Training like this is called contrastive learning: paired texts are pulled together and unpaired ones pushed apart. This loss is known as InfoNCE; sentence-transformers calls it MultipleNegativesRankingLoss.</p><p>Before training, the loss of the first batch is ${f(l0,2)}, even higher than ln 8 ≈ ${f(Math.log(8),2)}, the loss when every passage gets the same probability. Before training the cosines are random, and dividing by τ makes those random gaps 20 times larger too. So the softmax gives most of a row’s probability to one passage, and that passage is usually not the right one.</p><p>Each step averages the loss of the batch’s questions, then ${DEF('Adam',D_ADAM())} (see ${LL('optimizers')}) uses the gradient of that average loss to update the numbers in the embedding table. Press Train. The bar at the right of each table row is the probability the softmax gives that row’s correct passage; the line chart shows the recall@1 of the 24 held-out questions as training goes on. Watch the diagonal darken and the points in the map move.</p>`,
-                 `<p>只把对角线往上推是不够的。所有向量都指向同一个方向，对角线就全是 1，可那时其他格子也全是 1，问题分不出哪段是自己的。所以同一行里的其他格子还要往下压。同一行里的其他段落，是别的问题的正例；拿来当负例用，叫 ${DEF('batch 内负例',D_POS())}，不用另外找。算问题 i 的 loss 分两步：先用 softmax 把这一行的相似度变成概率（见 ${LL('softmax-numerics')}），再取它自己那段概率的负对数，也就是 cross-entropy。</p>${M(LOSS_TEX('loss'))}<p>${MI('s_{ij}')} 是问题 i 和段落 j 的余弦，log 是自然对数。${MI('\\tau')} = 0.05 是${DEF('温度',D_TAU())}：每个相似度都先除以它，差距就放大 20 倍（后面会细讲）。把这个 loss 降下去，就会把 ${MI('s_{ii}')} 往上推，把这一行其余的往下压。这种训练方法叫对比学习（contrastive learning）：让配对的两段文字靠近，不配对的分开。这个 loss 叫 InfoNCE，sentence-transformers 里叫 MultipleNegativesRankingLoss。</p><p>训练前，第一个 batch 的 loss 是 ${f(l0,2)}，比每段概率一样时的 ln 8 ≈ ${f(Math.log(8),2)} 还高。原因是训练前的余弦是随机的，除以 τ 以后，这些随机的差距也放大了 20 倍。于是 softmax 把一行的大部分概率给了某一段，而这一段多半不是正确的那段。</p><p>每一步在 batch 上取平均，再用 ${DEF('Adam',D_ADAM())}（见 ${LL('optimizers')}）更新表里的数值。按“训练”。表格每行右边的条，是 softmax 给这一行正确段落的概率；曲线图画的是训练过程中 24 个新问题的 recall@1。看对角线怎么变深，图里的点怎么移动。</p>`)+inRun();},
+  panels:['heat','rows','chart','metrics'],pair:['heat','rows'],l3:true,view:'r1',enter:()=>({...DEFAULT,steps:seenRun.has(runKey(DEFAULT))?MAXS:0}),target:'steps',expect:()=>S.steps>=50,showMe:{steps:MAXS},label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Train at least 50 steps to continue.',zh:'至少训练 50 步再继续。'},
+  body:()=>{const ok=pred==='both', n=knownToks(S.q).length, v=pred?tx(`<p class="${ok?'okline':'badline'}"><b>${ok?'Right.':'Not quite.'}</b> ${ok?'':`You predicted “${esc(predTxt(pred))}”. `}A step raises each true pair and lowers the rest of its row.</p>`,`<p class="${ok?'okline':'badline'}"><b>${ok?'对了。':'不对。'}</b>${ok?'':`你预测的是“${esc(predTxt(pred))}”。`}训练的一步把每个真正的配对往上推，把同一行其余的往下压。</p>`):tx(`<p>The answer: a step raises each true pair and lowers the rest of its row.</p>`,`<p>答案：训练的一步把每个真正的配对往上推，把同一行其余的往下压。</p>`);
+   return v+tx(`<p>Raising only the diagonal is not enough: if all vectors point the same way, every cell is 1 and a question can no longer tell which passage is its own. The other passages of the row are the other questions’ positives; used as negatives and pushed down, they are called ${DEF('in-batch negatives',D_POS())}.</p><p>The ${DEF('loss',D_LOSS())} turns a row of cosines into probabilities with a softmax (see ${LL('softmax-numerics')}) and takes minus the log of the right passage’s probability:</p>${M(LOSS_TEX('loss'))}<p>${MI('s_{ij}')} is the cosine of question i and passage j, ${MI('\\tau')} = 0.05 the ${DEF('temperature',D_TAU())}, and log the natural logarithm.</p><p>Press Train: the first ${SLOW_N} steps play slowly, with a pause after each, and the ${DEF('arrows',D_PUSH())} show which way the loss pushes each cell, longer for a bigger push. ${J('rows','A second picture')} shows the ${n} rows of the mission’s question ${quote(qText(S.q))} in the embedding table: watch them turn toward its passage.</p>`,
+                 `<p>只往上推不够：所有向量挤到同一个方向时，每一格都是 1，问题分不出哪段是自己的。同一行的其他段落是别的问题的正例，拿来当负例往下压，叫 ${DEF('batch 内负例',D_POS())}。</p><p>${DEF('loss',D_LOSS())} 用 softmax 把一行的余弦变成概率（见 ${LL('softmax-numerics')}），再取正确段落概率的负对数：</p>${M(LOSS_TEX('loss'))}<p>${MI('s_{ij}')} 是问题 i 和段落 j 的余弦，${MI('\\tau')} = 0.05 是${DEF('温度',D_TAU())}，log 是自然对数。</p><p>按“训练”：前 ${SLOW_N} 步一步一停，${DEF('箭头',D_PUSH())}是 loss 推每一格的方向，越长推得越多。${J('rows','另一张小图')}画的是任务里那个问题${quote(qText(S.q))}在 embedding 表里的 ${n} 行：看它们怎么转向它的正确段落。</p>`)+inRun();},
   obs:r=>obsRun(r)},
  {id:'batch',title:{en:'Batch size',zh:'batch 大小'},lead:{en:'More pairs per batch, more negatives per question.',zh:'每个 batch 的配对越多，每个问题的负例越多。'},
-  panels:['chart','heat','metrics'],view:'r1',enter:()=>({...DEFAULT,steps:MAXS}),target:'B',expect:()=>triedB.size>1,showMe:{B:16},label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Try another batch size to continue.',zh:'换一个 batch 大小再继续。'},
-  body:()=>tx(`<p>With B pairs per batch, each question is compared with B − 1 in-batch negatives in every step. With B = 2 it has only one, usually from another topic and easy to tell apart. But a bigger batch also uses more training pairs per step, so comparing by steps alone is unfair to small batches. So also compare the runs after they have used the same number of pairs.</p><p>Pick a batch size and watch ${J('chart','the recall curve')}. Every batch size you try leaves its curve in the chart, with its B written at the end of the line. A run also depends on its random start (the random table and the batches drawn), so the observation below averages 16 starts.</p>`,
-              `<p>每个 batch 有 B 对时，每一步里每个问题要和 B − 1 个 batch 内负例比。B = 2 时只有 1 个，而且多半来自别的主题，很容易分开。但 batch 越大，每一步用掉的训练配对也越多，只按步数比，对小 batch 不公平。所以还要比一比：用掉同样多的配对以后，谁的 recall 高。</p><p>选一个 batch 大小，看 ${J('chart','recall 曲线')}。你试过的每个 batch 大小都会在图里留下一条线，线的末端写着它的 B。一次训练的结果还和它的随机种子有关（种子决定随机的表和抽到的 batch），所以下面的“观察到”取 16 个种子的平均。</p>`)+inB(),
+  panels:['chart','heat','metrics'],pair:['chart','heat'],view:'r1',enter:()=>({...DEFAULT,steps:MAXS}),target:'B',expect:()=>triedB.size>1,showMe:{B:16},label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Try another batch size to continue.',zh:'换一个 batch 大小再继续。'},
+  body:()=>tx(`<p>With B pairs per batch, each question is compared with B − 1 in-batch negatives in every step. A bigger B compares more negatives and uses more pairs per step, so recall rises faster per step; with B = 2 there is only one negative, ${DEF('usually from another topic',D_SAME())} and easy to tell apart.</p><p>Pick a batch size and watch ${J('chart','the recall curve')}: every B you try leaves a line. Switch the x-axis to “By pairs used” to compare the runs after the same number of pairs; that view draws the average of 16 random starts, since one run also depends on its random start.</p>`,
+              `<p>每个 batch 有 B 对时，每个问题每一步要和 B − 1 个 batch 内负例比。B 越大，一步里比的负例和用掉的配对都越多，所以按步数算，recall 涨得更快；B = 2 时只有 1 个负例，${DEF('多半来自别的主题',D_SAME())}，很容易分开。</p><p>选一个 batch 大小，看 ${J('chart','recall 曲线')}：你试过的每个 B 都留一条线。把横轴切到“按配对数”，比的是用掉同样多的配对以后谁高；这时画的是 16 个种子的平均，因为一次训练的结果还和随机种子有关。</p>`)+inB(),
   obs:()=>obsBatch()},
- {id:'temp',title:{en:'Temperature',zh:'温度'},lead:{en:'How sharp the softmax is decides which negatives get pushed.',zh:'softmax 有多尖，决定把哪些负例推开。'},
-  panels:['chart','heat','metrics'],view:'loss',enter:()=>({...DEFAULT,steps:MAXS}),target:'tau',expect:()=>triedT.size>1,showMe:{tau:0.01},label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Try another temperature to continue.',zh:'换一个温度再继续。'},
-  body:()=>tx(`<p>A cosine lies between −1 and 1, so before the softmax the loss divides it by τ to spread the scores apart. With τ = 1 the scores differ by at most 2. In a batch of 16 the own passage then gets at most about a third of the probability. With τ = 0.05 every gap is 20 times larger: a slightly higher similarity already takes almost all of it.</p><p>The temperature also decides which negatives get pushed. For a wrong passage j, the gradient of row i’s loss is ${MI('\\partial \\ell_i / \\partial s_{ij} = p_{ij} / \\tau')}: the probability the softmax gives it, divided by τ. A small τ gives nearly all the probability, and so nearly all of the push, to the most similar wrong passage; a large τ spreads it over the whole row. Try a few and watch ${J('chart','the loss')}.</p>`,
-              `<p>余弦只在 −1 到 1 之间，所以 softmax 之前先除以 τ，把分数拉开。τ = 1 时，除完以后的分数最多只差 2。batch 有 16 段时，正确那段最多也只拿到约三分之一的概率。τ = 0.05 时，每个差距放大 20 倍，相似度稍高一点，就能拿走几乎全部概率。</p><p>温度还决定推开哪些负例。对一个错段落 j，第 i 行的 loss 对它的梯度是 ${MI('\\partial \\ell_i / \\partial s_{ij} = p_{ij} / \\tau')}：softmax 给它的概率，再除以 τ。τ 小，几乎全部概率都给了最像的那个错段落，推开的幅度也几乎全落在它身上；τ 大，推开的幅度分给整行。换几个温度，看 ${J('chart','loss 曲线')}。</p>`)+inTau(),
+ {id:'temp',title:{en:'Temperature',zh:'温度'},lead:{en:'A small τ makes the softmax sharp, and the loss soon reaches 0.',zh:'τ 小，softmax 尖，loss 很快就到 0。'},
+  panels:['chart','heat','metrics'],pair:['chart','heat'],view:'loss',enter:()=>({...DEFAULT,steps:MAXS}),target:'tau',expect:()=>triedT.size>1,showMe:{tau:0.01},label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Try another temperature to continue.',zh:'换一个温度再继续。'},
+  body:()=>tx(`<p>The smaller τ, the sharper the softmax: after a few steps each training question gives almost all its probability to its own passage, the loss falls near 0, and after that the encoder hardly learns. This lab has only 48 training pairs, so τ = 1 learns best here.</p><p>Before the softmax each cosine is divided by τ. Cosines lie between −1 and 1, so with τ = 1 the own passage in a batch of 8 gets ${DEF('at most about half',CAP_TIP())} of the probability, the loss cannot get near 0, and every step keeps pushing. The arrows in the table are that push. Try a few temperatures and watch ${J('chart','the loss')} and the arrows.</p>`,
+              `<p>τ 越小，softmax 越尖：没训练几步，每个训练问题就把几乎全部概率给了自己那段，loss 降到 0 附近，之后几乎不再学。这个 Lab 只有 48 对训练数据，所以 τ = 1 反而学得最好。</p><p>softmax 之前，每个余弦先除以 τ。余弦只在 −1 到 1 之间，τ = 1 时 batch 8 里正确那段${DEF('最多拿到约一半',CAP_TIP())}的概率，loss 降不到 0，每一步都还在推。表格里的箭头就是这一步的推力。换几个温度，看 ${J('chart','loss 曲线')}和箭头。</p>`)+inTau(),
   obs:()=>obsTemp()},
  {id:'limits',title:{en:'What an average cannot see',zh:'取平均看不到什么'},lead:{en:'Word order and negation; how real models do it.',zh:'词序和否定；真实的模型怎么做。'},
-  panels:['map','metrics'],enter:()=>({...DEFAULT,steps:MAXS}),expect:()=>!!trap,showMe:{trap:'order'},label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Pick a pair of sentences to continue.',zh:'选一对句子再继续。'},
-  body:()=>tx(`<p>The small encoder only averages, so it cannot see word order; tokens that never appear in the training data it skips altogether. Pick a pair of sentences and compare them with the encoder trained with the initial setup (batch 8, τ = 0.05, 200 steps).</p>`,
-              `<p>这个小编码器只取平均，所以看不到词的顺序；训练数据里没出现过的字对，它直接跳过。选一对句子，用训练好的编码器（batch 8、τ = 0.05、训练 200 步）比一比。</p>`)+leversTrap()+
-   tx(`<p>Real embedding models first read the whole text with a Transformer, so every token’s vector carries what comes before and after it (see ${LL('mha')}), and word order and negation change the result; then they average the vectors or take one position’s. The same model encodes short questions and long passages, so some models ask you to mark which one a text is: the three English E5 v2 models (384, 768 and 1,024 dimensions) put <code>query: </code> before a question and <code>passage: </code> before a passage; BGE’s English v1.5 models suggest an instruction before a question, and also work without it.</p>`,
-      `<p>真实的 embedding 模型先用 Transformer 读完整段文字，每个 token 的向量都带上了它前后的内容（见 ${LL('mha')}），所以词序和否定都会改变结果；然后再取平均，或取某一个位置的向量。同一个模型既要编码短问题，也要编码长段落，所以有的模型让你标明这段文字是哪一种：E5 v2 的三个英文模型（384、768、1,024 维）在问题前加 <code>query: </code>，在段落前加 <code>passage: </code>；BGE 的英文 v1.5 模型建议在问题前加一句检索指令，不加也能用。</p>`),
+  panels:['trap'],enter:()=>({...DEFAULT,steps:MAXS}),expect:()=>!!trap,showMe:{trap:'order'},label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Pick a pair of sentences to continue.',zh:'选一对句子再继续。'},
+  body:()=>tx(`<p>The small encoder only averages, so it cannot see word order; tokens that never appear in the training data it skips altogether. Pick a pair of sentences and compare them with the trained encoder (batch 8, τ = 0.05, 200 steps).</p>`,
+              `<p>这个小编码器只取平均，所以看不到词的顺序；训练数据里没出现过的字对，它直接跳过。选一对句子，用训练好的编码器（batch 8、τ = 0.05、训练 200 步）比一比。</p>`)+leversTrap()+seeStage()+
+   tx(`<p>Real embedding models first read the whole text with a Transformer, so every token’s vector carries what comes before and after it (see ${LL('mha')}), and word order and negation change the result.</p>`,
+      `<p>真实的 embedding 模型先用 Transformer 读完整段文字，每个 token 的向量都带上了它前后的内容（见 ${LL('mha')}），所以词序和否定都会改变结果。</p>`),
   obs:()=>obsTrap()},
  {id:'remember',title:{en:'What to remember',zh:'要记住的'},lead:{en:'Pairs, in-batch negatives, temperature; learned links, not only shared words.',zh:'配对、batch 内负例、温度；学到的联系，不只是共同的词。'},
-  panels:['map','chart'],view:'r1',enter:()=>({...DEFAULT,steps:MAXS}),
-  body:()=>{const T=run(LG(),8,0.05,16), T32=run(LG(),8,0.05,32), k0=Math.round(T.r1[0]*NP), k16=Math.round(T.r1[MAXS]*NP), k32=Math.round(T32.r1[MAXS]*NP), rk=T.rank[MAXS][0], p2=sameTopic(2), p16=sameTopic(16);
-   return tx(`<ul><li>An embedding is a text’s vector; search turns the question into a vector too and returns the passages with the highest cosine similarity. ${quote(qText(0))} shares no word with the passage about the dial, and the trained small encoder ${rk===0?'ranks that passage first':`ranks it ${rk+1}`}.</li><li>Training uses pairs and in-batch negatives: each question is pulled toward its own passage and pushed away from the other passages of its batch. The hardest passages to tell apart are those of the same topic, so it matters whether a batch holds any: with B = 2 a question’s one negative is from its own topic ${pc(p2)} of the time; with B = 16 a batch holds at least one passage of its topic ${pc(p16)} of the time.</li><li>The temperature decides how the push is shared: a small τ pushes almost only the most similar wrong passage, a large τ the whole row.</li></ul><div class="obs"><div class="eyebrow">Common misconceptions</div><p>✗ “High similarity means the same words.” Before training the small encoder does rely on shared words only: ${k0===0?'not one':`only ${k0}`} of the 24 held-out questions ${k0<=1?'finds its':'find their'} own passage first. After training in this lab, ${quote(qText(0))} shares no word with the passage about the dial and ${rk===0?'still ranks it first':`still ranks it ${rk+1}`}: the training pairs taught the encoder which words point to which passage.</p><p>✗ “More dimensions are always better.” More dimensions can hold more distinctions, but every dimension adds 4 bytes to every stored vector and one multiply to every comparison, so storage and search time grow in step with it. In this lab, going from 16 to 32 dimensions finds ${k32-k16} more of the 24 held-out questions. Real models can gain even less: E5-large-v2 stores vectors almost three times as long as E5-small-v2 and ${DEF('scores only a little higher',BEIR_TIP())} on the retrieval benchmark BEIR.</p></div>${A.shell.toScenarios()}`,
-             `<ul><li>embedding 是一段文字的向量。搜索时把问题也变成向量，返回余弦相似度最高的段落。${quote(qText(0))}和讲旋钮的那段没有一个共同的字对，训练后的小编码器${rk===0?'把那段排在第一':`把那段排在第 ${rk+1}`}。</li><li>训练用成对的数据和 batch 内负例：把每个问题往它自己那段拉，从同一个 batch 的其他段落推开。最难分开的是同主题的段落，所以 batch 里有没有同主题的段落很重要。B = 2 时，一个问题唯一的负例只有 ${pc(p2)} 的机会和它同主题；B = 16 时，${pc(p16)} 的 batch 里至少有一段和它同主题。</li><li>温度决定推开的幅度怎么分：τ 小，几乎只推最像的那个错段落；τ 大，推整行。</li></ul><div class="obs"><div class="eyebrow">常见误解</div><p>✗ “相似度高就是用词一样。”训练前的小编码器确实只靠共同的字词：24 个新问题里${k0===0?'没有一个':`只有 ${k0} 个`}第一个找到自己的段落。在这个 Lab 里训练以后，${quote(qText(0))}和讲旋钮的那段没有一个共同的字对，却${rk===0?'排在第一':`排在第 ${rk+1}`}：训练配对教会了它哪些词指向哪一段。</p><p>✗ “维度越高越好。”维度高能多存一些区别，但每多一维，每个存下的向量多 4 字节，每次比较多一次乘法，存储和搜索的时间都跟着维数一起涨。在这个 Lab 里，从 16 维加到 32 维，24 个新问题里多找对 ${k32-k16} 个。真实模型里可能涨得更少：E5-large-v2 存下的向量差不多是 E5-small-v2 的三倍长，在检索基准 BEIR 上却${DEF('只高一点',BEIR_TIP())}。</p></div>${A.shell.toScenarios()}`);}}
+  panels:['chart','rows'],view:'r1',enter:()=>({...DEFAULT,steps:MAXS}),
+  body:()=>{const T=run(LG(),8,0.05,16), T32=run(LG(),8,0.05,32), k0=Math.round(T.r1[0]*NP), k16=Math.round(T.r1[MAXS]*NP), k32=Math.round(T32.r1[MAXS]*NP), rk=T.rank[MAXS][0], n=knownToks(0).length;
+   return tx(`<ul><li>An embedding is a text’s vector; search turns the question into a vector too and returns the passages with the highest cosine similarity.</li><li>Training uses pairs and in-batch negatives: each question is pulled toward its own passage and pushed away from the other passages of its batch. A bigger batch learns faster per step; counted per pair used, the batch size makes little difference here.</li><li>The smaller the temperature τ, the sooner the loss reaches 0, and after that the encoder hardly learns; with only 48 training pairs, τ = 1 does best here.</li></ul><div class="obs"><div class="eyebrow">Common misconceptions</div><p>✗ “High similarity means the same words.” Before training the small encoder does rely on shared words only: ${k0===0?'not one':`only ${k0}`} of the 24 held-out questions ${k0<=1?'finds its':'find their'} own passage first. After training, ${quote(qText(0))} shares no word with the passage about the dial and ${rk===0?'still ranks it first':`still ranks it ${rk+1}`} (its ${n} rows in the embedding table are in ${J('rows','the small picture under the curve')}): the training pairs taught the encoder which words point to which passage.</p><p>✗ “More dimensions are always better.” More dimensions can hold more distinctions, but every dimension adds 4 bytes to every stored vector and one multiply to every comparison. The line for 32 dimensions in the chart finds ${k32-k16} more of the 24 held-out questions. Real models can gain even less: E5-large-v2 stores vectors almost three times as long as E5-small-v2 and ${DEF('scores only a little higher',BEIR_TIP())} on the retrieval benchmark BEIR.</p></div>${A.shell.toScenarios()}`,
+             `<ul><li>embedding 是一段文字的向量。搜索时把问题也变成向量，返回余弦相似度最高的段落。</li><li>训练用成对的数据和 batch 内负例：把每个问题往它自己那段拉，从同一个 batch 的其他段落推开。batch 越大，每一步学得越快；按用掉的配对数比，差别不大。</li><li>温度 τ 越小，loss 越快降到 0，之后几乎不再学；这个 Lab 只有 48 对训练数据，τ = 1 最好。</li></ul><div class="obs"><div class="eyebrow">常见误解</div><p>✗ “相似度高就是用词一样。”训练前的小编码器确实只靠共同的字词：24 个新问题里${k0===0?'没有一个':`只有 ${k0} 个`}第一个找到自己的段落。训练以后，${quote(qText(0))}和讲旋钮的那段没有一个共同的字对，却${rk===0?'排在第一':`排在第 ${rk+1}`}（它在 embedding 表里的 ${n} 行，画在曲线下面的${J('rows','小图')}里）：训练配对教会了它哪些词指向哪一段。</p><p>✗ “维度越高越好。”维度高能多存一些区别，但每多一维，每个存下的向量多 4 字节，每次比较多一次乘法。曲线图里 32 维那条线，24 个新问题里多找对 ${k32-k16} 个。真实模型里可能涨得更少：E5-large-v2 存下的向量差不多是 E5-small-v2 的三倍长，在检索基准 BEIR 上却${DEF('只高一点',BEIR_TIP())}。</p></div>${A.shell.toScenarios()}`);}}
 ];
 const SIX=id=>STEPS.findIndex(s=>s.id===id);
 /* the chance that the B − 1 other passages of a batch include one of the 3 other passages of the question's topic (23 to draw from) */
 function sameTopic(B){let none=1; for(let k=0;k<B-1;k++) none*=(20-k)/(23-k); return 1-none;}
+const D_SAME=()=>tx(`Passages of the same topic are the hardest to tell apart. With B = 2 a question’s one negative is from its own topic ${pc(sameTopic(2))} of the time; with B = 16 a batch holds at least one passage of its topic ${pc(sameTopic(16))} of the time.`,`同主题的段落最难分开。B = 2 时，一个问题唯一的负例只有 ${pc(sameTopic(2))} 的机会和它同主题；B = 16 时，${pc(sameTopic(16))} 的 batch 里至少有一段和它同主题。`);
 /* τ = 1: the most the own passage can get in a batch of B, when its cosine is 1 and every other one −1 */
 const capP=B=>Math.exp(2)/(Math.exp(2)+B-1);
 const CAP_TIP=()=>tx(`With τ = 1 the own passage’s score beats each other one by at most 2, so it gets at most e² / (e² + 7) = ${pc(capP(8))} in a batch of 8, and the loss stays above −ln ${f(capP(8),2)} = ${f(-Math.log(capP(8)),2)}.`,`τ = 1 时，正确那段的分数最多比其他每段高 2，所以 batch 8 时它最多拿到 e² / (e² + 7) = ${pc(capP(8))}，loss 不会低于 −ln ${f(capP(8),2)} = ${f(-Math.log(capP(8)),2)}。`);
@@ -264,41 +289,47 @@ function leversTrap(){return A.ui.levers({aria:tx('Pairs of sentences','几对�
 function topTxt(T,t,i,k){const d=T.d, H=T.H[t], P=T.P[t], sc=DATA.map((x,j)=>({j,s:dot(H,i*d,P,j*d,d)})); sc.sort((a,b)=>b.s-a.s||a.j-b.j); return sc.slice(0,k);}
 function obsEnc(r){
   const T=r.T, i=S.q, rk=T.rank[0][i], top=topTxt(T,0,i,1)[0];
-  return tx(`<p><b>Before training, the right passage comes first for ${Math.round(T.r1[0]*NP)} of the 24 held-out questions: recall@1 ${pc(T.r1[0])}, about what picking at random gives.</b> For ${quote(qText(i))} the closest passage is ${quote(pTitle(top.j))}; the right one, ${quote(pTitle(i))}, ranks ${rk+1}.</p><p>${DEF('Recall@5',D_REC())} is already ${pc(T.r5[0])}, above the 21% of picking 5 at random. The reason: two texts that share some words also share those rows, so even when the rows are random, their averages come out a little similar.</p>`,
-            `<p><b>训练前，24 个${DEF('新问题',D_HELD())}里${Math.round(T.r1[0]*NP)?`只有 ${Math.round(T.r1[0]*NP)} 个`:'没有一个'}的正确段落排第一：recall@1 是 ${pc(T.r1[0])}，和随便挑一段差不多。</b>${quote(qText(i))}最近的是${quote(pTitle(top.j))}；正确的${quote(pTitle(i))}排第 ${rk+1}。</p><p>${DEF('recall@5',D_REC())} 已经有 ${pc(T.r5[0])}，比随便挑 5 段的 21% 高。原因是两段文字有共同的字对，就会用到表里相同的几行；即使这些行是随机数，取平均以后两段的向量也会有点相近。</p>`);}
+  return tx(`<p><b>Before training, the right passage comes first for ${Math.round(T.r1[0]*NP)} of the 24 held-out questions: recall@1 ${pc(T.r1[0])}, about what picking at random gives.</b> For ${quote(qText(i))} the closest passage is ${quote(pTitle(top.j))}; the right one, ${quote(pTitle(i))}, ranks ${rk+1}.</p>`,
+            `<p><b>训练前，24 个${DEF('新问题',D_HELD())}里${Math.round(T.r1[0]*NP)?`只有 ${Math.round(T.r1[0]*NP)} 个`:'没有一个'}的正确段落排第一：recall@1 是 ${pc(T.r1[0])}，和随便挑一段差不多。</b>${quote(qText(i))}最近的是${quote(pTitle(top.j))}；正确的${quote(pTitle(i))}排第 ${rk+1}。</p>`);}
 /* the training question of passage i that holds the most of held-out question i's known tokens */
 function trainLink(i){const lang=LG(), V=built(lang).vocab, hk=[...new Set(tokens(DATA[i][4][LI(lang)],lang).filter(t=>V.has(t)))];
   let best=null; DATA[i][3].forEach(x=>{const s=x[LI(lang)], tk=new Set(tokens(s,lang)), n=hk.filter(t=>tk.has(t)).length; if(!best||n>best.n) best={s,n};}); best.m=hk.length; return best;}
-const ownCos=(T,s)=>{const d=T.d; let z=0; for(let i=0;i<NP;i++) z+=dot(T.H[s],i*d,T.P[s],i*d,d); return z/NP;};
+const ownCosQ=(T,s,q)=>dot(T.H[s],q*T.d,T.P[s],q*T.d,T.d);
 function obsRun(r){
   if(r.t===0) return '';
-  const T=r.T, t=r.t, q=S.q, rk=T.rank[t][q], done=t>=MAXS, up=r.r1>T.r1[0], c0=ownCos(T,0), c1=ownCos(T,t), nsh=shared(LG(),q,q).length, k=trainLink(q);
-  const why=k.n?tx(` Its passage is paired with the training question ${quote(k.s)}. Of the words of the held-out question, ${k.m} appear in the training data and so have their own row in the embedding table; this training question holds ${k.n===k.m?'all of them':`${k.n} of them`}. Training pulled the table rows of those words toward the direction of that passage.`,`原因是这段和训练问题${quote(k.s)}配对，新问题切出的字对里，有 ${k.m} 个在训练数据里出现过、在 embedding 表里有自己的一行，这 ${k.m} 个${k.n===k.m?'全都':`里有 ${k.n} 个`}在这句训练问题里。训练把这些字对在 embedding 表里的那几行，拉向了这段的方向。`):'';
-  return tx(`<p><b>After ${stepsTxt(t)}, recall@1 on the 24 held-out questions ${up?'rose':'went'} from ${pc(T.r1[0])} to ${pc(r.r1)}.</b> The diagonal of the table darkened, and the average cosine between a held-out question and its own passage ${c1>c0?'rose':'went'} from ${fx(c0,2)} to ${fx(c1,2)}.</p><p>${quote(qText(q))} ${rk===0?'now finds its passage first':`now ranks its passage ${rk+1}`}${rk===0&&nsh===0?', although the two share no word':''}.${why}${done?'':' Keep training to 200 steps to see the whole run.'}</p>`,
-            `<p><b>训练 ${t} 步后，24 个新问题的 recall@1 从 ${pc(T.r1[0])} ${up?'升到':'变到'} ${pc(r.r1)}。</b>表格的对角线变深了；新问题和它自己那段的平均余弦，从 ${fx(c0,2)} ${c1>c0?'升到':'变到'} ${fx(c1,2)}。</p><p>${quote(qText(q))}${rk===0?'现在第一个就找到了它的段落':`现在把它的段落排在第 ${rk+1}`}${rk===0&&nsh===0?'，尽管两者没有一个共同的字对':''}。${why}${done?'':'继续训练到 200 步，看完整次运行。'}</p>`);}
+  const T=r.T, t=r.t, q=S.q, rk=T.rank[t][q], c0=ownCosQ(T,0,q), c1=ownCosQ(T,t,q), nsh=shared(LG(),q,q).length, k=trainLink(q), st=linkSteps(T,q,Math.min(t,SLOW_N));
+  /* the slow steps after the last one that trained the pair: when the question's vector still turns toward its passage there, say so (N3) */
+  const E=Math.min(t,SLOW_N), L=st.length?st[st.length-1]:0, more=!!(k.n&&st.length)&&L<E&&ownCosQ(T,E,q)>ownCosQ(T,L,q)+0.02;
+  const span=E>L+1?tx(`Steps ${L+1} to ${E} do`,`第 ${L+1} 到 ${E} 步`):tx(`Step ${E} does`,`第 ${E} 步`);
+  const why=k.n&&st.length?tx(` Its ${k.m} rows in the embedding table were pulled toward ${quote(pTitle(q))} in ${st.length>1?'steps':'step'} ${listTxt(st)}: ${st.length>1?'those steps':'that step'} trained ${quote(k.s)}, which is paired with that passage and holds ${k.n===k.m?`all ${k.m} of these tokens`:`${k.n} of these tokens`}.${more?` ${span} not train that pair, yet the question’s vector ${DEF('keeps turning toward it',D_KEEP())}.`:''}`,
+                              `它在 embedding 表里的 ${k.m} 行，在第 ${listTxt(st)} 步被拉向${quote(pTitle(q))}：那${st.length>1?'几':'一'}步训练的${quote(k.s)}和这段配对，${k.n===k.m?`也有这 ${k.m} 个字对`:`有其中 ${k.n} 个字对`}${more?`；${span}没有这一对，问题的向量${DEF('还在接着转向它',D_KEEP())}`:''}。`):'';
+  return tx(`<p><b>After ${stepsTxt(t)}, recall@1 on the 24 held-out questions ${r.r1>T.r1[0]?'rose':'went'} from ${pc(T.r1[0])} to ${pc(r.r1)}.</b> The table holds training questions, and their right passages now get about 100%; the held-out questions were never seen in training, so their recall is lower.</p><p>${quote(qText(q))} ${rk===0?'now finds its passage first':`now ranks its passage ${rk+1}`}, its cosine with it up from ${fx(c0,2)} to ${fx(c1,2)}${rk===0&&nsh===0?', although the two share no word':''}.${why}</p>`,
+            `<p><b>训练 ${t} 步后，24 个新问题的 recall@1 从 ${pc(T.r1[0])} ${r.r1>T.r1[0]?'升到':'变到'} ${pc(r.r1)}。</b>表格里是训练用过的问题，正确段落的概率都到了 100% 左右；新问题训练时没见过，所以 recall@1 低一些。</p><p>${quote(qText(q))}${rk===0?'现在排第一':`现在排第 ${rk+1}`}，和正确段落的余弦从 ${fx(c0,2)} 升到 ${fx(c1,2)}${rk===0&&nsh===0?'，尽管两者没有一个共同的字对':''}。${why}</p>`);}
 const AVG_WAIT=()=>tx('<p class="muted small">Averaging 16 random starts …</p>','<p class="muted small">正在算 16 个随机种子的平均……</p>');
 function obsBatch(){
-  const lg=LG(), tau=S.tau, d=S.d, need=[[4,200],[8,100],[16,100],[2,100]].map(([B,m])=>[lg,B,tau,d,m]);
+  const lg=LG(), tau=S.tau, d=S.d, need=[[4,200],[8,100],[16,100],[2,200]].map(([B,m])=>[lg,B,tau,d,m]);
   if(!need.every(j=>avgReady(...j))){warm(need); return tx(`<p><b>A bigger batch raises recall@1 faster per step.</b></p>`,`<p><b>batch 越大，每一步 recall@1 涨得越快。</b></p>`)+AVG_WAIT();}
-  const av=(B,s)=>avgReady(lg,B,tau,d,B===4?200:100)[s];
+  const av=(B,s)=>avgReady(lg,B,tau,d,B===4||B===2?200:100)[s];
   const lst=[...triedB].sort((a,b)=>a-b).map(B=>tx(`<li>B = ${B}: ${pc(av(B,25))}</li>`,`<li>B = ${B}：${pc(av(B,25))}</li>`)).join('');
-  return tx(`<p><b>A bigger batch raises recall@1 faster per step.</b> One run depends on its random start, so these are averages over 16 starts, after 25 steps:</p><ul class="emb-ul">${lst}</ul><p>Counted per pair seen, the batch size makes little difference in this lab: after the same 800 pairs, B = 4, 8 and 16 all average between ${pc(Math.min(av(4,200),av(8,100),av(16,50)))} and ${pc(Math.max(av(4,200),av(8,100),av(16,50)))}. In real training a bigger batch does help: sentence-transformers’ documentation links much higher batch sizes with better performance, since each question meets more negatives per step. This lab, with 24 passages, is too small to show it.</p>`,
-            `<p><b>batch 越大，每一步 recall@1 涨得越快。</b>一次训练的结果和它的随机种子有关，所以下面是 16 个不同种子的平均，训练 25 步后：</p><ul class="emb-ul">${lst}</ul><p>按用掉的配对数比，在这个 Lab 里 batch 大小差别不大：同样用掉 800 对，B = 4、8、16 的平均都在 ${pc(Math.min(av(4,200),av(8,100),av(16,50)))} 到 ${pc(Math.max(av(4,200),av(8,100),av(16,50)))} 之间。真实训练里大 batch 确实更好：sentence-transformers 的文档说，batch 大得多时效果也更好，因为每个问题每一步能比过更多负例。这个 Lab 只有 24 段说明，太小，看不出来。</p>`);}
+  return tx(`<p><b>A bigger batch raises recall@1 faster per step.</b> Averaged over 16 random starts, after 25 steps:</p><ul class="emb-ul">${lst}</ul><p>Counted per pair used, the batch size makes little difference in this lab: after the same 800 pairs, B = 4, 8 and 16 all average between ${pc(Math.min(av(4,200),av(8,100),av(16,50)))} and ${pc(Math.max(av(4,200),av(8,100),av(16,50)))}. In real training a bigger batch does help, as sentence-transformers’ documentation says; this lab, with 24 passages, is too small to show it.</p>`,
+            `<p><b>batch 越大，每一步 recall@1 涨得越快。</b>16 个种子的平均，训练 25 步后：</p><ul class="emb-ul">${lst}</ul><p>按用掉的配对数比，在这个 Lab 里 batch 大小差别不大：同样用掉 800 对，B = 4、8、16 的平均都在 ${pc(Math.min(av(4,200),av(8,100),av(16,50)))} 到 ${pc(Math.max(av(4,200),av(8,100),av(16,50)))} 之间。真实训练里大 batch 确实更好（sentence-transformers 的文档这么说），这个 Lab 只有 24 段说明，太小，看不出来。</p>`);}
 function lossZero(T){for(let s=0;s<=MAXS;s++) if(T.loss[s]<0.01) return s; return -1;}
 function obsTemp(){
-  const lg=LG(), ts=[...triedT].sort((a,b)=>b-a), rows=ts.map(t=>{const T=run(lg,S.B,t,S.d), z=lossZero(T); return {t,T,z,lz:T.loss[MAXS],r:T.r1[MAXS],rz:z>=0?T.r1[z]:0};});
-  const lst=rows.map(x=>tx(`<li>τ = ${x.t}: ${x.z>=0?`the loss first falls under 0.01 at step ${x.z}, when recall@1 is ${pc(x.rz)}`:`the loss is still ${f(x.lz,2)} at step 200`}; recall@1 after 200 steps ${pc(x.r)}.</li>`,`<li>τ = ${x.t}：${x.z>=0?`第 ${x.z} 步 loss 第一次降到 0.01 以下，这时 recall@1 是 ${pc(x.rz)}`:`第 200 步 loss 还有 ${f(x.lz,2)}`}；200 步后 recall@1 是 ${pc(x.r)}。</li>`)).join('');
-  const need=ts.map(t=>[lg,S.B,t,S.d,MAXS]), ok=need.every(j=>avgReady(...j)); if(!ok) warm(need);
-  const avg=ok?tx(`<p>Training once with each of 16 random seeds and averaging, recall@1 after 200 steps is ${ts.map(t=>`${pc(avgReady(lg,S.B,t,S.d,MAXS)[MAXS])} with τ = ${t}`).join(', ')}.`,`<p>换 16 个随机种子各训练一次，取平均，200 步后的 recall@1：${ts.map(t=>`τ = ${t} 是 ${pc(avgReady(lg,S.B,t,S.d,MAXS)[MAXS])}`).join('，')}。`):'';
-  return tx(`<p>The run drawn on the stage (seed 20261009):</p><ul class="emb-ul">${lst}</ul><p>With a small τ, after only a few steps each training question gives almost all of its probability to its own passage, so most batches have a loss near 0. A loss near 0 means a small gradient, so each update gets smaller and recall@1 rises more and more slowly. Now and then a batch that is not yet separated comes up and the loss jumps: the spikes in the chart. With τ = 1 the loss cannot get near 0, so every step keeps pulling pairs together.</p>${ok?avg:AVG_WAIT()+'<p>'} In this lab, with only 48 training pairs, everything is separated within a few dozen steps, so a small τ learns less. Real training data is far bigger (sentence-transformers’ all-* models used more than 1B pairs): there are always batches not yet separated, and the loss does not reach 0 that fast. sentence-transformers’ default is τ = 0.05; its documentation calls scales from 10 to 100 common, that is τ from 0.1 to 0.01.</p>`,
-            `<p>舞台上画的这一次（种子 20261009）：</p><ul class="emb-ul">${lst}</ul><p>τ 小时，没训练几步，每个训练问题就把几乎全部概率给了自己那段，大多数 batch 的 loss 接近 0。loss 接近 0，梯度也就很小，所以每一步的更新越来越小，recall@1 涨得越来越慢。偶尔抽到还没分开的 batch，loss 会跳起来，就是图里的尖峰。τ = 1 时，loss 降不到 0 附近，每一步都还在把配对往一起拉。</p>${ok?avg:AVG_WAIT()+'<p>'}在这个 Lab 里只有 48 对训练数据，几十步就全分开了，所以 τ 小反而学得少。真实的训练数据大得多（sentence-transformers 的 all-* 模型用了 1B 对以上），总有还没分开的 batch，loss 不会这么快降到 0。sentence-transformers 默认 τ = 0.05，它的文档说 scale 常在 10 到 100 之间，也就是 τ 在 0.1 到 0.01 之间。</p>`);}
+  const lg=LG(), cur=S.tau, T=run(lg,S.B,cur,S.d), z=lossZero(T), b05=run(lg,S.B,0.05,S.d);
+  const need=TAUS.map(t=>[lg,S.B,t,S.d,MAXS]), ok=need.every(j=>avgReady(...j)); if(!ok) warm(need);
+  /* the run on the stage first, named before its numbers; the loss's later spikes are what the chart shows after it falls under 0.01 (N5) */
+  const spk=z>=0&&Array.from(T.loss.slice(z+1)).some(v=>v>0.1);
+  const head=tx(`<b>The one run drawn on the stage: with τ = ${cur} ${z>=0?`the loss falls under 0.01 by step ${z}.</b> ${spk?'After that it jumps up only now and then, when a batch holds pairs not yet told apart (the spikes in the chart).':'After that the encoder hardly learns.'}`:`the loss is still ${f(T.loss[MAXS],2)} at step 200, so every step keeps pushing.</b>`} Recall@1 after 200 steps is ${pc(T.r1[MAXS])}${cur!==0.05?`, against ${pc(b05.r1[MAXS])} with τ = 0.05`:''}.`,
+                `<b>舞台上画的这一次训练：τ = ${cur} 时，${z>=0?`第 ${z} 步 loss 就降到 0.01 以下。</b>${spk?'之后只有偶尔抽到还没分开的 batch，loss 才跳起来（图里的尖峰）。':'之后几乎不再学。'}`:`第 200 步 loss 还有 ${f(T.loss[MAXS],2)}，每一步都还在推。</b>`}200 步后 recall@1 是 ${pc(T.r1[MAXS])}${cur!==0.05?`，τ = 0.05 是 ${pc(b05.r1[MAXS])}`:''}。`);
+  const avg=ok?tx(`<p>Training once with each of 16 random starts and averaging, recall@1 after 200 steps is ${TAUS.map(t=>`${pc(avgReady(lg,S.B,t,S.d,MAXS)[MAXS])} with τ = ${t}`).join(', ')}.</p>`,`<p>换 16 个随机种子各训练一次取平均，200 步后的 recall@1：${TAUS.map(t=>`τ = ${t} 是 ${pc(avgReady(lg,S.B,t,S.d,MAXS)[MAXS])}`).join('，')}。</p>`):'';
+  return `<p>${head}</p>${avg}${ok?'':AVG_WAIT()}`+tx(`<p>Real training data is far bigger (sentence-transformers’ all-* models used more than 1B pairs), so the loss does not reach 0 that fast; there the default is τ = 0.05.</p>`,`<p>真实的训练数据大得多（sentence-transformers 的 all-* 模型用了 1B 对以上），loss 不会这么快降到 0，所以那里默认 τ = 0.05。</p>`);}
 function obsTrap(){
   if(!trap) return ''; const x=TRAPS.find(z=>z.k===trap), T=run(LG(),8,0.05,16), c=cosOf(T,x.a[li()],x.b[li()]);
   if(x.k==='order') return tx(`<p><b>Similarity ${f(c,2)}: the two sentences get exactly the same vector.</b> They contain the same tokens, so their averages are equal, although one says E-104 came first and the other E-201.</p>`,`<p><b>相似度 ${f(c,2)}：两句话的向量完全一样。</b>它们切出来的 token 一模一样，平均也就一样；可一句说 E-104 先出现，另一句说 E-201 先出现。</p>`);
   const lg=LG(), V=built(lg).vocab, ta=tokens(x.a[li()],lg), tb=tokens(x.b[li()],lg), neg=tb.filter(t=>!ta.includes(t)&&V.has(t)), nb=tb.filter(t=>V.has(t)).length, skip=[...new Set(ta.concat(tb).filter(t=>!V.has(t)))];
   const qs=a=>a.map(t=>`“${t}”`), en=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
   return tx(`<p><b>Similarity ${f(c,2)}: the two sentences mean the opposite, yet their vectors stay close.</b> The negation adds ${en(qs(neg))}, ${neg.length===1?'a token':'tokens'} the small encoder knows, but the second sentence’s vector is the average of ${nb} table rows and ${neg.length===1?'it is only 1':`they are only ${neg.length}`} of them, and an average cannot tell what ${neg.length===1?'it negates':'they negate'}.${skip.length?` ${skip.every(t=>!tb.includes(t))?'In the first sentence, ':''}${en(qs(skip))} never ${skip.length===1?'appears':'appear'} in the training data and ${skip.length===1?'is':'are'} skipped.`:''}</p>`,
-            `<p><b>相似度 ${f(c,2)}：两句话意思相反，向量却仍然很近。</b>否定多出来的${neg.length>1?`字对${qs(neg).join('')}都`:`${qs(neg).join('')}`}在词表里，但第二句的向量是 embedding 表里 ${nb} 行的平均，${neg.length>1?'它们':'它'}只占其中 ${neg.length} 行；取平均以后，分不出否定的是什么。${skip.length?`${skip.every(t=>!tb.includes(t))?'第一句里的':''}字对${qs(skip).join('')}，训练数据里没出现过，小编码器把${skip.length>1?'它们':'它'}直接跳过了。`:''}</p>`);}
+            `<p><b>相似度 ${f(c,2)}：两句话意思相反，向量却仍然很近。</b>否定多出来的${neg.length>1?`字对${qs(neg).join('')}都`:`${qs(neg).join('')}`}在训练数据里出现过，但第二句的向量是 embedding 表里 ${nb} 行的平均，${neg.length>1?'它们':'它'}只占其中 ${neg.length} 行；取平均以后，分不出否定的是什么。${skip.length?`${skip.every(t=>!tb.includes(t))?'第一句里的':''}字对${qs(skip).join('')}，训练数据里没出现过，小编码器把${skip.length>1?'它们':'它'}直接跳过了。`:''}</p>`);}
 
 /* ---------- scenarios ---------- */
 const PRESETS=[
@@ -306,25 +337,27 @@ const PRESETS=[
  {t:{en:'A tiny batch: 2 pairs',zh:'batch 很小：只有 2 对'},d:{en:'Each question has one in-batch negative per step.',zh:'每一步每个问题只有 1 个 batch 内负例。'},p:{B:2,tau:0.05,d:16}},
  {t:{en:'A big batch: 16 pairs',zh:'batch 大：16 对'},d:{en:'Each question has 15 in-batch negatives per step.',zh:'每一步每个问题有 15 个 batch 内负例。'},p:{B:16,tau:0.05,d:16}},
  {t:{en:'A flat softmax: τ = 1',zh:'softmax 很平：τ = 1'},d:{en:'Similarities are not spread apart before the softmax.',zh:'softmax 之前，相似度没有被拉开。'},p:{B:8,tau:1,d:16}},
- {t:{en:'A sharp softmax: τ = 0.01',zh:'softmax 很尖：τ = 0.01'},d:{en:'Almost all the push goes to the most similar wrong passage.',zh:'推开的幅度几乎全落在最像的那个错段落上。'},p:{B:8,tau:0.01,d:16}},
+ {t:{en:'A sharp softmax: τ = 0.01',zh:'softmax 很尖：τ = 0.01'},d:{en:'The loss soon falls near 0, and after that the encoder hardly learns.',zh:'loss 很快降到 0 附近，之后几乎不再学。'},p:{B:8,tau:0.01,d:16}},
  {t:{en:'Only 4 dimensions',zh:'只有 4 维'},d:{en:'Every text has to fit into 4 numbers.',zh:'每段文字只能用 4 个数值表示。'},p:{B:8,tau:0.05,d:4}}];
 const presetNow=()=>PRESETS.findIndex(p=>p.p.B===S.B&&p.p.tau===S.tau&&p.p.d===S.d);
 function sandboxHTML(){const c=presetNow();
   return `<div class="railcard"><div class="eyebrow">${A.t('modeSandbox')}</div><h3 class="rh">${tx('Pick a scenario','选一个应用场景')}</h3>`+
    `<p class="small">${tx('Pick a scenario and see how recall@1 on the 24 held-out questions changes as the small encoder trains.','选一个场景，看看小编码器训练时，24 个新问题的 recall@1 怎么变。')}</p>`+
-   `<div class="presets" role="group" aria-label="${esc(tx('Scenarios, pick one','应用场景，选一个'))}">${PRESETS.map((p,i)=>`<button type="button" class="preset" data-preset="${i}" aria-pressed="${i===c}"><b>${esc(L(p.t))}</b><span>${esc(L(p.d))}</span></button>`).join('')}</div>`+
+   `<div class="presets" role="group" aria-label="${esc(tx('Scenarios, pick one','应用场景，选一个'))}">${PRESETS.map((p,i)=>`<button type="button" class="preset" data-preset="${i}" aria-pressed="${i===c}"><b>${esc(L(p.t))}</b><span>${esc(L(p.d))}</span></button>`).join('')}</div>`+seeStage()+
    `<div class="obs" id="emb-insight" aria-live="polite"></div>`+
    `<p class="small">${tx(`Change anything else under ${J('controls','Settings')}.`,`想改别的，在${J('controls','“自由调参”')}里改。`)}</p>${A.shell.toChallenge()}</div>`;}
 function insightHTML(r){
   if(r.t===0) return tx('<p><b>Step 0: nothing trained yet.</b> Press Train in the chart, or drag the training steps.</p>','<p><b>第 0 步：还没训练。</b>按图里的“训练”，或拖动训练步数。</p>');
   const T=r.T, base=run(LG(),8,0.05,16), i=presetNow();
-  let h=tx(`<p><b>After ${stepsTxt(r.t)}, recall@1 on the 24 held-out questions went from ${pc(T.r1[0])} to ${pc(r.r1)}.</b></p>`,`<p><b>训练 ${r.t} 步后，24 个新问题的 recall@1 从 ${pc(T.r1[0])} 变到 ${pc(r.r1)}。</b></p>`);
+  const k0=Math.round(T.r1[0]*NP), lucky=k0?tx(` (before training, the random table happens to rank ${k0===1?'1 question':`${k0} questions`} right)`,`（训练前，随机的表碰巧让 ${k0} 个问题排对）`):'';
+  let h=tx(`<p><b>After ${stepsTxt(r.t)}, recall@1 on the 24 held-out questions went from ${pc(T.r1[0])}${lucky} to ${pc(r.r1)}.</b></p>`,`<p><b>训练 ${r.t} 步后，24 个新问题的 recall@1 从 ${pc(T.r1[0])}${lucky||' '}变到 ${pc(r.r1)}。</b></p>`);
   if(i<0) return h+tx('<p class="small">The current settings match none of these scenarios.</p>','<p class="small">现在的设置和这几个场景都不一样。</p>');
   if(r.t<MAXS) return h;
   const k=['init','b2','b16','t1','t001','d4'][i], z=lossZero(T);
   if(k==='init') h+=tx(`<p>Each question compares itself with 7 in-batch negatives per step. The loss of a batch first falls under 0.01 at step ${z}, when recall@1 is ${pc(T.r1[z])}; after that the updates get smaller, and recall@1 only rises slowly.</p>`,`<p>每一步每个问题和 7 个 batch 内负例比。第 ${z} 步 batch 的 loss 就降到 0.01 以下，这时 recall@1 是 ${pc(T.r1[z])}；之后更新越来越小，recall@1 只是慢慢上升。</p>`);
   else if(k==='b2') h+=tx(`<p>With one negative per question, a step mostly separates two passages of different topics, which is easy. It ends below a batch of 8, which reaches ${pc(base.r1[MAXS])}.</p>`,`<p>每个问题只有 1 个负例，一步里多半只是把两个不同主题的段落分开，这很容易。最后比 batch 8 时的 ${pc(base.r1[MAXS])} 低。</p>`);
-  else if(k==='b16') h+=tx(`<p>With 15 negatives per question, a step usually includes passages of the same topic, the hard ones. After 25 steps it already reaches ${pc(T.r1[25])}; a batch of 8 has ${pc(base.r1[25])} then.</p>`,`<p>每个问题有 15 个负例，一步里通常就有同一主题的段落，也就是难分的那些。25 步时就到 ${pc(T.r1[25])}；batch 8 那时是 ${pc(base.r1[25])}。</p>`);
+  else if(k==='b16'){const av=[16,8].map(B=>avgReady(LG(),B,0.05,16,100)); if(!av.every(Boolean)) warm([16,8].map(B=>[LG(),B,0.05,16,100]));
+    h+=tx(`<p>With 15 negatives per question, a step usually includes passages of the same topic, the hard ones. In the run on the stage it reaches ${pc(T.r1[25])} after 25 steps, against ${pc(base.r1[25])} for a batch of 8 with the same seed${av.every(Boolean)?`; averaged over 16 random starts, ${pc(av[0][25])} against ${pc(av[1][25])}`:''}.</p>`,`<p>每个问题有 15 个负例，一步里通常就有同一主题的段落，也就是难分的那些。舞台上这一次训练，25 步时就到 ${pc(T.r1[25])}，同一个种子下 batch 8 那时是 ${pc(base.r1[25])}${av.every(Boolean)?`；换 16 个随机种子取平均，是 ${pc(av[0][25])} 对 ${pc(av[1][25])}`:''}。</p>`);}
   else if(k==='t1') h+=tx(`<p>The loss is still ${f(T.loss[MAXS],2)} at the end. With τ = 1 the similarities are not magnified, and cosines lie between −1 and 1, so in a batch of 8 the own passage can get ${DEF('only about half',CAP_TIP())} of the probability and the loss cannot get near 0. A loss above 0 means every step still pulls the pairs together, and in this lab it ends higher than with τ = 0.05, which reaches ${pc(base.r1[MAXS])}.</p>`,`<p>最后 loss 还有 ${f(T.loss[MAXS],2)}。τ = 1 时相似度没有被放大，而余弦只在 −1 到 1 之间，所以 batch 8 时正确那段${DEF('最多只拿到约一半',CAP_TIP())}概率，loss 降不到 0 附近。loss 不到 0，每一步就都还在把配对往一起拉；在这个 Lab 里，它最后比 τ = 0.05 时的 ${pc(base.r1[MAXS])} 还高。</p>`);
   else if(k==='t001') h+=tx(`<p>The loss first falls under 0.01 at step ${z}, when recall@1 is ${pc(T.r1[z])}. After that the updates soon get small and recall@1 rises only slowly.</p>`,`<p>第 ${z} 步 loss 就降到 0.01 以下，这时 recall@1 是 ${pc(T.r1[z])}。之后每一步的更新很快变小，recall@1 涨得很慢。</p>`);
   else h+=tx(`<p>Four numbers cannot keep 24 passages apart: passages of different topics share directions. It ends below 16 dimensions, which reach ${pc(base.r1[MAXS])}.</p>`,`<p>4 个数值分不开 24 段说明：不同主题的段落挤在相同的方向上。最后比 16 维时的 ${pc(base.r1[MAXS])} 低。</p>`);
@@ -354,17 +387,21 @@ function chResultHTML(){
   else if(me.ok) h=tx(`<p class="okline" style="margin-top:12px"><b>Goal met: an average recall@1 of ${pc(me.r1)}.</b> But B = ${bb.B} reaches ${G55()} in ${stepsTxt(bb.steps)}, instead of ${me.steps}.</p>`,`<p class="okline" style="margin-top:12px"><b>达成目标：平均 recall@1 是 ${pc(me.r1)}。</b>不过 B = ${bb.B} 只要 ${bb.steps} 步就能到 ${G55()}，而不是 ${me.steps} 步。</p>`);
   else {h=tx(`<p class="badline" style="margin-top:12px"><b>Not yet: an average recall@1 of ${pc(me.r1)}, under ${G55()}.</b></p><p class="small">Hint: in one step, which batch size trains on the most pairs and gives every question the most wrong passages to beat?</p>`,`<p class="badline" style="margin-top:12px"><b>还没达到：平均 recall@1 是 ${pc(me.r1)}，不到 ${G55()}。</b></p><p class="small">提示：一步里，哪种 batch 大小训练的配对最多，每个问题要比过的错段落也最多？</p>`);
     if(!chReveal) h+=`<button type="button" class="linkbtn" data-act="reveal">${tx('Show the answer','直接看答案')}</button>`;}
+  const f1=run(LG(),S.B,0.05,16).r1[chN];   // the stage draws the first of the 16 starts (P22)
+  h+=tx(`<p class="small muted">The stage draws the first of the 16 runs: recall@1 ${pc(f1)} there.</p>`,`<p class="small muted">舞台上画的是 16 次里的第 1 次：recall@1 是 ${pc(f1)}。</p>`);
   if(!chReveal) return h;
   const isInit=p=>p.B===2&&p.steps===25;
   const rows=pts.map(p=>({label:tx(`B = ${p.B}, ${stepsTxt(p.steps)}`,`B = ${p.B}，${p.steps} 步`),value:p.r1*100,text:pc(p.r1),ok:p.ok,me:p===me,best:p.ok&&p.steps===minS,
-    tags:(isInit(p)?[{text:tx('initial setup','初始设置')}]:[]).concat(p===me?[{text:tx('your pick','你的选择'),me:true}]:[])}));
+    tags:(isInit(p)?[{text:tx('the challenge’s default','挑战的默认选择')}]:[]).concat(p===me?[{text:tx('your pick','你的选择'),me:true}]:[])}));
+  const hid=pts.filter(p=>!(p.ok||p===me||isInit(p))), hidTxt=()=>{const by=BS.map(B=>[B,hid.filter(p=>p.B===B).map(p=>p.steps)]).filter(x=>x[1].length);
+    return tx(by.map(([B,a])=>`B = ${B} for ${listTxt(a.map(String))} steps`).join('; '),by.map(([B,a])=>`B = ${B} 训练 ${a.join('、')} 步`).join('；'));};
   h+=A.ui.cmpChart({brief:true,title:tx(`Average recall@1 over 16 starts, τ = 0.05 (goal: at least ${G55()})`,`16 个种子的平均 recall@1，τ = 0.05（目标：至少 ${G55()}）`),
     aria:tx('Average recall@1 by batch size and steps.','按 batch 大小和步数的平均 recall@1。'),rows,goal:CH_GOAL*100,goalLabel:tx(`goal: ${G55()}`,`目标 ${G55()}`),max:100,
-    hiddenText:n=>tx(`The other ${n} choices stay under ${G55()} and are not shown.`,`其余 ${n} 种选择到不了 ${G55()}，图里没有列出。`),
+    hiddenText:n=>tx(`The other ${n} choices (${hidTxt()}) stay under ${G55()} and are not shown.`,`其余 ${n} 种选择（${hidTxt()}）到不了 ${G55()}，图里没有列出。`),
     okText:tx(`reaches ${G55()}`,`达到 ${G55()}`),noText:tx('misses it','没达到'),goalText:tx(`goal: ${G55()}`,`目标：${G55()}`)});
-  const s0=CH_STEPS[0], pp=16*s0, per=[4,8,16].map(B=>avgR1(LG(),B,pp/B)), lo=Math.min(...per), hi=Math.max(...per);
-  h+=tx(`<p class="small">Why: a bigger batch trains on more pairs in each step and gives every question more negatives, so per step it learns fastest. After ${s0} steps, only B = 16 reaches ${G55()}. Each of its steps does more work, though. Counted per pair seen, B = 4, 8 and 16 are about equal in this lab: after the same ${pp} pairs they all average between ${pc(lo)} and ${pc(hi)}.</p>`,
-        `<p class="small">原因：batch 越大，一步里训练的配对越多，每个问题的负例也越多，所以按步数算学得最快。训练 ${s0} 步，只有 B = 16 能到 ${G55()}。不过它的每一步工作量也更大。按用掉的配对数比，在这个 Lab 里 B = 4、8、16 差不多：同样用掉 ${pp} 对，平均都在 ${pc(lo)} 到 ${pc(hi)} 之间。</p>`);
+  const s0=CH_STEPS[0], pp=400, per=[4,8,16].map(B=>avgR1(LG(),B,pp/B)), lo=Math.min(...per), hi=Math.max(...per);
+  h+=tx(`<p class="small">Why: a bigger batch trains on more pairs in each step and gives every question more negatives, so per step it learns fastest. After ${s0} steps, only B = 16 reaches ${G55()}. Each of its steps does more work, though. Counted per pair used, B = 4, 8 and 16 are about equal in this lab: after the same ${pp} pairs (B = 4 for ${pp/4} steps, B = 8 for ${pp/8}, B = 16 for ${pp/16}) they all average between ${pc(lo)} and ${pc(hi)}.</p>`,
+        `<p class="small">原因：batch 越大，一步里训练的配对越多，每个问题的负例也越多，所以按步数算学得最快。训练 ${s0} 步，只有 B = 16 能到 ${G55()}。不过它的每一步工作量也更大。按用掉的配对数比，在这个 Lab 里 B = 4、8、16 差不多：同样用掉 ${pp} 对（B = 4 训练 ${pp/4} 步、B = 8 训练 ${pp/8} 步、B = 16 训练 ${pp/16} 步），平均都在 ${pc(lo)} 到 ${pc(hi)} 之间。</p>`);
   h+=tx(`<p class="small muted">Note: recall is counted on 24 questions, so one question is about 4 percentage points, and one run depends on its random start; that is why the verdict averages 16 starts.</p>`,
         `<p class="small muted">注意：recall 只在 24 个问题上数，一个问题就是约 4 个百分点；一次训练的结果又和随机种子有关。所以判定用 16 个种子的平均。</p>`);
   return h;}
@@ -413,20 +450,25 @@ const FIDPOP=()=>tx(`<p><b>Toy run:</b> your browser trains a real small encoder
 const PRIPOP=()=>tx(`<p>A softmax turns a row of scores into probabilities that add up to 1; dividing the scores by a temperature first makes it sharper or flatter. Cross-entropy is minus the log of the probability given to the right answer. ${LL('softmax-numerics')} covers both. An embedding table holds one vector per token, as in ${LL('architecture')}.</p>`,
                     `<p>softmax 把一行分数变成加起来为 1 的概率；先把分数除以温度，它就变尖或变平。cross-entropy 是正确答案那一项概率的负对数。这两个都在 ${LL('softmax-numerics')} 里讲。embedding 表每个 token 存一个向量，见 ${LL('architecture')}。</p>`);
 function headerHTML(){return A.shell.header({id:ID,world:'apps',outcome:esc(OUTCOME()),short:tx('Embeddings','Embedding'),title:tx('How does an embedding know two sentences mean the same?','embedding 怎么知道两句话意思相同？'),
-  minutes:12,fid:'Live',fidPop:FIDPOP(),primer:tx('Primer: softmax and cross-entropy','前置知识：softmax 和 cross-entropy'),primerPop:PRIPOP(),descs:DESCS(),mode});}
+  minutes:15,fid:'Live',fidPop:FIDPOP(),primer:tx('Primer: softmax and cross-entropy','前置知识：softmax 和 cross-entropy'),primerPop:PRIPOP(),descs:DESCS(),mode});}
 
 /* ---------- stage ---------- */
 function playLabel(){return anim?tx('❚❚ Pause','❚❚ 暂停'):tx('▶ Train','▶ 训练');}
+const PANS=['pair','chart','map','heat','rows','trap'];
+/* the panels sit in one grid; each part orders them and pairs two side by side (main picture first, R7.12) */
 function stageHTML(){
   return `<div class="panel stage emb-stage" id="emb-stage">`+
    `<div class="stage-head emb-head"><div class="emb-st-title" id="emb-st-title"></div><div class="stage-actions"><span class="status" id="emb-status" tabindex="0"></span></div></div>`+
    `<div class="emb-transport" id="emb-transport"></div>`+
+   `<div class="emb-body" id="emb-body">`+
    `<section class="emb-pan" id="emb-pan-pair"><div class="emb-pt" id="emb-pa-title"></div><div class="emb-pair" id="emb-pair"></div></section>`+
-   `<div class="emb-row" id="emb-row"><section class="emb-pan" id="emb-pan-map"><div class="emb-pt" id="emb-m-title"></div>`+
-     `<svg class="emb-map" id="emb-map" viewBox="0 0 360 300" role="img" aria-label=""></svg><div class="legend-row emb-leg" id="emb-m-leg"></div><div class="emb-side"><label class="emb-ql" for="emb-qsel">${tx('Search with a held-out question','用一个新问题搜索')}</label><select id="emb-qsel" class="emb-qsel" data-key="q"></select><ol class="emb-top" id="emb-top"></ol><p class="small emb-miss" id="emb-miss"></p></div></section>`+
-   `<section class="emb-pan" id="emb-pan-heat"><div class="emb-pt" id="emb-h-title"></div><svg class="emb-heat" id="emb-heat" role="img" aria-label=""></svg><div class="legend-row emb-leg" id="emb-h-leg"></div></section></div>`+
-   `<section class="emb-pan" id="emb-pan-chart"><div class="emb-chead"><div class="emb-pt" id="emb-c-title"></div><div id="emb-c-view"></div></div><svg class="emb-chart" id="emb-chart" viewBox="0 0 440 178" role="img" aria-label=""></svg><div class="legend-row emb-leg" id="emb-c-leg"></div></section>`+
-   `<div class="metrics emb-metrics" id="emb-metrics"></div>`+
+   `<section class="emb-pan" id="emb-pan-chart"><div class="emb-chead"><div class="emb-pt" id="emb-c-title"></div><div class="emb-cviews" id="emb-c-view"></div></div><svg class="emb-chart" id="emb-chart" role="img" aria-label=""></svg><div class="legend-row emb-leg" id="emb-c-leg"></div></section>`+
+   `<section class="emb-pan" id="emb-pan-map"><div class="emb-pt" id="emb-m-title"></div><div class="emb-mfig"><svg class="emb-map" id="emb-map" viewBox="0 0 360 300" role="img" aria-label=""></svg><p class="small muted emb-note" id="emb-m-note"></p><div class="emb-legs" id="emb-m-leg"></div></div>`+
+     `<div class="emb-side"><label class="emb-ql" for="emb-qsel">${tx('Search with a held-out question','用一个新问题搜索')}</label><select id="emb-qsel" class="emb-qsel" data-key="q"></select><ol class="emb-top" id="emb-top"></ol><p class="small emb-miss" id="emb-miss"></p></div></section>`+
+   `<section class="emb-pan" id="emb-pan-heat"><div class="emb-pt emb-ht" id="emb-h-title"></div><svg class="emb-heat" id="emb-heat" role="img" aria-label=""></svg><p class="small emb-cap" id="emb-h-cap"></p><div class="legend-row emb-leg" id="emb-h-leg"></div></section>`+
+   `<section class="emb-pan" id="emb-pan-rows"><div class="emb-pt" id="emb-r-title"></div><div class="small muted emb-rsub" id="emb-r-sub"></div><ol class="emb-rows" id="emb-rows"></ol><p class="small emb-rres" id="emb-r-res"></p></section>`+
+   `<section class="emb-pan" id="emb-pan-trap"><div class="emb-pt" id="emb-t-title"></div><div class="emb-trap" id="emb-trap"></div></section>`+
+   `<div class="metrics emb-metrics" id="emb-metrics"></div></div>`+
    `<details class="math" id="emb-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="emb-mathbody"></div></details></div>`;}
 function controlsHTML(){
   return `<aside class="panel controls" id="emb-controls" aria-label="${esc(A.t('ctrlAria'))}"><div class="eyebrow">${A.t('ctrlEyebrow')}</div>`+
@@ -436,11 +478,11 @@ function controlsHTML(){
    `<div class="lockable">`+A.ui.seg({id:'emb-ctl-tau',key:'tau',label:tx('Temperature τ','温度 τ'),options:TAUS.map(t=>[String(t),tauTxt(t)]),value:String(S.tau),
       note:tx('Every similarity is divided by τ before the softmax. sentence-transformers’ default is 0.05 (its scale 20); its documentation calls scales from 10 to 100 common, that is τ from 0.1 to 0.01.','softmax 之前，每个相似度都除以 τ。sentence-transformers 默认 0.05（scale 20），它的文档说 scale 常在 10 到 100 之间，也就是 τ 在 0.1 到 0.01 之间。')})+`</div>`+
    `<div class="lockable">`+A.ui.seg({id:'emb-ctl-d',key:'d',label:tx('Dimensions per vector, d','每个向量的维数 d'),options:DS.map(d=>[String(d),String(d)]),value:String(S.d),
-      note:tx('The length of every row of the table and of every text’s vector. Stored as float32, each vector takes 4 × d bytes: a 768-dimensional one 3,072 bytes, so 1M passages take 3.07 GB (GB = 10⁹ bytes). Real models use hundreds: the three English E5 v2 models 384, 768 or 1,024.','表里每一行、每段文字的向量有多长。存成 float32 时每个向量占 4 × d 字节：768 维的向量占 3,072 字节，1M 段就是 3.07 GB（GB 是 10⁹ 字节）。真实的模型用几百维：E5 v2 的三个英文模型是 384、768 或 1,024 维。')})+`</div>`+
+      note:tx('The length of every row of the embedding table and of every text’s vector. Stored as float32, each vector takes 4 × d bytes: a 768-dimensional one 3,072 bytes, so 1M passages take 3.07 GB (GB = 10⁹ bytes). Real models use hundreds: the three English E5 v2 models 384, 768 or 1,024.','embedding 表里每一行、每段文字的向量有多长。存成 float32 时每个向量占 4 × d 字节：768 维的向量占 3,072 字节，1M 段就是 3.07 GB（GB 是 10⁹ 字节）。真实的模型用几百维：E5 v2 的三个英文模型是 384、768 或 1,024 维。')})+`</div>`+
    `<div class="lockable">`+A.ui.range({id:'emb-ctl-steps',key:'steps',label:tx('Training steps','训练步数'),min:0,max:MAXS,value:S.steps,out:stepsTxt(S.steps),
       note:tx('Steps taken from the random table; each step uses one batch.','从随机的表开始训练了几步；每一步用一个 batch。')})+`</div>`+
    `<details class="adv"><summary>${tx('Fixed in this lab: optimizer, learning rate, seed, data','这个 Lab 里固定的：优化器、学习率、随机种子、数据')}</summary>`+
-   `<p class="ctl-note">${tx(`Adam with learning rate ${LR}, β₁ 0.9, β₂ 0.999: this lab’s choice, set so that 200 steps show the whole effect; it does not carry over to a real model. Seed ${SEED} fixes the starting table and the batches: the same settings give the same run. The observations on batch size and temperature, and the challenge, also average 16 starts: seeds ${SEED} + 1,000k for k = 0 to 15. 48 training pairs and 24 held-out questions, written for this lab.`,`Adam，学习率 ${LR}，β₁ 0.9，β₂ 0.999：这个 Lab 自己定的，为了让 200 步就能看到完整的效果，不能照搬到真实模型上。随机种子 ${SEED} 决定初始的表和每一步的 batch：设置一样，运行就一样。讲 batch 大小和温度时的“观察到”以及挑战，还会取 16 个种子的平均，种子是 ${SEED} + 1,000k，k 从 0 到 15。48 对训练数据和 24 个新问题，都是为这个 Lab 写的。`)}</p></details>`+
+   `<p class="ctl-note">${tx(`${DEF('Adam',D_ADAM())} (see ${LL('optimizers')}) with learning rate ${LR}, β₁ 0.9, β₂ 0.999: this lab’s choice, set so that 200 steps show the whole effect; it does not carry over to a real model. Seed ${SEED} fixes the starting table and the batches: the same settings give the same run. The observations on batch size and temperature, and the challenge, also average 16 random starts. 48 training pairs and 24 held-out questions, written for this lab.`,`${DEF('Adam',D_ADAM())}（见 ${LL('optimizers')}），学习率 ${LR}，β₁ 0.9，β₂ 0.999：这个 Lab 自己定的，为了让 200 步就能看到完整的效果，不能照搬到真实模型上。随机种子 ${SEED} 决定初始的表和每一步的 batch：设置一样，运行就一样。讲 batch 大小和温度时的“观察到”以及挑战，还会取 16 个随机种子的平均。48 对训练数据和 24 个新问题，都是为这个 Lab 写的。`)}</p></details>`+
    `<div><button type="button" class="btn ghost sm" data-act="reset">${A.t('reset')}</button></div></aside>`;}
 const CODE=`import torch
 import torch.nn.functional as F
@@ -486,114 +528,266 @@ function connectHTML(){
    `</div></section>`;}
 function viewHTML(){return `<div class="emb-app m2" id="emb-app">`+headerHTML()+`<div class="wrap bench"><aside class="rail" id="emb-rail" aria-label="${esc(tx('Lab parts','Lab 各部分'))}"></aside>`+stageHTML()+controlsHTML()+`</div>`+connectHTML()+`</div>`;}
 
-/* which panels the stage shows now */
+/* which panels the stage shows now, in order; pair: the two drawn side by side on a wide stage */
 function ctx(){
-  if(mode==='guided'){const s=STEPS[step]; return {panels:s.panels,run:s.panels.includes('chart')||s.id==='train'};}
-  return {panels:['map','heat','chart','metrics'],run:true,noTr:mode==='challenge'&&!chSubmitted};}
+  if(mode==='guided'){const s=STEPS[step]; return {panels:s.panels,pair:s.pair||[],l3:!!s.l3,run:s.panels.includes('chart')||s.id==='train'};}
+  return {panels:['chart','metrics','map','heat'],pair:['map','heat'],run:true,noTr:mode==='challenge'&&!chSubmitted};}
 const TCOL=t=>`emb-c-${t}`;
 function drawPair(){
-  const i=0, k=kwRank(LG(),i), top=DATA.map((x,j)=>({j,s:k.sc[j]})).sort((a,b)=>b.s-a.s||a.j-b.j).slice(0,3), ahead=k.sc.filter((v,j)=>j!==i&&v>k.sc[i]).length;
+  const i=0, lg=LG(), k=kwRank(lg,i), hits=DATA.map((x,j)=>({j,s:k.sc[j]})).filter(x=>x.j!==i&&x.s>k.sc[i]).sort((a,b)=>b.s-a.s||a.j-b.j), ahead=hits.length, top=hits.slice(0,3);
   $('#emb-pa-title',app).textContent=tx('A keyword search for one question: which passages share the most words with it?','用关键词搜一个问题：哪几段和它共同的字对最多？');
-  const sw=j=>{const w=shared(LG(),i,j); return w.length?w.map(esc).join(tx(', ','、')):tx('none','没有');};
+  const sw=j=>shared(lg,i,j).map(esc).join(tx(', ','、'));
   $('#emb-pair',app).innerHTML=`<div class="emb-pq"><span class="emb-lab">${tx('The question','问题')}</span><p>${esc(qText(i))}</p></div>`+
    `<div class="emb-pp"><span class="emb-lab">${tx('The passage that answers it','能回答它的那一段')}${tx(': ','：')}${esc(pTitle(i))}</span><p>${esc(pText(i))}</p><p class="emb-bad small">${tx(`Shared words: none. A keyword search returns ${ahead} other passages before it.`,`共同的字对：没有。关键词搜索会先给出另外 ${ahead} 段。`)}</p></div>`+
-   `<div class="emb-kw"><span class="emb-lab">${tx('What the keyword search returns first','关键词搜索排在最前面的')}</span><ol>${top.map(x=>`<li><b>${esc(pTitle(x.j))}</b> <span class="muted">${tx(`shares ${x.s} word${x.s===1?'':'s'}`,`共同的字对 ${x.s} 个`)}${tx(': ','：')}${sw(x.j)}</span></li>`).join('')}</ol><p class="small muted">${tx('Only words like these are shared: they say nothing about warmth.','共同的只是这类字对，和“暖和”没有关系。')}</p></div>`;}
+   `<div class="emb-kw"><span class="emb-lab">${tx('What the keyword search returns first','关键词搜索排在最前面的')}</span><ol>${top.map(x=>`<li><b>${esc(pTitle(x.j))}</b> <span class="muted">${tx(`shares ${x.s} word${x.s===1?'':'s'}`,`共同的字对 ${x.s} 个`)}${tx(': ','：')}${sw(x.j)}</span></li>`).join('')}</ol>`+
+   (ahead>top.length?`<p class="small muted">${tx(`… and ${ahead-top.length} more passages that share a word with it.`,`……还有 ${ahead-top.length} 段也和它有共同的字对。`)}</p>`:'')+
+   `<p class="small">${tx(`The other ${NP-ahead} passages share no word with it, the one that answers it, ${quote(pTitle(i))}, among them: a keyword search cannot tell them apart.`,`其余 ${NP-ahead} 段共同的字对都是 0 个，包括能回答它的${quote(pTitle(i))}：关键词搜索分不出它们的先后。`)}</p>`+
+   `<p class="small muted">${tx('Only words like these are shared: they say nothing about warmth.','共同的只是这类字对，和“暖和”没有关系。')}</p></div>`;}
 function drawMapLegend(){
   const el=$('#emb-m-leg',app), k=A.lang(); if(el._k===k) return; el._k=k;
-  el.innerHTML=TOPICS.map(t=>`<span class="lg"><i class="sw emb-sw ${TCOL(t)}"></i>${esc(L(TOPIC_N[t]))}</span>`).join('')+
-   `<span class="lg" data-tipx="${esc(tx('A filled dot is one of the 24 passages, coloured by its topic.','实心点是 24 段说明中的一段，颜色是它的主题。'))}"><i class="sw emb-sw-p"></i>${tx('passage','说明段落')}</span>`+
-   `<span class="lg" data-tipx="${esc(tx('A hollow circle is a held-out question; a thin line joins it to its own passage.','空心圈是一个新问题，细线连到它自己的段落。'))}"><i class="sw emb-sw-q"></i>${tx('held-out question','新问题')}</span>`+
-   `<span class="lg" data-tipx="${esc(tx('The thick ring is the question you search with; dashed lines go to its 3 most similar passages, numbered by rank.','粗圈是你用来搜索的问题；虚线连到和它最相似的 3 段，数字是名次。'))}"><i class="sw emb-sw-me"></i>${tx('your question, its top 3','你的问题和它的前 3 名')}</span>`+
-   `<span class="lg" data-tipx="${esc(tx('A green ring: the right passage is the most similar. A red ring: it is not.','绿圈：正确段落是最相似的。红圈：它不是。'))}"><i class="sw emb-sw-ok"></i><i class="sw emb-sw-bad"></i>${tx('right passage: found first / missed','正确段落：排第一 / 没排第一')}</span>`;}
+  const row=(name,items)=>`<div class="legend-row emb-leg"><span class="emb-lgk">${name}</span><span class="emb-lgi">${items}</span></div>`;
+  el.innerHTML=row(tx('Topics','主题'),TOPICS.map(t=>`<span class="lg"><i class="sw emb-sw ${TCOL(t)}"></i>${esc(L(TOPIC_N[t]))}</span>`).join(''))+
+   row(tx('Dots','点'),`<span class="lg" data-tipx="${esc(tx('A filled dot is one of the 24 passages, coloured by its topic.','实心点是 24 段说明中的一段，颜色是它的主题。'))}"><i class="sw emb-sw-p"></i>${tx('passage','说明段落')}</span>`+
+     `<span class="lg" data-tipx="${esc(tx('A hollow circle is a held-out question; a thin line joins it to its own passage.','空心圈是一个新问题，细线连到它自己的段落。'))}"><i class="sw emb-sw-q"></i>${tx('held-out question, a thin line to its passage','新问题，细线连到它的段落')}</span>`)+
+   row(tx('Rings','圈'),`<span class="lg" data-tipx="${esc(tx('The thick ring is the question you search with; dashed lines go to its 3 most similar passages, numbered by rank.','粗圈是你用来搜索的问题；虚线连到和它最相似的 3 段，数字是名次。'))}"><i class="sw emb-sw-me"></i>${tx('your question, dashed lines to its top 3','你的问题，虚线连到前 3 名')}</span>`+
+     `<span class="lg" data-tipx="${esc(tx('A green ring: the right passage is the most similar. A red ring: it is not.','绿圈：正确段落是最相似的。红圈：它不是。'))}"><i class="sw emb-sw-ok"></i><i class="sw emb-sw-bad"></i>${tx('right passage: first / not first','正确段落：排第一 / 没排第一')}</span>`);}
 function drawMap(r){
-  const T=r.T, t=r.t, xy=T.pca.xy[t], R=T.pca.R*1.06||1, W=360, H=300, cx=W/2, cy=H/2, sc=Math.min(W,H)/2/R*0.94;
-  const X=p=>cx+p[0]*sc, Y=p=>cy-p[1]*sc, q=S.q, d=T.d;
+  const T=r.T, t=r.t, xy=T.pca.xy[t], W=360, H=300, cx=W/2, cy=H/2;
+  /* zoomed to where the points are at this step, never more than twice the last step's spread: untrained, they sit near the middle */
+  let Rt=0; for(const p of xy) Rt=Math.max(Rt,Math.abs(p[0]),Math.abs(p[1]));
+  const R=Math.max(Rt,T.pca.R*0.5)*1.06||1, sc=Math.min(W,H)/2/R*0.92, X=p=>cx+p[0]*sc, Y=p=>cy-p[1]*sc, q=S.q, d=T.d;
   const top=topTxt(T,t,q,3), rk=T.rank[t][q];
   let h=`<rect class="emb-frame" x="0.5" y="0.5" width="${W-1}" height="${H-1}" rx="6"></rect>`;
   for(let i=0;i<NP;i++){const a=xy[i], b=xy[NP+i]; h+=`<line class="emb-pl ${TCOL(DATA[i][0])}" x1="${X(a).toFixed(1)}" y1="${Y(a).toFixed(1)}" x2="${X(b).toFixed(1)}" y2="${Y(b).toFixed(1)}"></line>`;}
   top.forEach(x=>{const a=xy[NP+q], b=xy[x.j]; h+=`<line class="emb-tl" x1="${X(a).toFixed(1)}" y1="${Y(a).toFixed(1)}" x2="${X(b).toFixed(1)}" y2="${Y(b).toFixed(1)}"></line>`;});
-  for(let i=0;i<NP;i++){const a=xy[NP+i]; h+=`<circle class="emb-qd ${TCOL(DATA[i][0])}" cx="${X(a).toFixed(1)}" cy="${Y(a).toFixed(1)}" r="3.4" data-tipx="${esc(tx(`Held-out question ${quote(qText(i))}: its own passage ranks ${T.rank[t][i]+1} of 24 at step ${t}.`,`新问题${quote(qText(i))}第 ${t} 步时，它自己的段落排第 ${T.rank[t][i]+1}（共 24 段）。`))}"></circle>`;}
+  for(let i=0;i<NP;i++){const a=xy[NP+i]; h+=`<circle class="emb-qd ${TCOL(DATA[i][0])}" cx="${X(a).toFixed(1)}" cy="${Y(a).toFixed(1)}" r="3.4" data-tipx="${esc(tx(`Held-out question ${quote(qText(i))}: ${t?`after ${stepsTxt(t)}`:'before training'}, its own passage ranks ${T.rank[t][i]+1} of 24.`,`新问题${quote(qText(i))}：${t?`训练 ${t} 步后`:'训练前'}，它自己的段落排第 ${T.rank[t][i]+1}（共 24 段）。`))}"></circle>`;}
   for(let i=0;i<NP;i++){const a=xy[i]; h+=`<circle class="emb-pd ${TCOL(DATA[i][0])}" cx="${X(a).toFixed(1)}" cy="${Y(a).toFixed(1)}" r="5.2" data-tipx="${esc(tx(`Passage (${L(TOPIC_N[DATA[i][0]])}). ${pText(i)}`,`说明（${L(TOPIC_N[DATA[i][0]])}）。${pText(i)}`))}"></circle>`;}
   const own=xy[q]; h+=`<circle class="emb-own ${rk===0?'ok':'bad'}" cx="${X(own).toFixed(1)}" cy="${Y(own).toFixed(1)}" r="9"></circle>`;
-  top.forEach((x,k)=>{const b=xy[x.j]; h+=`<text class="emb-rk" x="${(X(b)+8).toFixed(1)}" y="${(Y(b)-7).toFixed(1)}">${k+1}</text>`;});
+  /* the rank numbers sit outside the dots, away from the middle, on a short leader line (P7) */
+  top.forEach((x,k)=>{const b=xy[x.j], px=X(b), py=Y(b); let dx=px-cx, dy=py-cy; const n=Math.hypot(dx,dy); if(n<1){dx=0.7; dy=-0.7;} else {dx/=n; dy/=n;}
+    const lx=Math.max(9,Math.min(W-9,px+dx*19)), ly=Math.max(12,Math.min(H-5,py+dy*19+4));
+    h+=`<line class="emb-rkl" x1="${(px+dx*7).toFixed(1)}" y1="${(py+dy*7).toFixed(1)}" x2="${(lx-dx*6).toFixed(1)}" y2="${(ly-4-dy*6).toFixed(1)}"></line><text class="emb-rk" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle">${k+1}</text>`;});
   const me=xy[NP+q]; h+=`<circle class="emb-me" cx="${X(me).toFixed(1)}" cy="${Y(me).toFixed(1)}" r="6.5"></circle>`;
-  const svg=$('#emb-map',app); svg.innerHTML=h; svg.setAttribute('aria-label',tx(`Map of the 24 passages and 24 held-out questions at step ${t}.`,`第 ${t} 步时 24 段说明和 24 个新问题的分布图。`));
-  $('#emb-m-title',app).innerHTML=tx(`Where the vectors point at step ${t}: 24 passages and 24 held-out questions (${DEF(`${d} dimensions projected onto a plane`,D_PCA())})`,`第 ${t} 步时向量的方向：24 段说明和 24 个新问题（${DEF(`把 ${d} 维向量投影到平面上`,D_PCA())}）`);
+  const svg=$('#emb-map',app); svg.innerHTML=h; svg.setAttribute('aria-label',tx(`Map of the 24 passages and 24 held-out questions ${t?`after ${stepsTxt(t)}`:'before training'}.`,`${t?`训练 ${t} 步后`:'训练前'}，24 段说明和 24 个新问题的分布图。`));
+  $('#emb-m-title',app).innerHTML=t===0?tx(`Where the vectors point before training: 24 passages and 24 held-out questions (${DEF(`${d} dimensions projected onto a plane`,D_PCA())})`,`训练前向量的方向：24 段说明和 24 个新问题（${DEF(`把 ${d} 维向量投影到平面上`,D_PCA())}）`)
+    :tx(`Where the vectors point after ${stepsTxt(t)}: 24 passages and 24 held-out questions (${DEF(`${d} dimensions projected onto a plane`,D_PCA())})`,`训练 ${t} 步后向量的方向：24 段说明和 24 个新问题（${DEF(`把 ${d} 维向量投影到平面上`,D_PCA())}）`);
+  $('#emb-m-note',app).textContent=tx('Distances in the map are only a sketch; the search list gives the ranks.','图上的远近只是示意，名次以搜索列表为准。');
   const sel=$('#emb-qsel',app); if(sel._k!==A.lang()){sel.innerHTML=DATA.map((x,i)=>`<option value="${i}">${esc(qText(i))}</option>`).join(''); sel._k=A.lang();} if(+sel.value!==q) sel.value=String(q);
   $('#emb-top',app).innerHTML=top.map(x=>`<li class="${x.j===q?'emb-hit':''}"><span>${esc(pTitle(x.j))}</span><span class="mono">${fx(x.s,2)}</span></li>`).join('');
   const miss=$('#emb-miss',app), ownS=dot(T.H[t],q*d,T.P[t],q*d,d);
   miss.className='small emb-miss'+(rk===0?' ok':' bad');
   miss.innerHTML=rk===0?tx(`The right passage, ${quote(pTitle(q))}, is first (cosine ${fx(ownS,2)}).`,`正确段落${quote(pTitle(q))}排第一（余弦 ${fx(ownS,2)}）。`):tx(`The right passage, ${quote(pTitle(q))}, ranks ${rk+1} (cosine ${fx(ownS,2)}).`,`正确段落${quote(pTitle(q))}排第 ${rk+1}（余弦 ${fx(ownS,2)}）。`);}
 const showP=()=>!(mode==='guided'&&step<SIX('train'));   // softmax and the loss are defined where training starts: before that, no probabilities (R2.8)
+
+/* what the batch table shows (R7.11). At rest after t steps: the batch step t + 1 would train, scored by the encoder after t steps,
+   with the push its loss would give. During the training part's slow steps: the batch being trained, first with its push, then turning into its scores
+   after the update. While a run plays fast: held where it was (frozen), updated when the run ends. */
+function tabOf(r){
+  const T=r.T, B=T.B;
+  if(anim&&anim.slow&&anim.k<=SLOW_N){const k=anim.k, i=k-1, ph=anim.ph, mx=ph<MORPH0?0:Math.min(1,(ph-MORPH0)/(MORPH1-MORPH0));
+    const S0=T.S[i], P0=T.Pr[i], S1=T.Sa[i], P1=T.Pra[i], Sx=new Float64Array(B*B), Px=new Float64Array(B*B);
+    for(let z=0;z<B*B;z++){Sx[z]=S0[z]+(S1[z]-S0[z])*mx; Px[z]=P0[z]+(P1[z]-P0[z])*mx;}
+    return {kind:'slow',k,bt:T.batch[i],S:Sx,Pr:Px,push:ph<MORPH1?P0:null};}
+  if(anim&&anim.frozen) return {...anim.frozen,kind:'frozen',push:null};
+  return {kind:'rest',t:r.t,bt:T.batch[r.t],S:T.S[r.t],Pr:T.Pr[r.t],push:T.Pr[r.t]};}
+/* the held state of the table and of the rows: after slow step k, or where a run starts (step t) */
+function freezeAt(T,t,k){return k?{k,end:endStep(),bt:T.batch[k-1],S:T.Sa[k-1],Pr:T.Pra[k-1],s:k}:{t,end:endStep(),bt:T.batch[t],S:T.S[t],Pr:T.Pr[t],s:t};}
+/* part 4: the row of the table that holds one of the mission question's passage's training questions */
+function markRow(tb){if(!(mode==='guided'&&STEPS[step].id==='train')) return -1; return tb.bt.qs.findIndex(qq=>Math.floor(qq/2)===S.q);}
+const trainQ=qq=>DATA[Math.floor(qq/2)][3][qq%2][li()];
+function heatTitle(tb,B){
+  const what=tx(`${B} training questions (rows) and their ${B} passages (columns)`,`${B} 个训练问题（行）和它们的 ${B} 段说明（列）`);
+  if(tb.kind==='slow') return tx(`Step ${tb.k}, training this batch: `,`第 ${tb.k} 步，训练这个 batch：`)+what;
+  if(tb.kind==='frozen') return tb.k?(n=>tx(`Steps ${tb.k+1} to ${tb.end} play fast: the table and the ${n} rows stay at step ${tb.k} and change when the run ends`,`快放第 ${tb.k+1} 到 ${tb.end} 步：表格和 ${n} 行停在第 ${tb.k} 步，播完再换`))(knownToks(S.q).length)
+    :tx(`Training: the table stays ${tb.t?`at step ${tb.t}`:'as before training'} and changes when the run ends`,`训练中：表格停在${tb.t?`第 ${tb.t} 步`:'训练前'}，播完再换`);
+  if(tb.t===0) return tx('Before training, the batch step 1 will train: ','训练前，第 1 步要训练的 batch：')+what;
+  const tip=tb.t<endStep()?tx(`The ${B} pairs step ${tb.t+1} would train, drawn from the 48 training pairs; the numbers come from the encoder after ${stepsTxt(tb.t)}.`,`第 ${tb.t+1} 步要训练的就是这 ${B} 对，从 48 对训练数据里抽的；表里的数是训练 ${tb.t} 步后的编码器算的。`)
+    :tx(`Training stops here; these ${B} pairs are drawn from the 48 training pairs by the same rule, and the numbers come from the encoder after ${stepsTxt(tb.t)}.`,`训练停在这一步；这 ${B} 对是按同样的规则从 48 对训练数据里抽的，表里的数是训练 ${tb.t} 步后的编码器算的。`);
+  return tx(`After ${stepsTxt(tb.t)}, `,`训练 ${tb.t} 步后，`)+DEF(tx('one training batch','看一个训练 batch'),tip)+tx(': ','：')+what;}
 function drawHeat(r){
-  const T=r.T, t=r.t, B=S.B, Sx=T.S[t], Pr=T.Pr[t], bt=T.batch[t], sp=showP(), cs=B<=4?40:(B<=8?30:13), lab=18, gp=sp?(B<=2?60:12):0, bw=sp?40:0, pw=sp&&B<=8?34:0, W=Math.max(220,lab+B*cs+gp+bw+pw), H=lab+B*cs+4, txt=B<=8;
-  let h=`<text class="emb-ax" x="${Math.max(80,lab+B*cs/2)}" y="11" text-anchor="middle">${tx('passages of the batch','batch 里的说明')}</text>`;
-  if(sp) h+=`<text class="emb-ax" x="${lab+B*cs+gp-2+bw+pw}" y="11" text-anchor="end">${tx('own p','正确的 p')}</text>`;
+  const T=r.T, B=T.B, tb=r.tb, sp=showP(), svg=$('#emb-heat',app), pan=$('#emb-pan-heat',app);
+  /* drawn at its own pixel size, so its numbers stay 11 px at every width (R7.14) */
+  const avail=Math.max(220,Math.floor(pan.clientWidth||320)), lab=18, top=30, bw=sp?40:0, pw=sp&&B<=8?34:0;
+  const cs=Math.max(12,Math.min(B<=4?44:34,Math.floor((avail-lab-(sp?10:0)-bw-pw-4)/B))), wide=B*cs>=150;
+  /* a batch of 2 is narrower than its column heading: the heading then starts at the first column, and the bars move right to leave it room */
+  const gp=sp?(wide?10:24):0, W=Math.max(lab+B*cs+gp+bw+pw+4,wide?0:lab+152), H=top+B*cs+4, txt=B<=8&&cs>=32;
+  const Sx=tb.S, Pr=tb.Pr, bt=tb.bt, push=sp?tb.push:null, mk=markRow(tb), a0=txt&&sp?15:4;
+  let h=`<text class="emb-ax" x="${wide?lab+B*cs/2:lab}" y="11" text-anchor="${wide?'middle':'start'}">${tx('passages of the batch','batch 里的说明')}</text>`;
+  if(sp) h+=`<text class="emb-ax" x="${W-2}" y="11" text-anchor="end">${tx('own p','正确的 p')}</text>`;
+  for(let j=0;j<B;j++) if(B<=8||j%3===0) h+=`<text class="emb-ax" x="${lab+j*cs+cs/2}" y="${top-6}" text-anchor="middle">${j+1}</text>`;
+  if(mk>=0) h+=`<rect class="emb-rowmk" x="${lab-1}" y="${top+mk*cs-1}" width="${B*cs+2}" height="${cs+2}" rx="3"></rect>`;
   for(let i=0;i<B;i++){
-    h+=`<text class="emb-ax" x="${lab-4}" y="${lab+i*cs+cs/2+3}" text-anchor="end">${i+1}</text>`;
-    for(let j=0;j<B;j++){const s=Sx[i*B+j], op=Math.max(0,Math.min(1,s))*0.85+0.05, x=lab+j*cs, y=lab+i*cs;
-      const tip=tx(`Row ${i+1}, the question ${quote(DATA[Math.floor(bt.qs[i]/2)][3][bt.qs[i]%2][0])}, against column ${j+1}, the passage ${quote(pTitle(bt.ps[j]))}: cosine ${fx(s,2)}${sp?`; the softmax gives it ${pc(Pr[i*B+j],0)} of the row`:''}.`,`第 ${i+1} 行的问题${quote(DATA[Math.floor(bt.qs[i]/2)][3][bt.qs[i]%2][1])}和第 ${j+1} 列的段落${quote(pTitle(bt.ps[j]))}，余弦是 ${fx(s,2)}${sp?`；softmax 给它这一行的 ${pc(Pr[i*B+j],0)}`:''}。`);
+    h+=`<text class="emb-ax${i===mk?' mk':''}" x="${lab-4}" y="${top+i*cs+cs/2+3.5}" text-anchor="end">${i+1}</text>`;
+    for(let j=0;j<B;j++){const s=Sx[i*B+j], op=Math.max(0,Math.min(1,s))*0.85+0.05, x=lab+j*cs, y=top+i*cs, pv=push?(i===j?1-push[i*B+i]:push[i*B+j]):0;
+      const tip=tx(`Row ${i+1}, the question ${quote(trainQ(bt.qs[i]))}, against column ${j+1}, the passage ${quote(pTitle(bt.ps[j]))}: cosine ${fx(s,2)}${sp?`; the softmax gives it ${pc(Pr[i*B+j],0)} of the row`:''}${push&&pv>=0.03?`; this step’s loss pushes it ${i===j?'up':'down'} by ${f(pv,2)}`:''}.`,
+                   `第 ${i+1} 行的问题${quote(trainQ(bt.qs[i]))}和第 ${j+1} 列的段落${quote(pTitle(bt.ps[j]))}，余弦是 ${fx(s,2)}${sp?`；softmax 给它这一行的 ${pc(Pr[i*B+j],0)}`:''}${push&&pv>=0.03?`；这一步的 loss 把它往${i===j?'上':'下'}推 ${f(pv,2)}`:''}。`);
       h+=`<rect class="emb-cell${i===j?' dg':''}" x="${x+1}" y="${y+1}" width="${cs-2}" height="${cs-2}" style="fill-opacity:${op.toFixed(3)}" data-tipx="${esc(tip)}"></rect>`;
-      if(txt) h+=`<text class="emb-cv${op>0.5?' inv':''}" x="${x+cs/2}" y="${y+cs/2+3.5}" text-anchor="middle">${fx(s,1)}</text>`;}
+      if(txt) h+=`<text class="emb-cv${op>0.5?' inv':''}" x="${x+cs/2}" y="${(sp?y+12:y+cs/2+3.5).toFixed(1)}" text-anchor="middle">${fx(s,1)}</text>`;
+      if(push&&pv>=0.03){const lo=y+a0, hi=y+cs-4, len=Math.max(4,(hi-lo)*Math.min(1,pv)), xm=x+cs/2, up=i===j, ya=up?hi:lo, yb=up?hi-len:lo+len, hd=up?3.4:-3.4;
+        const dd=`M${xm},${ya.toFixed(1)}V${yb.toFixed(1)}M${xm-3},${(yb+hd).toFixed(1)}L${xm},${yb.toFixed(1)}L${xm+3},${(yb+hd).toFixed(1)}`;
+        h+=`<path class="emb-ar halo" d="${dd}"></path><path class="emb-ar ${up?'up':'dn'}" d="${dd}"></path>`;}}
     if(!sp) continue;
-    const pd=Pr[i*B+i], bx=lab+B*cs+gp; h+=`<rect class="emb-pbt" x="${bx}" y="${lab+i*cs+cs*0.2}" width="${bw}" height="${cs*0.6}"></rect><rect class="emb-pb" x="${bx}" y="${lab+i*cs+cs*0.2}" width="${(bw*pd).toFixed(1)}" height="${cs*0.6}"></rect>`;
-    if(B<=8) h+=`<text class="emb-ax" x="${bx+bw+3}" y="${lab+i*cs+cs/2+3}">${pc(pd)}</text>`;}
-  const svg=$('#emb-heat',app); svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.style.maxWidth=Math.round(W*1.1)+'px'; svg.innerHTML=h;
-  svg.setAttribute('aria-label',tx(`Similarity table of one more batch drawn after ${t} training steps.`,`训练 ${t} 步后再抽一个 batch，它的相似度表。`));
-  $('#emb-h-title',app).textContent=tx(`After ${t} training steps, one more batch drawn to look at: ${B} questions (rows) and their ${B} passages (columns)`,`训练 ${t} 步后，再抽一个 batch 来看：${B} 个问题（行）和它们的 ${B} 段说明（列）`);
-  const lg=$('#emb-h-leg',app), k=A.lang()+B+sp; if(lg._k!==k){lg._k=k; lg.innerHTML=`<span class="lg"><i class="sw emb-sw-cell"></i>${tx('darker: higher cosine','越深：余弦越高')}</span><span class="lg"><i class="sw emb-sw-dg"></i>${tx('framed: the true pair','带框：真正的配对')}</span>`+(sp?`<span class="lg" data-tipx="${esc(tx('The bar on the right of each row: the probability the softmax gives the row’s own passage. The loss of that row is minus its log.','每行右边的条：softmax 给这一行正确段落的概率。这一行的 loss 就是它的负对数。'))}"><i class="sw emb-sw-pb"></i>${tx('own passage’s probability','正确段落的概率')}</span>`:'');}}
+    const pd=Pr[i*B+i], bx=lab+B*cs+gp; h+=`<rect class="emb-pbt" x="${bx}" y="${top+i*cs+cs*0.2}" width="${bw}" height="${cs*0.6}"></rect><rect class="emb-pb" x="${bx}" y="${top+i*cs+cs*0.2}" width="${(bw*pd).toFixed(1)}" height="${cs*0.6}"></rect>`;
+    if(B<=8) h+=`<text class="emb-ax" x="${bx+bw+3}" y="${top+i*cs+cs/2+3.5}">${pc(pd)}</text>`;}
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.style.width=W+'px'; svg.innerHTML=h;
+  const ttl=heatTitle(tb,B), te=$('#emb-h-title',app); if(te._h!==ttl){te.innerHTML=ttl; te._h=ttl;}
+  svg.setAttribute('aria-label',te.textContent);
+  pan.classList.toggle('emb-frozen',tb.kind==='frozen');
+  /* one caption line under the table, its room kept while a run plays (R7.9): the mission question's training question while training plays; why a
+     batch of 2 is sure of itself before training */
+  let pmax=0; if(push) for(let i=0;i<B;i++) for(let j=0;j<B;j++) pmax=Math.max(pmax,i===j?1-push[i*B+i]:push[i*B+j]);
+  const still=!!push&&pmax<0.03&&tb.kind==='rest'&&tb.t>0;
+  const capOn=mk>=0||(mode==='guided'&&STEPS[step].id==='train')||(sp&&B===2&&T.tau<1)||still, cap=$('#emb-h-cap',app);
+  cap.hidden=!capOn; pan.classList.toggle('emb-capon',capOn);
+  cap.innerHTML=mk>=0?tx(`Row ${mk+1}, ${quote(trainQ(bt.qs[mk]))}, is paired with ${quote(pTitle(S.q))}, the passage that answers the mission’s question.`,`第 ${mk+1} 行${quote(trainQ(bt.qs[mk]))}和${quote(pTitle(S.q))}配对；${quote(pTitle(S.q))}就是任务里那个问题的正确段落。`)
+    :(mode==='guided'&&STEPS[step].id==='train'?tx(`No training question in this batch is paired with ${quote(pTitle(S.q))}.`,`这个 batch 里没有和${quote(pTitle(S.q))}配对的训练问题。`)
+    :(sp&&B===2&&T.tau<1?tx(`With 2 passages, the cosines are divided by τ = ${T.tau}: even before training one of the two usually gets almost all of a row.`,`只有 2 段时，余弦都要除以 τ = ${T.tau}：训练前，一行的概率也常常几乎全给了其中一段。`)
+    :(still?tx('The loss of this batch is almost 0: its push is too small to draw, so the table has no arrows.','这个 batch 的 loss 几乎是 0：推力太小，表格里画不出箭头。'):'')));
+  const lg=$('#emb-h-leg',app), k=A.lang()+B+sp; if(lg._k!==k){lg._k=k; lg.innerHTML=`<span class="lg"><i class="sw emb-sw-cell"></i>${tx('darker: higher cosine','越深：余弦越高')}</span><span class="lg"><i class="sw emb-sw-dg"></i>${tx('framed: the true pair','带框：真正的配对')}</span>`+
+    (sp?`<span class="lg" data-tipx="${esc(D_PUSH())}"><span class="emb-arw" aria-hidden="true"><b class="up">↑</b><b class="dn">↓</b></span>${tx('arrows: this step’s push','箭头：这一步的推力')}</span><span class="lg" data-tipx="${esc(tx('The bar on the right of each row: the probability the softmax gives the row’s own passage. The loss of that row is minus its log.','每行右边的条：softmax 给这一行正确段落的概率。这一行的 loss 就是它的负对数。'))}"><i class="sw emb-sw-pb"></i>${tx('own passage’s probability','正确段落的概率')}</span>`:'');}}
+
+/* the training part and the summary: the mission question's table rows, each one's cosine with its own passage (P1) */
+function rowsState(T,q,s){const b=built(T.lang), o=b.Ho[q], n=b.Hu[q].length, d=T.d; return {v:Array.from(T.rows[s].slice(o,o+n)),own:dot(T.H[s],q*d,T.P[s],q*d,d),rk:T.rank[s][q]};}
+function drawRows(r){
+  const T=r.T, q=S.q, b=built(T.lang), names=[...b.vocab.keys()], ids=b.Hu[q], n=ids.length, pan=$('#emb-pan-rows',app), hit=new Set();
+  let st=rowsState(T,q,r.t);
+  if(anim&&anim.slow&&anim.k<=SLOW_N){const k=anim.k, a=rowsState(T,q,k-1), c=rowsState(T,q,k), mx=anim.ph<MORPH0?0:Math.min(1,(anim.ph-MORPH0)/(MORPH1-MORPH0));
+    st={v:a.v.map((x,z)=>x+(c.v[z]-x)*mx),own:a.own+(c.own-a.own)*mx,rk:anim.ph<MORPH0?a.rk:c.rk};
+    const bt=T.batch[k-1], mark=t=>{if(ids.includes(t)) hit.add(t);}; bt.qs.forEach(qq=>b.Ti[qq].forEach(mark)); bt.ps.forEach(pp=>b.Pi[pp].forEach(mark));}   // the rows this step's loss reaches
+  else if(anim&&anim.frozen) st=rowsState(T,q,anim.frozen.s);
+  pan.classList.toggle('emb-frozen',!!(anim&&anim.frozen));
+  const ttl=`${quote(qText(q))}${tx(' in the embedding table: ','在 embedding 表里的 ')}${DEF(tx(`${n} rows`,`${n} 行`),D_ROWS(n))}`, te=$('#emb-r-title',app); if(te._h!==ttl){te.innerHTML=ttl; te._h=ttl;}
+  $('#emb-r-sub',app).textContent=tx(`Each row’s cosine with the right passage, ${quote(pTitle(q))}`,`每行和正确段落${quote(pTitle(q))}的余弦`)+(isStep('train')?tx('; ◆: this step’s batch holds that token','；带 ◆ 的：这一步的 batch 里有这个字对'):'');
+  const bar=v=>{const c=Math.max(-1,Math.min(1,v)); return `<i class="v${c<0?' neg':''}" style="left:${(50+Math.min(0,c)*50).toFixed(2)}%;width:${(Math.abs(c)*50).toFixed(2)}%"></i>`;};
+  $('#emb-rows',app).innerHTML=ids.map((id,z)=>`<li class="${hit.has(id)?'hit':''}"><span class="emb-rm" aria-hidden="true">◆</span><span class="emb-rt">${esc(names[id])}</span><span class="emb-rb"><i class="z"></i>${bar(st.v[z])}</span><span class="emb-rv mono">${fx(st.v[z],2)}</span></li>`).join('');
+  const res=$('#emb-r-res',app); res.className='small emb-rres '+(st.rk===0?'ok':'bad');
+  res.textContent=tx(`Averaged, these ${n} rows are the question’s vector: its cosine with the right passage is ${fx(st.own,2)}, rank ${st.rk+1} of 24.`,`这 ${n} 行取平均，就是问题的向量：它和正确段落的余弦是 ${fx(st.own,2)}，排第 ${st.rk+1}（共 24 段）。`);}
+
+/* part 7: the two sentences' tokens (in both, in one, skipped) and their average vectors (P16) */
+function drawTrap(){
+  const host=$('#emb-trap',app), x=trap&&TRAPS.find(z=>z.k===trap);
+  /* the pieces are tokens, defined as on the encoder step's card: character pairs in Chinese, a code such as E-104 whole (N8) */
+  const tt=tx(`Two sentences: their ${DEF('tokens',D_TOK())} and their average vectors`,`两句话切出的 ${DEF('token',D_TOK())} 和它们的平均向量`), te=$('#emb-t-title',app); if(te._h!==tt){te.innerHTML=tt; te._h=tt;}
+  if(!x){host.innerHTML=`<p class="small muted">${tx('Pick a pair of sentences in the card: this picture then shows the tokens of both, their average vectors and their similarity.','在卡片里选一对句子，这里会画出两句话切出的 token、它们的平均向量和相似度。')}</p>`; return;}
+  const lg=LG(), T=run(lg,8,0.05,16), b=built(lg), d=T.d, sa=x.a[li()], sb=x.b[li()], ta=tokens(sa,lg), tb=tokens(sb,lg);
+  const vec=s=>{const out=new Float64Array(d), ids=b.known(s); encode(T.E,d,ids,out,0); return {v:out,n:ids.length};};
+  const va=vec(sa), vb=vec(sb), c=dot(va.v,0,vb.v,0,d), mx=Math.max(...Array.from(va.v).map(Math.abs),...Array.from(vb.v).map(Math.abs))||1;
+  /* a token is matched in lower case; its chip shows it as the sentence writes it (E-104, not e-104) */
+  const asIn=(s,t)=>{const i=String(s).toLowerCase().indexOf(t); return i>=0?String(s).slice(i,i+t.length):t;};
+  const chips=(tk,other,s)=>tk.map(t=>`<span class="emb-chip ${!b.vocab.has(t)?'skip':(other.includes(t)?'both':'only')}">${esc(asIn(s,t))}</span>`).join('');
+  const bars=(v,name)=>{const w=13, W=d*w, H=40; let h=`<line class="emb-vz" x1="0" x2="${W}" y1="${H/2}" y2="${H/2}"></line>`;
+    for(let k=0;k<d;k++){const hh=v[k]/mx*(H/2-2); h+=`<rect class="emb-vb" x="${k*w+2}" y="${(hh>0?H/2-hh:H/2).toFixed(1)}" width="${w-4}" height="${Math.max(0.5,Math.abs(hh)).toFixed(1)}"></rect>`;}
+    return `<svg class="emb-vec" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(tx(`The ${d} numbers of the vector of ${name}`,`${name}向量的 ${d} 个数值`))}">${h}</svg>`;};
+  const one=(lab,s,tk,other,v)=>`<div class="emb-ts"><div class="emb-lab">${lab}${tx(': ','：')}${quote(s)}</div><div class="emb-chips">${chips(tk,other,s)}</div><div class="emb-vrow">${bars(v.v,lab)}<span class="small muted">${tx(`its vector: the average of ${v.n} rows`,`它的向量：${v.n} 行的平均`)}</span></div></div>`;
+  host.innerHTML=one(tx('First sentence','第一句'),sa,ta,tb,va)+one(tx('Second sentence','第二句'),sb,tb,ta,vb)+
+    `<p class="emb-tres"><b>${tx(`Similarity (cosine) ${f(c,2)}`,`相似度（余弦）${f(c,2)}`)}</b></p>`+
+    `<div class="legend-row emb-leg"><span class="lg"><span class="emb-chip both">token</span>${tx('in both sentences','两句都有')}</span><span class="lg"><span class="emb-chip only">token</span>${tx('in this sentence only','只在这一句')}</span><span class="lg"><span class="emb-chip skip">token</span>${tx('not in the training data, skipped','训练数据里没有，跳过')}</span><span class="lg">${tx('token: a word; a code such as E-104 counts as one','token：中文是相邻两个字（字对），E-104 这类代码整个算一个')}</span></div>`;}
+
 const VIEWS=[['r1',{en:'Recall',zh:'召回率'}],['loss',{en:'Loss',zh:'loss'}]];
+const XMODES=[['steps',{en:'By steps',zh:'按步数'}],['pairs',{en:'By pairs used',zh:'按配对数'}]];
+const PAIR_MAX=800, isStep=id=>mode==='guided'&&STEPS[step].id===id;
 function ghosts(){
-  if(mode==='guided'&&STEPS[step].id==='batch') return [...triedB].filter(b=>b!==S.B).map(b=>({T:run(LG(),b,S.tau,S.d),lab:`B = ${b}`}));
-  if(mode==='guided'&&STEPS[step].id==='temp') return [...triedT].filter(x=>x!==S.tau).map(x=>({T:run(LG(),S.B,x,S.d),lab:`τ = ${x}`}));
+  const lg=LG();
+  if(isStep('batch')) return [...triedB].filter(b=>b!==S.B).map(b=>({T:run(lg,b,S.tau,S.d),lab:`B = ${b}`}));
+  if(isStep('temp')) return [...triedT].filter(x=>x!==S.tau).map(x=>({T:run(lg,S.B,x,S.d),lab:`τ = ${x}`}));
+  if(isStep('remember')){const T32=run(lg,S.B,S.tau,32); return [{T:T32,lab:tx(`32 dims ${pc(T32.r1[MAXS])}`,`32 维 ${pc(T32.r1[MAXS])}`)}];}
   return [];}
-function drawChart(r){
-  const T=r.T, t=r.t, W=440, H=178, X0=40, X1=W-64, Y0=12, Y1=H-30, gs=ghosts(), loss=view==='loss';
-  const ser=TT=>loss?TT.loss:TT.r1;
-  const LO=-3, HI=2, ymax=1;   // the loss view is on a log scale from 0.001 to 100
-  const X=s=>X0+(X1-X0)*s/MAXS, Y=v=>loss?Y1-(Y1-Y0)*(Math.max(LO,Math.min(HI,Math.log10(Math.max(v,1e-12))))-LO)/(HI-LO):Y1-(Y1-Y0)*Math.min(1,v/ymax);
-  let h='';
-  const yt=loss?[0.001,0.01,0.1,1,10,100]:[0,0.25,0.5,0.75,1];
-  yt.forEach(v=>{h+=`<line class="emb-grid" x1="${X0}" x2="${X1}" y1="${Y(v)}" y2="${Y(v)}"></line><text class="emb-ax" x="${X0-5}" y="${Y(v)+3}" text-anchor="end">${loss?String(v):pc(v)}</text>`;});
-  if(loss) h+=`<text class="emb-ax" x="${X0+4}" y="${Y0+2}">${tx('log scale','对数刻度')}</text>`;
-  [0,50,100,150,200].forEach(s=>{h+=`<text class="emb-ax" x="${X(s)}" y="${Y1+13}" text-anchor="middle">${s}</text>`;});
-  h+=`<text class="emb-ax" x="${(X0+X1)/2}" y="${H-3}" text-anchor="middle">${tx('training steps','训练步数')}</text>`;
-  if(!loss) h+=`<line class="emb-chance" x1="${X0}" x2="${X1}" y1="${Y(1/NP)}" y2="${Y(1/NP)}"></line>`;
-  const path=(arr,upto)=>arr.slice(0,upto+1).map((v,s)=>`${s?'L':'M'}${X(s).toFixed(1)},${Y(v).toFixed(1)}`).join('');
-  gs.forEach(g=>{const a=ser(g.T); h+=`<path class="emb-ghost" d="${path(a,MAXS)}"></path><text class="emb-gl" x="${W-2}" y="${Y(a[MAXS])+3}" text-anchor="end">${esc(g.lab)}</text>`;});
-  if(!loss) h+=`<path class="emb-r5" d="${path(T.r5,t)}"></path>`;
-  h+=`<path class="emb-line" d="${path(ser(T),t)}"></path>`;
-  h+=`<line class="emb-head-l" x1="${X(t)}" x2="${X(t)}" y1="${Y0}" y2="${Y1}"></line><circle class="emb-dot" cx="${X(t)}" cy="${Y(ser(T)[t])}" r="3.5"></circle>`;
-  const lab=loss?fmtLoss(T.loss[t]):pc(T.r1[t]), rt=t<MAXS*0.7; h+=`<text class="emb-cl" x="${rt?X(t)+6:X(t)-6}" y="${Math.max(Y0+10,Y(ser(T)[t])-6)}"${rt?'':' text-anchor="end"'}>${lab}</text>`;
-  const svg=$('#emb-chart',app); svg.innerHTML=h;
-  svg.setAttribute('aria-label',loss?tx(`Loss of the batch drawn at each step, up to step ${t}.`,`到第 ${t} 步为止，每一步抽到的 batch 的 loss。`):tx(`Recall@1 on the held-out questions up to step ${t}.`,`到第 ${t} 步为止，新问题的 recall@1。`));
-  $('#emb-c-title',app).textContent=loss?tx('How does the loss of each step’s batch change as training runs?','训练时，每一步那个 batch 的 loss 怎么变？'):tx('How many held-out questions find their own passage first as training runs?','训练时，有多少新问题第一个就找到自己的段落？');
-  const vw=$('#emb-c-view',app), vk=A.lang()+view; if(vw._k!==vk){vw._k=vk; vw.innerHTML=A.ui.seg({id:'emb-view',key:'view',label:tx('Show','显示'),options:VIEWS.map(([k,n])=>[k,L(n)]),value:view});}
-  const cur=`B = ${S.B}, τ = ${S.tau}, d = ${S.d}`;
-  $('#emb-c-leg',app).innerHTML=(loss?`<span class="lg"><i class="sw emb-sw-line"></i>${tx(`loss (${cur})`,`loss（${cur}）`)}</span>`:`<span class="lg"><i class="sw emb-sw-line"></i>${tx(`recall@1 (${cur})`,`recall@1（${cur}）`)}</span><span class="lg"><i class="sw emb-sw-r5"></i>recall@5</span><span class="lg" data-tipx="${esc(tx('Picking one of the 24 passages at random finds the right one 1 time in 24: 4%.','24 段里随便挑一段，24 次里对 1 次：4%。'))}"><i class="sw emb-sw-ch"></i>${tx('random pick (4%)','随便挑（4%）')}</span>`)+
-    (gs.length?`<span class="lg"><i class="sw emb-sw-gh"></i>${tx('other settings you tried (named at the end of each line)','你试过的其他设置（名字写在线的末端）')}</span>`:'')+
-    `<span class="lg"><i class="sw emb-sw-head"></i>${tx('current step','当前步')}</span>`;}
+const lineName=()=>isStep('batch')?`B = ${S.B} `:isStep('temp')?`τ = ${S.tau} `:isStep('remember')?tx(`${S.d} dims `,`${S.d} 维 `):'';
+/* end labels moved apart so that none overlaps another (P12); a short line joins a moved label to the end of its line */
+function spread(items,lo,hi,gap){items.sort((a,b)=>a.y-b.y); items.forEach((it,i)=>{it.ly=Math.max(it.y,i?items[i-1].ly+gap:lo);});
+  const n=items.length; if(n&&items[n-1].ly>hi){items[n-1].ly=hi; for(let i=n-2;i>=0;i--) items[i].ly=Math.min(items[i].ly,items[i+1].ly-gap);} return items;}
 const fmtLoss=v=>v>=0.01?f(v,2):(v>=0.001?f(v,3):tx('under 0.001','不到 0.001'));
-function niceMax(v){if(v<=0) return 1; const e=Math.pow(10,Math.floor(Math.log10(v))), m=v/e; return (m<=1?1:m<=2?2:m<=5?5:10)*e;}
+function drawChart(r){
+  const T=r.T, t=r.t, svg=$('#emb-chart',app), lg=LG(), loss=view==='loss', pm=isStep('batch')&&xmode==='pairs'&&!loss;
+  /* drawn at its own pixel size, so its text stays 11 px at every width (P21) */
+  const W=Math.max(260,Math.floor(svg.parentElement.clientWidth||440)), H=W<480?160:168, Y0=10, Y1=H-30, X0=44;
+  const ser=TT=>loss?TT.loss:TT.r1, LO=-3, HI=2, gs=pm?[]:ghosts(), cw=s=>[...s].reduce((a,ch)=>a+(/[一-鿿＀-￯]/.test(ch)?11.5:6.7),0);
+  const Y=v=>loss?Y1-(Y1-Y0)*(Math.max(LO,Math.min(HI,Math.log10(Math.max(v,1e-12))))-LO)/(HI-LO):Y1-(Y1-Y0)*Math.min(1,v);
+  /* the lines and their end labels first, so that the plot leaves room on the right for the longest label */
+  const lines=[], ends=[]; let wait=false;
+  if(pm){const Bs=[...new Set([...triedB,S.B])].sort((a,b)=>a-b), need=Bs.map(B=>[lg,B,S.tau,S.d,Math.min(MAXS,PAIR_MAX/B)]);
+    if(!need.every(j=>avgReady(...j))){warm(need); wait=true;}
+    else Bs.forEach(B=>{const m=Math.min(MAXS,PAIR_MAX/B), a=avgReady(lg,B,S.tau,S.d,m).slice(0,m+1), ln={a,xs:s=>s*B,inv:x=>x/B,me:B===S.B}; lines.push(ln); ends.push({xv:m*B,y:Y(a[m]),text:`B = ${B} ${pc(a[m])}`,me:B===S.B,line:ln});});}
+  else {gs.forEach(g=>{const a=ser(g.T), ln={a,xs:s=>s,inv:x=>x,ghost:true}; lines.push(ln); ends.push({xv:MAXS,y:Y(a[MAXS]),text:g.lab,line:ln});});
+    /* the current line's name and value; in the loss view the value is named, so “τ = 0.2: loss 0.05” does not read as two temperatures (N6) */
+    if(t>=endStep()&&t>0){const nm=lineName().trim(), v=loss?fmtLoss(T.loss[t]):pc(T.r1[t]); ends.push({xv:t,y:Y(ser(T)[t]),text:nm?(loss?tx(`${nm}: loss ${v}`,`${nm}：loss ${v}`):`${nm} ${v}`):v,me:true});}}
+  const XM=pm?PAIR_MAX:MAXS, rightW=Math.max(30,...ends.filter(e=>e.xv>=XM).map(e=>cw(e.text)))+14, X1=W-rightW, X=x=>X0+(X1-X0)*x/XM;
+  let h=''; const yt=loss?[0.001,0.01,0.1,1,10,100]:[0,0.25,0.5,0.75,1];
+  yt.forEach(v=>{h+=`<line class="emb-grid" x1="${X0}" x2="${X1}" y1="${Y(v)}" y2="${Y(v)}"></line><text class="emb-ax" x="${X0-5}" y="${Y(v)+3.5}" text-anchor="end">${loss?String(v):pc(v)}</text>`;});
+  if(loss) h+=`<text class="emb-ax" x="${X0+4}" y="${Y0+3}">${tx('log scale','对数刻度')}</text>`;
+  (pm?[0,200,400,600,800]:[0,50,100,150,200]).forEach(s=>{h+=`<text class="emb-ax" x="${X(s)}" y="${Y1+14}" text-anchor="middle">${A.fmt.int(s)}</text>`;});
+  h+=`<text class="emb-ax" x="${(X0+X1)/2}" y="${H-3}" text-anchor="middle">${pm?tx('pairs used (B × steps)','用掉的配对数（B × 步数）'):tx('training steps','训练步数')}</text>`;
+  if(!loss) h+=`<line class="emb-chance" x1="${X0}" x2="${X1}" y1="${Y(1/NP)}" y2="${Y(1/NP)}"></line>`;
+  const path=(arr,upto,xs)=>arr.slice(0,upto+1).map((v,s)=>`${s?'L':'M'}${X(xs(s)).toFixed(1)},${Y(v).toFixed(1)}`).join('');
+  lines.filter(l=>!l.me).forEach(l=>{h+=`<path class="emb-ghost" d="${path(l.a,l.a.length-1,l.xs)}"></path>`;});
+  if(pm){lines.filter(l=>l.me).forEach(l=>{h+=`<path class="emb-line" d="${path(l.a,l.a.length-1,l.xs)}"></path>`;});
+    if(wait) h+=`<text class="emb-ax" x="${(X0+X1)/2}" y="${(Y0+Y1)/2}" text-anchor="middle">${tx('Averaging 16 random starts …','正在算 16 个随机种子的平均……')}</text>`;}
+  else {if(!loss) h+=`<path class="emb-r5" d="${path(T.r5,t,s=>s)}"></path>`;
+    h+=`<path class="emb-line" d="${path(ser(T),t,s=>s)}"></path>`;
+    h+=`<line class="emb-head-l" x1="${X(t)}" x2="${X(t)}" y1="${Y0}" y2="${Y1}"></line><circle class="emb-dot" cx="${X(t)}" cy="${Y(ser(T)[t])}" r="3.5"></circle>`;
+    if(!(t>=endStep()&&t>0)){const lab=loss?fmtLoss(T.loss[t]):pc(T.r1[t]), rt=t<MAXS*0.7; h+=`<text class="emb-cl" x="${rt?X(t)+6:X(t)-6}" y="${Math.max(Y0+10,Y(ser(T)[t])-6)}"${rt?'':' text-anchor="end"'}>${lab}</text>`;}}
+  /* a dot marks where each line ends (the current line in the steps view already has its head dot). Labels at the right edge are centred
+     on their line's end and spread so none overlaps another; a moved label is joined to its line's end by a short elbow, across and then
+     down or up, so the joint does not read as the line dropping (N7) */
+  const dotAt=e=>e.me&&!pm?'':`<circle class="emb-gld${e.me?' me':''}" cx="${X(e.xv).toFixed(1)}" cy="${e.y.toFixed(1)}" r="2.3"></circle>`;
+  const right=spread(ends.filter(e=>e.xv>=XM),Y0,Y1-2,13), inner=ends.filter(e=>e.xv<XM);
+  right.forEach(e=>{const xe=X(e.xv), c=e.ly; h+=dotAt(e);
+    if(Math.abs(c-e.y)>1.5) h+=`<path class="emb-gll" d="M${(xe+3).toFixed(1)},${e.y.toFixed(1)}H${(xe+6).toFixed(1)}V${c.toFixed(1)}H${(xe+8).toFixed(1)}"></path>`;
+    h+=`<text class="${e.me?'emb-cl':'emb-gl'}" x="${(xe+10).toFixed(1)}" y="${(c+3.5).toFixed(1)}">${esc(e.text)}</text>`;});
+  /* a line that ends inside the plot (B = 2 by pairs used) is labelled next to its end, on the side away from the other lines, on a background */
+  inner.forEach(e=>{const xe=X(e.xv), x0=xe+5, w=cw(e.text), oy=[];
+    lines.filter(l=>l!==e.line).forEach(l=>[0,0.25,0.5,0.75,1].forEach(k=>{const s=Math.round(l.inv((x0+w*k-X0)/(X1-X0)*XM)); if(s>=0&&s<l.a.length) oy.push(Y(l.a[s]));}));
+    const top=oy.length?Math.min(...oy):e.y, bot=oy.length?Math.max(...oy):e.y;
+    const c=Math.max(Y0+7,Math.min(Y1-8,e.y>=bot-3||e.y>top+3?Math.max(e.y,bot)+12:Math.min(e.y,top)-12));
+    h+=dotAt(e)+`<rect class="emb-glb" x="${(x0-2).toFixed(1)}" y="${(c-7.5).toFixed(1)}" width="${(w+4).toFixed(1)}" height="15" rx="2"></rect>`+
+      `<text class="${e.me?'emb-cl':'emb-gl'}" x="${x0.toFixed(1)}" y="${(c+3.5).toFixed(1)}">${esc(e.text)}</text>`;});
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML=h;
+  svg.setAttribute('aria-label',pm?tx('Average recall@1 of the batch sizes you tried, by pairs used.','你试过的 batch 大小，按用掉的配对数画的平均 recall@1。'):loss?tx(`Loss of the batch drawn at each step, up to step ${t}.`,`到第 ${t} 步为止，每一步抽到的 batch 的 loss。`):tx(`Recall@1 on the held-out questions up to step ${t}.`,`到第 ${t} 步为止，新问题的 recall@1。`));
+  $('#emb-c-title',app).textContent=pm?tx('After the same number of pairs, which batch size finds more held-out questions?','用掉同样多的配对以后，哪个 batch 大小找对的新问题多？')
+    :loss?tx('How does the loss of each step’s batch change as training runs?','训练时，每一步那个 batch 的 loss 怎么变？'):tx('How many held-out questions find their own passage first as training runs?','训练时，有多少新问题第一个就找到自己的段落？');
+  const xs=isStep('batch')&&!loss, vw=$('#emb-c-view',app), vk=A.lang()+view+xmode+xs; if(vw._k!==vk){vw._k=vk; vw.innerHTML=A.ui.seg({id:'emb-view',key:'view',label:tx('Show','显示'),options:VIEWS.map(([k,n])=>[k,L(n)]),value:view})+
+    (xs?A.ui.seg({id:'emb-xmode',key:'xmode',label:tx('x-axis','横轴'),options:XMODES.map(([k,n])=>[k,L(n)]),value:xmode}):'');}
+  $('#emb-c-leg',app).innerHTML=pm?`<span class="lg"><i class="sw emb-sw-line"></i>${tx(`average recall@1 of 16 random starts, B = ${S.B}`,`16 个随机种子的平均 recall@1，B = ${S.B}`)}</span>`+(lines.length>1?`<span class="lg"><i class="sw emb-sw-gh"></i>${tx('the other batch sizes you tried','你试过的其他 batch 大小')}</span>`:'')+`<span class="lg" data-tipx="${esc(tx('Picking one of the 24 passages at random finds the right one 1 time in 24: 4%.','24 段里随便挑一段，24 次里对 1 次：4%。'))}"><i class="sw emb-sw-ch"></i>${tx('random pick (4%)','随便挑（4%）')}</span>`
+    :((loss?`<span class="lg"><i class="sw emb-sw-line"></i>loss</span>`:`<span class="lg"><i class="sw emb-sw-line"></i>recall@1</span><span class="lg"><i class="sw emb-sw-r5"></i>recall@5</span><span class="lg" data-tipx="${esc(tx('Picking one of the 24 passages at random finds the right one 1 time in 24: 4%.','24 段里随便挑一段，24 次里对 1 次：4%。'))}"><i class="sw emb-sw-ch"></i>${tx('random pick (4%)','随便挑（4%）')}</span>`)+
+    (gs.length?`<span class="lg"><i class="sw emb-sw-gh"></i>${isStep('remember')?tx('the same training with 32 dimensions','同样的训练，换成 32 维'):tx('other settings you tried (named at the end of each line)','你试过的其他设置（名字写在线的末端）')}</span>`:'')+
+    `<span class="lg"><i class="sw emb-sw-head"></i>${tx('current step','当前步')}</span>`);}
+/* the training step's slow steps show each batch before and after its update, so these two cards jump back at every new batch: their tooltips say so (N11) */
+const slowTip=k=>!(mode==='guided'&&STEPS[step].id==='train')?'':k==='loss'?tx(' In the slow steps each step first shows its batch’s loss before the update, then the lower loss after it; the next step takes a new batch, which starts high again.','慢放时，每一步先显示这个 batch 训练前的 loss，更新后降下来；下一步换一个 batch，又从高处开始。')
+  :tx(' In the slow steps each step first shows its batch’s probability before the update, then the higher one after it; the next step takes a new batch, which starts lower again.','慢放时，每一步先显示这个 batch 训练前的概率，更新后升上去；下一步换一个 batch，又从低处开始。');
+const lossTip=T=>{const l0=T.loss[0], lnB=Math.log(T.B);
+  return tx(`The in-batch-negatives loss of the batch in the table, averaged over its rows; giving every passage the same probability scores ln B. ${l0>lnB?`Before training the first batch scores ${f(l0,2)}, above ln ${T.B} ≈ ${f(lnB,2)}: dividing the random cosines by τ = ${T.tau} makes their gaps ${f(1/T.tau,0)} times larger, so the softmax gives most of a row to one passage, usually a wrong one.`:`Before training the first batch scores ${f(l0,2)}.`}${slowTip('loss')}`,
+            `表格里那个 batch 的 batch 内负例 loss，按行取平均；每段概率一样时是 ln B。${l0>lnB?`训练前第 1 个 batch 的 loss 是 ${f(l0,2)}，比 ln ${T.B} ≈ ${f(lnB,2)} 还高：随机的余弦除以 τ = ${T.tau}，差距放大 ${f(1/T.tau,0)} 倍，softmax 把一行的大部分概率给了某一段，多半是错的那段。`:`训练前第 1 个 batch 的 loss 是 ${f(l0,2)}。`}${slowTip('loss')}`);};
+/* the table's own probability and loss come from the batch the table shows, so they move with it (R7.11) */
+const tabPd=tb=>{const B=tb.bt.ps.length; let s=0; for(let i=0;i<B;i++) s+=tb.Pr[i*B+i]; return s/B;};
+const tabLoss=tb=>{const B=tb.bt.ps.length; let s=0; for(let i=0;i<B;i++) s-=Math.log(tb.Pr[i*B+i]); return s/B;};
 const MET=[
  {k:'r1',label:()=>tx('Recall@1, held-out','新问题 recall@1'),v:r=>pc(r.r1),sub:r=>tx(`24 questions; ${pc(r.T.r1[0])} untrained`,`24 个问题；训练前 ${pc(r.T.r1[0])}`),tip:()=>tx('The share of the 24 held-out questions whose own passage is the most similar of the 24 passages.','24 个新问题里，正确段落是 24 段中最相似那段的占多少。'),pts:true},
- {k:'r5',label:()=>tx('Recall@5, held-out','新问题 recall@5'),v:r=>pc(r.r5),sub:()=>tx('own passage in the top 5','正确段落在前 5 名'),tip:()=>tx('The share of the 24 held-out questions whose own passage is among their 5 most similar passages.','24 个新问题里，正确段落在相似度前 5 名的占多少。'),pts:true},
- {k:'pd',label:()=>tx('Own passage’s probability','正确段落的概率'),v:r=>pc(r.pd),sub:r=>tx(`one more batch, average of ${S.B} rows`,`再抽的 batch，${S.B} 行平均`),tip:()=>tx('Draw one more batch after the current step: the probability the softmax gives each question’s own passage, averaged over the rows.','当前这一步之后再抽一个 batch：softmax 给每个问题正确段落的概率，按行取平均。'),pts:true},
- {k:'loss',label:()=>tx('Loss, one more batch','再抽一个 batch 的 loss'),v:r=>f(r.loss,2),sub:()=>tx(`all passages equal: ln ${S.B} = ${f(Math.log(S.B),2)}`,`每段概率一样时：ln ${S.B} = ${f(Math.log(S.B),2)}`),tip:()=>tx('Draw one more batch after the current step: its in-batch-negatives loss, averaged over its questions. Giving every passage the same probability scores ln B.','当前这一步之后再抽一个 batch：它的 batch 内负例 loss，按问题取平均。给每段一样的概率时是 ln B。')}];
+ {k:'r5',label:()=>tx('Recall@5, held-out','新问题 recall@5'),v:r=>pc(r.r5),sub:()=>tx('own passage in the top 5','正确段落在前 5 名'),tip:r=>tx(`The share of the 24 held-out questions whose own passage is among their 5 most similar passages. Untrained it is already ${pc(r.T.r5[0])}, above the 21% of picking 5 at random: two texts that share words use the same rows of the embedding table.`,`24 个新问题里，正确段落在相似度前 5 名的占多少。训练前就有 ${pc(r.T.r5[0])}，比随便挑 5 段的 21% 高：两段文字有共同的字对，就会用到 embedding 表里相同的几行。`),pts:true},
+ {k:'pd',label:()=>tx('Training questions: own passage’s p','训练问题：正确段落的概率'),v:r=>pc(tabPd(r.tb)),sub:()=>tx(`the table’s ${S.B} rows, averaged`,`表格里 ${S.B} 行的平均`),tip:()=>tx('The table holds training questions: the probability the softmax gives each row’s own passage, averaged over the rows. Training questions reach about 100% fast; how the encoder does on questions it never saw is what recall@1 counts.','表格里是训练问题：softmax 给每行正确段落的概率，按行取平均。训练问题很快就到 100% 左右；没见过的新问题，看 recall@1。')+slowTip('pd'),pts:true},
+ {k:'loss',label:()=>tx('Loss of the table’s batch','训练 batch 的 loss'),v:r=>f(tabLoss(r.tb),2),sub:()=>tx(`all passages equal: ln ${S.B} = ${f(Math.log(S.B),2)}`,`每段概率一样时：ln ${S.B} = ${f(Math.log(S.B),2)}`),tip:r=>lossTip(r.T)}];
 let metKey=null;
 function drawMetrics(r){
   const host=$('#emb-metrics',app), rk=runKey(S), cfgCh=metKey!=null&&metKey!==rk; metKey=rk; const mets=showP()?MET:MET.slice(0,2), hk=A.lang()+mets.length;
-  if(!host.children.length||host._lang!==hk){host.innerHTML=mets.map(m=>`<div class="metric" data-k="${m.k}" data-tipx="${esc(m.tip())}" tabindex="0"><div class="k"></div><div class="v mono"></div><div class="sub"></div><div class="d mono"></div></div>`).join(''); host._lang=hk;}
+  if(!host.children.length||host._lang!==hk){host.innerHTML=mets.map(m=>`<div class="metric" data-k="${m.k}" data-tipx="" tabindex="0"><div class="k"></div><div class="v mono"></div><div class="sub"></div><div class="d mono"></div></div>`).join(''); host._lang=hk; host.style.setProperty('--emb-mn',String(mets.length));}
   mets.forEach(m=>{const el=host.querySelector(`[data-k="${m.k}"]`), v=m.v(r), d=el.querySelector('.d');
-    el.querySelector('.k').textContent=m.label(); el.querySelector('.v').textContent=v; el.querySelector('.sub').textContent=m.sub(r); el.dataset.tipx=m.tip();
+    el.querySelector('.k').textContent=m.label(); el.querySelector('.v').textContent=v; el.querySelector('.sub').textContent=m.sub(r); el.dataset.tipx=m.tip(r);
     let dt=''; if(userAct&&cfgCh&&!anim&&shownPrev[m.k]!=null&&shownPrev[m.k]!==v&&m.pts) dt=A.fmt.delta(parseFloat(shownPrev[m.k])/100,parseFloat(v)/100,{pts:true,dp:0});
     clearTimeout(d._t); if(dt){d.textContent=dt; d.classList.add('on'); d._t=setTimeout(()=>{d.classList.remove('on'); d.textContent='';},2800);} else {d.classList.remove('on'); d.textContent='';}
     shownPrev[m.k]=v;});}
+/* the stage title: one sentence whose words stay put while a run plays, only the step count changing (P10, R7.9) */
 function drawHead(r){
-  const st=$('#emb-st-title',app), el=$('#emb-status',app), c=ctx();
-  const pair=c.panels[0]==='pair'; el.hidden=pair;
-  st.textContent=pair?tx('Keyword search: the help center of Lumo Home (example)','关键词搜索：小鹿家居的帮助中心（示例）'):(anim?tx(`Training the ${S.d}-dimensional small encoder: step ${r.t} of ${mode==='challenge'?chN:MAXS} (${S.B} pairs per batch, τ = ${S.tau})`,`正在训练 ${S.d} 维的小编码器：第 ${r.t} 步，共 ${mode==='challenge'?chN:MAXS} 步（每个 batch ${S.B} 对，τ = ${S.tau}）`):
-    (r.t===0?tx(`The ${S.d}-dimensional small encoder before training`,`训练前的 ${S.d} 维小编码器`):tx(`The ${S.d}-dimensional small encoder after ${stepsTxt(r.t)} (${S.B} pairs per batch, τ = ${S.tau})`,`训练 ${r.t} 步后的 ${S.d} 维小编码器（每个 batch ${S.B} 对，τ = ${S.tau}）`)));
+  const st=$('#emb-st-title',app), el=$('#emb-status',app), c=ctx(), pair=c.panels[0]==='pair', trp=c.panels[0]==='trap', end=endStep();
+  el.hidden=pair;
+  const cfg=tx(`batch\u00a0${S.B}, τ\u00a0=\u00a0${S.tau}, ${S.d}\u00a0dimensions`,`batch\u00a0${S.B}，τ\u00a0=\u00a0${S.tau}，${S.d}\u00a0维`);   // no break inside a setting
+  // while a run plays, a phone shows only the step count (the settings sit in a span its CSS hides), so the title keeps its two lines (P10, R7.9)
+  // the encoder and predict steps come before batch training and τ are explained: their head names only what they show (N1)
+  const early=mode==='guided'&&['encoder','predict'].includes(STEPS[step].id);
+  const h=pair?tx('Keyword search: the help center of Lumo Home (example)','关键词搜索：小鹿家居的帮助中心（示例）')
+    :trp?tx('The trained small encoder: batch 8, τ = 0.05, 200 steps','训练好的小编码器：batch 8，τ = 0.05，200 步')
+    :early?tx(`The untrained small encoder: ${S.d} dimensions`,`训练前的小编码器：${S.d} 维`)
+    :anim?tx(`Training, ${S.steps} / ${end} steps`,`训练中 ${S.steps} / ${end} 步`)+`<span class="emb-cfg">${tx(': ','：')}${cfg}</span>`
+    :(r.t===0?tx(`Before training: ${cfg}`,`训练前：${cfg}`):tx(`After ${stepsTxt(r.t)}: ${cfg}`,`训练 ${r.t} 步后：${cfg}`));
+  if(st._h!==h){st.innerHTML=h; st._h=h;}
   if(mode==='challenge'){const done=chDone(), p=done?chPoint(LG(),S.B,chN):null; el.className='status'+(done?(p.ok?' ok':' bad'):''); el.textContent=done?(p.ok?tx(`Average reaches ${G55()}`,`平均达到 ${G55()}`):tx(`Average under ${G55()}`,`平均不到 ${G55()}`)):(chSubmitted?tx(`Training: step ${S.steps}`,`训练中：第 ${S.steps} 步`):tx('Not trained yet','还没训练')); el.dataset.tipx=tx(`Whether recall@1 on the 24 held-out questions, averaged over 16 random starts, reaches the ${G55()} goal. It shows once you submit and the training has run.`,`24 个新问题的 recall@1，按 16 个随机种子取平均，是否达到 ${G55()}。提交并训练完以后才显示。`); return;}
   el.className='status'; el.textContent=tx(`Recall@1 ${pc(r.r1)}`,`recall@1 ${pc(r.r1)}`); el.dataset.tipx=tx('Recall@1 on the 24 held-out questions now.','现在 24 个新问题的 recall@1。');}
 function drawTransport(){
@@ -606,31 +800,47 @@ function drawTransport(){
       (mode==='challenge'?'':A.ui.range({id:'emb-tr-steps',key:'steps',label:tx('Step','步数'),min:0,max:MAXS,value:S.steps,out:String(S.steps),inline:true}));
     A.ui.initRanges(tEl);}
   const i=$('#emb-tr-steps-in',app); if(i&&+i.value!==S.steps){i.value=S.steps; A.ui.setRange(i);} const o=i&&i.closest('.inline-ctl,.ctl'), out=o&&o.querySelector('output'); if(out) out.textContent=String(S.steps);}
-function panelsShow(){const c=ctx(); ['pair','map','heat','chart'].forEach(p=>{const el=$('#emb-pan-'+p,app); if(el) el.hidden=!c.panels.includes(p);}); const mt=$('#emb-metrics',app); if(mt) mt.hidden=!c.panels.includes('metrics');
-  const row=$('#emb-row',app), two=c.panels.includes('map')&&c.panels.includes('heat'); row.classList.toggle('two',two); row.hidden=!c.panels.includes('map')&&!c.panels.includes('heat');
-  const ch=$('#emb-pan-chart',app), chFirst=c.panels[0]==='chart';   // the main picture of the part comes first (R7.12)
-  if(chFirst&&ch.nextElementSibling!==row) row.parentNode.insertBefore(ch,row); else if(!chFirst&&row.nextElementSibling!==ch) row.parentNode.insertBefore(ch,row.nextSibling);}
-/* Show the math: four short blocks, each a lead line, the named formula, the numbers of the current state, the result */
-function mathHTML(r){
-  const T=r.T, t=r.t, d=T.d, b=built(LG()), q=S.q, n=b.Hi[q].length, B=S.B, Sx=T.S[t], Pr=T.Pr[t], tau=S.tau;
-  const ownS=dot(T.H[t],q*d,T.P[t],q*d,d), row=[]; for(let j=0;j<B;j++) row.push(Sx[j]);
-  const blk=(lead,tex,sub)=>`<div class="emb-mb"><p class="emb-mb-lead">${lead}</p>${M(tex)}${sub?M(sub):''}</div>`;
+function panelsShow(){const c=ctx(), vis=c.panels.filter(p=>p!=='metrics'); $('#emb-body',app).classList.toggle('l3',!!c.l3);
+  [...PANS,'metrics'].forEach(p=>{const el=p==='metrics'?$('#emb-metrics',app):$('#emb-pan-'+p,app), i=c.panels.indexOf(p); el.hidden=i<0; el.style.order=String(i<0?99:i); el.classList.toggle('half',c.pair.includes(p));});
+  PANS.forEach(p=>$('#emb-pan-'+p,app).classList.toggle('first',p===vis[0]||(c.pair.includes(p)&&c.pair.includes(vis[0]))));}
+/* Show the math (P5): the blocks a part has met, each a lead line, the named formula, the numbers of the current state */
+const blk=(lead,tex,sub)=>`<div class="emb-mb"><p class="emb-mb-lead">${lead}</p>${M(tex)}${sub?M(sub):''}</div>`;
+function mKw(){const lg=LG(), k=kwRank(lg,0), j1=DATA.map((x,j)=>j).filter(j=>j!==0&&k.sc[j]>0).sort((a,b)=>k.sc[b]-k.sc[a]||a-b)[0], sc=tx('score','分数'), qq=tx('question','问题');
+  return blk(tx('1. Keyword search scores each passage by the words it shares with the question and ranks the highest first:','1. 关键词搜索给每段打分：问题和这段共同的字对有几个，分数越高排得越前。'),`\\text{${sc}}(q, p) = \\text{${tx('words in both','两边都有的字对数')}}`)+
+    blk(tx(`2. The question against the passage that answers it, and against ${quote(pTitle(j1))}:`,`2. 问题对能回答它的那段，和对${quote(pTitle(j1))}：`),`\\text{${sc}}(\\text{${qq}}, \\text{${esc(pTitle(0))}}) = ${k.sc[0]}`,`\\text{${sc}}(\\text{${qq}}, \\text{${esc(pTitle(j1))}}) = ${k.sc[j1]}`);}
+/* whose vector the blocks use: the question picked on the encoder step and in the free modes, the mission's question from the predict step on (N10) */
+const qWho=()=>mode==='guided'&&STEPS[step].id!=='encoder'?tx(`the mission’s question ${quote(qText(S.q))}`,`任务里那个问题${quote(qText(S.q))}`):tx(`your question ${quote(qText(S.q))}`,`你的问题${quote(qText(S.q))}`);
+function mVec(r,n0){const T=r.T, d=T.d, n=built(LG()).Hi[S.q].length;
+  return blk(tx(`${n0}. The vector of ${qWho()}: of its tokens, ${n} appear in the training data and so have a row in the embedding table; their average, scaled to length 1 (${d} numbers).`,`${n0}. ${qWho()}的向量：它切出的字对里，有 ${n} 个在训练数据里出现过、在 embedding 表里有自己的一行；取这 ${n} 行的平均，再缩放成长度 1（${d} 个数值）。`),ENC_TEX(tx('text vector','文字的向量')),AVG_TEX);}
+function mCos(r,n0){const T=r.T, t=r.t, d=T.d, q=S.q, ownS=dot(T.H[t],q*d,T.P[t],q*d,d);
+  return blk(tx(`${n0}. ${t?`After ${stepsTxt(t)}, its`:'Before training, its'} similarity with its own passage: the dot product of two unit vectors.`,`${n0}. ${t?`训练 ${t} 步后`:'训练前'}它和自己那段的相似度：两个单位向量的点积。`),COS_TEX(tx('similarity','相似度')),`\\cos(\\text{${tx('question','问题')}}, \\text{${tx('passage','段落')}}) = ${fx(ownS,3)}`);}
+function mCell(r,n0){const tb=r.tb, B=r.T.B, s=tb.S[0];
+  return blk(tx(`${n0}. The table’s first cell: row 1, the training question ${quote(trainQ(tb.bt.qs[0]))}, against column 1, its passage ${quote(pTitle(tb.bt.ps[0]))}.`,`${n0}. 表格左上角那一格：第 1 行的训练问题${quote(trainQ(tb.bt.qs[0]))}和第 1 列，它的段落${quote(pTitle(tb.bt.ps[0]))}。`),`s_{11} = \\cos(q_1, p_1) = ${fx(s,3)}`);}
+function mLoss(r,n0){const tb=r.tb, B=r.T.B, tau=r.T.tau, row=[]; for(let j=0;j<B;j++) row.push(tb.S[j]);
   /* row 1 rewritten as log(1 + Σ_{j≠1} e^{(s_1j − s_11)/τ}): the two biggest terms written out, the rest summed as r, so the line can be
      recomputed by hand and fits a phone (kit_math_scroll) */
   const ex=row.map((s,j)=>({j,s,e:Math.exp((s-row[0])/tau)})).slice(1).sort((a,b)=>b.e-a.e), top=ex.slice(0,2), rest=ex.slice(2).reduce((a,c)=>a+c.e,0), l1=Math.log1p(ex.reduce((a,c)=>a+c.e,0));
   const terms=top.map(x=>`e^{(${fx(x.s,3)}-${fx(row[0],3)})/${tau}}`).join(' + ')+(ex.length>2?' + r':''), terms2=top.map(x=>`e^{${fx((x.s-row[0])/tau,2)}}`).join(' + ')+(ex.length>2?` + ${sig2(rest)}`:'');
-  const k1=Math.round(T.r1[t]*NP);
-  return blk(tx(`1. The vector of your question: the average of the rows of its ${n} tokens that appear in the training data (and so have a row in the table), scaled to length 1 (${d} numbers).`,`1. 你的问题的向量：它有 ${n} 个 token 在训练数据里出现过、在表里有自己的一行，取这 ${n} 行的平均，再缩放成长度 1（${d} 个数值）。`),ENC_TEX(tx('text vector','文字的向量')),AVG_TEX)+
-   blk(tx(`2. Its similarity with its own passage at step ${t}: the dot product of two unit vectors.`,`2. 第 ${t} 步时它和自己那段的相似度：两个单位向量的点积。`),COS_TEX(tx('similarity','相似度')),`\\cos(\\text{${tx('question','问题')}}, \\text{${tx('passage','段落')}}) = ${fx(ownS,3)}`)+
-   `<div class="emb-mb"><p class="emb-mb-lead">${tx(`3. The loss of row 1 of one more batch drawn now (B = ${B}, τ = ${tau}). The numerator is ${MI('e^{s_{11}/\\tau}')} of its own passage; the denominator adds up all ${B} of the row:`,`3. 现在再抽一个 batch，它第 1 行的 loss（B = ${B}，τ = ${tau}）。分子是它自己那段的 ${MI('e^{s_{11}/\\tau}')}，分母把这一行 ${B} 段的都加起来：`)}</p>${M(LOSS_TEX('loss'))}<p class="emb-mb-lead">${tx(`Divided through by the numerator, only the gaps to the own passage are left${ex.length>2?`; the two biggest terms are written out, r is the other ${ex.length-2}`:''}:`,`分子分母同除以分子，只剩下和自己那段的差${ex.length>2?`；写出最大的两项，r 是其余 ${ex.length-2} 项的和`:''}：`)}</p>${M(`\\ell_1 = \\log\\Big(1 + \\sum_{j \\ne 1} e^{(s_{1j}-s_{11})/\\tau}\\Big)`)}${M(`= \\log(1 + ${terms})`)}${M(`= \\log(1 + ${terms2}) = ${sig2(l1)}`)}</div>`+
-   blk(tx(`4. Recall@1: held-out questions whose own passage is the most similar, out of 24.`,`4. recall@1：自己的段落是最相似那段的新问题，除以 24。`),`\\text{recall@1} = \\frac{${k1}}{24} = ${f(T.r1[t]*100,1)}\\,\\text{%}`);}
+  return `<div class="emb-mb"><p class="emb-mb-lead">${tx(`${n0}. The loss of row 1 of the batch in the table, the training question ${quote(trainQ(tb.bt.qs[0]))} (B = ${B}, τ = ${tau}). The numerator is ${MI('e^{s_{11}/\\tau}')} of its own passage; the denominator adds up all ${B} of the row:`,`${n0}. 表格里这个 batch 第 1 行的 loss：训练问题${quote(trainQ(tb.bt.qs[0]))}（B = ${B}，τ = ${tau}）。分子是它自己那段的 ${MI('e^{s_{11}/\\tau}')}，分母把这一行 ${B} 段的都加起来：`)}</p>${M(LOSS_TEX('loss'))}<p class="emb-mb-lead">${tx(`Divided through by the numerator, only the gaps to the own passage are left${ex.length>2?`; the two biggest terms are written out, r is the other ${ex.length-2}`:''}:`,`分子分母同除以分子，只剩下和自己那段的差${ex.length>2?`；写出最大的两项，r 是其余 ${ex.length-2} 项的和`:''}：`)}</p>${M(`\\ell_1 = \\log\\Big(1 + \\sum_{j \\ne 1} e^{(s_{1j}-s_{11})/\\tau}\\Big)`)}${M(`= \\log(1 + ${terms})`)}${M(`= \\log(1 + ${terms2}) = ${sig2(l1)}`)}</div>`;}
+function mRec(r,n0){const T=r.T, t=r.t, k1=Math.round(T.r1[t]*NP);
+  return blk(tx(`${n0}. Recall@1: held-out questions whose own passage is the most similar, out of 24.`,`${n0}. recall@1：自己的段落是最相似那段的新问题，除以 24。`),`\\text{recall@1} = \\frac{${k1}}{24} = ${f(T.r1[t]*100,1)}\\,\\text{%}`);}
+function mTrap(){const x=TRAPS.find(z=>z.k===trap), lg=LG(), T=run(lg,8,0.05,16), b=built(lg), sa=x.a[li()], sb=x.b[li()], na=b.known(sa).length, nb=b.known(sb).length, c=cosOf(T,sa,sb);
+  return blk(tx(`1. Each sentence’s vector: the average of the rows of its tokens that appear in the training data (${na} and ${nb} rows), scaled to length 1.`,`1. 每句话的向量：它切出的 token 里，在训练数据里出现过的各有一行（两句分别是 ${na} 行和 ${nb} 行），取平均，再缩放成长度 1。`),ENC_TEX(tx('text vector','文字的向量')),AVG_TEX)+
+    blk(tx('2. Their similarity: the dot product of the two unit vectors.','2. 两句的相似度：两个单位向量的点积。'),COS_TEX(tx('similarity','相似度')),`\\cos(\\text{${tx('first','第一句')}}, \\text{${tx('second','第二句')}}) = ${fx(c,3)}`);}
+function mathHTML(r){
+  const id=mode==='guided'?STEPS[step].id:'';
+  if(id==='mission') return mKw();
+  if(id==='limits') return trap?mTrap():mVec(r,1)+mCos(r,2);
+  if(id==='encoder') return mVec(r,1)+mCos(r,2)+mRec(r,3);
+  if(id==='predict') return mVec(r,1)+mCell(r,2);
+  return mVec(r,1)+mCos(r,2)+mLoss(r,3)+mRec(r,4);}
 /* two significant digits (TeX): written out down to 0.001, below that as a power of ten so the line still fits a phone */
 function sig2(v){if(!(v>0)) return '0'; if(v>=100) return f(v,0); if(v>=0.1) return f(v,2); const e=Math.floor(Math.log10(v));
   if(e>=-3) return v.toFixed(1-e); let m=+(v/Math.pow(10,e)).toFixed(1), k=e; if(m>=10){m=1; k++;} return `${m.toFixed(1)} \\times 10^{${k}}`;}
 
 function syncControls(){
   $$('.seg-ctl[data-key]',app).forEach(gEl=>{const k=gEl.dataset.key;
-    if(k==='view') A.ui.setPressed(gEl,view); else if(k==='speed') A.ui.setPressed(gEl,runSpeed); else if(k==='chN') A.ui.setPressed(gEl,String(chN)); else if(S[k]!=null) A.ui.setPressed(gEl,String(S[k]));});
+    if(k==='view') A.ui.setPressed(gEl,view); else if(k==='xmode') A.ui.setPressed(gEl,xmode); else if(k==='speed') A.ui.setPressed(gEl,runSpeed); else if(k==='chN') A.ui.setPressed(gEl,String(chN)); else if(S[k]!=null) A.ui.setPressed(gEl,String(S[k]));});
   $$('#emb-controls input[data-key="steps"]',app).forEach(i=>{if(+i.value!==S.steps) i.value=S.steps; A.ui.setRange(i); const o=i.closest('.ctl,.inline-ctl'), out=o&&o.querySelector('output'); if(out) out.textContent=stepsTxt(S.steps);});
   const lock=mode==='challenge', c=$('#emb-controls',app); c.classList.toggle('locked',lock);
   const ln=$('#emb-lock',app); ln.hidden=!lock;
@@ -640,10 +850,10 @@ function isNextDisabled(){const s=STEPS[step]; return (!!s.expect&&!observed[ste
 function updateRail(r){
   const rail=$('#emb-rail',app); if(!rail) return;
   if(mode==='guided'){
-    const s=STEPS[step], box=$('[data-obs]',rail);
-    if(s.expect&&s.expect(r)) observed[step]=true;
+    const s=STEPS[step], box=$('[data-obs]',rail), held=!!anim&&s.id==='train';   // part 4: the observation waits for the end of the run (P10, R7.9)
+    if(!held&&s.expect&&s.expect(r)) observed[step]=true;
     const show=!!s.obs&&(!s.expect||!!observed[step]);
-    if(box){box.hidden=!show; if(show){const html=`<div class="eyebrow">${L(s.label||{en:'Observed',zh:'观察到'})}</div>`+s.obs(r); if(box._h!==html){const again=box._h!=null; box.innerHTML=html; box._h=html; if(again&&!anim) A.ui.obsBump(box);}}}
+    if(box&&!held){box.hidden=!show; if(show){const html=`<div class="eyebrow">${L(s.label||{en:'Observed',zh:'观察到'})}</div>`+s.obs(r); if(box._h!==html){const again=box._h!=null; box.innerHTML=html; box._h=html; if(again&&!anim) A.ui.obsBump(box);}}}
     A.ui.setNext(rail,isNextDisabled());
     const sm=$('[data-nav="showme"]',rail); if(sm) sm.hidden=!!observed[step];
     $$('[data-play]',rail).forEach(b=>{b.textContent=playLabel();});
@@ -669,34 +879,55 @@ function renderRail(){const rail=$('#emb-rail',app);
 /* ---------- render ---------- */
 function render(){
   if(!app) return;
-  const r=compute(S);
+  const r=compute(S); r.tb=tabOf(r);
   panelsShow(); drawTransport(); drawHead(r);
-  if(!$('#emb-pan-pair',app).hidden) drawPair();
-  if(!$('#emb-pan-map',app).hidden){drawMapLegend(); drawMap(r);}
-  if(!$('#emb-pan-heat',app).hidden) drawHeat(r);
-  if(!$('#emb-pan-chart',app).hidden) drawChart(r);
+  const on=p=>!$('#emb-pan-'+p,app).hidden;
+  if(on('pair')) drawPair();
+  if(on('map')){drawMapLegend(); drawMap(r);}
+  if(on('heat')) drawHeat(r);
+  if(on('rows')) drawRows(r);
+  if(on('trap')) drawTrap();
+  if(on('chart')) drawChart(r);
   if(!$('#emb-metrics',app).hidden) drawMetrics(r);
-  const mb=$('#emb-mathbody',app), mh=mathHTML(r); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}
+  /* the formulas follow the table; while a run plays they are redrawn only when open */
+  const md=$('#emb-math',app), mb=$('#emb-mathbody',app); if(!anim||md.open){const mh=mathHTML(r); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}}
   syncControls(); updateRail(r);
   A.hash.write(token()); A.dock.refresh(); announce(r);}
-function announce(r){clearTimeout(annT); annT=setTimeout(()=>{if(!app) return; A.announce(tx(`After ${stepsTxt(r.t)}: recall@1 ${pc(r.r1)}.`,`训练 ${r.t} 步后：recall@1 ${pc(r.r1)}。`));},400);}
+function announce(r){clearTimeout(annT); annT=setTimeout(()=>{if(!app) return; A.announce(r.t?tx(`After ${stepsTxt(r.t)}: recall@1 ${pc(r.r1)}.`,`训练 ${r.t} 步后：recall@1 ${pc(r.r1)}。`):tx(`Before training: recall@1 ${pc(r.r1)}.`,`训练前：recall@1 ${pc(r.r1)}。`));},400);}
 function setState(p){
   Object.assign(S,p);
   if(mode==='challenge'){S.tau=0.05; S.d=16; if(!BS.includes(S.B)) S.B=2;}
   if(!BS.includes(S.B)) S.B=8; if(!TAUS.includes(S.tau)) S.tau=0.05; if(!DS.includes(S.d)) S.d=16;
   S.steps=Math.max(0,Math.min(MAXS,Math.round(S.steps))); if(!(S.q>=0&&S.q<NP)) S.q=0;
   render();}
-/* ---------- animation (R3.9, R3.20): a run plays only when it is new; one already watched shows its end at once ---------- */
+/* ---------- animation (R3.9, R3.20): a run plays only when it is new; one already watched shows its end at once ----------
+   Part 4 plays its first SLOW_N steps slowly, then the rest of the run fast (see SLOW_N); the other parts, the scenarios and the
+   challenge play the whole run as a result, with the table held where the run started (R7.11) */
 function stopAnim(){if(raf){cancelAnimationFrame(raf); raf=0;} const was=anim; anim=null; lastTs=0; return was;}
 const endStep=()=>mode==='challenge'?chN:MAXS;
-function finishAnim(){const a=stopAnim(); if(!a) return; if(S.steps>=endStep()) seenRun.add(a.rk+(mode==='challenge'?'|'+chN:'')); if(app) render();}
+/* on a phone the curve sits under the table and the rows: when the slow steps end and the table holds still, the fast part brings the
+   curve into view, if the reader is still watching the table (R7.12: what plays is on screen) */
+function fastView(){if(innerWidth>760||!app) return; const h=$('#emb-pan-heat',app), c=$('#emb-pan-chart',app); if(!h||!c||c.hidden) return;
+  const r=h.getBoundingClientRect(); if(r.bottom>0&&r.top<innerHeight) A.ui.reveal(c);}
+function finishAnim(){const a=stopAnim(); if(!a) return; if(S.steps>=endStep()) seenRun.add(a.rk+(mode==='challenge'?'|'+chN:'')); if(!app) return; render();
+  if(mode==='guided'&&STEPS[step].id==='train'&&observed[step]) revealObs();}   // the training part's observation shows only once the run ends: bring it into view then (R3.10)
+const slowPart=()=>mode==='guided'&&STEPS[step].id==='train';
 function runStart(fromZero,sp){
   stopAnim(); if(fromZero) S.steps=0; const end=endStep(); if(S.steps>=end){S.steps=end; render(); return;}
   if(A.reduceMotion()){S.steps=end; seenRun.add(runKey(S)+(mode==='challenge'?'|'+chN:'')); render(); return;}
-  anim={rk:runKey(S),acc:0,sp:sp||null}; lastTs=0; render(); raf=requestAnimationFrame(tick);}
+  const slow=slowPart()&&!sp&&S.steps<SLOW_N;
+  anim={rk:runKey(S),acc:0,sp:sp||null,slow,k:S.steps+1,ph:0,frozen:slow?null:freezeAt(cur(),S.steps,0)};
+  lastTs=0; render(); raf=requestAnimationFrame(tick);}
 function tick(ts){
   raf=0; if(!anim||!app) return;
   const dt=lastTs?Math.min(0.1,(ts-lastTs)/1000):0; lastTs=ts;
+  if(anim.slow&&anim.k<=SLOW_N){
+    /* one slow step: its push (until MORPH0), its update (until MORPH1), a pause; the step count turns at MORPH0 */
+    anim.ph+=dt/SLOW_SEC[runSpeed];
+    if(anim.ph>=MORPH0&&S.steps<anim.k) S.steps=anim.k;
+    if(anim.ph>=1){if(S.steps>=endStep()){finishAnim(); return;}
+      if(anim.k>=SLOW_N){anim.k=SLOW_N+1; anim.frozen=freezeAt(cur(),0,S.steps); anim.acc=0; fastView();} else {anim.k++; anim.ph=0;}}
+    render(); raf=requestAnimationFrame(tick); return;}
   anim.acc+=dt*RUN_SPEEDS[anim.sp||runSpeed]; const n=Math.floor(anim.acc);
   if(n>0){anim.acc-=n; S.steps=Math.min(endStep(),S.steps+n); if(S.steps>=endStep()){finishAnim(); return;} render();}
   raf=requestAnimationFrame(tick);}
@@ -707,8 +938,8 @@ function showRun(sp){const k=runKey(S); if(seenRun.has(k)){S.steps=MAXS; render(
 function enterStep(i){
   stopAnim(); step=Math.max(0,Math.min(STEPS.length-1,i)); const s=STEPS[step];
   if(s.enter) Object.assign(S,s.enter());
-  if(s.view) view=s.view;
-  if(s.id==='batch'){triedB.clear(); triedB.add(S.B); warm([[4,200],[2,100],[8,100],[16,100]].map(([B,m])=>[LG(),B,S.tau,S.d,m]));}
+  if(s.view) view=s.view; xmode='steps';
+  if(s.id==='batch'){triedB.clear(); triedB.add(S.B); warm([[4,200],[2,200],[8,100],[16,100]].map(([B,m])=>[LG(),B,S.tau,S.d,m]));}
   if(s.id==='temp'){triedT.clear(); triedT.add(S.tau); warm([0.05,0.01,1,0.2].map(t=>[LG(),S.B,t,S.d,MAXS]));}
   if(s.id==='encoder'){triedQ.clear(); triedQ.add(S.q);}
   const st=$('#emb-stage',app); if(st) st.scrollTop=0;
@@ -733,6 +964,7 @@ function setMode(m){
   const was=mode; mode=m;
   if(was==='challenge'&&saved){S={...saved}; saved=null;}
   if(m==='challenge'){saved={...S}; chSubmitted=false; chReveal=false; chN=25; S={...S,B:2,tau:0.05,d:16,steps:0}; view='r1'; chWarm();}
+  xmode='steps';
   if(m==='sandbox'&&was==='guided'){S={...DEFAULT,q:S.q,steps:seenRun.has(runKey(DEFAULT))?MAXS:0}; view='r1';}
   A.shell.setMode(app,m,DESCS());
   const st=$('#emb-stage',app); if(st) st.scrollTop=0;
@@ -744,7 +976,9 @@ const token=(s=S)=>[s.B,s.tau,s.d,s.steps,s.q].join('_');
 function parse(tok){const p=String(tok||'').split('_'); if(p.length!==5) return null; const o={B:+p[0],tau:+p[1],d:+p[2],steps:+p[3],q:+p[4]};
   if(!BS.includes(o.B)||!TAUS.includes(o.tau)||!DS.includes(o.d)||!Number.isInteger(o.steps)||o.steps<0||o.steps>MAXS||!Number.isInteger(o.q)||o.q<0||o.q>=NP) return null; return o;}
 function act(a,btn){
-  if(a==='play'){if(anim){stopAnim(); render(); return;} if(S.steps>=endStep()){runStart(true); return;} byLearner(()=>runStart(false)); return;}
+  if(a==='play'){if(anim){stopAnim(); render(); return;} if(S.steps>=endStep()) runStart(true); else byLearner(()=>runStart(false));
+    if(btn&&btn.closest('#emb-rail')&&innerWidth<=760) A.ui.reveal(firstPan());   // a phone: the stage sits above the card, so its first picture comes up (P2)
+    return;}
   if(a==='replay'){runStart(true); return;}
   if(a==='reset'){stopAnim(); byLearner(()=>{Object.assign(S,DEFAULT); render();}); return;}
   if(a==='submit'){chSubmitted=true; const k=runKey(S)+'|'+chN; if(seenRun.has(k)){S.steps=chN; render();} else runStart(true); revealObs(); return;}
@@ -778,8 +1012,10 @@ function renderDrill(){
 /* ---------- jumps ---------- */
 const CTLN={B:{en:'Pairs per batch, B',zh:'每个 batch 的配对数 B'},tau:{en:'Temperature τ',zh:'温度 τ'},d:{en:'Dimensions per vector, d',zh:'每个向量的维数 d'},steps:{en:'Training steps',zh:'训练步数'}};
 function jumpAct(k){
+  if(k==='stage') return tx('Click to go back up to the picture.','点击回到上面的图。');
   if(k==='pair') return tx('Click to show the keyword search.','点击查看关键词搜索。');
   if(k==='heat') return tx('Click to show the batch’s similarity table.','点击查看 batch 的相似度表。');
+  if(k==='rows') return tx('Click to show the question’s rows in the embedding table.','点击查看这个问题在 embedding 表里的几行。');
   if(k==='chart') return tx('Click to show the chart.','点击查看曲线图。');
   if(k==='controls') return tx('Click to jump to Settings.','点击跳到“自由调参”。');
   if(!CTLN[k]) return '';
@@ -787,15 +1023,19 @@ function jumpAct(k){
   return tx(`Click to jump to “${L(CTLN[k])}”.`,`点击跳到“${L(CTLN[k])}”。`);}
 function jump(k,src){
   if(!app) return;
-  const pan=(id,mark)=>{const el=$('#emb-pan-'+id,app); if(el&&el.hidden){el.hidden=false; render();} A.tip.hide(); const m=mark&&$(mark,app);
-    if(el){(m||el).scrollIntoView({block:'nearest',behavior:A.reduceMotion()?'auto':'smooth'}); if(m) A.ui.flash(m);}};
+  const pan=(id,mark)=>{const el=$('#emb-pan-'+id,app); A.tip.hide(); if(!el||el.hidden) return; const m=mark&&$(mark,app);
+    (m||el).scrollIntoView({block:'nearest',behavior:A.reduceMotion()?'auto':'smooth'}); if(m) A.ui.flash(m);};
+  if(k==='stage'){A.tip.hide(); A.ui.reveal(firstPan()); return;}
   if(k==='pair'){pan('pair','#emb-pair'); return;}
   if(k==='heat'){pan('heat','#emb-heat'); return;}
+  if(k==='rows'){pan('rows','#emb-rows'); return;}
   if(k==='chart'){pan('chart','#emb-chart'); return;}
   if(k==='controls'){const c=$('#emb-controls',app); A.tip.hide(); A.ui.reveal(c); A.ui.flash(c); return;}
   if(!CTLN[k]) return;
   if(mode==='challenge'&&k!=='B'){if(src) A.tip.show(src,`<div>${jumpAct(k)}</div>`); return;}
   const el=$('#emb-ic-'+k,app)||$('#emb-ctl-'+k,app); if(el) A.ui.jumpToEl(el);}
+/* the part's first picture (a phone's “See the chart ↑” and Train in the card bring it up under the top bar) */
+const firstPan=()=>$('#emb-pan-'+ctx().panels.find(p=>p!=='metrics'),app)||$('#emb-stage',app);
 let stageT=0, stageGoal=null;
 const stageStop=()=>{clearTimeout(stageT); stageT=0;};
 /* after a click in the rail, keep the sticky stage's head below the top bar (R3.2), copied from labs/llm-judge.js (R9.7) */
@@ -821,6 +1061,7 @@ function bind(el){
     const seg=b.closest('.seg-ctl[data-key]');
     if(seg&&d.v!=null){if(b.disabled) return; const k=seg.dataset.key, inRail=!!seg.closest('#emb-rail');
       if(k==='view'){view=d.v; render(); return;}
+      if(k==='xmode'){xmode=d.v; render(); return;}
       if(k==='speed'){runSpeed=d.v; render(); return;}
       if(k==='q'){S.q=+d.v; triedQ.add(S.q); byLearner(render); if(inRail) revealObs(); return;}
       if(k==='chN'){stopAnim(); chN=+d.v; if(!chReveal){chSubmitted=false; S.steps=0;} else S.steps=chN; render(); return;}
@@ -902,7 +1143,7 @@ A.registerLab({
   /* the learner's state for a reload (round 3 #6): settings, part, prediction, the view, the pair picked, what was tried, the runs
      watched, the challenge picks and result. A run still playing is saved as finished (its end is what the learner is about to see) */
   snap:()=>{const sk=anim?anim.rk+(mode==='challenge'?'|'+chN:''):null, done=!!anim||S.steps>=chN;
-    return {v:1,mode,step,S:{...S,steps:anim?endStep():S.steps},pred,observed:{...observed},saved:saved?{...saved}:null,chN,chSubmitted,chReveal,view,trap,
+    return {v:1,mode,step,S:{...S,steps:anim?endStep():S.steps},pred,observed:{...observed},saved:saved?{...saved}:null,chN,chSubmitted,chReveal,view,xmode,trap,
       triedB:[...triedB],triedT:[...triedT],triedQ:[...triedQ],seenRun:[...new Set([...seenRun,...(sk?[sk]:[])])].slice(-100),runSpeed,drillSeed,drillOpen,
       passed:mode==='challenge'&&chSubmitted&&done&&chPoint(LG(),S.B,chN).ok};},
   restore(o){if(!o||o.v!==1) return; const ps=s=>s&&typeof s==='object'?parse(token(s)):null, p=ps(o.S); if(!p) return;
@@ -912,7 +1153,7 @@ A.registerLab({
     if(o.observed&&typeof o.observed==='object') for(const k in o.observed) if(/^\d+$/.test(k)&&+k<STEPS.length&&o.observed[k]===true) observed[k]=true;
     const sv=ps(o.saved); saved=mode==='challenge'&&sv?sv:null;
     chN=CH_STEPS.includes(o.chN)?o.chN:25; chSubmitted=bool(o.chSubmitted); chReveal=chSubmitted&&bool(o.chReveal);
-    view=VIEWS.some(x=>x[0]===o.view)?o.view:'r1'; trap=TRAPS.some(x=>x.k===o.trap)?o.trap:null;
+    view=VIEWS.some(x=>x[0]===o.view)?o.view:'r1'; xmode=XMODES.some(x=>x[0]===o.xmode)?o.xmode:'steps'; trap=TRAPS.some(x=>x.k===o.trap)?o.trap:null;
     triedB.clear(); arr(o.triedB,v=>BS.includes(v)).forEach(v=>triedB.add(v)); triedT.clear(); arr(o.triedT,v=>TAUS.includes(v)).forEach(v=>triedT.add(v));
     triedQ.clear(); arr(o.triedQ,v=>ints(v,0,NP-1)).forEach(v=>triedQ.add(v));
     seenRun.clear(); arr(o.seenRun,k=>typeof k==='string'&&k.length<60&&/^(en|zh)(\|[0-9.]+){3,4}$/.test(k)).forEach(k=>seenRun.add(k));
@@ -931,18 +1172,32 @@ A.registerLab({
   onResize(){if(app) render();},
   termTip(){return '';},
   jump, jumpAct,
+  /* the mini bar (P13): on a wide screen the sticky stage keeps its head in view, so the head is the anchor and the bar shows only once
+     the stage has left the screen; on a phone the anchor is the part's main picture. Its bar is recall@1, named next to it */
   dock:{
-    anchor:()=>app&&($('#emb-pan-map:not([hidden])',app)||$('#emb-pan-heat:not([hidden])',app)||$('#emb-pan-chart:not([hidden])',app)||$('#emb-pan-pair',app)), bench:()=>app&&$('.bench',app), target:()=>app&&$('#emb-stage',app),
-    render({status,vis,read}){if(!app) return; const r=compute(S), c=ctx();
-      vis.innerHTML=`<div class="emb-dk"><i style="width:${(r.r1*100).toFixed(1)}%"></i></div>`;
+    anchor:()=>{if(!app) return null; const st=$('#emb-stage',app);
+      if(innerWidth>760&&getComputedStyle(st).position==='sticky') return $('.emb-head',app);
+      const p=ctx().panels.find(x=>x!=='metrics'), fig={pair:'#emb-pair',map:'#emb-map',heat:'#emb-heat',rows:'#emb-rows',chart:'#emb-chart',trap:'#emb-trap'}[p];
+      return (fig&&$(fig,app))||st;},
+    bench:()=>app&&$('.bench',app), target:()=>app&&$('#emb-stage',app),
+    render({status,vis,read}){if(!app) return; const r=compute(S), c=ctx(), id=mode==='guided'?STEPS[step].id:'';
+      // a phone's bar is too narrow for the label and the bar together, and its sentence already names recall@1: the bar is left out there
+      vis.innerHTML=innerWidth<=760?'':`<div class="emb-dkw"><span class="emb-dkl">recall@1</span><div class="emb-dk"><i style="width:${(r.r1*100).toFixed(1)}%"></i></div></div>`;
       if(mode==='challenge'){const done=chDone(), p=done?chPoint(LG(),S.B,chN):null; status.className='status'+(done?(p.ok?' ok':' bad'):''); status.textContent=done?(p.ok?tx('Goal met','已达标'):tx('Not yet','未达标')):(chSubmitted?tx('Training','训练中'):tx('Not submitted','未提交'));
         read.textContent=done?tx(`Batch ${S.B} for ${chN} steps: average recall@1 ${pc(p.r1)} over 16 starts`,`batch ${S.B}、训练 ${chN} 步：16 个种子的平均 recall@1 是 ${pc(p.r1)}`):tx(`Batch ${S.B} for ${chN} steps`,`batch ${S.B}、训练 ${chN} 步`); return;}
-      if(c.panels[0]==='pair'){status.className='status'; status.textContent=tx('Keyword search','关键词搜索'); read.textContent=tx('The right passage shares no word with the question','正确段落和问题没有共同的字对'); return;}
-      status.className='status'; status.textContent=tx(`Step ${r.t}`,`第 ${r.t} 步`);
-      read.textContent=tx(`After ${stepsTxt(r.t)}, recall@1 on 24 held-out questions is ${pc(r.r1)}`,`训练 ${r.t} 步后，24 个新问题的 recall@1 是 ${pc(r.r1)}`);}}
+      status.className='status';
+      if(c.panels[0]==='pair'){vis.innerHTML=''; status.textContent=tx('Keyword search','关键词搜索'); read.textContent=tx('The right passage shares no word with the question','正确段落和问题没有共同的字对'); return;}
+      if(id==='limits'){vis.innerHTML=''; status.textContent=tx(`After ${stepsTxt(MAXS)}`,`训练 ${MAXS} 步后`); const x=trap&&TRAPS.find(z=>z.k===trap);
+        read.textContent=x?tx(`${L(x.t)}: the two sentences’ similarity is ${f(cosOf(run(LG(),8,0.05,16),x.a[li()],x.b[li()]),2)}`,`${L(x.t)}：两句话的相似度是 ${f(cosOf(run(LG(),8,0.05,16),x.a[li()],x.b[li()]),2)}`):tx('Pick a pair of sentences in the card','在卡片里选一对句子'); return;}
+      status.textContent=r.t?tx(`Step ${r.t}`,`第 ${r.t} 步`):tx('Before training','训练前');
+      if(id==='encoder'){read.textContent=tx(`The right passage of ${quote(qText(S.q))} ranks ${r.rank+1} of 24`,`${quote(qText(S.q))}的正确段落排第 ${r.rank+1}（共 24 段）`); return;}
+      read.textContent=r.t?tx(`After ${stepsTxt(r.t)}, recall@1 on the 24 held-out questions is ${pc(r.r1)}`,`训练 ${r.t} 步后，24 个新问题的 recall@1 是 ${pc(r.r1)}`):tx(`Before training, recall@1 on the 24 held-out questions is ${pc(r.r1)}`,`训练前，24 个新问题的 recall@1 是 ${pc(r.r1)}`);}}
 });
 /* read-only hook for tests/embeddings_numbers.py and the home tile */
-window.__emb={state:()=>({mode,step,B:S.B,tau:S.tau,d:S.d,steps:S.steps,q:S.q,pred,view,trap,chN,chSubmitted,chReveal,lang:LG()}),animState:()=>anim?{steps:S.steps}:null,
+window.__emb={state:()=>({mode,step,B:S.B,tau:S.tau,d:S.d,steps:S.steps,q:S.q,pred,view,xmode,trap,chN,chSubmitted,chReveal,lang:LG()}),
+  animState:()=>anim?{steps:S.steps,slow:!!(anim.slow&&anim.k<=SLOW_N),k:anim.k,ph:anim.ph,frozen:anim.frozen?anim.frozen.s:null}:null,
+  table:()=>{if(!app) return null; const tb=tabOf(compute(S)); return {kind:tb.kind,k:tb.k==null?null:tb.k,t:tb.t==null?null:tb.t,qs:tb.bt.qs.slice(),ps:tb.bt.ps.slice(),push:!!tb.push,pd:tabPd(tb),loss:tabLoss(tb)};},
+  slow:{n:SLOW_N,sec:SLOW_SEC,m0:MORPH0,m1:MORPH1},
   seen:()=>[...seenRun],
   run:(lang,B,tau,d)=>{const T=run(lang,B,tau,d); return {r1:T.r1,r5:T.r5,loss:T.loss,rank:T.rank,batch:T.batch,S:T.S.map(a=>Array.from(a)),P:[0,MAXS].map(s=>Array.from(T.P[s])),H:[0,MAXS].map(s=>Array.from(T.H[s])),xy:[0,50,MAXS].map(s=>T.pca.xy[s]),R:T.pca.R};},
   runRaw:(lang,B,tau,d)=>run(lang,B,tau,d),

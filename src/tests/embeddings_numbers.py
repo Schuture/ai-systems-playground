@@ -86,7 +86,7 @@ def train(w, B, tau, d, seed=SEED, maxs=MAXS, light=False):
     """light: keep only recall@1, the loss, the mean own cosine and the mean Adam step per step (for the many-start checks)"""
     r = Mulberry(seed); E = np.array([[r() * 2 - 1 for _ in range(d)] for _ in range(w.V)])
     m = np.zeros_like(E); v = np.zeros_like(E); rb = Mulberry(seed + 1); N = len(w.P)
-    out = {'r1': [], 'r5': [], 'loss': [], 'rank': [], 'Pv': [], 'Hv': [], 'pd': [], 'own': [], 'upd': []}
+    out = {'r1': [], 'r5': [], 'loss': [], 'rank': [], 'Pv': [], 'Hv': [], 'pd': [], 'own': [], 'upd': [], 'qs': []}
     for s in range(maxs + 1):
         Pv = np.array([w.enc(E, x) for x in w.P]); Hv = np.array([w.enc(E, x) for x in w.H]); Sm = Hv @ Pv.T
         rk = [int((Sm[i] > Sm[i, i]).sum()) for i in range(N)]
@@ -97,6 +97,7 @@ def train(w, B, tau, d, seed=SEED, maxs=MAXS, light=False):
         for i in range(B):
             j = i + int(rb() * (N - i)); idx[i], idx[j] = idx[j], idx[i]
         ps = idx[:B]; qs = [2 * p + int(rb() * 2) for p in ps]
+        if not light: out['qs'].append(qs)
         uq = np.array([E[w.T[q]].mean(0) for q in qs]); up = np.array([E[w.P[p]].mean(0) for p in ps])
         nq = np.linalg.norm(uq, axis=1, keepdims=True); npn = np.linalg.norm(up, axis=1, keepdims=True); q = uq / nq; p = up / npn
         L = q @ p.T / tau; L = L - L.max(1, keepdims=True); sm = np.exp(L); sm /= sm.sum(1, keepdims=True)
@@ -194,7 +195,10 @@ with sync_playwright() as pw:
             p800 = [A[(4, 200)], A[(8, 100)], A[(16, 50)]]
             check(f'{l} group {g}: part 5: at 800 pairs B 4, 8, 16 are within 8 points {[round(x * 100) for x in p800]}', max(p800) - min(p800) <= 0.08)
             p160 = [A[(4, 40)], avg(l, 8, 20, g), A[(16, 10)]]
-            check(f'{l} group {g}: challenge why: at 160 pairs B 4, 8, 16 are within 6 points {[round(x * 100) for x in p160]}', max(p160) - min(p160) <= 0.06)
+            check(f'{l} group {g}: per pair used: at 160 pairs B 4, 8, 16 are within 6 points {[round(x * 100) for x in p160]}', max(p160) - min(p160) <= 0.06)
+            # the challenge's why compares choices the learner can pick (P24): 400 pairs, with the tolerance of the same per-pair claim in part 5
+            p400 = [A[(4, 100)], A[(8, 50)], A[(16, 25)]]
+            check(f'{l} group {g}: challenge why: at 400 pairs B 4, 8, 16 are within 8 points {[round(x * 100) for x in p400]}', max(p400) - min(p400) <= 0.08)
             if g == 0:
                 js = {B: pg.evaluate(f"()=>window.__emb.avg('{l}',{B},0.05,16,{LEN[B]})") for B in (2, 4, 8, 16)}
                 bad = [(B, s) for (B, s), v in A.items() if abs(js[B][s] - v) > 1e-12]
@@ -271,6 +275,7 @@ with sync_playwright() as pw:
         PY[('ahead', l)] = ahead
     # ---------- numbers printed on the page ----------
     def text(sel): return pg.evaluate("s=>{const e=document.querySelector(s); return e?e.innerText.replace(/\\u00a0/g,' '):''}", sel)
+    def tips(sel): return pg.evaluate("s=>[...document.querySelectorAll(s+' [data-tipx]')].map(e=>e.getAttribute('data-tipx')).join(' | ')", sel)
     def go(i):
         pg.evaluate(f"()=>{{const b=document.querySelector('#emb-rail [data-go=\"{i}\"]'); if(b) b.click();}}"); pg.wait_for_timeout(300)
     def showme():
@@ -293,27 +298,35 @@ with sync_playwright() as pw:
         go(0); t = text('#emb-rail .step.current')
         check(f'{l}: part 1 names the {ahead} passages a keyword search returns first', (f'puts {ahead} other passages first' if l == 'en' else f'先给出另外 {ahead} 段') in t, t[:400])
         check(f'{l}: stage names the same count', (f'returns {ahead} other passages before it' if l == 'en' else f'先给出另外 {ahead} 段') in text('#emb-pair'))
-        if l == 'zh': check('zh: part 1 says character pairs and 1M', '字对' in t and '共同的字对' in text('#emb-pair') and '1M 个以上' in t, t[:500])
+        if l == 'zh': check('zh: part 1 says character pairs; the line about the next lab is gone (P3)', '字对' in t and '共同的字对' in text('#emb-pair') and '向量索引' not in t, t[:500])
         go(1); showme()
         t = text('#emb-rail [data-obs]')
         k0 = sum(1 for k in o['rank'][0] if k == 0)
-        check(f'{l}: part 2 untrained recall@1 {pct(o["r1"][0])} and recall@5 {pct(o["r5"][0])}', pct(o['r1'][0]) in t and pct(o['r5'][0]) in t and (f'for {k0} of the 24' if l == 'en' else (f'只有 {k0} 个' if k0 else '没有一个的正确段落排第一')) in t, t[:300])
+        r5t = pg.evaluate("()=>{const e=document.querySelector('#emb-metrics [data-k=\"r5\"]'); return e?e.getAttribute('data-tipx'):''}")   # recall@5 is explained in its card's tooltip (P6)
+        check(f'{l}: part 2 untrained recall@1 {pct(o["r1"][0])} (observation) and recall@5 {pct(o["r5"][0])} above 21% for 5 random picks (its card’s tooltip)', pct(o['r1'][0]) in t and pct(o['r5'][0]) in r5t and '21%' in r5t and pct(5 / 24) == '21%' and o['r5'][0] > 5 / 24 and (f'for {k0} of the 24' if l == 'en' else (f'只有 {k0} 个' if k0 else '没有一个的正确段落排第一')) in t, (t[:300], r5t))
         rk = o['rank'][0][9]
         check(f'{l}: part 2 rank of the shown question ({rk + 1})', (f'ranks {rk + 1}' if l == 'en' else f'排第 {rk + 1}') in t)
-        check(f'{l}: part 2 says the held-out questions reword the training questions', ('asks the same thing as the training questions of its passage, in other words' if l == 'en' else '和这一段说明的训练问题一样，只是换了一种说法') in text('#emb-rail .step.current'))
+        check(f'{l}: part 2 says (in the held-out questions’ tooltip) that they reword the training questions', ('asks the same thing as the training questions of its passage, in other words' if l == 'en' else '和这一段说明的训练问题一样，只是换了一种说法') in tips('#emb-rail .step.current'))
         check(f'{l}: parts 2 and 3 show only the two recall cards', pg.evaluate("()=>document.querySelectorAll('#emb-metrics .metric').length") == 2)
         go(2); ht = pg.evaluate("()=>document.querySelector('#emb-heat').textContent")
         check(f'{l}: part 3 shows no probability column', 'own p' not in ht and '正确的 p' not in ht and not pg.query_selector('#emb-heat .emb-pb'), ht[:200])
-        go(3); t = text('#emb-rail .step.current')
-        check(f'{l}: part 4 names contrastive learning and InfoNCE, the untrained loss {o["loss"][0]:.2f} above ln 8', ('contrastive learning' in t and 'InfoNCE' in t and 'natural logarithm' in t) if l == 'en' else ('对比学习（contrastive learning）' in t and 'InfoNCE' in t and '自然对数' in t) and f'{o["loss"][0]:.2f}' in t and '2.08' in t, t[:1500])
-        check(f'{l}: part 4 card: {o["loss"][0]:.2f}', f'{o["loss"][0]:.2f}' in t)
+        go(3); t = text('#emb-rail .step.current'); t4 = tips('#emb-rail .step.current')
+        lt = pg.evaluate("()=>{const e=document.querySelector('#emb-metrics [data-k=\"loss\"]'); return e?e.getAttribute('data-tipx'):''}")
+        check(f'{l}: part 4 names contrastive learning and InfoNCE (the loss’s tooltip) and the natural logarithm', ('contrastive learning' in t4 and 'InfoNCE' in t4 and 'natural logarithm' in t) if l == 'en' else ('对比学习（contrastive learning）' in t4 and 'InfoNCE' in t4 and '自然对数' in t), (t[:600], t4[:600]))
+        check(f'{l}: part 4: the loss card’s tooltip gives the untrained loss {o["loss"][0]:.2f} above ln 8 = 2.08 (P9)', f'{o["loss"][0]:.2f}' in lt and ('ln 8 ≈ 2.08' in lt) and o['loss'][0] > math.log(8), lt)
         showme(); t = text('#emb-rail [data-obs]')
-        ow0, ow1 = o['own'][0], o['own'][MAXS]
+        ow0, ow1 = float(o['Hv'][0][0] @ o['Pv'][0][0]), float(o['Hv'][MAXS][0] @ o['Pv'][MAXS][0])   # the mission question with its own passage
         fx2 = lambda v: f'{v:.2f}'.replace('-', '−')
         check(f'{l}: part 4 recall@1 {pct(o["r1"][0])} to {pct(o["r1"][MAXS])}, own cosine {ow0:.2f} to {ow1:.2f}', pct(o['r1'][0]) in t and pct(o['r1'][MAXS]) in t and fx2(ow0) in t and fx2(ow1) in t, t[:400])
         hk = list(dict.fromkeys(t_ for t_ in toks(data[0][4][li], l) if t_ in w.vocab)); best = max(data[0][3], key=lambda q: len([x for x in hk if x in set(toks(q[li], l))]))
         nb = len([x for x in hk if x in set(toks(best[li], l))])
-        check(f'{l}: part 4 names the training question {best[li]!r}: {nb} of {len(hk)} known tokens', best[li] in t and ((f'{len(hk)} appear in the training data' in t and (f'holds {nb} of them' if nb < len(hk) else 'holds all of them')) if l == 'en' else f'有 {len(hk)} 个在训练数据里出现过、在 embedding 表里有自己的一行，这 {len(hk)} 个' + ('全都' if nb == len(hk) else f'里有 {nb} 个')) in t, t)
+        bi = [q[li] for q in data[0][3]].index(best[li]); st10 = [s + 1 for s in range(10) if bi in o['qs'][s]]
+        lst = (f'step {st10[0]}' if len(st10) == 1 else f'steps {", ".join(map(str, st10[:-1]))} and {st10[-1]}') if l == 'en' else '、'.join(map(str, st10))
+        check(f'{l}: part 4 names the training question {best[li]!r} ({nb} of the {len(hk)} rows’ tokens) and the slow steps that trained it {st10}', st10 and best[li] in t and ((f'Its {len(hk)} rows in the embedding table were pulled toward' in t and f'in {lst}' in t and (f'holds all {len(hk)} of these tokens' if nb == len(hk) else f'holds {nb} of these tokens') in t) if l == 'en' else (f'它在 embedding 表里的 {len(hk)} 行，在第 {lst} 步被拉向' in t and (f'也有这 {len(hk)} 个字对' if nb == len(hk) else f'有其中 {nb} 个字对') in t)), (st10, t))
+        # the slow steps after the last one that trained the pair (N3): the question's vector still turns toward its passage there, and the observation says so
+        own = lambda s_: float(o['Hv'][s_][0] @ o['Pv'][s_][0]); L_ = st10[-1]; keep = L_ < 10 and own(10) > own(L_) + 0.02
+        kp = (f'Steps {L_ + 1} to 10 do not train that pair, yet the question’s vector keeps turning toward it' if L_ < 9 else 'Step 10 does not train that pair, yet the question’s vector keeps turning toward it') if l == 'en' else (f'第 {L_ + 1} 到 10 步没有这一对，问题的向量还在接着转向它' if L_ < 9 else '第 10 步没有这一对，问题的向量还在接着转向它')
+        check(f'{l}: part 4: after step {L_} the cosine goes {own(L_):.2f} to {own(10):.2f} by step 10, and the observation ' + ('says the vector keeps turning' if keep else 'says nothing more'), (kp in t) == keep, (keep, t[-300:]))
         mt = text('#emb-metrics')
         check(f'{l}: metric cards at step 200', pct(o['r1'][MAXS]) in mt and pct(o['r5'][MAXS]) in mt and f"{o['loss'][MAXS]:.2f}" in mt and pct(o['pd'][MAXS]) in mt, mt)
         check(f'{l}: baseline ln 8 = 2.08 on the card, named as equal probabilities', '2.08' in mt and ('all passages equal' in mt if l == 'en' else '每段概率一样时' in mt))
@@ -328,22 +341,31 @@ with sync_playwright() as pw:
         p8 = [A[(4, 200)], A[(8, 100)], A[(16, 50)]]
         check(f'{l}: part 5 averages after 25 steps: B 8 {pct(A[(8, 25)])}, B 16 {pct(A[(16, 25)])}; 800 pairs between {pct(min(p8))} and {pct(max(p8))}', all(x in t for x in (f'B = 8{": " if l == "en" else "："}{pct(A[(8, 25)])}', f'B = 16{": " if l == "en" else "："}{pct(A[(16, 25)])}', (f'between {pct(min(p8))} and {pct(max(p8))}' if l == 'en' else f'都在 {pct(min(p8))} 到 {pct(max(p8))} 之间'))) and '16' in t, t[:900])
         check(f'{l}: part 5 no longer claims a bigger batch wins at equal pairs', ('little difference' in t) if l == 'en' else ('差别不大' in t), t)
+        t5 = tips('#emb-rail .step.current')
+        check(f'{l}: part 5 tooltip: a same-topic negative 13% of the time with B 2, at least one in 97% of batches with B 16 (P18)', '13%' in t5 and '97%' in t5, t5[:600])
         go(5); showme(); obs_ready()
-        t = text('#emb-rail [data-obs]')
-        for tau in (0.05, 0.01):
+        b05 = PY[(l, 8, 0.05, 16)]['r1'][MAXS]
+        for tau in (0.01, 0.05):   # the observation's first line is about the temperature picked
+            if tau == 0.05:
+                pg.evaluate("()=>document.querySelector('#emb-rail .seg-ctl[data-key=\"tau\"] button[data-v=\"0.05\"]').click()")
+                pg.wait_for_function("()=>!window.__emb.animState()", timeout=30000); pg.wait_for_timeout(300); obs_ready()
+            t = text('#emb-rail [data-obs]')
             tt = PY[(l, 8, tau, 16)]; z = next(s for s in range(MAXS + 1) if tt['loss'][s] < 0.01)
-            check(f'{l}: part 6 tau {tau}: under 0.01 at step {z} with recall@1 {pct(tt["r1"][z])}, {pct(tt["r1"][MAXS])} after 200', ((f'τ = {tau}: the loss first falls under 0.01 at step {z}, when recall@1 is {pct(tt["r1"][z])}; recall@1 after 200 steps {pct(tt["r1"][MAXS])}') if l == 'en' else (f'τ = {tau}：第 {z} 步 loss 第一次降到 0.01 以下，这时 recall@1 是 {pct(tt["r1"][z])}；200 步后 recall@1 是 {pct(tt["r1"][MAXS])}')) in t, t[:500])
+            # N5: the run on the stage is named first; after the loss falls under 0.01 the observation names the spikes the chart shows
+            spk = any(v > 0.1 for v in tt['loss'][z + 1:])
+            check(f'{l}: part 6 tau {tau}: the stage’s run named first, under 0.01 by step {z}, {pct(tt["r1"][MAXS])} after 200' + ('' if tau == 0.05 else f', against {pct(b05)} with tau 0.05') + (', the spikes named' if spk else ''), ((f'The one run drawn on the stage: with τ = {tau} the loss falls under 0.01 by step {z}' in t and f'Recall@1 after 200 steps is {pct(tt["r1"][MAXS])}' in t and (tau == 0.05 or f'against {pct(b05)} with τ = 0.05' in t) and ('the spikes in the chart' in t) == spk) if l == 'en' else (f'舞台上画的这一次训练：τ = {tau} 时，第 {z} 步 loss 就降到 0.01 以下' in t and f'200 步后 recall@1 是 {pct(tt["r1"][MAXS])}' in t and (tau == 0.05 or f'τ = 0.05 是 {pct(b05)}' in t) and ('图里的尖峰' in t) == spk)), t[:500])
         ta = PY[('tavg', l)]
         check(f'{l}: part 6 averages {pct(ta[0.05])} / {pct(ta[0.01])} and 1B pairs, no "learning stops"', pct(ta[0.05]) in t and pct(ta[0.01]) in t and ('1B pairs' in t if l == 'en' else '1B 对' in t) and 'stops' not in t and '学习就停了' not in t, t)
         go(6); t = text('#emb-rail .step.current')
-        check(f'{l}: part 7 has no storage paragraph, names the E5 v2 English models and BGE v1.5', '3,072' not in t and ('three English E5 v2 models' in t and 'also work without it' in t if l == 'en' else 'E5 v2 的三个英文模型' in t and '不加也能用' in t), t[-700:])
+        cn = text('#emb-app section.connect'); fid = pg.evaluate("()=>{const e=document.querySelector('#emb-app [id$=\"-fid\"]'); return e?e.textContent:''}")
+        check(f'{l}: part 7 has no storage or prefix paragraph (P17); the E5 prefixes and BGE’s instruction stay in Connect, BGE v1.5 without it in the fidelity note', '3,072' not in t and 'E5' not in t and 'BGE' not in t and "'query: '" in cn and "'passage: '" in cn and 'Represent this sentence for searching relevant passages' in cn and ('v1.5 also without it' in fid if l == 'en' else 'v1.5 不加也能用' in fid), (t[-500:], fid[-300:]))
         pg.evaluate("()=>document.querySelector('#emb-rail [data-lever=\"neg\"]').click()"); pg.wait_for_timeout(300)
         t = text('#emb-rail [data-obs]'); ca, neg, nkb, skip = PY[('neg', l)]
         exp_ = (f'Similarity {ca:.2f}' in t and f'the average of {nkb} table rows' in t and all(f'“{x}”' in t for x in neg + skip)) if l == 'en' else (f'相似度 {ca:.2f}' in t and f'第二句的向量是 embedding 表里 {nkb} 行的平均' in t and f'其中 {len(neg)} 行' in t and all(f'“{x}”' in t for x in neg + skip))
         check(f'{l}: part 7 negation: {ca:.2f}, {neg} among {nkb} rows, skipped {skip}', exp_, t)
         go(7); t = text('#emb-rail .step.current')
         k0 = round(o['r1'][0] * 24); k16 = round(o['r1'][MAXS] * 24); k32 = round(PY[(l, 8, 0.05, 32)]['r1'][MAXS] * 24)
-        check(f'{l}: part 8: 13% / 97%, d 32 finds {k32 - k16} more of the 24 ({k32} vs {k16}), BEIR named', all(x in t for x in ('13%', '97%', 'BEIR')) and k32 > k16 and (f'finds {k32 - k16} more of the 24' in t if l == 'en' else f'24 个新问题里多找对 {k32 - k16} 个' in t), t[-900:])
+        check(f'{l}: part 8: no number it did not show before (13% / 97% are in part 5, P18); d 32 finds {k32 - k16} more of the 24 ({k32} vs {k16}), BEIR named', '13%' not in t and '97%' not in t and 'BEIR' in t and k32 > k16 and (f'finds {k32 - k16} more of the 24' in t if l == 'en' else f'24 个新问题里多找对 {k32 - k16} 个' in t), t[-900:])
         bt = pg.evaluate("()=>[...document.querySelectorAll('#emb-rail .step.current [data-tipx]')].map(x=>x.getAttribute('data-tipx')).join(' | ')")
         check(f'{l}: part 8 BEIR tooltip: 50.6 / 49.0, 1,024 / 384 dimensions, 24 / 12 layers', all(x in bt for x in ('50.6', '49.0', '1,024', '384', '24', '12')), bt[-500:])
         dn = pg.evaluate("()=>document.querySelector('#emb-ctl-d').closest('.lockable').textContent")
@@ -383,8 +405,8 @@ with sync_playwright() as pw:
     pg.wait_for_function("()=>!window.__emb.animState()", timeout=20000); pg.wait_for_timeout(300)
     t = text('#emb-ch-res'); A = PY[('avg', 'en')]
     check(f'challenge: B 16 x 10 is met ({pct(A[(16, 10)])}) and minimal', 'Goal met' in t and pct(A[(16, 10)]) in t and 'no choice reaches 55% in fewer steps' in t, t[:300])
-    p160 = [A[(4, 40)], sum(cnt(run_s('en', 8, 0.05, 16, sd, 100), 20) for sd in SEEDS[:NSEED]) / (NSEED * 24), A[(16, 10)]]
-    check(f'challenge: the why: only B = 16 after 10 steps; at 160 pairs between {pct(min(p160))} and {pct(max(p160))}', 'only B = 16 reaches 55%' in t and f'between {pct(min(p160))} and {pct(max(p160))}' in t and all(A[(B, 10)] < 0.55 for B in (2, 4, 8)), t)
+    p400 = [A[(4, 100)], A[(8, 50)], A[(16, 25)]]
+    check(f'challenge: the why: only B = 16 after 10 steps; at 400 pairs (B 4 x 100, 8 x 50, 16 x 25) between {pct(min(p400))} and {pct(max(p400))}', 'only B = 16 reaches 55%' in t and f'between {pct(min(p400))} and {pct(max(p400))}' in t and 'B = 4 for 100 steps, B = 8 for 50, B = 16 for 25' in t and all(A[(B, 10)] < 0.55 for B in (2, 4, 8)), t)
     check('challenge: the note no longer cites "real teams"', 'Real teams' not in t and 'real teams' not in t)
     # capability layer and drill arithmetic
     check('exits: 1M x 384 x 4 bytes = 1.54 GB, x 1,024 = 4.10 GB', f'{1e6 * 384 * 4 / 1e9:.2f}' == '1.54' and f'{1e6 * 1024 * 4 / 1e9:.2f}' == '4.10')

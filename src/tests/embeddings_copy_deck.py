@@ -6,8 +6,8 @@ zh.md, where tests/numdense.py reads them)
 
 Order: home tile (every step count, the note), lab header, each guided part (card before and after its action, the stage, the
 metrics), Show the math, the scenarios (each insight), Settings, the challenge (every feedback tier and the chart), the capability
-card, and Connect with the drill answer. A tooltip is printed the first time it appears with a given text, and
-only the first three of each kind (map points, table cells). Reduced motion is on, so
+card, and Connect with the drill answer; then part 4 once more with motion on, while Train plays its slow steps and its fast part. A tooltip is printed the first time it appears with a given text, and
+only the first three of each kind (map points, table cells). Reduced motion is on (except in that last capture), so
 every run ends at once."""
 import pathlib, re, subprocess, sys
 from playwright.sync_api import sync_playwright
@@ -30,7 +30,8 @@ LIN_JS = r"""s=>{
     if(t==='msubsup') return lin(k[0])+'_'+lin(k[1])+'^'+lin(k[2]); if(t==='mover'||t==='munder') return lin(k[0]);
     return [...n.childNodes].map(lin).join(''); };
   const one=m=>lin(m).replace(/\s+/g,' ').trim();
-  return [...document.querySelectorAll(s)].filter(e=>e.getClientRects().length).map(e=>{
+  const all=[...document.querySelectorAll(s)].filter(e=>e.getClientRects().length);
+  return all.filter(e=>!all.some(o=>o!==e&&o.contains(e))).map(e=>{   // an element inside another match is already in that one's text
     const undo=[];
     e.querySelectorAll('.emb-eqs').forEach(g=>{ const c=[...g.children], d=document.createElement('div');
       for(let i=0;i<c.length;i+=3){ const r=document.createElement('div'); r.textContent=c.slice(i,i+3).map(x=>{const m=x.querySelector('math'); return m?one(m):x.textContent.trim();}).join(' ').trim(); d.appendChild(r); }
@@ -68,9 +69,28 @@ def click(pg, sel, ms=200):
 
 
 def stage(pg, d, label):
-    d.add(label + ' — stage', txt(pg, '#emb-stage .emb-head, #emb-stage .emb-pan:not([hidden]) .emb-pt, #emb-stage .emb-pan:not([hidden]) .emb-pair, #emb-stage .emb-pan:not([hidden]) .emb-leg, #emb-stage .emb-pan:not([hidden]) .emb-side, #emb-stage .emb-pan:not([hidden]) .legend-row'))
+    pan = '#emb-stage .emb-pan:not([hidden]) '
+    d.add(label + ' — stage', txt(pg, '#emb-stage .emb-head, ' + ', '.join(pan + c for c in ('.emb-pt', '.emb-cviews', '.emb-pair', '.emb-note', '.emb-cap', '.emb-rsub', '.emb-rows', '.emb-rres', '.emb-trap', '.emb-leg', '.emb-side', '.legend-row'))))
     d.add(label + ' — chart labels', pg.evaluate("()=>[...document.querySelectorAll('#emb-stage svg')].filter(e=>e.getClientRects().length).map(s=>[...s.querySelectorAll('text')].map(t=>t.textContent).join(' | ')).join('\\n')"))
     d.add(label + ' — metric cards', txt(pg, '#emb-metrics'))
+
+
+def anim_texts(b, lang, d):
+    """Part 4 played at the default speed (motion on): the table and the rows during a slow step, then during the fast part."""
+    pg = b.new_page(viewport={'width': 1440, 'height': 900})
+    pg.goto(URL); pg.wait_for_timeout(300); click(pg, f'.langsw button[data-lang="{lang}"]', 150)
+    pg.evaluate("()=>{location.hash='embeddings'}"); pg.wait_for_timeout(500)
+    click(pg, '#emb-rail [data-go="3"]', 500)
+    sel = ', '.join('#emb-stage ' + c for c in ('#emb-pan-heat .emb-pt', '#emb-pan-heat .emb-cap', '#emb-pan-rows .emb-pt', '#emb-pan-rows .emb-rsub', '#emb-pan-rows .emb-rows', '#emb-pan-rows .emb-rres'))
+    click(pg, '#emb-transport [data-act="play"]', 50)
+    pg.wait_for_function("()=>{const a=window.__emb.animState(); return a&&a.slow&&a.k===5&&a.ph>0.1&&a.ph<0.35}", timeout=20000)
+    d.add('Part 4 while Train plays: slow step 5, arrows on', txt(pg, sel))
+    pg.wait_for_function("()=>{const a=window.__emb.animState(); return a&&a.slow&&a.k===5&&a.ph>0.75}", timeout=20000)
+    d.add('Part 4 while Train plays: slow step 5, after the update', txt(pg, sel))
+    pg.wait_for_function("()=>{const a=window.__emb.animState(); return a&&!a.slow&&a.frozen!==null}", timeout=30000)
+    d.add('Part 4 while Train plays: the fast part', txt(pg, sel))
+    pg.wait_for_function("()=>!window.__emb.animState()", timeout=40000)
+    pg.close()
 
 
 def avg_ready(pg):   # the 16-start averages are filled in the background; wait until the observation shows them
@@ -116,11 +136,12 @@ def run(lang):
                 acted = True
             if st['step'] == 6:
                 for k in ('order', 'neg'):
-                    click(pg, f'#emb-rail [data-lever="{k}"]', 200); d.add(f'After the {k} pair', txt(pg, '#emb-rail .step.current'))
+                    click(pg, f'#emb-rail [data-lever="{k}"]', 200); d.add(f'After the {k} pair', txt(pg, '#emb-rail .step.current')); stage(pg, d, f'Part {i + 1}, the {k} pair')
             if acted: d.add('Card after the action', txt(pg, '#emb-rail .step.current')); stage(pg, d, f'Part {i + 1} after'); d.tipsOf(pg, '#emb-app')
             nb = pg.query_selector('#emb-rail .step.current [data-nav="next"]')
             if nb and not nb.is_disabled(): click(pg, '#emb-rail .step.current [data-nav="next"]', 300)
         d.add('Next-lab footer', txt(pg, '.next-lab'))
+        d.h('Part 4 while Train plays'); anim_texts(b, lang, d)
         d.h('Show the math')
         pg.evaluate("()=>{const m=document.querySelector('#emb-math'); if(m) m.open=true}"); pg.wait_for_timeout(150); d.add('Math', txt(pg, '#emb-math')); d.tipsOf(pg, '#emb-math')
         d.h('Scenarios')
