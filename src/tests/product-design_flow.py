@@ -66,6 +66,11 @@ red = lambda pg: count(pg, '#pdz-wf .pdz-bar.red')
 sq_area = lambda pg: pg.evaluate("()=>[...document.querySelectorAll('#pdz-fleet .pdz-sqs .pdz-sq')].reduce((a,e)=>{const r=e.getBoundingClientRect(); return a+r.width*r.height;},0)")
 plan = lambda pg, q=False: pg.evaluate("q=>window.__pdz.plan(q)", q)
 # P15: the metric cards fit in the stage's visible box without scrolling inside it (the stage is capped at 1440)
+# N13: the line above the cards, and the cards' ▲▼ lines with their heights
+MVS = """()=>{const m=document.querySelector('#pdz-metrics'), v=m.querySelector('.pdz-mvs'), c=[...m.querySelectorAll('.metric')].filter(e=>e.getClientRects().length);
+  const ds=c.map(e=>e.querySelector('.d')).filter(d=>d.classList.contains('on')&&d.textContent.trim());
+  return {vs:v?v.textContent.trim():'', vsOn:!!v&&v.classList.contains('on'), vsAbove:!!v&&c.length>0&&c.every(e=>v.getBoundingClientRect().bottom<=e.getBoundingClientRect().top+0.5),
+    d:ds.map(d=>d.textContent.trim()), h:ds.map(d=>Math.round(d.getBoundingClientRect().height))};}"""
 cards_in_view = lambda pg: pg.evaluate("()=>{const s=document.querySelector('#pdz-stage'), m=document.querySelector('#pdz-metrics'); if(!m||!m.getClientRects().length) return true; return m.getBoundingClientRect().bottom-s.getBoundingClientRect().top+s.scrollTop<=s.clientHeight+1;}")
 red_after_goal = lambda pg: pg.evaluate("()=>{const g=document.querySelector('#pdz-wf .pdz-goal'); if(!g) return false; const gx=g.getBoundingClientRect().left; return [...document.querySelectorAll('#pdz-wf .pdz-bar.red')].every(e=>e.getBoundingClientRect().left>=gx-1.5);}")
 svg_scale = lambda pg: pg.evaluate("()=>{const s=document.querySelector('#pdz-wf svg'); return s?s.getBoundingClientRect().width/s.viewBox.baseVal.width:1}")
@@ -311,8 +316,13 @@ def walk(b, lang, w):
         if i == 3: check(f'{tag} scenario 4 (no streaming): the first word is red, only past the budget line', count(pg, '#pdz-insight .pdz-bad') == 1 and red(pg) >= 1 and red_after_goal(pg))
         if i == 2: check(f'{tag} scenario 3 (P29): its line gives the messages per user and the share to the small model', Z(lang, '5 messages per user a day, half to the small model', '每人每天 5 条消息，一半交给小模型') in text(pg, '#pdz-rail [data-preset="2"]'), text(pg, '#pdz-rail [data-preset="2"]'))
         if i >= 1:
-            mt = text(pg, '#pdz-metrics')
-            check(f'{tag} scenario {i + 1} (P30): the change is measured against the scenario before, named', '“' in mt and Z(lang, 'vs last', '上次') not in mt, mt[:160])
+            # P30: the change is measured against the scenario before, named; N13 (kit polish K2): named once, above the cards, and each
+            # card's ▲▼ line is only the change, on one line
+            mv = pg.evaluate(MVS); prev = pg.evaluate(f"()=>{{const b=document.querySelector('#pdz-rail [data-preset=\"{i - 1}\"] b'); return b?b.textContent.trim():''}}")   # the scenario before, as its button names it
+            check(f'{tag} scenario {i + 1} (P30, N13): above the cards, once: the change is measured against the scenario before, named',
+                  bool(prev) and mv['vs'] == Z(lang, f'▲▼ compared with “{prev}”', f'▲▼ 和“{prev}”比') and mv['vsOn'] and mv['vsAbove'], json.dumps([prev, mv], ensure_ascii=False)[:300])
+            check(f'{tag} scenario {i + 1} (N13): the cards give only the change (▲ n 倍 / ▼ −n%), each on one line, no scenario name, no “vs last”',
+                  len(mv['d']) >= 1 and all(x[0] in '▲▼' and not any(y in x for y in ('“', 'vs', 'last', 'times', '比', '上次', '是')) for x in mv['d']) and all(h <= 16 for h in mv['h']), json.dumps(mv, ensure_ascii=False)[:300])
         rules(pg, f'{tag} scenario {i + 1}', lang)
         if i in (2, 3): shot(pg, f'{lang}_{w}_sc{i + 1}')
     if w == 1440: check(f'{tag} scenarios (P15): no dock over the sticky stage in any of the {len(docks)}', all(not g['dock'] and dock_ok(g) for g in docks), json.dumps(docks[:2]))

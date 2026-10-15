@@ -677,12 +677,7 @@ function updateRail(){
     $$('[data-chfx]',rail).forEach(b=>{const on=chFx.includes(b.dataset.chfx); b.setAttribute('aria-pressed',String(on)); b.disabled=!on&&chFx.length>=2;});
     const sb=$('[data-act="submit"]',rail); if(sb) sb.disabled=chFx.length!==2; const sw=$('.rgf-subw',rail); if(sw) sw.textContent=chFx.length===2?'':tx('Pick two fixes to submit.','选好两种改法再提交。');
     const sub=$('#rgf-ch-sub',rail); if(sub) sub.hidden=chSubmitted;
-    const res=$('#rgf-ch-res',rail), html=chResultHTML(); if(res._h!==html){const again=res._h!=null&&res._h!==''&&html!==''; res.innerHTML=html; res._h=html; goalLabels(res); if(again) A.ui.obsBump(res);}}}
-/* a value label sits right of its bar, so for a row just under the goal the goal line would run through it (picks at 70–73%): rows under
-   the goal carry their label inside the bar's end instead (an inline right, which the kit leaves where the lab puts it; round-1 polish P21) */
-function goalLabels(host){$$('.cmp-track',host).forEach(tr=>{const g=$('b.g',tr), v=$('.cmp-val',tr), w=$('i',tr); if(!g||!v||!w) return;
-  const gl=parseFloat(g.style.left), vl=parseFloat(w.style.width); if(!(vl<gl)) return;
-  v.classList.remove('cmp-fit'); v.style.cssText=`right:${(100-vl).toFixed(2)}%;left:auto;margin-left:0;margin-right:3px`; v.classList.add('rgf-vin');});}
+    const res=$('#rgf-ch-res',rail), html=chResultHTML(); if(res._h!==html){const again=res._h!=null&&res._h!==''&&html!==''; res.innerHTML=html; res._h=html; if(again) A.ui.obsBump(res);}}}
 function railHTML(){
   if(mode==='guided'){const s=STEPS[step]; return A.ui.steps({steps:STEPS.map(x=>({title:L(x.title),lead:x.lead?esc(L(x.lead)):''})),m2:true,current:step,body:s.body(),back:step>0,showMe:!!s.showMe,next:step<STEPS.length-1,nextDisabled:isNextDisabled(),nextWhy:s.nextWhy?L(s.nextWhy):undefined,skip:!!s.skip});}
   return mode==='sandbox'?sandboxHTML():challengeHTML();}

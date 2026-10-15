@@ -147,9 +147,6 @@
 .dpo-app .ctl-note code,.dpo-app .c-card code{overflow-wrap:anywhere}
 .dpo-prod{margin:0 0 8px;padding-left:18px;display:grid;gap:6px;font-size:13.5px;line-height:1.5}
 .dpo-simpl{margin-top:10px}
-/* comparison chart: a value label sits on top of the dashed goal line */
-.dpo-app .cmp-val{background:var(--surface-2);padding:1px 3px;border-radius:2px;z-index:1}
-.dpo-app .cmp-row.me .cmp-val{background:var(--surface)}
 
 /* mini result bar: a stacked strip of the four probabilities, same fills as the bars */
 .dpo-strip{display:flex;height:14px;border-radius:3px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line)}

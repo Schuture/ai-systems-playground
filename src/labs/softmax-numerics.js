@@ -403,10 +403,11 @@ const chOpt=id=>id==='start'?CH0:CHO.find(o=>o.id===id);
 /* the brief chart's rows (the owner's review of batch 8): [CH0, ...CHO] in order, only the fixes that meet the goal, the pick and the
    initial setup, as A.ui.cmpChart({brief:true}) keeps them */
 const chShown=()=>[CH0].concat(CHO).map(chEval).filter(e=>e.ok||e.o.id===chPick||e.o.id==='start');
-/* a bar past 55% of the track carries its label inside its end (R7.8) */
+/* the NaN row is red hatched and named in the legend (A19). Where each value label goes (right of its bar, or inside a long bar's end,
+   clear of the goal line) is the kit's (kit polish K1; this lab's own “inside its end past 55%”, R7.8, could put the line through it) */
 function chChartFix(box){
-  const rows=chShown(), lg=x=>Number.isNaN(x)?9.4:Math.max(0.25,Math.min(9.4,Math.log10(Math.max(x,1e-12))+7));
-  let nan=false; $$('.cmp-row',box).forEach((el,i)=>{const e=rows[i]; if(!e) return; const n=Number.isNaN(e.err); nan=nan||n; el.classList.toggle('sm-cmp-in',lg(e.err)/9.6>0.55); el.classList.toggle('sm-cmp-nan',n);});
+  const rows=chShown();
+  let nan=false; $$('.cmp-row',box).forEach((el,i)=>{const e=rows[i]; if(!e) return; const n=Number.isNaN(e.err); nan=nan||n; el.classList.toggle('sm-cmp-nan',n);});
   const leg=$('.cmp-leg',box); if(nan&&leg&&!$('.sm-leg-nan',leg)) leg.insertAdjacentHTML('beforeend',`<span><i class="sm-leg-nan"></i>${esc(tx('NaN: no result','NaN：没有结果'))}</span>`);
 }
 const chLabel=o=>`${L(o.t)} (${o.bytes} B)`;

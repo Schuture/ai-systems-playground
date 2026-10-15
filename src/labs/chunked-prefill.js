@@ -677,10 +677,9 @@ function updateRail(){
     g.classList.toggle('met',p.ok); pr.classList.toggle('met',p.ok); g.classList.toggle('ck-over',!p.ok); pr.classList.toggle('ck-over',!p.ok);
     if(chSubmitted&&p.ok) chReveal=true;
     const res=$('#ck-ch-res',rail), html=chResultHTML(); if(res._h!==html){const again=res._h!=null&&res._h!==''&&html!==''; res.innerHTML=html; res._h=html; if(again) A.ui.obsBump(res);
-      /* a bar past the scale keeps its value inside, at the track's end; a long bar keeps it inside its own end, so it never wraps */
-      $$('.cmp-row',res).forEach(rw=>{const v=rw.querySelector('.cmp-val'), bar=rw.querySelector('.cmp-track i'); if(!v) return;
-        if(/▸/.test(v.textContent)){rw.classList.add('ck-off'); return;}
-        const w=bar?parseFloat(bar.style.width)||0:0; if(w>62){v.style.left='auto'; v.style.right=`calc(${(100-w).toFixed(2)}% + 3px)`; v.style.marginLeft='0';}});}
+      /* a bar past the scale keeps its value inside, at the track's end; every other label the kit places, on one line and clear of
+         the goal line (kit polish K1: this lab's own “inside a bar longer than 62%” put the goal line through 24.24 ms and 47.16 ms) */
+      $$('.cmp-row',res).forEach(rw=>{const v=rw.querySelector('.cmp-val'); if(v&&/▸/.test(v.textContent)) rw.classList.add('ck-off');});}
   }
 }
 

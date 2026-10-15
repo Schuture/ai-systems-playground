@@ -140,8 +140,6 @@
 .ppo-app .step-b a,.ppo-app .obs a{text-underline-offset:2px}
 .ppo-app .c-card code{overflow-wrap:anywhere}
 .ppo-prod{margin:0 0 8px;padding-left:18px;display:grid;gap:6px;font-size:13.5px;line-height:1.5}
-.ppo-app .cmp-val{background:var(--surface-2);padding:1px 3px;border-radius:2px;z-index:1}
-.ppo-app .cmp-row.me .cmp-val{background:var(--surface)}
 
 /* mini result bar */
 .ppo-dk{position:relative;height:12px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden}
