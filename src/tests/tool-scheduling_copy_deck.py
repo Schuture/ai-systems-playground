@@ -131,7 +131,8 @@ def run(lang):
         click(pg, '#tls-app .modes button[data-mode="challenge"]', 400)
         d.add('Card', txt(pg, '#tls-rail .railcard')); d.add('Settings note', txt(pg, '#tls-lock')); stage(pg, d, 'Challenge before Submit')
         click(pg, '#tls-rail [data-act="submit"]', 300); d.add('Initial setup submitted', txt(pg, '#tls-ch-res, #tls-status'))
-        for a, label in (([1, 1, 1, 2, 2, 2], 'tests in the edit batch'), ([1, 2, 2, 3, 3, 4], 'a 13.4-s arrangement'), ([1, 1, 1, 2, 2, 3], 'the best arrangement')):
+        for a, label in (([1, 1, 1, 2, 2, 2], 'tests in the edit batch'), ([1, 1, 1, 2, 2, 1], 'tests before both edits (had not begun)'),
+                         ([1, 1, 1, 2, 3, 2], 'tests with D, before E (one still editing, one not begun)'), ([1, 1, 2, 3, 2, 4], 'a 13.4-s arrangement'), ([1, 1, 1, 2, 2, 3], 'the best arrangement')):
             for j, v in enumerate(a): click(pg, f'#tls-ch-{j} button[data-v="{v}"]', 60)
             click(pg, '#tls-rail [data-act="submit"]', 300); d.add(label, txt(pg, '#tls-ch-res'))
         stage(pg, d, 'Challenge after Submit')
