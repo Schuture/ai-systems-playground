@@ -1,7 +1,8 @@
 """Numbers test for the rag-failure lab: an independent Python twin of the page's engine (each run's four checks read from its record,
 the 200-question breakdown with every set of fixes for both systems, the four rates, the added wait, the challenge's feasible pairs and
 best pair) compared with the page; the numbers the page writes in its cards, charts, observations and results; the home tile; the
-interview drill (mulberry32 re-implemented); and the quoted source wordings re-read from sources/b10src/rag-failure/raw/.
+interview drill (mulberry32 re-implemented); each failing run's verdict against the check of the stage it names (N1 of the round-1
+check); and the quoted source wordings re-read from sources/b10src/rag-failure/raw/.
 Run: python3 tests/rag-failure_numbers.py"""
 import itertools, math, pathlib, re, subprocess, sys
 from playwright.sync_api import sync_playwright
@@ -168,8 +169,13 @@ with sync_playwright() as p:
         pg.evaluate("()=>document.querySelector('#rgf-rail [data-go=\"6\"]').click()"); pg.wait_for_timeout(300)
         rem = txt('#rgf-rail .step.current')
         gain = {f: twin('base', [f])['ok'] - 140 for f in FIXES}
-        check(f'{lang} part 7: split the question adds the fewest ({gain["dec"]}); rerank and the bigger budget add {gain["hyb"]} and {gain["ctx"]}; the cut kind is the largest',
-              min(gain, key=gain.get) == 'dec' and re.search(rf'\b{gain["dec"]}\b', rem) and re.search(rf'\b{gain["hyb"]}\b', rem) and gain['hyb'] == gain['ctx'] and max(MIX['base'][k] for k in MIX['base'] if k != 'ok') == MIX['base']['cut'], (gain, rem[-300:]))
+        # round-1 polish: part 7 now picks fixes by what they repair and what they add to the wait (the largest kind, the two fixes for
+        # it, the citing fix for the two answer-stage kinds); each number it names is the twin's, and each claim is checked here
+        named = [MIX['base']['cut'], gain['hyb'], MIX['base']['unsup'], MIX['base']['noans'], gain['cite'], WAIT['cite']]
+        check(f'{lang} part 7: the cut kind is the largest ({MIX["base"]["cut"]}); rerank and the bigger budget each add {gain["hyb"]}; citing covers the two answer-stage kinds ({MIX["base"]["unsup"]}, {MIX["base"]["noans"]}), adds {gain["cite"]}, the most of any single fix, for {WAIT["cite"]} ms',
+              max(MIX['base'][k] for k in MIX['base'] if k != 'ok') == MIX['base']['cut'] and gain['hyb'] == gain['ctx']
+              and set(SHARE['cite']) == {'unsup', 'noans'} and max(gain, key=gain.get) == 'cite' and WAIT['cite'] < min(WAIT[f] for f in ('hyb', 'dec'))
+              and all(re.search(rf'\b{v}\b', rem) for v in named), (gain, named, rem[-300:]))
         # challenge: pick the best pair and read the result
         pg.evaluate("()=>document.querySelector('#rgf-app .modes button[data-mode=\"challenge\"]').click()"); pg.wait_for_timeout(300)
         for f in ('hyb', 'ver'): pg.evaluate("f=>document.querySelector(`#rgf-rail [data-chfx=\"${f}\"]`).click()", f); pg.wait_for_timeout(100)
@@ -255,13 +261,55 @@ with sync_playwright() as p:
         gain = m['ok'] - m0['ok']; fixed = {k: MIX['base'][k] - m['left'][k] for k in m['left']}
         need = [str(gain)] + ([str(fixed['cut'])] if fx == ['hyb'] else []) + ([str(twin('base', ['hyb'])['ok'] - 140)] if fx == ['ver', 'cite'] else [])
         claim = {'10000': fixed['cut'] * 2 > gain, '00110': gain > twin('base', ['hyb'])['ok'] - 140, '01001': fixed['cut'] * 2 > gain}[bits]
+        if fx == ['ver', 'cite']:
+            # N3 of the round-1 check: each side's kinds, all three of them (the largest kind, cut by the budget, among the hybrid fix's),
+            # are the kinds its shares touch; “only half” is said exactly when the hybrid fix repairs half of its kinds
+            a3 = sum(MIX['base'][k] for k in ('stale', 'unsup', 'noans')); r3 = sum(MIX['base'][k] for k in ('miss', 'multi', 'cut')); rh = twin('base', ['hyb'])['ok'] - 140
+            need += [str(a3), str(r3)]
+            claim = claim and set(SHARE['ver']) | set(SHARE['cite']) == {'stale', 'unsup', 'noans'} and set(SHARE['hyb']) == {'miss', 'multi', 'cut'} and a3 > r3 and (2 * rh == r3) == ('only half' in ins)
         check(f'scenario {"+".join(fx)}: names {need} and its claim holds', all(re.search(rf'\b{x}\b', ins) for x in need) and claim, ins[:300])
+    # N1 of the round-1 check: a verdict names the stage the run failed at, and the check of that stage sits on the same line. Where that
+    # check still passes (an outdated page: the current edition was retrieved, so retrieval recall passes, and it cannot see that the
+    # replaced edition came back too), the verdict says what went wrong there, the replaced row is the red one, and the ✓ says why it
+    # passes; for every other kind that check fails. Read from the record of each run, in both languages
+    OWN = {'ret': 'ret', 'ctx': 'ctx', 'ans': 'grd'}
+    SNAME = {'ret': ('Retrieval', '检索'), 'ctx': ('Context', '放进上下文'), 'ans': ('Answer', '回答')}
+    WHY = {'en': ('it returned the replaced edition too', 'cannot tell that the replaced edition came back too'), 'zh': ('取回了已被替换的旧版', '查不出旧版也被取回来了')}
+    passing = [r['kind'] for r in D['RUNS'] if r['kind'] != 'ok' and run_checks(r)[OWN[D['CAUSE'][r['kind']]]]]
+    check('N1: the outdated page is the one kind whose failing stage passes its own check', passing == ['stale'], passing)
+    REC = """()=>{const v=document.querySelector('#rgf-flow .rgf-verdict');
+      return {verd:v?v.innerText.replace(/\\u00a0/g,' '):'', red:[...document.querySelectorAll('#rgf-flow .rgf-stg.bad')].map(e=>e.dataset.s),
+        pills:[...document.querySelectorAll('#rgf-flow .rgf-pill')].map(e=>({m:e.dataset.m,tip:e.getAttribute('data-tipx')||''})),
+        oldRed:[...document.querySelectorAll('#rgf-flow .rgf-li.bad')].some(e=>!!e.querySelector('.rgf-tag'))}}"""
+    for lang in ('en', 'zh'):
+        rp = b.new_page(viewport={'width': 1440, 'height': 900}, reduced_motion='reduce'); rp.on('pageerror', lambda e: errs.append(str(e)))
+        rp.goto(URL); rp.wait_for_timeout(300); rp.click(f'.langsw button[data-lang="{lang}"]'); rp.wait_for_timeout(150)
+        li = 0 if lang == 'en' else 1
+        for i, r in enumerate(D['RUNS']):
+            if r['kind'] == 'ok': continue
+            rp.evaluate(f"()=>{{location.hash='rag-failure~f00000_r{i}'}}"); rp.wait_for_timeout(350)
+            if rp.evaluate("()=>document.querySelector('#rgf-runtog').getAttribute('aria-expanded')") != 'true':
+                rp.evaluate("()=>document.querySelector('#rgf-runtog').click()"); rp.wait_for_timeout(250)
+            g = rp.evaluate(REC); stage = D['CAUSE'][r['kind']]; own = OWN[stage]; passes = run_checks(r)[own]
+            pill = g['pills'][['ret', 'ctx', 'grd', 'cor'].index(own)] if len(g['pills']) == 4 else {'m': '', 'tip': ''}
+            named = SNAME[stage][li] in g['verd'] and g['red'][:1] == [stage]
+            if passes:
+                ok = named and pill['m'] == '✓' and WHY[lang][0] in g['verd'] and WHY[lang][1] in pill['tip'] and g['oldRed']
+            else:
+                ok = named and pill['m'] == '✗' and WHY[lang][0] not in g['verd'] and WHY[lang][1] not in pill['tip']
+            check(f'{lang} N1: run {r["id"]} ({r["kind"]}) fails at {stage}; its check {own} shows {"✓ with why it passes, and the verdict says what went wrong" if passes else "✗"}', ok, (g['verd'], g['red'], pill))
+        rp.close()
     # the home tile: build with the map and read each option's sentence
     pg.evaluate("()=>{location.hash='map'}"); pg.wait_for_timeout(300)
     pg.click('.langsw button[data-lang="en"]'); pg.wait_for_timeout(300)
     tile = pg.query_selector('#tile-rag-failure')
     if tile:
-        want = [('ret', 10), ('ctx', 16), ('doc', 12), ('ans', 22)]
+        # three stages named as in the lab's figure; an outdated page counts under retrieval, as in the lab (round-1 polish N1)
+        mix = pg.evaluate("()=>window.__rgf.data().MIX.base")
+        want = [('ret', mix['miss'] + mix['multi'] + mix['stale']), ('ctx', mix['cut']), ('ans', mix['unsup'] + mix['noans'])]
+        names = pg.evaluate("()=>[...document.querySelectorAll('#tile-rag-failure .seg-ctl[data-key=\"tzs\"] button')].map(b=>b.textContent.trim())")
+        check('tile: three stages, named as in the lab', names == ['Retrieval', 'Context', 'Answer'], names)
+        check('tile: 22, 16 and 22 of the 60 wrong answers', [v for _, v in want] == [22, 16, 22], want)
         for i, (k, v) in enumerate(want):
             pg.evaluate("i=>document.querySelector(`#tile-rag-failure .seg-ctl[data-key=\"tzs\"] button[data-v=\"${i}\"]`).click()", i); pg.wait_for_timeout(120)
             rd = pg.evaluate("()=>document.querySelector('#tile-rag-failure .tz-read').textContent")

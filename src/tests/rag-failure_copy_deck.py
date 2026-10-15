@@ -5,8 +5,9 @@ python3 tests/rag-failure_copy_deck.py  ->  out/rag-failure-copy/en.md and out/r
 
 Order: home tile (each stage, the notes), lab header, each guided part (card before and after its action, the stage, the
 breakdown, the metric cards), Show the math, the scenarios (each insight), Settings, the challenge (every feedback tier and the
-chart), the capability card, and Connect with the drill answer. A tooltip is printed the first time it appears with a given text, and only the first three
-of each kind. Reduced motion is on, so every cut ends at once."""
+chart), the capability card, Connect with the drill answer, and what only a phone (390) shows: the dock's lines and the buttons under the
+cards in Scenarios and Settings. A tooltip is printed the first time it appears with a given text, and only the first three of each kind.
+Reduced motion is on at 1440, so every cut ends at once; it is off at 390, where a new run waits for ▶."""
 import pathlib, re, subprocess, sys
 from playwright.sync_api import sync_playwright
 
@@ -66,11 +67,39 @@ def click(pg, sel, ms=200):
 
 
 def stage(pg, d, label):
-    d.add(label + ' — stage', txt(pg, '#rgf-stage .rgf-head, #rgf-stage .rgf-pan:not([hidden]) .rgf-pt, #rgf-stage #rgf-pan-run:not([hidden]) .rgf-ql, #rgf-stage #rgf-pan-run:not([hidden]) #rgf-rnote:not([hidden]), #rgf-stage #rgf-pan-run:not([hidden]) #rgf-flow, #rgf-stage #rgf-pan-run:not([hidden]) #rgf-r-leg, #rgf-stage #rgf-pan-bars:not([hidden]) #rgf-bars, #rgf-stage #rgf-pan-bars:not([hidden]) #rgf-b-leg'))
+    d.add(label + ' — stage', txt(pg, '#rgf-stage .rgf-head, #rgf-stage #rgf-pan-sum:not([hidden]) #rgf-two, #rgf-stage .rgf-pan:not([hidden]) .rgf-pt, #rgf-stage #rgf-pan-run:not([hidden]) #rgf-runtog, #rgf-stage #rgf-pan-run:not([hidden]) .rgf-ql, #rgf-stage #rgf-pan-run:not([hidden]) #rgf-rnote:not([hidden]), #rgf-stage #rgf-pan-run:not([hidden]) #rgf-flow, #rgf-stage #rgf-pan-run:not([hidden]) #rgf-r-leg, #rgf-stage #rgf-pan-bars:not([hidden]) #rgf-bars, #rgf-stage #rgf-pan-bars:not([hidden]) #rgf-b-leg'))
     d.add(label + ' — metric cards', txt(pg, '#rgf-metrics:not([hidden])'))
 
 
 SEG = lambda k, v: f'#rgf-rail .seg-ctl[data-key="{k}"] button[data-v="{v}"]'
+DOCK = "()=>{const d=document.getElementById('dock'); return d&&!d.hidden&&d.getBoundingClientRect().height>0?d.innerText:''}"
+
+
+def phone(b, d, lang):
+    """390 only (round-1 check: P18, N1, N6): the dock's lines and the buttons under the cards"""
+    pg = b.new_page(viewport={'width': 390, 'height': 844})
+    pg.goto(URL); pg.wait_for_timeout(300); click(pg, f'.langsw button[data-lang="{lang}"]', 150)
+    pg.evaluate("()=>{location.hash='rag-failure'}"); pg.wait_for_timeout(500)
+
+    def below():
+        pg.evaluate("()=>{const a=document.querySelector('#rgf-stage'); window.scrollTo(0,a.getBoundingClientRect().bottom+scrollY-20)}")
+        try: pg.wait_for_function("()=>{const d=document.getElementById('dock'); return d&&!d.hidden&&d.getBoundingClientRect().height>0}", timeout=3000)
+        except Exception: pass
+        pg.wait_for_timeout(400)
+        return pg.evaluate(DOCK)
+    d.h('Phone (390): the dock and the buttons under the cards')
+    d.add('Dock while the first run waits for ▶', below())
+    click(pg, '#rgf-rail [data-go="2"]', 300); click(pg, '#rgf-rail [data-tri="cut"]', 200); click(pg, '#rgf-rail [data-trigo="1"]', 200)
+    pg.evaluate("()=>{const i=document.querySelector('#rgf-tr-p-in'); i.value=100; i.dispatchEvent(new Event('input',{bubbles:true}));}"); pg.wait_for_timeout(200)
+    click(pg, '#rgf-rail [data-tri="stale"]', 200)
+    d.add('Dock after the right pick on the outdated-page run', below())
+    click(pg, '#rgf-app .modes button[data-mode="sandbox"]:not([data-flow=free])', 400)
+    d.add('Scenarios: the buttons under the cards', txt(pg, '#rgf-pk'))
+    click(pg, '#rgf-pk [data-pick="2"]', 300)
+    d.add('Dock with a scenario’s fixes on', below())
+    click(pg, '#rgf-app .modes button[data-flow="free"]', 400)
+    d.add('Settings: the buttons under the cards', txt(pg, '#rgf-pk'))
+    pg.close()
 
 
 def run(lang):
@@ -92,6 +121,7 @@ def run(lang):
         d.add('Fidelity note', pg.evaluate("()=>{const e=document.querySelector('#rgf-app [id$=\"-fid\"]'); return e?e.innerText:''}"))
         d.add('Primer note', pg.evaluate("()=>{const e=document.querySelector('#rgf-app [id$=\"-pri\"]'); return e?e.innerText:''}"))
         d.add('Transport', txt(pg, '#rgf-transport')); d.tipsOf(pg, '#rgf-transport')
+        d.add('The play button over the record (phones, before a new run plays)', pg.evaluate("()=>{const e=document.querySelector('#rgf-go'); return e?e.textContent:''}"))
         d.add('The seven runs', pg.evaluate("()=>[...document.querySelectorAll('#rgf-rsel option')].map(o=>o.textContent).join('\\n')"))
         for i in range(7):
             d.h(f'Guided part {i + 1}')
@@ -132,6 +162,9 @@ def run(lang):
         for i in range(5):
             click(pg, f'#rgf-rail [data-preset="{i}"]', 300); d.add(f'Scenario {i + 1} insight', txt(pg, '#rgf-insight')); d.add(f'Scenario {i + 1} status', txt(pg, '#rgf-st-title, #rgf-status'))
         stage(pg, d, 'Scenario 5')
+        if pg.query_selector('#rgf-runtog'):
+            click(pg, '#rgf-runtog', 300)
+            d.add('Scenario 5 — the run record opened', txt(pg, '#rgf-stage #rgf-runtog, #rgf-stage #rgf-pan-run .rgf-ql, #rgf-stage #rgf-rnote:not([hidden]), #rgf-stage #rgf-flow, #rgf-stage #rgf-r-leg')); d.tipsOf(pg, '#rgf-stage')
         d.h('Settings'); d.add('Settings', txt(pg, '#rgf-controls')); d.tipsOf(pg, '#rgf-controls')
         pg.evaluate("()=>{const m=document.querySelector('#rgf-controls details'); if(m) m.open=true}"); pg.wait_for_timeout(100); d.add('Lab assumptions', txt(pg, '#rgf-controls details'))
         d.h('Challenge')
@@ -160,6 +193,7 @@ def run(lang):
         d.h('Connect'); d.add('Connect', txt(pg, '#rgf-app section.connect'))
         if pg.query_selector('#rgf-app [data-act="drill-reveal"]'): click(pg, '#rgf-app [data-act="drill-reveal"]', 150)
         d.add('Drill with the answer', txt(pg, '#rgf-drill-q, #rgf-drill-a')); d.tipsOf(pg, '#rgf-app')
+        phone(b, d, lang)
         b.close()
     (OUT / f'{lang}.md').write_text(f'# rag-failure copy deck ({lang})\n' + '\n'.join(d.lines))
     print(lang, len(d.lines), 'blocks')
