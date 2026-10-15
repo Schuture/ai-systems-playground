@@ -67,7 +67,8 @@ def click(pg, sel, ms=200):
 
 
 def stage(pg, d, label):
-    d.add(label + ' — stage', txt(pg, '#vix-stage .vix-head, #vix-stage .vix-pan:not([hidden]) .vix-pt, #vix-stage .vix-pan:not([hidden]) .vix-leg, #vix-stage .vix-pan:not([hidden]) .vix-kdbars'))
+    # each panel shown: its title, the picture's caption, legend and note, the scale bars and the k-d bars (review polish r1)
+    d.add(label + ' — stage', txt(pg, '#vix-stage .vix-head, #vix-stage .vix-pan:not([hidden]) > .vix-pt, #vix-stage .vix-pan:not([hidden]) .vix-cap, #vix-stage .vix-pan:not([hidden]) .vix-leg, #vix-stage .vix-pan:not([hidden]) .vix-pnote, #vix-stage .vix-pan:not([hidden]) .vix-scale, #vix-stage .vix-pan:not([hidden]) .vix-kdbars'))
     d.add(label + ' — stage picture label', pg.evaluate("()=>{const s=document.querySelector('#vix-pic'); return s&&s.getClientRects().length?s.getAttribute('aria-label'):''}"))
     d.add(label + ' — chart labels', pg.evaluate("()=>[...document.querySelectorAll('#vix-stage svg')].filter(e=>e.getClientRects().length).map(s=>[...s.querySelectorAll('text')].map(t=>t.textContent).join(' | ')).join('\\n')"))
     d.add(label + ' — metric cards', txt(pg, '#vix-metrics'))

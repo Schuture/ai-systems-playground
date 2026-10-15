@@ -7,7 +7,11 @@ The twin (numpy for k-means and distances, plain Python for the graph) follows s
   heuristic and search; levels by coin flips with odds 1/M), IVF-PQ (256 centres per piece, a table of distances, codes in IVF lists),
   a k-d tree (median of (coordinate, id), axis = depth mod d, branch and bound);
 - every recall@10 and vectors-compared figure of every setting, the k-d tree shares, the 2-D picture (the question, its cells, its
-  graph, its PQ grid), bytes per vector and the real-scale memory and time, the challenge's answer, the drill, the home tile's numbers;
+  graph, its PQ grid, and what each search in it compares and returns: the exact scan, the k-d tree, IVF at each nprobe, the HNSW walk
+  at each ef, PQ at 4, 8 and 16 centres), bytes per vector and the real-scale memory and time, the challenge's answer, the drill,
+  the home tile's numbers;
+- the picture's question shows what each index can miss (review polish r1, P11): its nearest cell holds 3 to 7 of its 10 nearest,
+  2 cells still miss one, HNSW with ef = 10 misses one, and the PQ grid finds more with more centres;
 - the page text: observations, scenario insights and the challenge result quote the engine's numbers;
 - ef outside the menu (review b10r1, B1): the page scans ef 10 to 400 for M = 4 and 8, and the twin rebuilds the edges of the ranges
   the challenge's answer quotes (EF_FREE); IVF and IVF-PQ never meet both bars at any nprobe from 1 to 50; at the same number of
@@ -249,16 +253,32 @@ for d in KDD:
 # the 2-D picture
 A2 = gen(SEED + 20, 2, 340, 8, 0.35, False); PX, PQs = A2[:300], A2[300:]
 PC, PL = ivf_build(PX, 16, 300, 10, SEED + 21)
-PQI = next(i for i in range(40) if 3 <= len(set(ivf_search(PX, PC, PL, PQs[i], 1, K)[0]) & set(topk(sqd(PX, PQs[i]), np.arange(300), K))) <= 7)
-PGT = topk(sqd(PX, PQs[PQI]), np.arange(300), K)
 PG = HNSW(PX, 4, 20, SEED + 22)
+PT = kd_build(PX)
+PSN = {}
 
 
-def pic_pq(c):
-    cx = kmeans(PX[:, 0:1], range(300), c, 10, SEED + 30)[:, 0]; cy = kmeans(PX[:, 1:2], range(300), c, 10, SEED + 31)[:, 0]
-    sx = cx[nearest(PX[:, 0:1], cx[:, None])]; sy = cy[nearest(PX[:, 1:2], cy[:, None])]
-    q = PQs[PQI]; d = (sx - q[0]) ** 2 + (sy - q[1]) ** 2
+def pic_pq(c, qi):
+    if c not in PSN:
+        cx = kmeans(PX[:, 0:1], range(300), c, 10, SEED + 30)[:, 0]; cy = kmeans(PX[:, 1:2], range(300), c, 10, SEED + 31)[:, 0]
+        PSN[c] = (cx[nearest(PX[:, 0:1], cx[:, None])], cy[nearest(PX[:, 1:2], cy[:, None])])
+    sx, sy = PSN[c]; q = PQs[qi]; d = (sx - q[0]) ** 2 + (sy - q[1]) ** 2
     return topk(d, np.arange(300), K)
+
+
+def pic_question():
+    # the first question whose nearest cell holds 3 to 7 of its 10 nearest, whose 2 nearest cells still miss one, which HNSW with
+    # ef = 10 misses one of, and whose PQ grid finds more of them with 8 centres than with 4, and more with 16
+    for i in range(40):
+        g = set(topk(sqd(PX, PQs[i]), np.arange(300), K)); hit = lambda ids: len(set(ids) & g)
+        v1, v2 = hit(ivf_search(PX, PC, PL, PQs[i], 1, K)[0]), hit(ivf_search(PX, PC, PL, PQs[i], 2, K)[0])
+        h10 = hit(PG.search(PQs[i], 10, K)[0]); pq = [hit(pic_pq(c, i)) for c in (4, 8, 16)]
+        if 3 <= v1 <= 7 and v2 < K and h10 < K and pq[0] < pq[1] < pq[2]: return i
+    return 0
+
+
+PQI = pic_question()
+PGT = topk(sqd(PX, PQs[PQI]), np.arange(300), K)
 
 
 def bytes_per(s, d):
@@ -301,9 +321,24 @@ with sync_playwright() as pw:
     check('picture: the question and its 10 nearest', pic['q'] == PQI and pic['gt'] == PGT, (pic['q'], PQI))
     check('picture: cells', pic['lists'] == [[int(j) for j in l] for l in PL])
     check('picture: graph levels', pic['level'] == PG.level and pic['entry'] == PG.entry)
-    for c in (4, 8, 16): check(f'picture: PQ grid with {c} centres', pg.evaluate(f"()=>window.__vix.picPQ({c}).ids") == pic_pq(c))
-    pv = pg.evaluate("()=>window.__vix.picEv('ivf',1,16)")
-    check('picture: IVF probing 1 cell finds 3 to 7 of the 10', 3 <= len(set(pv['found']) & set(PGT)) <= 7)
+    for c in (4, 8, 16): check(f'picture: PQ grid with {c} centres', pg.evaluate(f"()=>window.__vix.picPQ({c}).ids") == pic_pq(c, PQI))
+    hits = lambda ids: len(set(ids) & set(PGT))
+    pv = pg.evaluate("()=>window.__vix.picEv('flat',1,16)")
+    check('picture: the exact scan compares all 300 points and returns the 10 nearest', pv['found'] == PGT and pv['comps'] == 300 and pv['n'] == 300, (pv['found'], pv['comps']))
+    kid, kc = kd_search(PX, PT, PQs[PQI])[:2]
+    pv = pg.evaluate("()=>window.__vix.picEv('kd',1,16)")
+    check('picture: the k-d tree search finds the nearest point with the twin\'s comparisons; each event compares or skips', pv['found'] == [int(kid)] and pv['comps'] == kc and set(pv['kinds']) <= {'cmp', 'skip'} and pv['kinds'].count('cmp') == kc, (pv['found'], kid, pv['comps'], kc))
+    for np_ in (1, 2, 4, 16):
+        pv = pg.evaluate(f"()=>window.__vix.picEv('ivf',{np_},16)"); ids, comps, _ = ivf_search(PX, PC, PL, PQs[PQI], np_, K)
+        check(f'picture: IVF probing {np_} cells returns the twin\'s 10 and compares {comps}; centres, ranking, then one event per cell opened', pv['found'] == ids and pv['comps'] == comps and pv['kinds'] == ['ctr', 'rank'] + ['open'] * np_ + ['end'], (pv, ids, comps))
+        if np_ == 1: check('picture: IVF probing 1 cell finds 3 to 7 of the 10', 3 <= hits(pv['found']) <= 7, hits(pv['found']))
+        if np_ == 2: check('picture: IVF probing 2 cells still misses one', hits(pv['found']) < K, hits(pv['found']))
+    for ef in EFS:
+        pv = pg.evaluate(f"()=>window.__vix.picEv('hnsw',1,{ef})"); ids, comps = PG.search(PQs[PQI], ef, K)
+        check(f'picture: the HNSW walk at ef = {ef} returns the twin\'s 10 and compares {comps}', pv['found'] == ids and pv['comps'] == comps and pv['kinds'][0] == 'entry' and pv['kinds'].count('bottom') == 1, (pv['found'], ids, pv['comps'], comps))
+        if ef == 10: check('picture: HNSW with ef = 10 misses one of the 10', hits(pv['found']) < K, hits(pv['found']))
+    ph = [hits(pg.evaluate(f"()=>window.__vix.picEv('pq',1,16,{c})")['found']) for c in (4, 8, 16)]
+    check('picture: the PQ grid finds more of the 10 with more centres', ph[0] < ph[1] < ph[2] and ph == [hits(pic_pq(c, PQI)) for c in (4, 8, 16)], ph)
     # bytes per vector and real scale
     bp = lambda s, d: pg.evaluate(f"()=>window.__vix.bytesPer({s},{d})".replace('True', 'true'))
     for s in ({'ix': 'flat'}, {'ix': 'ivf', 'np': 1}, {'ix': 'hnsw', 'M': 16, 'ef': 10}, {'ix': 'pq', 'm': 8, 'np': 1}):
@@ -362,8 +397,11 @@ with sync_playwright() as pw:
     pg.evaluate("()=>document.querySelector('#vix-rail .seg-ctl[data-key=\"np\"] button[data-v=\"16\"]').click()"); pg.wait_for_timeout(300)
     o = tx('#vix-rail [data-obs]'); r16, c16 = TW[('ivf', 16, 0)]
     check('part 5: nprobe 16 numbers', pc1(r16) in o and f'{round(c16):,}' in o, o)
-    big = 65536 + 16 * 1e9 / 65536
-    check('part 5: at 1B in 65,536 cells, probing 16 takes about 0.03% as many comparisons as vectors', f'{big / 1e9 * 100:.2f}%' == '0.03%' and '65,536 cells' in o and '0.03%' in o, (big, o))
+    # the real-scale cells moved from the observation to Show the math (review polish r1, P10)
+    pg.evaluate("()=>{const m=document.querySelector('#vix-math'); if(m) m.open=true}"); pg.wait_for_timeout(200)
+    mb = tx('#vix-mathbody'); big = 65536 + 16 * round(1e9 / 65536)
+    check('part 5 (Show the math): at 1B in 65,536 cells, probing 16 compares about 0.03% as many as the vectors', f'{big / 1e9 * 100:.2f}%' == '0.03%' and '65,536 cells' in mb and '0.03%' in mb and f'{int(big):,}' in mb and '15,259' in mb, (big, mb[-600:]))
+    pg.evaluate("()=>{const m=document.querySelector('#vix-math'); if(m) m.open=false}")
     pg.evaluate("()=>{const b=[...document.querySelectorAll('#vix-rail [data-nav=\"next\"]')].find(x=>x.offsetParent); b&&b.click();}"); pg.wait_for_timeout(600)
     pg.evaluate("()=>document.querySelector('#vix-rail .seg-ctl[data-key=\"ef\"] button[data-v=\"64\"]').click()"); pg.wait_for_timeout(300)
     o = tx('#vix-rail [data-obs]'); r, c = TW[('hnsw', 16, 64)]
@@ -372,6 +410,8 @@ with sync_playwright() as pw:
     pg.evaluate("()=>document.querySelector('#vix-rail .seg-ctl[data-key=\"m\"] button[data-v=\"16\"]').click()"); pg.wait_for_timeout(300)
     o = tx('#vix-rail [data-obs]'); r, c = TW[('pq', 16, 16)]
     check('part 7: 16-byte codes numbers', pc1(r) in o and '72 GB' in o, o)
+    mc = tx('#vix-metrics')
+    check('part 7: the memory card counts IVF-PQ at real scale as the observation does: 64-byte codes + 8-byte ids = 72 GB (P15)', '72 GB' in mc, mc)
     # challenge: pick the answer and submit
     pg.evaluate("()=>document.querySelector('#vix-app .modes button[data-mode=\"challenge\"]').click()"); pg.wait_for_timeout(500)
     for sel in ('ix" ] button[data-v="hnsw', ):

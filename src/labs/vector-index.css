@@ -6,71 +6,135 @@
 .vix-stage{container-type:inline-size}
 .vix-head{align-items:flex-start;gap:10px}
 .vix-st-title{font-weight:650;font-size:15px;min-width:0}
+/* the transport: one row, every control one height and one baseline; the speed's label sits left of its buttons (review polish r1, P26) */
 .vix-transport{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0 4px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.vix-transport .ctl{display:flex;align-items:center;gap:6px;margin:0}
+.vix-transport .ctl>.lbl{font-size:12.5px;font-weight:600;color:var(--ink-2);white-space:nowrap}
 .vix-transport .seg-ctl{margin:0}
 .vix-transport .btn.sm,.vix-transport .seg-ctl{height:32px;box-sizing:border-box}
 .vix-transport .btn.sm{padding-top:0;padding-bottom:0;line-height:1.2}
-.vix-transport .seg-ctl button{padding:0 10px;font-size:13px;line-height:1.2}
+.vix-transport .seg-ctl button{padding:0 10px;font-family:var(--font-ui);font-size:13px;line-height:1.2}   /* the buttons' font, so the text sits on their baseline */
 .vix-scrub{flex:1 1 120px;min-width:90px;margin:0}
-.vix-pan{border-top:1px solid var(--line);padding-top:8px;margin-top:8px;min-width:0}
-.vix-transport+.vix-pan,.vix-transport[hidden]+.vix-pan{border-top:0;margin-top:0}
+/* the picture and its partner side by side on a wide stage, one above the other on a narrow one (review polish r1, P23) */
+.vix-figs{display:grid;grid-template-columns:minmax(0,1fr);gap:0 18px;align-items:start}
+.vix-figs:not(.two)>.vix-pan{width:100%;max-width:560px;justify-self:center}
+.vix-figs:not(.two)>#vix-pan-pic{max-width:440px}   /* the title, caption and legend line up with the picture */
+.vix-pan{min-width:0}
+.vix-pan.sec{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+@container (min-width:640px){
+  .vix-figs.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .vix-figs.two>.vix-pan.sec{border-top:0;margin-top:0;padding-top:0;border-left:1px solid var(--line);padding-left:18px}}
 .vix-pt{font-weight:600;font-size:13px;line-height:1.35;margin-bottom:4px;min-width:0}
-.vix-leg{margin:2px 0 6px;flex-wrap:wrap;gap:4px 12px;font-size:12px}
+/* the caption says what the frame on screen shows; its height stays put while it changes */
+.vix-cap{font-size:12.5px;line-height:1.45;color:var(--ink-2);min-height:2.9em;margin:0 0 4px}
+@container (max-width:460px){.vix-cap{min-height:4.35em}}
+.vix-leg{margin:4px 0 4px;flex-wrap:wrap;gap:4px 12px;font-size:12px}
 .vix-leg .lg{display:inline-flex;align-items:center;gap:5px}
 .vix-pic{display:block;width:100%;max-width:440px;height:auto;margin:0 auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
-.vix-pt+.vix-pic{margin-top:2px}
+.vix-pnote{margin:4px 0 0;line-height:1.4}
+/* the picture's marks */
 .vix-cell{fill:transparent;stroke:var(--line-2);stroke-width:1}
 .vix-cell.on{fill:var(--vix-ivf);fill-opacity:.16}
 .vix-ctr{fill:var(--vix-ivf);stroke:var(--surface);stroke-width:1}
+.vix-ctr.on{stroke:var(--ink);stroke-width:1.2}
+.vix-cl{stroke:var(--vix-ivf);stroke-width:1;opacity:.55}
+.vix-cl.on{opacity:.9;stroke-width:1.3}
+.vix-cl.off{opacity:.14}
+.vix-zbox{fill:var(--surface);stroke:var(--ink-3);stroke-width:1}
+.vix-zr{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 2}
+.vix-zlab{font-size:10px;font-weight:600;fill:var(--ink-3);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.vix-cn{font-family:var(--font-mono);font-size:10px;font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
 circle.vix-dot{fill:var(--ink-3);opacity:.45}
 circle.vix-dot.chk{fill:var(--ink);opacity:1}
-.vix-ring{fill:none;stroke:var(--ink-2);stroke-width:1.4}
-.vix-ring.ok{stroke:var(--c-ok);stroke-width:2.2}
-.vix-ring.bad{stroke:var(--c-oom);stroke-width:2.4}
-.vix-q{stroke:var(--ink);stroke-width:2.6;stroke-linecap:round;fill:none}
+circle.vix-dot.cur{fill:var(--ink);opacity:1;stroke:var(--surface);stroke-width:1}
+circle.vix-dot.exp{fill:var(--vix-hnsw);opacity:1}
+.vix-ring{fill:none;stroke:var(--ink-3);stroke-width:1.2}
+.vix-ring.nn{stroke:var(--ink-2);stroke-width:1.1}
+.vix-ring.ok{stroke:var(--c-ok);stroke-width:1.9}
+.vix-ring.bad{stroke:var(--c-oom);stroke-width:2.1}
+.vix-q{stroke:var(--ink);stroke-width:2.4;stroke-linecap:round;fill:none}
+.vix-rad{fill:none;stroke:var(--ink-2);stroke-width:1.2;stroke-dasharray:4 3}
+.vix-rad.h{stroke:var(--vix-hnsw);stroke-width:1.4}
+.vix-cut{stroke:var(--ink-3);stroke-width:.8;opacity:.6}
+.vix-cut.on{stroke:var(--ink-2);stroke-width:1.6;opacity:.9}
+.vix-skip{fill:var(--ink-3);fill-opacity:.2;stroke:none}
+.vix-skip.now{fill-opacity:.32;stroke:var(--ink-2);stroke-width:1}
+.vix-best{fill:none;stroke:var(--ink);stroke-width:1.6}
 .vix-link{stroke:var(--vix-hnsw);stroke-width:.7;opacity:.28}
+.vix-link.dim{opacity:.1}
+.vix-ulink{stroke:var(--vix-hnsw);stroke-width:1.6;opacity:.75}
+.vix-unode{fill:none;stroke:var(--vix-hnsw);stroke-width:1.4}
+.vix-nbl{stroke:var(--ink);stroke-width:1;opacity:.55}
 .vix-hop{stroke:var(--vix-hnsw);stroke-width:2;stroke-dasharray:5 3;fill:none}
 .vix-arrh{fill:var(--vix-hnsw)}
 .vix-entry{fill:none;stroke:var(--vix-hnsw);stroke-width:2}
-.vix-grid{stroke:var(--vix-pq);stroke-width:.8;opacity:.5}
-.vix-cut{stroke:var(--ink-2);stroke-width:1;opacity:.7}
+.vix-curn{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-dasharray:2 2}
+.vix-out{stroke:var(--ink);stroke-width:1.4;fill:none}
+.vix-elab{font-size:10.5px;font-weight:650;fill:var(--vix-hnsw);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.vix-grid{stroke:var(--vix-pq);stroke-width:.8;opacity:.55}
+.vix-trail{stroke:var(--vix-pq);stroke-width:1.2;opacity:.85}
+circle.vix-orig{fill:var(--surface);stroke:var(--ink-3);stroke-width:1}
+.vix-cnt{font-family:var(--font-mono);font-size:10px;font-weight:700;fill:var(--vix-pq);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+/* the legend's swatches, one per mark */
 .sw.vix-sw-q{background:transparent;width:10px;height:10px;position:relative;border:0}
 .sw.vix-sw-q::before,.sw.vix-sw-q::after{content:"";position:absolute;left:4px;top:-1px;width:2.4px;height:12px;background:var(--ink);transform:rotate(45deg)}
 .sw.vix-sw-q::after{transform:rotate(-45deg)}
 .sw.vix-sw-pt{background:var(--ink-3);opacity:.5;border-radius:50%;width:7px;height:7px}
 .sw.vix-sw-chk{background:var(--ink);border-radius:50%;width:7px;height:7px}
+.sw.vix-sw-nn{background:transparent;border:1.2px solid var(--ink-2);border-radius:50%;width:10px;height:10px}
 .sw.vix-sw-ok{background:transparent;border:2px solid var(--c-ok);border-radius:50%;width:10px;height:10px}
 .sw.vix-sw-bad{background:transparent;border:2px solid var(--c-oom);border-radius:50%;width:10px;height:10px}
-.sw.vix-sw-cell{background:var(--vix-ivf);opacity:.35;border:1px solid var(--line-2)}
+.sw.vix-sw-rad{background:transparent;border:1.2px dashed var(--ink-2);border-radius:50%;width:12px;height:12px}
+.sw.vix-sw-radh{background:transparent;border:1.4px dashed var(--vix-hnsw);border-radius:50%;width:12px;height:12px}
+.sw.vix-sw-ctr{background:var(--vix-ivf);width:8px;height:8px;border:0}
+.sw.vix-sw-bd{background:transparent;border-top:1px solid var(--line-2);height:0;width:16px;align-self:center}
+.sw.vix-sw-cell{background:var(--vix-ivf);opacity:.3;border:1px solid var(--line-2);width:12px;height:10px}
+.sw.vix-sw-cl{background:transparent;border-top:1.3px solid var(--vix-ivf);height:0;width:16px;align-self:center}
+.sw.vix-sw-cut{background:transparent;border-left:1.6px solid var(--ink-2);width:0;height:12px}
+.sw.vix-sw-skip{background:var(--ink-3);opacity:.35;width:12px;height:10px;border:0}
+.sw.vix-sw-best{background:transparent;border:1.6px solid var(--ink);border-radius:50%;width:10px;height:10px}
+.sw.vix-sw-entry{background:transparent;border:2px solid var(--vix-hnsw);border-radius:50%;width:11px;height:11px}
+.sw.vix-sw-up{background:transparent;border-top:1.6px solid var(--vix-hnsw);height:0;width:16px;align-self:center}
 .sw.vix-sw-hop{background:transparent;border-top:2px dashed var(--vix-hnsw);height:0;width:16px;align-self:center}
 .sw.vix-sw-link{background:transparent;border-top:1px solid var(--vix-hnsw);opacity:.5;height:0;width:16px;align-self:center}
+.sw.vix-sw-exp{background:var(--vix-hnsw);border-radius:50%;width:7px;height:7px}
 .sw.vix-sw-grid{background:transparent;border:1px solid var(--vix-pq);width:10px;height:10px}
-.sw.vix-sw-cut{background:transparent;border-left:1.5px solid var(--ink-2);width:0;height:12px}
-.vix-kdbars{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+.sw.vix-sw-trail{background:transparent;border-top:1.2px solid var(--vix-pq);height:0;width:16px;align-self:center}
+.vix-sw-cnt{font-size:11px;font-weight:700;color:var(--vix-pq)}
+/* part 2's scale bars and part 3's k-d bars */
+.vix-sg+.vix-sg{margin-top:12px}
+.vix-kdbars,.vix-scale{min-width:0}
 .vix-kb{display:grid;grid-template-columns:7.5em minmax(0,1fr) 4.2em;gap:8px;align-items:center;font-size:13px;margin:4px 0;padding:2px 4px;border-radius:5px}
+.vix-scale .vix-kb{grid-template-columns:3.6em minmax(0,1fr) 5.6em}
 .vix-kb.on{background:var(--sunken);font-weight:650}
-.vix-kbt{height:10px;border-radius:3px;background:var(--sunken);overflow:hidden;border:1px solid var(--line)}
+.vix-kbt{position:relative;height:10px;border-radius:3px;background:var(--sunken);overflow:hidden;border:1px solid var(--line)}
 .vix-kbt i{display:block;height:100%;background:var(--ink-2)}
-.vix-kb b{text-align:right;font-weight:600}
-.vix-chart{display:block;width:100%;height:auto;overflow:visible}
+.vix-kbt s{position:absolute;top:0;bottom:0;width:0;border-left:1.5px dashed var(--ink);text-decoration:none}
+.vix-kb b{text-align:right;font-weight:600;white-space:nowrap}
+.vix-snote{font-size:12px;color:var(--ink-3);margin:2px 4px 0;line-height:1.4}
+/* the chart */
+.vix-chart{display:block;width:100%;max-width:520px;height:auto;margin:0 auto;overflow:hidden}
 .vix-gl{stroke:var(--line);stroke-width:1}
-.vix-ax{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.vix-ax{font-family:var(--font-mono);font-size:12px;fill:var(--ink-3)}
 .vix-cv{fill:none;stroke-width:2}
 .vix-cd{stroke:var(--surface);stroke-width:1}
 polyline.vix-k-ivf{stroke:var(--vix-ivf)}circle.vix-k-ivf{fill:var(--vix-ivf)}
 polyline.vix-k-hnsw{stroke:var(--vix-hnsw);stroke-dasharray:6 3}circle.vix-k-hnsw{fill:var(--vix-hnsw)}
+polyline.vix-k-hnsw16{stroke:var(--vix-hnsw);stroke-dasharray:1.5 2.5;stroke-width:1.4}circle.vix-k-hnsw16{fill:var(--surface);stroke:var(--vix-hnsw);stroke-width:1.2}
 polyline.vix-k-pq{stroke:var(--vix-pq);stroke-dasharray:2 3}circle.vix-k-pq{fill:var(--vix-pq)}
 circle.vix-k-flat{fill:var(--ink)}
 .vix-me{fill:none;stroke:var(--ink);stroke-width:2.4}
-.vix-mel{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
 .vix-goal{stroke:var(--c-ok);stroke-width:1.3;stroke-dasharray:4 3}
 .sw.vix-sw-ivf{background:transparent;border-top:2px solid var(--vix-ivf);height:0;width:16px;align-self:center}
 .sw.vix-sw-hnsw{background:transparent;border-top:2px dashed var(--vix-hnsw);height:0;width:16px;align-self:center}
+.sw.vix-sw-hnsw16{background:transparent;border-top:1.6px dotted var(--vix-hnsw);height:0;width:16px;align-self:center}
 .sw.vix-sw-pq{background:transparent;border-top:2px dotted var(--vix-pq);height:0;width:16px;align-self:center}
 .sw.vix-sw-flat{background:var(--ink);border-radius:50%;width:8px;height:8px}
 .sw.vix-sw-me{background:transparent;border:2.4px solid var(--ink);border-radius:50%;width:10px;height:10px}
 .sw.vix-sw-goal{background:transparent;border-top:1.5px dashed var(--c-ok);height:0;width:16px;align-self:center}
-.vix-metrics{margin-top:10px}
+/* four metric cards in one row on a wide stage */
+.vix-stage .vix-metrics{margin-top:10px;grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.vix-stage .vix-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .vix-math-line{overflow-x:auto;padding-block:.3em;margin:4px 0}
 .vix-mb{border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
 .vix-mb:first-child{border-top:0;margin-top:0}
@@ -81,7 +145,6 @@ circle.vix-k-flat{fill:var(--ink)}
 .vix-dk i{display:block;height:100%;background:var(--ink-2)}
 .vix-ch-res .cmp{margin-top:10px}
 #vix-ch-ctl .inline-ctl{margin:6px 0}
-/* review b10r1: a formula on its own line inside an exit answer; the challenge's short "why" lines; the PQ picture's note */
+/* review b10r1: a formula on its own line inside an exit answer; the challenge's short "why" lines */
 .vix-mblk{display:block}
 .vix-why p{margin:4px 0}
-.vix-pnote{margin:6px 0 0}
