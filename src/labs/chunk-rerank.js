@@ -856,7 +856,7 @@ function drawMetrics(){
   const m=measure(LG(),S), changed=key!==metKey, user=changed&&metUser&&metKey!=null;
   MET.forEach(x=>{const el=host.querySelector(`[data-k="${x.k}"]`), d=el.querySelector('.d'), num={rec:Math.round(m.rec*100),ctx:m.ctx,lat:m.lat,spl:m.splits}[x.k];
     el.querySelector('.k').textContent=x.label(); el.querySelector('.v').textContent=x.v(m); el.querySelector('.sub').innerHTML=x.sub(m); el.dataset.tipx=x.tip(m)+tx(' ▲▼: the change from the last setting.','▲▼ 是和上一次设置相比的变化。');
-    if(changed){let dt=''; if(user&&shownPrev[x.k]!=null&&shownPrev[x.k]!==num) dt=(x.pts?A.fmt.delta(shownPrev[x.k],num,{pts:true,dp:0}):A.fmt.delta(shownPrev[x.k],num,{dp:0})).replace(/（比上次）$| vs last$/,'');
+    if(changed){let dt=''; if(user&&shownPrev[x.k]!=null&&shownPrev[x.k]!==num) dt=x.pts?A.fmt.delta(shownPrev[x.k],num,{pts:true,dp:0,base:false}):A.fmt.delta(shownPrev[x.k],num,{dp:0,base:false});   // the card's tip says what ▲▼ compares with (P4)
       d.textContent=dt; d.classList.toggle('on',!!dt);}   // a change stays on until the next one
     shownPrev[x.k]=num;});
   metKey=key; metUser=false;}

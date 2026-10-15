@@ -100,8 +100,13 @@
 .pdz-app .pdz-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
 @container (min-width:560px){.pdz-app .pdz-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .pdz-metrics .metric.pdz-mbad .v{color:var(--c-oom)}
-/* a change named after a scenario takes two lines in a narrow card: they break between phrases, not inside the scenario's name (N13) */
-.pdz-metrics .metric .d{word-break:keep-all;overflow-wrap:anywhere}
+/* what the ▲▼ lines are compared with, once above the cards (N13): the line sits in the gap above the cards and takes no room of its
+   own, so the cards stay put when it comes and goes; the gap grows by 4 px (12 to 16) to hold it. The cards stay whole in the sticky
+   stage (P15; the tightest case, part 7 with 10 million users in English at 1440x900, keeps 1.9 px) */
+.pdz-main>#pdz-metrics{margin-top:4px}
+.pdz-metrics{position:relative}
+.pdz-metrics>.pdz-mvs{position:absolute;left:0;right:0;top:-14px;height:12px;font-size:11px;line-height:12px;white-space:nowrap;color:var(--ink-2);opacity:0;transition:opacity .35s;pointer-events:none}
+.pdz-metrics>.pdz-mvs.on{opacity:1}
 #pdz-ctls{display:grid;gap:15px}
 /* the challenge readout: one line per goal (P32) */
 .pdz-chg{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:3px 8px;font-size:13px;margin-top:10px;align-items:baseline}

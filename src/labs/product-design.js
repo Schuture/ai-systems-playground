@@ -831,16 +831,23 @@ const MET=[
  {k:'cost',label:()=>tx('GPU cost per day','每天的 GPU 花费'),v:r=>usd(r.costDay),dp:0,sub:r=>tx(`at ${usd(r.s.price)} per GPU hour`,`每 GPU 小时 ${usd(r.s.price)}`),tip:()=>D_GPUH(),bad:r=>mode==='challenge'&&r.costDay>CH.budget+1e-9},
  {k:'user',label:()=>tx('Per user per month','每个用户每月'),v:r=>usd(r.perUserMonth),dp:3,sub:()=>tx('GPU cost only','只算 GPU'),tip:()=>tx('Daily GPU cost times 30, divided by daily users.','每天的 GPU 花费乘以 30，再除以每天的用户数。')}];
 const numOf=s=>parseFloat(String(s).replace(/[$,s ]/g,''));
-let dBase=null;   // a scenario switch says which scenario the change is from (P30); on two lines it breaks before “（比” or “n 倍”, not inside the name (N13)
+let dBase=null;   // a scenario switch says which scenario the change is from (P30)
+/* the ▲▼ lines say what they are compared with once, above the cards (“▲▼ 和“刚上线的聊天应用”比”), and each card only the change
+   (“▲ 38 倍”, “▼ −62%”), so a narrow card keeps it on one line (N13; kit polish K2, A.fmt.delta with base:false). The line above the
+   cards sits in the gap above them and takes no room (product-design.css), so the cards do not move when it comes and goes with the ▲▼ */
+const vsTxt=()=>dBase?tx(`▲▼ compared with ${dBase.en}`,`▲▼ 和${dBase.zh}比`):tx('▲▼ compared with the last setting','▲▼ 和上一次的设置比');
 function drawMetrics(r){const host=$('#pdz-metrics',app);
-  if(!host.children.length) host.innerHTML=MET.map(m=>`<div class="metric" data-k="${m.k}" tabindex="0"><div class="k"></div><div class="v mono"></div><div class="sub"></div><div class="d mono"></div></div>`).join('');
+  if(!host.children.length) host.innerHTML=`<div class="pdz-mvs"></div>`+MET.map(m=>`<div class="metric" data-k="${m.k}" tabindex="0"><div class="k"></div><div class="v mono"></div><div class="sub"></div><div class="d mono"></div></div>`).join('');
+  const vs=host.querySelector('.pdz-mvs'), now=performance.now(); let any=false;
   MET.forEach(m=>{const el=host.querySelector(`[data-k="${m.k}"]`), v=m.v(r), d=el.querySelector('.d');
     el.querySelector('.k').textContent=m.label(); el.querySelector('.v').textContent=v; el.querySelector('.sub').textContent=m.sub(r); el.dataset.tipx=m.tip();
     el.classList.toggle('pdz-mbad',!!(m.bad&&m.bad(r)));
-    const a=numOf(shownPrev[m.k]), b=numOf(v), dt=userAct&&isFinite(a)&&isFinite(b)?(A.fmt.delta(a,b,dBase?{dp:m.dp,base:dBase}:{dp:m.dp})||''):'';
-    if(dt){d.textContent=dt.replace(/ 倍$/,'\u00a0倍').replace('（比“','（比\u2060“'); d.classList.add('on'); d._at=performance.now(); clearTimeout(d._t); d._t=setTimeout(()=>{d.classList.remove('on'); d.textContent='';},2600);}
-    else if(!userAct||performance.now()-(d._at||0)>50){d.classList.remove('on'); d.textContent='';}
-    shownPrev[m.k]=v;});}
+    const a=numOf(shownPrev[m.k]), b=numOf(v), dt=userAct&&isFinite(a)&&isFinite(b)?(A.fmt.delta(a,b,{dp:m.dp,base:false})||''):'';
+    if(dt){any=true; d.textContent=dt.replace(/ 倍$/,'\u00a0倍'); d.classList.add('on'); d._at=now; clearTimeout(d._t); d._t=setTimeout(()=>{d.classList.remove('on'); d.textContent='';},2600);}
+    else if(!userAct||now-(d._at||0)>50){d.classList.remove('on'); d.textContent='';}
+    shownPrev[m.k]=v;});
+  if(any){vs.textContent=vsTxt(); vs.classList.add('on'); vs._at=now; clearTimeout(vs._t); vs._t=setTimeout(()=>{vs.classList.remove('on'); vs.textContent='';},2600);}
+  else if(!userAct||now-(vs._at||0)>50){clearTimeout(vs._t); vs.classList.remove('on'); vs.textContent='';}}
 const MB=(lead,rows,res)=>`<div class="pdz-mb"><p>${lead}</p><div class="pdz-eqs">${rows.map(([l,r])=>`<span class="pdz-eq-l">${l?M(l):''}</span><span class="pdz-eq-r">${M(r)}</span>`).join('')}</div>${res?`<p class="pdz-mb-res">${res}</p>`:''}</div>`;
 const tt=s=>`\\text{${s}}`;
 function mathHTML(r){const s=r.s, ms=v=>I(v*1000), parts=r.seg.filter(g=>!['model','gen','hold'].includes(g.k));
@@ -1192,11 +1199,10 @@ A.registerLab({
   termTip(k){const tm=TERM[k]; if(!tm) return ''; return `<div>${tm()}</div><div class="act">${jumpAct(k)}</div>`;},
   jump, jumpAct,
   dock:{
-    /* the bar shows only once the stage's top has gone: on a desktop the sticky stage itself, on a phone its title row, so it never
-       covers the stage's title and badge (P15; the way backprop does it). The whole #pdz-main is taller than the screen in part 8 and
-       the scenarios, so with it as the anchor the bar sat on the sticky stage's title. */
-    anchor:()=>{if(!app) return null; const st=$('#pdz-stage',app), hd=st&&$('.stage-head',st); if(!st||innerWidth<=760) return hd;
-      const cs=getComputedStyle(st); return cs.position==='sticky'&&Math.abs(st.getBoundingClientRect().top-(parseFloat(cs.top)||70))<2?st:hd;},
+    /* the bar shows only once the stage's title row has gone, so it never covers the stage's title and badge (P15). The whole #pdz-main
+       is taller than the screen in part 8 and the scenarios, so with it as the anchor the bar sat on the sticky stage's title. While the
+       stage is stuck on a desktop the kit keeps the bar away itself (kit polish K4), so the anchor no longer switches to the whole stage */
+    anchor:()=>app&&$('#pdz-stage .stage-head',app),
     bench:()=>app&&$('.bench',app), target:()=>app&&$('#pdz-main',app),
     render({status,vis,read}){if(!app) return; const r=R_(), g=goalNow();
       vis.innerHTML=`<div class="pdz-dk"><i style="width:${Math.min(100,r.vis/(g*1.5)*100).toFixed(1)}%"></i><b style="left:${(100/1.5).toFixed(1)}%"></b></div>`;

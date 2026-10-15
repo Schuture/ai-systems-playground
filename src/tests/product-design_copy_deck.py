@@ -28,7 +28,8 @@ def stage(pg):
     parts = [txt(pg, '#pdz-st-title'), txt(pg, '#pdz-status')] + [txt(pg, f'#pdz-{x}') for x in ('trace', 'prompt', 'fleet', 'sheet')]
     svg = pg.evaluate("()=>[...document.querySelectorAll('#pdz-wf svg text')].filter(t=>t.getClientRects().length).map(t=>t.textContent.trim()).filter(Boolean).join(' / ')")
     mets = pg.evaluate("()=>[...document.querySelectorAll('#pdz-metrics .metric')].filter(m=>m.getClientRects().length).map(m=>[...m.children].map(c=>c.innerText.trim()).filter(Boolean).join(' | '))")
-    return '\n'.join([p for p in parts if p] + ([f'Drawing text: {svg}'] if svg else []) + (['Metrics:'] + [f'- {m}' for m in mets] if mets else []))
+    vs = txt(pg, '#pdz-metrics .pdz-mvs')   # N13 (kit polish K2): what the ▲▼ lines are compared with, once above the cards
+    return '\n'.join([p for p in parts if p] + ([f'Drawing text: {svg}'] if svg else []) + (['Metrics:'] + ([f'({vs})'] if vs else []) + [f'- {m}' for m in mets] if mets else []))
 
 
 class Tips:

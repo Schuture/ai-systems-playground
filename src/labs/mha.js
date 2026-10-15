@@ -538,7 +538,9 @@ function chRows(me){const rows=[[true,true,true,true],[true,false,true,true],[tr
   if(!rows.some(on=>onKey(on)===onKey(me.on))) rows.push(me.on); return rows;}
 function chChart(me){
   const lg=LG(), ci=CAT[lg], rows=chRows(me);
-  const bar=(lab,v)=>`<div class="mha-cb"><span>${lab}</span><div class="cmp-track"><i style="width:${(v*100).toFixed(2)}%"></i><b class="g" style="left:80%"></b><span class="cmp-val mono" style="left:${(v*100).toFixed(2)}%">${pc(v)}</span></div></div>`;
+  /* the value label goes where the kit puts it (cmp-cq, cmp-fit, --v: right of the bar's end, or inside it, clear of the 80% line; kit
+     polish K1), as in A.ui.cmpChart; it used to sit right of the bar on its own background over the line */
+  const bar=(lab,v)=>`<div class="mha-cb"><span>${lab}</span><div class="cmp-track cmp-cq"><i style="width:${(v*100).toFixed(2)}%"></i><b class="g" style="left:80%"></b><span class="cmp-val mono cmp-fit" style="left:${(v*100).toFixed(2)}%;--v:${(v*100).toFixed(2)}">${pc(v)}</span></div></div>`;
   const body=rows.map(on=>{const p=chPoint(lg,on), isMe=onKey(on)===onKey(me.on), init=on.every(Boolean);
     const lab=tx(`${onNames(on).join(', ')||'none'} on (${p.off} off)`,`开着 ${onNames(on).join('、')||'无'}（关掉 ${p.off} 个）`);
     const tags=(init?`<span class="cmp-tag">${tx('initial setup','初始设置')}</span>`:'')+(isMe?`<span class="cmp-you">${tx('your pick','你的选择')}</span>`:'');

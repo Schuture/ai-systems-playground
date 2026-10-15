@@ -308,7 +308,8 @@ with sync_playwright() as pw:
             pg.wait_for_function("()=>!window.__ckr.animState()", timeout=20000); dt = (pg.evaluate('()=>performance.now()') - t0) / 1000
             check(f'{tag} part 2: the cut takes about 2.4 s at 中 (R3.9)', 1.9 <= dt <= 3.6, dt)
             pg.wait_for_timeout(150); dl = pg.evaluate("()=>({pend:document.querySelector('#ckr-metrics').classList.contains('ckr-pend'), d:[...document.querySelectorAll('#ckr-metrics .d.on')].map(e=>e.textContent)})")
-            check(f'{tag} part 2: when the cut ends, the cards show their ▲▼, without “vs last” (P4)', not dl['pend'] and len(dl['d']) >= 1 and not any(('vs last' in x or '比上次' in x) for x in dl['d']), dl)
+            # P4, kit polish K2: the cards take A.fmt.delta's base:false, so no ▲▼ line names what it is compared with (the card's tip does)
+            check(f'{tag} part 2: when the cut ends, the cards show their ▲▼, without “vs last” (P4)', not dl['pend'] and len(dl['d']) >= 1 and not any(('last' in x or '上次' in x or '比' in x) for x in dl['d']), dl)
             pg.wait_for_timeout(3200)
             check(f'{tag} part 2: the ▲▼ stay until the next change (P4)', pg.evaluate("()=>document.querySelectorAll('#ckr-metrics .d.on').length") == len(dl['d']))
             m32 = meas(pg, lang, {**INIT, 'size': 32})

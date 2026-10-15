@@ -1272,9 +1272,9 @@ A.registerLab({
   termTip(k){return termTipHTML(k);},
   jump, jumpAct,
   dock:{
-    /* the bar shows only once the stage's top has gone: on a desktop the sticky stage itself, on a phone its title row (A5) */
-    anchor:()=>{if(!app) return null; const st=$('#bp-stage',app), hd=$('#bp-stage .stage-head',app); if(!st||innerWidth<=760) return hd;
-      const cs=getComputedStyle(st); return cs.position==='sticky'&&Math.abs(st.getBoundingClientRect().top-(parseFloat(cs.top)||70))<2?st:hd;},
+    /* the bar shows only once the stage's title row has gone (A5); while the stage is stuck on a desktop the kit keeps the bar away
+       itself (kit polish K4), so the anchor no longer switches to the whole stage */
+    anchor:()=>app&&$('#bp-stage .stage-head',app),
     bench:()=>app&&$('.bench',app), target:()=>app&&$('#bp-graph',app),
     render({status,vis,read}){if(!app) return; const s=statusOf(), r=R(), k=kNow(), nt=NT(r), hide=chHide(), np=r.params.length;
       status.className='status '+s.cls; status.textContent=s.short;

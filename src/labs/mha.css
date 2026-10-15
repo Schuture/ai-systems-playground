@@ -130,7 +130,6 @@
 .mha-cr:not(.ok) .cmp-track i{background:var(--ink-3)}
 .mha-cr.me .cmp-track{box-shadow:0 0 0 1.5px var(--ink)}
 .mha-cr.me .cmp-lab{color:var(--ink);font-weight:650}
-.mha-cmp .cmp-val{background:var(--surface-2);padding:1px 3px;border-radius:2px;z-index:1}
 .mha-cmp .cmp-axis{margin:5px 38px 0 calc(4.6em + 6px)}
 .mha-cmp .cmp-leg i.ok{background:var(--c-ok)}
 

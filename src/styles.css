@@ -863,7 +863,13 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
    bar's end; never past the track's left edge. A label a lab has moved itself (an inline left, right or margin) is left where it is */
 .cmp-val{white-space:nowrap}
 .cmp-track.cmp-cq{container-type:inline-size}
-.cmp-fit[style^="left:"]{transform:translateY(-50%) translateX(max(calc(var(--v) * -1cqw - 6px),clamp(calc(-100% - 12px),calc(((100 - var(--v)) * 1cqw + 20px - 100%) * 1000),0px)))}
+.cmp-fit[style^="left:"]{transform:translateY(-50%) translateX(var(--cx,max(calc(var(--v) * -1cqw - 6px),clamp(calc(-100% - 12px),calc(((100 - var(--v)) * 1cqw + 20px - 100%) * 1000),0px))))}
+/* kit polish K1: the kit measures each label and sets --cx, the shift from its place right of the bar's end, so that no reference line
+   (.g) runs through it (app.js cmpPlaceAll); the formula above is only what shows before that. When nothing on the bar's row fits, the
+   label goes under the bar's end (.cmp-lo) and the track keeps room for it below (--lo); the lines stop 3 px under the track */
+.cmp-track.cmp-lo{margin-bottom:var(--lo,19px)}
+.cmp-lo-row{display:flow-root}   /* the row holds that room (no margin collapsing through it) */
+.cmp-val.cmp-fit.cmp-lo[style^="left:"]{top:calc(100% + 4px);transform:translateX(var(--cx,0px))}
 /* 2. options: the title and the result share the first row while the title fits on one line beside the result (R3.6, R3.10); otherwise
    the result drops under the title, still on the right, and the title keeps the row's whole width; the description fills the next row */
 .lever{display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:10px;row-gap:1px}

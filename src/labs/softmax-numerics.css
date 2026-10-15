@@ -145,9 +145,8 @@
 #sm-zlist{font-size:12.5px;line-height:1.45}
 .sm-app sup{font-size:.72em;line-height:0}
 
-/* ---------- the challenge chart (A1, A19): labels on one line; a long bar carries its label inside its end; NaN is red hatched ---------- */
+/* ---------- the challenge chart (A1, A19): labels on one line (the kit places them); NaN is red hatched ---------- */
 #sm-ch-res .cmp-val{white-space:nowrap}
-#sm-ch-res .cmp-row.sm-cmp-in .cmp-val{transform:translate(calc(-100% - 12px),-50%)}
 #sm-ch-res .cmp-row.sm-cmp-nan .cmp-track i,#sm-ch-res .cmp-leg i.sm-leg-nan{background:repeating-linear-gradient(135deg,var(--c-oom-soft) 0 3px,transparent 3px 6px),var(--c-oom-soft);box-shadow:inset 0 0 0 1.5px var(--c-oom)}
 #sm-ch-res .cmp-row.sm-cmp-nan .cmp-val{color:var(--c-oom);font-weight:700}
 

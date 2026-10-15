@@ -280,7 +280,16 @@ function drawBar(host,b,o){
 function drawAxis(host,cap,o){o=o||{};const W=o.capw||80,SC=o.scaleCap||cap;
   host.innerHTML=[0,.25,.5,.75,1].map((f,i)=>`<span style="left:${f*cap/SC*W}%">${fmtNum(f*cap/GiB,0)}${i===4?' GiB':''}</span>`).join('');}
 const reduceMotion=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-function setFill(el){const p=(el.value-el.min)/(el.max-el.min)*100;el.style.setProperty('--fill',p+'%');}
+function setFill(el){const lo=el.min===''?0:+el.min, hi=el.max===''?100:+el.max, p=hi>lo?(el.value-lo)/(hi-lo)*100:0; el.style.setProperty('--fill',p+'%');}
+/* the fill follows the value however code sets it (kit polish K5): the track's dark part is --fill, which only the reader's own input
+   events (the document listener in start()) and A.ui.setRange wrote, so a slider moved in code (input.value = …, valueAsNumber, a new
+   min or max, a slider rendered without initRanges) kept its old fill until the reader dragged it (PR #1: pd-disagg's progress slider
+   ran ahead of its dark line; that lab now calls setRange every frame). Writing value or valueAsNumber of a range input now repaints
+   it; kitObs repaints a range input whose min, max, step or value attribute changes and every range input added to the page */
+(function(){const P=window.HTMLInputElement&&HTMLInputElement.prototype; if(!P) return;
+  ['value','valueAsNumber'].forEach(k=>{const d=Object.getOwnPropertyDescriptor(P,k); if(!d||!d.set||!d.configurable) return;
+    Object.defineProperty(P,k,{configurable:true,enumerable:d.enumerable,get:d.get,set(v){d.set.call(this,v); if(this.type==='range') setFill(this);}});});})();
+const fillAll=n=>{if(!n||n.nodeType!==1) return; if(n.matches('input[type=range]')) setFill(n); else if(n.firstElementChild) n.querySelectorAll('input[type=range]').forEach(setFill);};
 
 /* ---------- hero meter ---------- */
 const HCTX=[4096,8192,12288,16384,32768,65536,131072];
@@ -1620,13 +1629,26 @@ function dockCtx(){
   if(view==='lab') return {anchor:$('#pgBar'),bench:$('#view-lab .bench'),target:$('#stageGraph')};
   if(view==='dyn'&&dyn&&dyn.dock){const a=dyn.dock.anchor(); return {anchor:a,bench:dyn.dock.bench(),target:dyn.dock.target?dyn.dock.target():a};}
   return null;}
-function barInView(a){const b=a.getBoundingClientRect(); return b.height>0&&b.top>=60&&b.bottom<=window.innerHeight-8;}
+function barInView(a,dy){dy=dy||0; const b=a.getBoundingClientRect(); return b.height>0&&b.top-dy>=60&&b.bottom-dy<=window.innerHeight-8;}
 // the mini result bar waits until the lab's title has scrolled under the top bar, so it never covers the breadcrumb or the title,
 // at any width and whatever pushed the chart down (an open Fidelity popover did; site review R10 #1, #2). On phones, Next, Back and a
 // mode switch scroll the new card up to the top bar (R3.7), so the title is gone and the bar shows while the learner works.
-function benchInView(bn){const b=bn.getBoundingClientRect(), bar=$('.topbar'), tl=$(view==='lab'?'#view-lab .labtitle':'#view-dyn .labtitle');
-  if(tl&&tl.getBoundingClientRect().bottom>(bar?bar.offsetHeight:58)-2) return false;
-  return b.top<window.innerHeight-120&&b.bottom>200;}
+function benchInView(bn,dy){dy=dy||0; const b=bn.getBoundingClientRect(), bar=$('.topbar'), tl=$(view==='lab'?'#view-lab .labtitle':'#view-dyn .labtitle');
+  if(tl&&tl.getBoundingClientRect().bottom-dy>(bar?bar.offsetHeight:58)-2) return false;
+  return b.top-dy<window.innerHeight-120&&b.bottom-dy>200;}
+/* the stage's title row (kit polish K4): on a desktop the stage sticks at 70 px, right where the bar sits (59 to about 108 px), so a bar
+   shown while the stage was on the screen covered the stage's title and its status badge (product-design P15, at 1440x900 in part 8,
+   Scenarios, Settings; backprop and product-design had made their anchor the whole stage while it was stuck to avoid it). The bar now
+   stays away while any of the stage's title row is in the bar's band: the stage stuck or about to stick, or pushed up at the bench's end
+   with its title row not yet under the top bar. It comes once that row has gone: under the top bar, or scrolled away inside a stuck stage
+   whose result the reader has scrolled off (dpo's math at 900 and 1280 px), as before. On phones (no sticky stage) the same holds for a
+   stage scrolled up to the top. The stage stays put (no shift of the sticky top, no smaller stage), so nothing on it moves */
+const DOCK_H=50;   // the bar's height (min-height 48 px and its border), also when it is hidden
+function dockStageTop(c,dy){dy=dy||0; const st=(c.anchor.closest&&c.anchor.closest('.stage'))||c.bench.querySelector(':scope>.stage'); if(!st||!st.getClientRects().length) return false;
+  const hd=st.querySelector('.stage-head')||st, bar=$('.topbar'), bb=bar?bar.offsetHeight:58, h=hd.getBoundingClientRect();
+  return h.height>0&&h.bottom-dy>bb+1&&h.top-dy<bb+DOCK_H;}   // some of the title row is in the bar's band, from the top bar's bottom to 50 px below it
+// whether the bar shows, or would show once the page is scrolled by dy with nothing else moving (revealTop asks that on phones, K3)
+function dockShows(c,dy){return !!(c&&c.anchor&&c.bench)&&c.bench.dataset.flow!=='primer'&&benchInView(c.bench,dy)&&!barInView(c.anchor,dy)&&!dockStageTop(c,dy);}   // no dock over the primer (2026-10-11)
 function pulseDock(){const d=$('#dock'); if(reduceMotion()) return; d.classList.remove('pulse'); void d.offsetWidth; d.classList.add('pulse');}
 function renderDockAny(pulse){
   if(view==='lab'){renderDock(compute(S),pulse); return;}
@@ -1645,7 +1667,7 @@ function renderDock(r,pulse){
   if(pulse) pulseDock();
 }
 function updateDock(){
-  const c=dockCtx(), d=$('#dock'), show=!!(c&&c.anchor&&c.bench)&&c.bench.dataset.flow!=='primer'&&benchInView(c.bench)&&!barInView(c.anchor);   // no dock over the primer (2026-10-11)
+  const d=$('#dock'), show=dockShows(dockCtx());
   if(d.hidden!==show) return;
   d.hidden=!show; if(show) renderDockAny(false);
 }
@@ -1815,6 +1837,9 @@ function labUI(){
     else if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-jump][data-ktab]')){e.preventDefault(); doJump(e.target.dataset.jump,e.target);}});
   $('#dock').addEventListener('click',()=>{const c=dockCtx(); if(c&&c.target) c.target.scrollIntoView({block:'start',behavior:reduceMotion()?'auto':'smooth'});});
   window.addEventListener('scroll',dockSoon,{passive:true});
+  // a stuck stage scrolled inside itself (a wheel over the stage) moves its title row and the lab's anchor without a window scroll: the bar
+  // checks again on any scroll, so it neither stays over a title row scrolled back into its band nor stays away once both have gone (kit polish K4)
+  document.addEventListener('scroll',e=>{if(e.target!==document) dockSoon();},{capture:true,passive:true});
   $('#stage').addEventListener('scroll',()=>{hideTip(); dockSoon();},{passive:true});
 }
 
@@ -2085,27 +2110,35 @@ function revealTop(el){
   // (only right after a click that changes the part or the mode: a lab's own reveal of its card, e.g. "the conclusion is in part 3", goes to the card)
   if(PHONE.matches&&performance.now()<structUntil){const m=el.closest('.m2'); if(m&&(el.matches('.rail')||el.closest('.rail .steps'))){const pb=m.querySelector('.bench .pbar'), st=m.querySelector('.bench>.stage');
     el=pb&&pb.getBoundingClientRect().height>0?pb:(st||el);}}
-  const bar=$('.topbar'), dk=$('#dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(window.innerWidth<=760?50:0))+12, r=el.getBoundingClientRect();
+  const bar=$('.topbar'), dk=$('#dock'), r=el.getBoundingClientRect(), bh=bar?bar.offsetHeight:56;
+  let top=bh+(dk&&!dk.hidden?dk.offsetHeight:0)+12;
+  // phones: room for the mini result bar only when it will show where the scroll ends (kit polish K3: the 50 px kept for a bar that did not
+  // come pushed rag-failure's metric cards off the screen in Scenarios and Settings). Asked for the place without that room: if the bar
+  // would show there, the card goes under it, as before; if not, the card goes right under the top bar
+  if(window.innerWidth<=760){const t0=bh+12, de=document.documentElement, to=Math.max(0,Math.min(de.scrollHeight-window.innerHeight,window.scrollY+r.top-t0));
+    top=dockShows(dockCtx(),to-window.scrollY)?bh+(dk&&!dk.hidden?dk.offsetHeight:DOCK_H)+12:t0;}
   if(window.innerWidth<=760?Math.abs(r.top-top)<8:(r.top>=top&&r.top<=window.innerHeight-160)) return;
   pinGen++; quietTips(); window.scrollTo({top:Math.max(0,window.scrollY+r.top-top),behavior:reduceMotion()?'auto':'smooth'});}
 /* a change the learner just made, always saying what it is compared with (R6.6).
    dp: the decimals the card shows; both values are rounded to it first, so the change reproduces from the shown values.
    pts: the values are percentages, so the change is in percentage points. base: what is compared with (default: the last value).
+   base:false (kit polish K2) writes no comparison at all, for a card group that names it once above the cards (“Compared with
+   ‘Just-launched chat app’” / “和‘刚上线的聊天应用’比”): “▲ 41 pts” / “▲ 41 个百分点”, “▲ 2.1×” / “▲ 2.1 倍”, “▼ −26%”, “▲ up from 0” /
+   “▲ 从 0 升上来”; a narrow card then keeps the change on one line (product-design N13, chunk-rerank P4). Without it, nothing changes.
    An empty string means no change: the caller clears its badge. Callers show a badge only after the learner's own change,
    never when a part, a mode or the lab itself sets the state. */
 function deltaVs(a,b,o){o=o||{};
   if(!isFinite(a)||!isFinite(b)) return '';
   if(o.dp!=null){const k=Math.pow(10,o.dp); a=Math.round(a*k)/k; b=Math.round(b*k)/k;}
   if(a===b) return '';
-  const base=o.base||{en:'last',zh:'上次'}, vs=tx(` vs ${base.en}`,`（比${base.zh}）`);
+  const bare=o.base===false, base=(!bare&&o.base)||{en:'last',zh:'上次'}, vs=bare?'':tx(` vs ${base.en}`,`（比${base.zh}）`);
   if(o.pts){const dp=o.dp!=null?o.dp:1, d=b-a; if(Math.abs(d)<0.5*Math.pow(10,-dp)) return ''; const n=fmtNum(Math.abs(d),dp);
     return (d>0?'▲ ':'▼ ')+n+tx(n==='1'?' pt':' pts',' 个百分点')+vs;}
   // from or to 0 there is no ratio: say so, without "vs last"
-  if(a===0) return b>0?tx('▲ up from 0',`▲ ${base.zh}是 0`):tx('▼ down from 0',`▼ ${base.zh}是 0`);
+  if(a===0) return bare?(b>0?tx('▲ up from 0','▲ 从 0 升上来'):tx('▼ down from 0','▼ 从 0 降下来')):(b>0?tx('▲ up from 0',`▲ ${base.zh}是 0`):tx('▼ down from 0',`▼ ${base.zh}是 0`));
   if(b===0) return a>0?tx('▼ down to 0','▼ 降到 0'):tx('▲ up to 0','▲ 升到 0');
   const q=b/a;
-  if(q>=1.995){const n=q>=9.95?fmtInt(q):fmtNum(q,1); return tx(`▲ ${n} times ${o.base?base.en:'the last value'}`,`▲ 是${base.zh}的 ${n} 倍`);}
+  if(q>=1.995){const n=q>=9.95?fmtInt(q):fmtNum(q,1); return bare?tx(`▲ ${n}×`,`▲ ${n} 倍`):tx(`▲ ${n} times ${o.base?base.en:'the last value'}`,`▲ 是${base.zh}的 ${n} 倍`);}
   // half away from zero, as by hand (160 → 252 is +58%); a value that is not 0 never shows −100%: 1,371 → 1 is −99.9%
   const r=(q-1)*100, p=Math.sign(r)*Math.round(Math.abs(r)+1e-9); if(p===0) return '';
   if(p<=-100){let d=1, v=100; for(;d<=4;d++){v=Math.round(Math.abs(r)*10**d+1e-9)/10**d; if(v<100) break;} return '▼ −'+fmtD(v,d)+'%'+vs;}
@@ -2297,11 +2330,50 @@ function exPassSync(){$$('[data-exits]').forEach(box=>{const id=box.dataset.exit
    lab disables in place shows its why line again (a line rendered while Next was enabled is hidden until then) */
 function whyShow(b){const pb=b.closest('.pbar'), host=pb?pb.parentElement:(b.closest('.steps')||{}).parentElement; if(!host) return;
   host.querySelectorAll(':scope>.steps>.step.current [data-next-why], :scope>.pbar>[data-next-why]').forEach(p=>{p.hidden=false;});}
+/* comparison charts (kit polish K1): a value label never has a reference line (the dashed goal or budget line, .g) running through it,
+   stays in its own row and on one line. The CSS alone put it right of its bar's end (or inside the end when the row had no room), so a
+   bar that ended near the line had the line through its number (tool-scheduling 12.7 / 13.4 / 13.7 s against 14 s; chunk-rerank; the
+   product-design budget; rag-failure moved its labels itself). Now the kit measures the label and the track and picks the first place
+   that keeps clear of every line by CMP_CLR px: right of the bar's end; inside the bar's end; else the place nearest the bar's end just
+   past or just before a line (beside the bar or inside it, never across its end); else, when nothing on the bar's row fits, under the
+   bar's end. --cx carries the shift for the CSS (styles.css 1c). It runs when a chart is added and again when its track or its label
+   changes size (a resize, “See all settings that pass” opened, a font that arrives late). A label a lab placed itself (an inline
+   right, no .cmp-fit, or a lab rule that moves it elsewhere) is left where the lab put it. */
+const CMP_CLR=4;
+const cmpRO=typeof ResizeObserver==='function'?new ResizeObserver(es=>{const s=new Set();
+  es.forEach(e=>{const t=e.target.classList.contains('cmp-track')?e.target:e.target.parentElement; if(!t||!t.isConnected){cmpRO.unobserve(e.target); return;} s.add(t);});
+  cmpPlaceAll([...s]);}):null;
+function cmpSeeAll(n){if(!n||n.nodeType!==1) return; const ts=n.matches('.cmp-track')?[n]:(n.firstElementChild?[...n.querySelectorAll('.cmp-track')]:[]); if(!ts.length) return;
+  const fresh=ts.filter(t=>!t._cmpSeen); fresh.forEach(t=>{t._cmpSeen=1; if(cmpRO){cmpRO.observe(t); const v=t.querySelector(':scope>.cmp-val'); if(v) cmpRO.observe(v);}});
+  cmpPlaceAll(fresh);}
+const cmpOwn=v=>!v||v._cmpOff||!v.classList.contains('cmp-fit')||!/%$/.test(v.style.left)||!!v.style.right;
+function cmpPlaceAll(ts){
+  // reads first, then writes, then one check (a single layout per batch, however many rows)
+  const jobs=[];
+  for(const tr of ts){const v=tr.querySelector(':scope>.cmp-val'); if(cmpOwn(v)) continue; const tb=tr.getBoundingClientRect(), W=tb.width; if(!W) continue;   // hidden: the observer comes back when it shows
+    const M=parseFloat(getComputedStyle(tr).marginRight)||0, ml=parseFloat(getComputedStyle(v).marginLeft)||0, tr0=tb.left;
+    const w=v.getBoundingClientRect().width, xb=Math.max(0,Math.min(W,parseFloat(v.style.left)/100*W)), hi=W+M-2;
+    const lines=[...tr.querySelectorAll(':scope>.g')].map(g=>{const r=g.getBoundingClientRect(); return [r.left-tr0,r.left-tr0+Math.max(1.5,r.width)];}).filter(([a,b])=>b>=-1&&a<=W+M+1);
+    const clear=x0=>lines.every(([a,b])=>x0+w+CMP_CLR<=a||x0>=b+CMP_CLR);
+    const beside=x0=>x0>=xb+ml-0.5, inside=x0=>x0>=2&&x0+w<=xb-2;   // right of the bar's end, or wholly inside the bar
+    const fits=x0=>x0>=0&&x0+w<=hi&&clear(x0)&&(beside(x0)||inside(x0));
+    let x0=null, lo=false;
+    if(fits(xb+ml)) x0=xb+ml; else if(fits(xb-ml-w)) x0=xb-ml-w;
+    else {let best=null, bd=Infinity; lines.forEach(([a,b])=>[b+CMP_CLR,a-CMP_CLR-w].forEach(c=>{if(!fits(c)) return; const d=c>=xb?c-xb:xb-(c+w); if(d<bd){bd=d; best=c;}})); x0=best;}
+    if(x0==null){lo=true; x0=Math.max(0,Math.min(xb-w,hi-w));}   // nothing on the row fits: under the bar's end (the lines stop 3 px below the track)
+    const par=tr.parentElement, blk=!!par&&(par.classList.contains('cmp-lo-row')||getComputedStyle(par).display==='block');   // a block row holds the room under the bar itself (.cmp-lo-row); a grid or flex row already does
+    jobs.push({tr,v,x0,lo,xb,ml,tr0,h:v.offsetHeight,par,blk});}
+  for(const j of jobs){j.tr.classList.toggle('cmp-lo',j.lo); j.v.classList.toggle('cmp-lo',j.lo); if(j.par) j.par.classList.toggle('cmp-lo-row',j.lo&&j.blk); if(j.lo) j.tr.style.setProperty('--lo',(j.h+7)+'px'); else j.tr.style.removeProperty('--lo');
+    j.v.style.setProperty('--cx',(j.x0-j.xb-j.ml).toFixed(2)+'px');}
+  // a lab rule that places the label its own way wins over --cx: then the kit leaves that label alone
+  for(const j of jobs){const r=j.v.getBoundingClientRect(); if(Math.abs(r.left-(j.tr.getBoundingClientRect().left+j.x0))>1.5){j.v._cmpOff=1; j.v.style.removeProperty('--cx'); j.v.classList.remove('cmp-lo'); j.tr.classList.remove('cmp-lo'); if(j.par) j.par.classList.remove('cmp-lo-row'); j.tr.style.removeProperty('--lo');}}}
+if(document.fonts&&document.fonts.addEventListener) document.fonts.addEventListener('loadingdone',()=>cmpPlaceAll([...document.querySelectorAll('.cmp-track')].filter(t=>t._cmpSeen)));
 const kitObs=window.MutationObserver?new MutationObserver(recs=>{for(const r of recs){
-  if(r.type==='childList'){r.addedNodes.forEach(n=>{if(n.nodeType===1) tipReachAll(n);});}
+  if(r.type==='childList'){r.addedNodes.forEach(n=>{if(n.nodeType===1){tipReachAll(n); fillAll(n); cmpSeeAll(n);}});}
   else if(r.attributeName==='disabled'){const b=r.target; if(b.disabled&&b.matches('[data-nav="next"]')) whyShow(b);}
+  else if(r.attributeName==='min'||r.attributeName==='max'||r.attributeName==='step'||r.attributeName==='value'){if(r.target.type==='range') setFill(r.target);}   // K5
   else tipReach(r.target);}}):null;
-function kitObserve(){tipReachAll(document.body); if(kitObs) kitObs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['data-tip','data-tipx','data-tipfn','data-jump','disabled']});}
+function kitObserve(){tipReachAll(document.body); fillAll(document.body); cmpSeeAll(document.body); if(kitObs) kitObs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['data-tip','data-tipx','data-tipfn','data-jump','disabled','min','max','step','value']});}
 const UI={
   flash:flashEl, jumpToEl, obsBump, setRange:setFill, reveal:revealTop, done:id=>doneHTML(id),
   /* set every Next in root (the card's and the part bar's) and, if given, the text of their why lines (steps({nextWhy})) */

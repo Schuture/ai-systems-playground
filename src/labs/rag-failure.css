@@ -176,8 +176,6 @@
 .rgf-pk-l{font-size:12.5px;font-weight:600;color:var(--ink-2);margin-right:2px}
 .rgf-pkb{font:inherit;font-size:13px;line-height:1.25;padding:5px 11px;min-height:32px;border:1px solid var(--line-2);border-radius:999px;background:var(--surface);color:var(--ink);cursor:pointer}
 .rgf-pkb[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
-/* the challenge chart: a row under the goal carries its value inside its bar's end, clear of the goal line (P21) */
-.rgf-ch-res .cmp-val.rgf-vin{z-index:1}
 /* part 4: two numbers (P11) */
 .rgf-two{display:grid;gap:12px;padding:4px 0 6px}
 .rgf-tw-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13.5px;font-weight:600}
