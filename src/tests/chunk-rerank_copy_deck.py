@@ -69,7 +69,7 @@ def click(pg, sel, ms=200):
 
 
 def stage(pg, d, label):
-    d.add(label + ' — stage', txt(pg, '#ckr-stage .ckr-head, #ckr-stage .ckr-ql, #ckr-stage .ckr-pan:not([hidden]) .ckr-pt, #ckr-stage .ckr-pan:not([hidden]) .ckr-leg, #ckr-stage #ckr-pan-doc:not([hidden]) #ckr-text, #ckr-stage #ckr-pan-lists:not([hidden]) #ckr-cols'))
+    d.add(label + ' — stage', txt(pg, '#ckr-stage .ckr-head, #ckr-stage .ckr-ql, #ckr-stage .ckr-pan:not([hidden]) .ckr-pt, #ckr-stage .ckr-pan:not([hidden]) .ckr-leg, #ckr-stage #ckr-pan-doc:not([hidden]) #ckr-text, #ckr-stage #ckr-pan-lists:not([hidden]) #ckr-ltools, #ckr-stage #ckr-pan-lists:not([hidden]) #ckr-cols, #ckr-stage #ckr-pan-lists:not([hidden]) #ckr-sum'))
     d.add(label + ' — pictures', pg.evaluate("()=>[...document.querySelectorAll('#ckr-stage svg')].filter(e=>e.getClientRects().length).map(s=>(s.getAttribute('aria-label')||'')+' | '+[...s.querySelectorAll('text')].map(t=>t.textContent).join(' | ')).join('\\n')"))
     d.add(label + ' — metric cards', txt(pg, '#ckr-metrics:not([hidden])'))
     d.add(label + ' — chart title', txt(pg, '#ckr-pan-chart:not([hidden]) .ckr-pt'))
@@ -107,7 +107,7 @@ def run(lang):
                 acted = True
             if pg.query_selector('#ckr-rail [data-pred="kw"]'): click(pg, '#ckr-rail [data-pred="vec"]'); acted = True
             if st['step'] == 3:
-                for q in ('8', '9', '0'):
+                for q in ('15', '8', '9', '0'):
                     click(pg, f'#ckr-rail .seg-ctl[data-key="q"] button[data-v="{q}"]', 200); d.add(f'After question {int(q) + 1}', txt(pg, '#ckr-rail [data-obs]')); d.add('Lists', txt(pg, '#ckr-cols'))
                 click(pg, '#ckr-rail .seg-ctl[data-key="q"] button[data-v="8"]', 200)
             if st['step'] == 4:
