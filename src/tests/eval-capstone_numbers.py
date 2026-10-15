@@ -33,7 +33,7 @@ MATHJS = r"""sel=>{const ex=n=>{const t=n.tagName.toLowerCase(), k=[...n.childre
   if(t==='mfrac') return `((${ex(k[0])})/(${ex(k[1])}))`;
   if(t==='msqrt') return `sqrt(${k.map(ex).join('')})`;
   if(t==='msup') return `((${ex(k[0])})**(${ex(k[1])}))`;
-  if(t==='mtext'){const c=n.textContent.trim(); return c==='to'||c==='到'?'|':(c===''?'':'@');}
+  if(t==='mtext'){const c=n.textContent.trim(); return c==='to'||c==='到'?'|':(c===''||c==='$'?'':'@');}   // “$4,030”: the $ is text, the amount is checked
   if(t==='mi') return '@';
   if(t==='mspace') return '';
   return k.map(ex).join('');};

@@ -7,7 +7,7 @@ Order: home tile (both choices), lab header and both popovers, each guided part 
 metrics), Show the math, the scenarios (each), Settings, the challenge (every feedback tier and the chart), the card “Can you use it
 on a new case?” (every question, every option's verdict), and Connect with the drill answer. A tooltip is printed the first time it
 appears with a given text, indented under “_New tooltips:_”."""
-import pathlib, subprocess, sys
+import pathlib, re, subprocess, sys
 from playwright.sync_api import sync_playwright
 
 P = pathlib.Path(__file__).resolve().parent.parent
@@ -18,12 +18,22 @@ URL = 'file://' + str(OUT / 'deck-wrapped.html')
 clean = lambda s: ' '.join(s.replace('‑', '-').replace(' ', ' ').split()) if s else ''
 
 
+def detag(t, lang):
+    """A tooltip written as a list (a title, then name and value pairs) read as one line: “name: value; name: value”."""
+    if '<' not in t: return t
+    sep, end = ('：', '；') if lang == 'zh' else (': ', '; ')
+    t = re.sub(r'</span>\s*<b>', sep, t)
+    t = re.sub(r'</(?:div|p)>', end, t)
+    t = re.sub(r'<[^>]+>', '', t)
+    return re.sub(r'(?:[；;]\s*)+', end, t).strip().rstrip('；; ')
+
+
 def txt(pg, sel):
     return pg.evaluate("s=>[...document.querySelectorAll(s)].filter(e=>e.getClientRects().length).map(e=>e.innerText).join('\\n')", sel)
 
 
 class Deck:
-    def __init__(self): self.lines, self.tips = [], set()
+    def __init__(self, lang='en'): self.lines, self.tips, self.lang = [], set(), lang
 
     def h(self, t): self.lines.append(f'\n## {t}\n')
 
@@ -34,7 +44,7 @@ class Deck:
     def tipsOf(self, pg, root):
         new = []
         for t in pg.evaluate("r=>[...document.querySelectorAll(r+' [data-tipx]')].filter(e=>e.getClientRects().length).map(e=>e.getAttribute('data-tipx'))", root):
-            c = clean(t)
+            c = clean(detag(t, self.lang))
             if c and c not in self.tips: self.tips.add(c); new.append('  - ' + c)
         if new: self.lines.append('_New tooltips:_\n' + '\n'.join(new) + '\n')
 
@@ -50,7 +60,7 @@ def seg(key, v, root='#ecap-rail'):
 
 
 def run(lang):
-    d = Deck(); d.lines.append(f'# eval-capstone copy deck ({lang})\n')
+    d = Deck(lang); d.lines.append(f'# eval-capstone copy deck ({lang})\n')
     with sync_playwright() as pw:
         b = pw.chromium.launch(); pg = b.new_page(viewport={'width': 1440, 'height': 900})
         pg.goto(URL); pg.wait_for_timeout(300); pg.click(f'.langsw button[data-lang="{lang}"]'); pg.wait_for_timeout(100)
@@ -81,7 +91,7 @@ def run(lang):
             d.add('Card', txt(pg, '#ecap-rail .step.current')); d.tipsOf(pg, '#ecap-rail'); stage(d, pg)
             for name, sel in acts:
                 cl(sel); d.add(f'After “{name}”: result box', txt(pg, '#ecap-rail [data-obs]') or txt(pg, '#ecap-rail .step.current')); d.tipsOf(pg, '#ecap-rail'); stage(d, pg)
-            if sid in ('split', 'calib'):
+            if sid in ('split', 'size', 'judge', 'calib'):
                 pg.evaluate("()=>{document.getElementById('ecap-math').open=true}"); pg.wait_for_timeout(150)
                 d.h(f'Show the math (part {i + 1})'); d.add('Show the math', txt(pg, '#ecap-mathbody'))
                 pg.evaluate("()=>{document.getElementById('ecap-math').open=false}")

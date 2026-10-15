@@ -1,6 +1,8 @@
 /* eval-capstone: a forest plot, one row per category (the plan on the left, the difference with its 95% interval in the middle,
    the verdict on the right), a total row on top, the true difference as a hollow diamond. Colours (R5.6): grayscale; red for a
-   category that got worse (the loss caught) and for a guardrail alarm, and for the word “wrong”; green only for the challenge's goal. */
+   category that got worse (the loss caught) and for a guardrail alarm, and for the word “wrong”; green only for the challenge's goal.
+   Under a judged row: the judge's lean as an arrow from the diamond (part 4), or the bias people measured, taken off the judge's own
+   result (part 5); part 3 keeps the 1,000-item intervals as dashed boxes. */
 .ecap-stage .stage-head{align-items:center}
 .ecap-graph{padding:12px 14px 14px;display:grid;gap:10px;min-width:0}
 .ecap-phone:empty{display:none}
@@ -13,6 +15,14 @@
 .ecap-sw.red::before{content:"";position:absolute;left:0;right:0;top:3px;height:4px;border-radius:2px;background:var(--c-oom)}
 .ecap-sw.mg{width:0;height:14px;border-left:2px dashed var(--ink-3);margin:0 8px}
 .ecap-sw.tru{width:9px;height:9px;transform:rotate(45deg);border:1.5px solid var(--ink);background:var(--surface);margin:0 4px}
+.ecap-sw.gh{height:10px;border:1px dashed var(--ink-2);border-radius:2px;box-sizing:border-box}
+/* the swatches of the line under writing's row: the same marks as on the track */
+.ecap-sw.bs::before,.ecap-sw.bp::before,.ecap-sw.cor::before{content:"";position:absolute;left:0;right:0;top:3px;height:3px;border-radius:1px}
+.ecap-sw.bs::before{background:var(--ink)}
+.ecap-sw.bp::before{background:repeating-linear-gradient(90deg,var(--ink-2) 0 4px,transparent 4px 7px)}
+.ecap-sw.cor::before{background:var(--ink-2)}
+.ecap-sw.bx::before{content:"";position:absolute;left:0;right:0;top:3px;height:0;border-top:2px dotted var(--ink-3)}
+.ecap-sw.rw{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink-2);background:var(--surface);box-sizing:border-box;margin:0 6px}
 .ecap-wr,.ecap-vd em{font-style:normal;color:var(--c-oom);font-weight:650}
 
 /* ---------- the forest plot ---------- */
@@ -23,12 +33,18 @@
 .ecap-row.tot+.ecap-row{border-top:0}
 .ecap-rn{min-width:0;display:grid;gap:1px;line-height:1.3}
 .ecap-rn b{font-size:13px;font-weight:650;color:var(--ink)}
-.ecap-rn span{font-size:11.5px;color:var(--ink-2)}
+/* a plan's line breaks after its commas, never inside a word such as 校正 (P19) */
+.ecap-rn span{font-size:11.5px;color:var(--ink-2);word-break:keep-all;overflow-wrap:anywhere}
 .ecap-tr{position:relative;height:26px;min-width:0}
+.ecap-row.has-b .ecap-tr{height:34px}
 .ecap-tr>i{position:absolute;display:block}
 .ecap-zero{top:-7px;bottom:-7px;width:0;border-left:1.5px solid var(--ink-3);transform:translateX(-.75px)}
 .ecap-mg{top:-7px;bottom:-7px;width:0;border-left:1.5px dashed var(--ink-3);transform:translateX(-.75px)}
 .ecap-bar{top:11px;height:4px;border-radius:2px;background:var(--ink-2)}
+/* the interval's ends, so a short interval still shows past its dot */
+.ecap-bar::before,.ecap-bar::after{content:"";position:absolute;top:-3px;width:1.5px;height:10px;background:inherit}
+.ecap-bar::before{left:0}
+.ecap-bar::after{right:0}
 .ecap-bar.red{background:var(--c-oom)}
 .ecap-pt{top:8px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 2px var(--surface)}
 .ecap-pt.red{background:var(--c-oom)}
@@ -36,6 +52,32 @@
 .ecap-cut{top:8px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent}
 .ecap-cut.l{left:-2px;border-right:7px solid var(--ink-2)}
 .ecap-cut.r{right:-2px;border-left:7px solid var(--ink-2)}
+/* part 3: the interval at 1,000 items each, a dashed box behind the bar (P7) */
+.ecap-ghost{top:6px;height:14px;border:1px dashed var(--ink-2);border-radius:3px;box-sizing:border-box;opacity:.85}
+/* the judge's lean: one lane under the bar, from the diamond to the judge's result (P11) */
+.ecap-bs{top:27px;height:3px;border-radius:1px}
+.ecap-bs.s{background:var(--ink)}
+.ecap-bs.p{background:repeating-linear-gradient(90deg,var(--ink-2) 0 4px,transparent 4px 7px)}
+.ecap-bs.x{height:0;border-top:2px dotted var(--ink-3)}
+.ecap-bs.cor{background:var(--ink-2)}
+.ecap-ah{top:24px;width:0;height:0;border-top:4.5px solid transparent;border-bottom:4.5px solid transparent}
+.ecap-ah.r{margin-left:-7px;border-left:7px solid var(--ink)}
+.ecap-ah.l{border-right:7px solid var(--ink-2)}
+/* part 5: the judge's own result, hollow, and its interval dashed (P15), on a lane of its own above the corrected result, so a corrected
+   interval that reaches the judge's point does not cover it (N13): judge's own result, corrected result, the bias taken off */
+.ecap-rawp{top:8px;width:10px;height:10px;margin-left:-5px;border-radius:50%;border:1.5px solid var(--ink-2);background:var(--surface);box-sizing:border-box}
+.ecap-rawb{top:12px;height:0;border-top:2px dashed var(--ink-3)}
+.ecap-row.has-r .ecap-tr{height:42px}
+.ecap-row.has-r .ecap-rawp{top:0}
+.ecap-row.has-r .ecap-rawb{top:4px}
+.ecap-row.has-r .ecap-bar{top:19px}
+.ecap-row.has-r .ecap-pt{top:16px}
+.ecap-row.has-r .ecap-tru{top:14px}
+.ecap-row.has-r .ecap-cut{top:16px}
+.ecap-row.has-r .ecap-bs{top:35px}
+.ecap-row.has-r .ecap-ah{top:32px}
+.ecap-ann{grid-column:2/4;display:flex;flex-wrap:wrap;gap:2px 14px;font-size:11.5px;line-height:1.35;color:var(--ink-2);padding-top:2px;min-width:0}
+.ecap-ann span{display:inline-flex;align-items:center;gap:5px;min-width:0}
 .ecap-row.wrong .ecap-rn b{color:var(--c-oom)}
 .ecap-vd{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.3;min-width:0;display:grid}
 .ecap-vd.bad{color:var(--c-oom)}
@@ -47,13 +89,44 @@
 .ecap-axis .ecap-tr span:last-child{transform:translateX(-100%)}
 .ecap-axl{font-size:11.5px;color:var(--ink-2);text-align:center;padding-left:calc(25% + 10px);padding-right:calc(17% + 10px);line-height:1.35}
 
-/* the verdict card says a short phrase (“No verdict yet”); on a phone it may take two lines rather than leave its card */
+/* the build-up, about 1 s on one clock (P11, P15): the lean grows from the diamond, preference by preference, then the judge's result
+   appears at its tip; in calibration the bias is taken off the judge's own result, leftward, then the corrected result appears.
+   Fill backwards only: once played, nothing is left running */
+@keyframes ecap-grow-r{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes ecap-grow-l{from{clip-path:inset(0 0 0 100%)}to{clip-path:inset(0 0 0 0)}}
+@keyframes ecap-in{from{opacity:0}to{opacity:1}}
+.ecap-anim.bias .ecap-bs.s{animation:ecap-grow-r .4s ease-out backwards}
+.ecap-anim.bias .ecap-bs.p,.ecap-anim.bias .ecap-bs.x{animation:ecap-grow-r .4s ease-out .4s backwards}
+.ecap-anim.bias .ecap-ann .a1{animation:ecap-in .3s ease-out backwards}
+.ecap-anim.bias .ecap-ann .a2{animation:ecap-in .3s ease-out .4s backwards}
+.ecap-anim.bias .ecap-ah,.ecap-anim.bias .ecap-m,.ecap-anim.bias .ecap-vd{animation:ecap-in .2s ease-out .8s backwards}
+.ecap-anim.cal .ecap-bs.cor{animation:ecap-grow-l .6s ease-in-out .1s backwards}
+.ecap-anim.cal .ecap-ann .a2{animation:ecap-in .3s ease-out .1s backwards}
+.ecap-anim.cal .ecap-ah,.ecap-anim.cal .ecap-m,.ecap-anim.cal .ecap-vd{animation:ecap-in .25s ease-out .7s backwards}
+/* N10: the badge and the verdict card show the new result when writing's row does, on the same clock */
+.ecap-lb{animation:ecap-in .2s ease-out .8s backwards}
+.ecap-lc{animation:ecap-in .25s ease-out .7s backwards}
+/* N11: on a phone the build-up waits, at its start, while the page brings the stage up */
+.ecap-hold .ecap-anim *,.ecap-hold .ecap-lb,.ecap-hold .ecap-lc{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){.ecap-anim,.ecap-anim *,.ecap-lb,.ecap-lc{animation:none!important}}
+
+/* row tooltips: the fields one per line, names and values in two columns (P20) */
+.tip .ecap-tl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:2px 10px;text-align:left;margin-top:4px}
+.tip .ecap-tl>div{display:contents}
+.tip .ecap-tl span{opacity:.75}
+.tip .ecap-tl b{font-weight:600}
+
+/* the verdict card says a short phrase (“No verdict yet”); on a phone it may take two lines rather than leave its card, broken between
+   words (“还不能 / 下结论”), or anywhere if a word alone is too wide */
 .ecap-metrics .metric .v{white-space:normal;line-height:1.2}
+.ecap-metrics .metric[data-k="dec"] .v{word-break:keep-all;overflow-wrap:anywhere}
+/* N5: a change that does not fit its line: the change on one line, what it is compared with on the next */
+.ecap-metrics .metric .d{white-space:pre-line}
 
 /* ---------- rail ---------- */
 .ecap-lv .levers{margin-top:6px}
 .ecap-vl,.ecap-pick{margin:4px 0 8px;padding-left:18px;display:grid;gap:2px}
-.ecap-pick{font-size:13px}
+.ecap-pick{font-size:13px;word-break:keep-all;overflow-wrap:anywhere}   /* a plan line breaks after a comma, not inside 校准 (P19) */
 .ecap-mt{margin-top:10px}
 .ecap-goal{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
 .ecap-goal.ecap-over b{color:var(--c-oom)}
@@ -61,9 +134,6 @@
 .ecap-chg{display:grid;gap:0;margin:8px 0 4px;border-top:1px solid var(--line)}
 .ecap-chg>.ecap-cg{border-bottom:1px solid var(--line);padding:4px 0}
 .ecap-cg{display:grid;gap:2px;min-width:0}
-.ecap-al{list-style:none;padding:0;margin:4px 0 0;display:grid;gap:0;border-top:1px solid var(--line)}
-.ecap-al li{display:grid;grid-template-columns:minmax(110px,32%) minmax(0,1fr);gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px;line-height:1.4}
-.ecap-al li span{color:var(--ink-2)}
 
 /* ---------- settings ---------- */
 #ecap-controls .ecap-cg{border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
@@ -91,19 +161,93 @@
 .ecap-dk i.b{top:3px;height:4px;border-radius:2px;background:var(--ink-2)}
 .ecap-dk i.b.red{background:var(--c-oom)}
 
+/* ---------- phone (P21, P22): the name and the verdict share the first line, the track takes the row's whole width below them, so a
+   1,000-item interval is several times wider than its dot; the legend is smaller, the rows shorter ---------- */
 @media (max-width:760px){
-  .ecap-graph{padding:10px 10px 12px}
-  .ecap-row{grid-template-columns:minmax(96px,30%) minmax(0,1fr) minmax(74px,24%);column-gap:7px}
-  .ecap-axl{padding-left:0;padding-right:0}
-  /* on a phone the track is narrow: only the ticks at −10, 0, +10 (online: every 2 points) keep their labels */
-  .ecap-axis .ecap-tr span.mn{display:none}
-  .ecap-al li{grid-template-columns:minmax(0,1fr)}
+  .ecap-graph{padding:10px 10px 12px;gap:8px}
+  .ecap-leg{font-size:11px;gap:2px 10px;line-height:1.35}
+  .ecap-leg .ecap-sw{width:16px}
+  .ecap-leg .ecap-sw.mg{width:0;margin:0 5px}
+  .ecap-leg .ecap-sw.tru{width:8px;height:8px}
+  .ecap-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"rn vd" "tr tr";column-gap:8px;row-gap:1px;padding:5px 0 4px;align-items:baseline}
+  .ecap-rn{grid-area:rn;display:block;font-size:12.5px;line-height:1.3}
+  .ecap-rn b{font-size:12.5px;margin-right:6px}
+  .ecap-rn span{font-size:11px}
+  .ecap-tr{grid-area:tr;height:22px}
+  .ecap-row.has-b .ecap-tr{height:30px}
+  .ecap-bar{top:9px}
+  .ecap-pt,.ecap-rawp{top:6px}
+  .ecap-tru{top:4px}
+  .ecap-ghost{top:4px}
+  .ecap-cut{top:6px}
+  .ecap-rawb{top:10px}
+  .ecap-bs{top:24px}
+  .ecap-ah{top:21px}
+  .ecap-zero,.ecap-mg{top:-3px;bottom:-3px}
+  .ecap-row.has-r .ecap-tr{height:36px}
+  .ecap-row.has-r .ecap-rawp{top:0}
+  .ecap-row.has-r .ecap-rawb{top:4px}
+  .ecap-row.has-r .ecap-bar{top:15px}
+  .ecap-row.has-r .ecap-pt{top:12px}
+  .ecap-row.has-r .ecap-tru{top:10px}
+  .ecap-row.has-r .ecap-cut{top:12px}
+  .ecap-row.has-r .ecap-bs{top:30px}
+  .ecap-row.has-r .ecap-ah{top:27px}
+  .ecap-vd{grid-area:vd;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:baseline;gap:0 6px;text-align:right;font-size:12px;max-width:46vw}
+  .ecap-ann{grid-column:1/-1;font-size:11px;gap:1px 10px}
+  .ecap-row.ecap-axis{padding:0}
+  .ecap-row.ecap-axis .ecap-rn,.ecap-row.ecap-axis .ecap-vd{display:none}
+  .ecap-axis .ecap-tr{height:15px}
+  .ecap-axl{padding-left:0;padding-right:0;font-size:11px}
+  /* the part's control on one line: its name left of the buttons */
+  .ecap-phone .inline-ctl{grid-template-columns:minmax(0,max-content) minmax(0,1fr);align-items:center;column-gap:10px;margin:0;padding:6px 8px}
+  .ecap-phone .inline-ctl>.lbl{max-width:7.5em;font-size:12.5px;line-height:1.3}
 }
 
 /* part 4: the line above the three ways to grade writing (R2.5), styled like a control's label */
 .ecap-lvh{margin:12px 0 6px;font-size:13px;font-weight:620;color:var(--ink-2);line-height:1.4}
-/* the full verdict names (R6.4) may take two lines rather than squeeze the option's title */
-.ecap-lv .lever .lv-r{white-space:normal;max-width:8.5em;text-align:right;line-height:1.3}
-/* part 5: the PPI formula on two lines, its name on the first, so it fits the card */
-.ecap-fx2{line-height:1.9}
-.ecap-fx2 math+br+math{margin-left:1.2em}
+/* a tried way's verdict on one line (R6.4, P13), and “wrong” in red under it, as on the chart's rows */
+.ecap-lv .lever .lv-r{white-space:normal;text-align:right;line-height:1.3}
+.ecap-nw,.ecap-wd{white-space:nowrap}
+.ecap-lv .lever .lv-r em.wrong{display:block;font-style:normal;color:var(--c-oom);font-weight:650}
+
+/* ---------- English on a phone (todo 6). English runs longer than Chinese, so the English stage is arranged to fit under the top bar as
+   the Chinese one does: the head's question on a line of its own, the plan's cost and the badge under it; a row's name, plan and verdict
+   on its first line, the track on the second with the interval's ends beside it (the tracks keep one width, so the rows share a scale);
+   the legend reordered so “true difference” and “wrong” share a line (four lines at most); the verdict card a little wider, its phrase set like the Chinese one rather than in the
+   numbers' font, so “No verdict yet” stays on one line. The Chinese stage is unchanged. ---------- */
+.ecap-vn{display:contents}
+/* in English no block ends with one word alone on its line (where the browser can: Chromium, Safari), and the verdict card's and the
+   guardrail card's phrase is set in the text's font at every width, so “No verdict yet” stays on one line */
+html:not([lang^="zh"]) #ecap-app{text-wrap-style:pretty}
+/* text set straight in a flex box (an answer button, a chart's legend entry) has its lines evened out instead */
+html:not([lang^="zh"]) #ecap-app .choice,html:not([lang^="zh"]) #ecap-app .cmp-leg>span{text-wrap-style:balance}
+html:not([lang^="zh"]) .ecap-metrics .metric[data-k="dec"] .v,html:not([lang^="zh"]) .ecap-metrics .metric[data-k="guard"] .v{font-family:var(--font-ui)}
+/* the legend's “wrong: truth disagrees”: the colon right after the word, as in a sentence */
+html:not([lang^="zh"]) .ecap-leg .lg-r{gap:0}
+@media (max-width:760px){
+  html:not([lang^="zh"]) .ecap-stage .stage-head{row-gap:0}
+  html:not([lang^="zh"]) .ecap-graph{padding:8px 10px 10px;gap:5px}
+  html:not([lang^="zh"]) .ecap-leg{line-height:1.25}
+  html:not([lang^="zh"]) .ecap-stage .stage-head>div:first-child{display:contents}
+  html:not([lang^="zh"]) #ecap-st-title{flex:1 0 100%;letter-spacing:0}
+  html:not([lang^="zh"]) #ecap-st-sub{flex:1 1 auto;min-width:0;margin-top:0}
+  html:not([lang^="zh"]) .ecap-leg .lg-t{order:1}
+  html:not([lang^="zh"]) .ecap-leg .lg-r{order:2}
+  html:not([lang^="zh"]) .ecap-leg .lg-g{order:3}
+  html:not([lang^="zh"]) .ecap-leg .lg-w{order:4}
+  html:not([lang^="zh"]) .ecap-leg .lg-mg{order:5}
+  html:not([lang^="zh"]) .ecap-row{grid-template-columns:minmax(0,1fr) auto 66px;grid-template-areas:"rn vw vw" "tr tr nm";column-gap:6px;align-items:center;padding:4px 0 3px}
+  html:not([lang^="zh"]) .ecap-row.tot{padding-bottom:7px}
+  html:not([lang^="zh"]) .ecap-row.ecap-axis{padding:0}
+  html:not([lang^="zh"]) .ecap-rn b{font-size:12px}
+  html:not([lang^="zh"]) .ecap-rn span{font-size:10.5px}
+  html:not([lang^="zh"]) .ecap-vd{display:contents}
+  html:not([lang^="zh"]) .ecap-vw{grid-area:vw;justify-self:end;align-self:start;white-space:nowrap;line-height:1.3}
+  html:not([lang^="zh"]) .ecap-vn{grid-area:nm;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;text-align:right;line-height:1.25;min-width:0}
+  html:not([lang^="zh"]) .ecap-vn small{white-space:nowrap}
+  html:not([lang^="zh"]) .ecap-metrics[data-n="3"]{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr)}
+  html:not([lang^="zh"]) .ecap-metrics .metric[data-k="dec"] .v,html:not([lang^="zh"]) .ecap-metrics .metric[data-k="guard"] .v{font-size:14px;line-height:1.3}
+  html:not([lang^="zh"]) .ecap-ann .ecap-sw{width:16px}
+  html:not([lang^="zh"]) .ecap-ann .ecap-sw.rw{width:10px;margin:0 3px}
+}
