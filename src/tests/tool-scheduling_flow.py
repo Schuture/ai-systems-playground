@@ -1,8 +1,8 @@
 """Flow test for the tool-scheduling lab (CONTRACT §6), at 1440×900 and 390×844, in EN and ZH.
 
 - no page errors, no horizontal overflow, a tooltip for every help cursor, no text past the stage at 390;
-- part 1: Next waits for a prediction (kit why line); the one-at-a-time run plays at 快 (R3.9) and the observation names 10 model
-  calls and 27.2 s only once it has played; no stage status before the prediction (R3.8);
+- part 1: Next waits for a prediction (kit why line); the one-at-a-time run plays at 快 (R3.9), the timeline above the graph (R7.12),
+  and the card names 10 model calls, 27.2 s and 12.2 s of tools; no stage status before the prediction (R3.8);
 - part 2: Next waits for two calls; picking “book flight” highlights what it waits for;
 - part 3: the verdict on the prediction comes first; all at once plays with a red call (R5.11); the three levers give 6.0 / 14.3 /
   16.3 s; Next waits for “by dependency, with a lock”;
@@ -13,7 +13,13 @@
 - part 7: the scenarios button and the next-lab footer;
 - Scenarios: five, the insight of each, the hash round trip, the language switch keeps the setup;
 - the challenge: no time and no verdict before Submit; the initial arrangement misses; the best arrangement meets the goal at
-  11.9 s; a 13.4-s arrangement gets the middle tier; a wrong one names the tests running too early; the brief chart; the capability card;
+  12.7 s; a 13.4-s arrangement gets the middle tier; ABC → DEF names E still editing when the tests start, and the timeline draws it
+  (polish r1, P1); ABCF → DE says D and E had not begun, and the words sit beside the red line (polish r2, N10); the status says
+  播放中 while the submitted run plays (P15); on a phone the run plays on the screen and a link under it leads to the verdict (T1);
+  the brief chart; the capability card;
+- polish r2: on a wide stage the pictures are drawn 1:1 with 13-px names and 12-px numbers and the stage needs no scroll at 1440×900
+  (N11); a tool made twice as fast shows its new time and a dot, the legend its old time (N7); part 2 on a phone brings the graph on
+  the screen and the dock names the call picked (T2);
 - the dock at 390; the writing rules on every visible text and tooltip (no “toy” outside the Toy run label, no two colons in one
   Chinese sentence, no “一次只能选 / 不会叠加 / 第 N 部分里”).
 Screenshots: shots/tool-scheduling/.
@@ -92,6 +98,7 @@ def mode(pg, m):
     click(pg, f'#tls-app .modes button[data-mode="{m}"]', 350)
 
 
+CARD = "()=>{const c=document.querySelector('#tls-rail .step.current .step-b').cloneNode(true); c.querySelectorAll('[data-now],[data-obs]').forEach(x=>x.remove()); return c.innerText.replace(/\\u00a0/g,' ')}"
 LVR = "()=>Object.fromEntries([...document.querySelectorAll('#tls-rail .step.current button[data-lever]')].map(b=>[b.dataset.lever,b.querySelector('.lv-r').textContent.trim()]))"
 NODES = """()=>{const bad=[]; document.querySelectorAll('#tls-graph .tls-node').forEach(g=>{const r=g.querySelector('rect').getBBox(), a=g.querySelector('.tls-nt').getBBox(), b=g.querySelector('.tls-ns').getBBox();
   const inside=x=>x.x>=r.x-0.5&&x.y>=r.y-0.5&&x.x+x.width<=r.x+r.width+0.5&&x.y+x.height<=r.y+r.height+0.5;
@@ -147,16 +154,16 @@ def run(b, w, h, lang):
     check(f'{tag} p1 no status before the prediction', pg.evaluate("()=>document.querySelector('#tls-status').hidden"))
     shot(pg, f'p1-{w}-{lang}')
     nodes_ok(pg, f'{tag} p1 trip graph')
+    check(f'{tag} p1 the timeline is above the graph (R7.12)', pg.evaluate("()=>{const g=document.querySelector('#tls-pan-gantt'), d=document.querySelector('#tls-pan-graph'); return !g.hidden&&g.getBoundingClientRect().top<d.getBoundingClientRect().top}"))
     wait_anim(pg, 20000)
-    ob = text(pg, '#tls-rail [data-obs]')
-    check(f'{tag} p1 observation 10 calls 27.2 s', '10' in ob and '27.2' in ob, ob)
+    ob = pg.evaluate(CARD)
+    check(f'{tag} p1 card names 10 model calls, 27.2 s, 12.2 s of tools', all(x in ob for x in ('10', '27.2', '12.2')), ob)
     check(f'{tag} p1 agent-anatomy linked', pg.evaluate("(lg)=>{const l=window.ASP.catalog.LAB['agent-anatomy']; return !!document.querySelector('#tls-rail a[href=\"#agent-anatomy\"]')||document.querySelector('#tls-rail').innerText.includes(l.s[lg])}", lang))
     click(pg, '#tls-rail [data-pred="ok"]')
     check(f'{tag} p1 Next enabled after a prediction', not any(nexts(pg)), nexts(pg))
     # R09: Settings put the stage on another setup: the card says so and names both; its own numbers stay on this part's setup
-    check(f'{tag} p1 the observation is labelled as this part’s setup (R09)', Z(lang, 'This part’s setup', '这一部分的设置').lower() in ob.lower(), ob)   # the eyebrow is set in capitals
     click(pg, '#tls-controls .seg-ctl[data-key="sch"] button[data-v="all"]'); wait_anim(pg, 20000)
-    nw, ob = text(pg, '#tls-rail [data-now]'), text(pg, '#tls-rail [data-obs]')
+    nw, ob = text(pg, '#tls-rail [data-now]'), pg.evaluate(CARD)
     check(f'{tag} p1 Settings on all at once: a line says the timeline shows another setup, names both, and the card keeps 27.2 s (R09)',
           Z(lang, 'The timeline now shows another setup than this card', '时间轴上现在不是这张卡片讲的设置') in nw and Z(lang, 'All at once', '一次全发') in nw and Z(lang, 'One at a time', '一个一个来') in nw and '27.2' in ob, (nw, ob))
     click(pg, '#tls-rail [data-act="card"]')
@@ -165,9 +172,17 @@ def run(b, w, h, lang):
     # part 2
     nxt(pg)
     check(f'{tag} p2 Next waits for two calls', all(nexts(pg)))
+    if w <= 760:   # the learner taps from the card, below the stage
+        pg.evaluate("()=>document.querySelector('#tls-ic-pick2').scrollIntoView({block:'center'})"); pg.wait_for_timeout(300)
     click(pg, '#tls-ic-pick2 button[data-v="bfl"]')
     check(f'{tag} p2 highlight', pg.evaluate("()=>document.querySelectorAll('#tls-graph .tls-node.up').length") == 4)
     ob = text(pg, '#tls-rail [data-obs]'); check(f'{tag} p2 observation names the comparison', Z(lang, 'Compare prices', '比价') in ob, ob)
+    if w <= 760:
+        g = pg.evaluate("()=>{const r=document.querySelector('#tls-pan-graph').getBoundingClientRect(); return [r.top,r.bottom,innerHeight]}")
+        check(f'{tag} p2 on a phone the graph with the highlight comes on the screen (T2)', g[0] >= 50 and g[1] <= g[2], g)
+        pg.evaluate("()=>window.scrollBy(0,500)"); pg.wait_for_timeout(450)
+        dk = pg.evaluate("()=>{const d=document.getElementById('dock'); return d&&!d.hidden?d.innerText.replace(/\\s+/g,' '):''}")
+        check(f'{tag} p2 the dock names the call picked and what it waits for (T2)', Z(lang, 'Book flight', '订机票') in dk and Z(lang, 'waits for', '要等') in dk and Z(lang, 'Compare prices', '比价') in dk, dk)
     click(pg, '#tls-ic-pick2 button[data-v="wea"]')
     check(f'{tag} p2 Next enabled', not any(nexts(pg)))
     shot(pg, f'p2-{w}-{lang}')
@@ -209,6 +224,13 @@ def run(b, w, h, lang):
         ob = text(pg, '#tls-rail [data-obs]'); check(f'{tag} p4 half {v} observation says {says}', says in ob, ob)
         mt = text(pg, '#tls-metrics'); check(f'{tag} p4 half {v} total {want}', want in mt, mt)
     check(f'{tag} p4 critical path outlined', pg.evaluate("()=>document.querySelectorAll('#tls-gantt .tls-bar.crit').length") >= 4)
+    nd = pg.evaluate("()=>{const g=[...document.querySelectorAll('#tls-graph .tls-node')][5]; return [g.querySelector('.tls-ns').textContent,!!g.querySelector('.tls-chgd'),document.querySelector('#tls-d-leg').innerText]}")
+    check(f'{tag} p4 the faster booking shows its new time and a dot; the legend gives the old time (N7)', nd[0] == Z(lang, '1.5 s', '1.5 秒') and nd[1] and '3.0' in nd[2] and '1.5' in nd[2] and '→' not in nd[0], nd)
+    if w > 760:
+        fs = pg.evaluate("()=>{const f=s=>getComputedStyle(document.querySelector(s)).fontSize; const v=document.querySelector('#tls-gantt'); return [f('#tls-gantt .tls-rl'),f('#tls-gantt .tls-ax'),f('#tls-graph .tls-nt'),f('#tls-graph .tls-ns'),Math.round(v.getBoundingClientRect().width-v.viewBox.baseVal.width)]}")
+        check(f'{tag} p4 the pictures are 1:1 with 13-px names and 12-px numbers (N11)', fs[:4] == ['13px', '12px', '13px', '12px'] and abs(fs[4]) <= 1, fs)
+        fit = pg.evaluate("()=>{const s=document.querySelector('#tls-stage'), r=s.getBoundingClientRect(); return [s.scrollHeight-s.clientHeight,Math.round(r.bottom),innerHeight]}")
+        check(f'{tag} p4 the stage needs no scroll of its own and ends on the screen (N11, R7.12)', fit[0] <= 1 and fit[1] <= fit[2], fit)
     check(f'{tag} p4 Next enabled', not any(nexts(pg)))
     shot(pg, f'p4-{w}-{lang}')
     pg.evaluate("()=>{document.querySelector('#tls-math').open=true}"); pg.wait_for_timeout(100)
@@ -250,6 +272,9 @@ def run(b, w, h, lang):
         click(pg, f'#tls-rail [data-preset="{i}"]', 200)
         ins = text(pg, '#tls-insight'); check(f'{tag} scenario {i} insight {want}', want in ins, ins)
         wait_anim(pg)
+        if w > 760:
+            fit = pg.evaluate("()=>{document.querySelector('#tls-math').open=false; const s=document.querySelector('#tls-stage'); return s.scrollHeight-s.clientHeight}")
+            check(f'{tag} scenario {i} the stage needs no scroll of its own, Show the math closed (N11)', fit <= 1, fit)
     a = click_anim(pg, '#tls-rail [data-preset="2"]'); check(f'{tag} a watched scenario does not replay', a is None, a)
     hs = pg.evaluate("()=>location.hash"); check(f'{tag} hash carries the setup', hs.startswith(f'#{LAB}~') and '_2_' in hs, hs)
     shot(pg, f'sandbox-{w}-{lang}')
@@ -273,20 +298,42 @@ def run(b, w, h, lang):
     check(f'{tag} ch no time before submit', Z(lang, 'shown after you submit', '提交后才知道') in t, t[:300])
     check(f'{tag} ch no Gantt before submit', pg.evaluate("()=>!document.querySelector('#tls-g-ph').hidden"))
     click(pg, '#tls-rail [data-act="submit"]', 300); wait_anim(pg)
-    r = text(pg, '#tls-ch-res'); check(f'{tag} ch initial misses', Z(lang, 'Not yet', '还没达到') in r and '17.1' in r, r[:300])
+    r = text(pg, '#tls-ch-res'); check(f'{tag} ch initial misses', Z(lang, 'Not yet', '还没达到') in r and '17.9' in r, r[:300])
     for i, v in enumerate([1, 1, 1, 2, 2, 2]):
         click(pg, f'#tls-ch-{i} button[data-v="{v}"]', 120)
     click(pg, '#tls-rail [data-act="submit"]', 300); wait_anim(pg)
-    r = text(pg, '#tls-ch-res'); check(f'{tag} ch tests too early', Z(lang, 'before', '之前') in r and Z(lang, 'F run the tests', 'F 跑测试') in r, r[:300])
+    r = text(pg, '#tls-ch-res'); check(f'{tag} ch tests too early, naming E (still editing), not D (done)', Z(lang, 'before', '之前') in r and Z(lang, 'F run the tests', 'F 跑测试') in r and Z(lang, 'E edit test_parser.py', 'E 改 test_parser.py') in r and Z(lang, 'D edit parser.py', 'D 改 parser.py') not in r.split('\n')[0], r[:300])
+    check(f'{tag} ch the timeline draws it: the tests start before E ends, with a red line between their rows (P1)', pg.evaluate("()=>{const R=window.__tls.sched('code',[[0,1,2],[3,4,5]],{k:2,lock:1,m:1.5,fail:-1,half:-1,idem:1}); return R.cs[5].s<R.cs[4].e&&R.cs[3].e<=R.cs[5].s&&document.querySelectorAll('#tls-gantt .tls-early').length===1}"))
+    # the tests in the first model call, before both edits (N10): “had not begun”, and the words beside the red line
+    click(pg, '#tls-ch-5 button[data-v="1"]', 120)
+    if w <= 760:
+        pg.evaluate("()=>document.querySelector('#tls-rail [data-act=\"submit\"]').scrollIntoView({block:'center'})"); pg.wait_for_timeout(300)
+    a = click_anim(pg, '#tls-rail [data-act="submit"]')
+    if w <= 760:
+        g = pg.evaluate("()=>{const r=document.querySelector('#tls-pan-gantt').getBoundingClientRect(); return [r.top,r.bottom,innerHeight]}")
+        check(f'{tag} ch on a phone the submitted run plays on the screen (T1, R7.12)', a is not None and g[0] >= 50 and g[1] <= g[2], (a, g))
+    wait_anim(pg)
+    r = text(pg, '#tls-ch-res')
+    check(f'{tag} ch F first: D and E had not begun (N10)', Z(lang, 'before “D edit parser.py” and “E edit test_parser.py” had begun', '“D 改 parser.py”和“E 改 test_parser.py”还没改，') in r and Z(lang, 'still editing', '还没改完') not in r, r[:300])
+    mk = pg.evaluate("()=>{const l=document.querySelector('#tls-gantt .tls-early'), x=+l.getAttribute('x1'); return [...document.querySelectorAll('#tls-gantt .tls-mk')].map(t=>[t.textContent,+t.getAttribute('x')-x])}")
+    check(f'{tag} ch F first: the words sit right beside the red line, on both edits (N10)', len(mk) == 2 and all(Z(lang, 'not', '还没改') in t and 0 < dx <= 8 for t, dx in mk), mk)
+    if w <= 760:
+        h = pg.evaluate("()=>{const e=document.querySelector('#tls-endhint'); return e&&!e.hidden?e.textContent:''}")
+        check(f'{tag} ch on a phone a link under the run leads to the verdict (T1, R3.2)', Z(lang, 'verdict', '结论') in h, h)
+        click(pg, '#tls-endhint', 400)
+        g = pg.evaluate("()=>{const r=document.querySelector('#tls-ch-res').getBoundingClientRect(); return [r.top,innerHeight]}")
+        check(f'{tag} ch the link brings the verdict on the screen', 50 <= g[0] <= g[1] - 60, g)
     click(pg, '#tls-ch-5 button[data-v="3"]', 120)
-    click(pg, '#tls-rail [data-act="submit"]', 300); wait_anim(pg)
-    r = text(pg, '#tls-ch-res'); check(f'{tag} ch best met', Z(lang, 'Goal met', '达成目标') in r and '11.9' in r and Z(lang, 'none is faster', '没有哪种更快') in r, r[:300])
+    a = click_anim(pg, '#tls-rail [data-act="submit"]')
+    st1 = text(pg, '#tls-status'); wait_anim(pg); st2 = text(pg, '#tls-status')
+    check(f'{tag} ch the status says playing while the run plays, then the verdict (P15)', (a is None or st1 == Z(lang, 'Playing', '播放中')) and st2 == Z(lang, 'Goal met', '达标'), (a, st1, st2))
+    r = text(pg, '#tls-ch-res'); check(f'{tag} ch best met', Z(lang, 'Goal met', '达成目标') in r and '12.7' in r and Z(lang, 'none is faster', '没有哪种更快') in r, r[:300])
     check(f'{tag} ch brief chart', pg.evaluate("()=>!!document.querySelector('#tls-ch-res .cmp')"))
     shot(pg, f'ch-best-{w}-{lang}')
-    for i, v in enumerate([1, 2, 2, 3, 3, 4]):
+    for i, v in enumerate([1, 1, 2, 3, 2, 4]):
         click(pg, f'#tls-ch-{i} button[data-v="{v}"]', 120)
     click(pg, '#tls-rail [data-act="submit"]', 300); wait_anim(pg)
-    r = text(pg, '#tls-ch-res'); check(f'{tag} ch middle tier', Z(lang, 'Goal met', '达成目标') in r and '13.4' in r and '11.9' in r, r[:300])
+    r = text(pg, '#tls-ch-res'); check(f'{tag} ch middle tier', Z(lang, 'Goal met', '达成目标') in r and '13.4' in r and '12.7' in r, r[:300])
     check(f'{tag} ch capability card', pg.evaluate("()=>!!document.querySelector('#tls-rail [data-exits]')"))
     shot(pg, f'ch-{w}-{lang}')
     writing(pg, f'{tag} challenge', lang)

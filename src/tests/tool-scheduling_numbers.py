@@ -3,7 +3,11 @@ specs/tool-scheduling.md, not ported from the JS) recomputes every schedule the 
 - every trip setup: 3 ways of sending × lock × k ∈ {1,2,3,none} × timeout {none, hotel search, flight booking} × key × model call
   {0.5, 1.5, 3} s, plus the part-4 “twice as fast” cases: total time, model calls, tool time added up, what goes wrong, the critical path;
 - the named numbers of the copy (27.2, 6.0, 14.3, 16.3, 15.8, 14.8, 19.7, 16.8, 20.8, 21.3, 23.8, 42.2 s);
-- the challenge: 4,683 distinct arrangements, which are right, which meet 14 s, the unique best (11.9 s), the initial setup (17.1 s);
+- the challenge: 4,683 distinct arrangements, which are right, which meet 14 s, the unique best (12.7 s), the initial setup (17.9 s);
+- the tests starting too early (polish r1, P1): in every arrangement the page flags the tests exactly when the timeline starts them
+  before an edit they read has finished, and names exactly the edits still running; ABC → DEF says so of E, not D, in both languages;
+  among those, the edits that had not even begun (polish r2, N10) are told apart: ABCF → DE says D and E “had not begun”, ABC → DF → E
+  says D was still editing and E had not begun;
 - the teaser (19.1 s and 10.0 s) and the interview drill for seeds 1–12;
 - the page's own text: the observations and the challenge result name the same numbers.
 Run: python3 tests/tool-scheduling_numbers.py"""
@@ -33,7 +37,7 @@ TRIP = [('cal', .4, [], [], None), ('sfl', 2.5, [], [], None), ('sho', 2.0, [], 
         ('cmp', .5, [1, 2], [], None), ('bfl', 3.0, [0, 4], [], 'sheet'), ('bho', 2.0, [4], [], 'sheet'),
         ('evt', .4, [5, 6], [], None), ('eml', .8, [3, 5, 6], [], None)]
 CODE = [('A', .3, [], [], None), ('B', .3, [], [], None), ('C', 1.2, [], [], None), ('D', .4, [0, 2], [], None),
-        ('E', .4, [1], [], None), ('F', 4.0, [], [3, 4], None)]
+        ('E', 1.2, [1], [], None), ('F', 4.0, [], [3, 4], None)]
 
 
 def depth(task):
@@ -69,11 +73,13 @@ def simulate(task, turns, k=0, lock=1, m=1.5, fail=-1, half=-1, idem=1):
             running = [r for r in running if end[r] > now + 1e-9]
         fin = max([t0] + [end[i] for i in calls]); T.append((clock, t0, fin, calls)); clock = fin
     total = round(clock + m, 6)
-    wrong = []
+    wrong, early_by, not_begun = [], {}, {}
     for i, c in enumerate(task):
         if i not in start: continue
         if any(not (turn_of.get(j, 99) < turn_of[i]) for j in c[2]): wrong.append((i, 'miss'))
-        if any(not (turn_of.get(j, 99) < turn_of[i]) for j in c[3]): wrong.append((i, 'early'))
+        # a call that must see another's changes is wrong when it starts before that call has finished (by the clock, as drawn)
+        late = [j for j in c[3] if not (j in end and end[j] <= start[i] + 1e-9)]
+        if late: wrong.append((i, 'early')); early_by[i] = late; not_begun[i] = [j for j in late if j not in start or start[j] > start[i] + 1e-9]
     for a, b in itertools.combinations(range(len(task)), 2):
         if a in start and b in start and task[a][4] and task[a][4] == task[b][4] and start[a] < end[b] - 1e-9 and start[b] < end[a] - 1e-9:
             wrong.append((b if end[b] > end[a] else a, 'lost'))
@@ -87,7 +93,8 @@ def simulate(task, turns, k=0, lock=1, m=1.5, fail=-1, half=-1, idem=1):
             prev = [q for q in calls if q != cur and abs(end[q] - start[cur]) < 1e-9]
             if not prev: break
             cur = prev[0]
-    return dict(total=total, n=len(turns) + 1, tools=round(sum(end[i] - start[i] for i in start), 6), wrong=sorted(wrong), crit=sorted(crit))
+    return dict(total=total, n=len(turns) + 1, tools=round(sum(end[i] - start[i] for i in start), 6), wrong=sorted(wrong), crit=sorted(crit),
+                start=start, end=end, turn_of=turn_of, early_by=early_by, not_begun=not_begun)
 
 
 r1 = lambda v: round(v + 1e-9, 1)
@@ -167,17 +174,53 @@ with sync_playwright() as p:
     mism = [x['key'] for x in jsch if x['key'] not in seen or abs(seen[x['key']][0] - x['total']) > 1e-6 or seen[x['key']][2] != x['right'] or seen[x['key']][3] != x['ok']]
     check('challenge: every arrangement agrees', not mism, mism[:5])
     okk = sorted((v[0], k) for k, v in seen.items() if v[3])
-    check('challenge: 13 meet the goal, 63 are right', len(okk) == 13 and sum(1 for v in seen.values() if v[2]) == 63, (len(okk),))
-    check('challenge: the unique best is 012|34|5 at 11.9 s', okk[0] == (11.9, '012|34|5') and okk[1][0] > 11.9 + 1e-9, okk[:2])
+    check('challenge: 3 meet the goal, 63 are right', len(okk) == 3 and sum(1 for v in seen.values() if v[2]) == 63, (len(okk), okk))
+    check('challenge: the three that pass are 012|34|5 12.7 s, 01|24|3|5 13.4 s, 1|024|3|5 13.7 s',
+          [(r1(t), k) for t, k in okk] == [(12.7, '012|34|5'), (13.4, '01|24|3|5'), (13.7, '1|024|3|5')], okk)
+    check('challenge: the unique best is 012|34|5 at 12.7 s', okk[0] == (12.7, '012|34|5') and okk[1][0] > 12.7 + 1e-9, okk[:2])
     check('challenge: the best is the one flagged best', [x['key'] for x in jsch if x['best']] == ['012|34|5'])
-    check('challenge: initial setup 17.1 s, right but too slow', r1(seen['0|1|2|3|4|5'][0]) == 17.1 and seen['0|1|2|3|4|5'][2] and not seen['0|1|2|3|4|5'][3])
-    check('challenge: 13.4 s arrangement 0|12|34|5', r1(seen['0|12|34|5'][0]) == 13.4 and seen['0|12|34|5'][3])
-    check('challenge: without the limit the best takes 11.6 s', r1(simulate(CODE, [[0, 1, 2], [3, 4], [5]], k=0)['total']) == 11.6)
-    check('challenge: starting C first under the limit also takes 11.6 s (the page says a real harness could)', r1(simulate(CODE, [[2, 0, 1], [3, 4], [5]], k=2, lock=1, m=1.5)['total']) == 11.6)
-    # slowest first in every batch: the same 13 arrangements pass (review S8), so the start order does not change which ones pass
+    check('challenge: initial setup 17.9 s, right but too slow', r1(seen['0|1|2|3|4|5'][0]) == 17.9 and seen['0|1|2|3|4|5'][2] and not seen['0|1|2|3|4|5'][3])
+    check('challenge: 13.4 s arrangement 01|24|3|5 (the middle tier the flow test submits)', r1(seen['01|24|3|5'][0]) == 13.4 and seen['01|24|3|5'][3])
+    check('challenge: without the limit the best takes 12.4 s', r1(simulate(CODE, [[0, 1, 2], [3, 4], [5]], k=0)['total']) == 12.4)
+    check('challenge: starting C first under the limit also takes 12.4 s (the page says a real harness could)', r1(simulate(CODE, [[2, 0, 1], [3, 4], [5]], k=2, lock=1, m=1.5)['total']) == 12.4)
+    # slowest first in every batch: the same 3 arrangements pass (review S8), so the start order does not change which ones pass
     def slow_first(t): return sorted(t, key=lambda i: -CODE[i][1])
     pass_sf = set(k for k, v in seen.items() if (lambda R: not R['wrong'] and R['total'] <= 14 + 1e-9)(simulate(CODE, [slow_first([int(c) for c in g]) for g in k.split('|')], k=2, lock=1, m=1.5)))
-    check('challenge: slowest-first order passes the same 13 arrangements', pass_sf == set(k for k, v in seen.items() if v[3]), len(pass_sf))
+    check('challenge: slowest-first order passes the same 3 arrangements', pass_sf == set(k for k, v in seen.items() if v[3]), len(pass_sf))
+    # P1 (polish r1): the verdict, the timeline and the card's rule agree. The JS schedule of every arrangement: each “started too
+    # early” names exactly the edits whose bar is still running when the tests' bar starts, and every such overlap is flagged.
+    keys = sorted(seen)
+    jsr = pg.evaluate("ks=>ks.map(k=>{const R=window.__tls.sched('code',k.split('|').map(g=>[...g].map(Number)),{k:2,lock:1,m:1.5,fail:-1,half:-1,idem:1}); return {cs:R.cs,bad:R.bad};})", keys)
+    bad_by, bad_wait, kinds = [], [], set()
+    for k, R in zip(keys, jsr):
+        cs = R['cs']; F = 5
+        overlap = sorted(j for j in CODE[F][3] if cs[F]['s'] < cs[j]['e'] - 1e-9)
+        flagged = sorted(j for x in R['bad'] if x['kind'] == 'early' and x['i'] == F for j in x['by'])
+        py = simulate(CODE, [[int(c) for c in g] for g in k.split('|')], k=2, lock=1, m=1.5)
+        if overlap != flagged or sorted(py['early_by'].get(F, [])) != flagged: bad_by.append((k, overlap, flagged))
+        # N10: of those, the ones whose bar starts after the tests' bar has started had not begun
+        wait = sorted(j for x in R['bad'] if x['kind'] == 'early' and x['i'] == F for j in x.get('wait', []))
+        later = sorted(j for j in flagged if cs[j]['s'] > cs[F]['s'] + 1e-9)
+        if wait != later or sorted(py['not_begun'].get(F, [])) != wait: bad_wait.append((k, later, wait))
+        if flagged: kinds.add('not begun' if wait == flagged else 'still editing' if not wait else 'both')
+    check('challenge P1: “started too early” names exactly the edits still running when the tests start, in all 4,683', not bad_by, bad_by[:5])
+    check('challenge N10: the edits told “had not begun” are exactly those whose bar starts after the tests start, in all 4,683', not bad_wait, bad_wait[:5])
+    check('challenge N10: all three wordings occur (not begun, still editing, both)', kinds == {'not begun', 'still editing', 'both'}, kinds)
+    f1 = simulate(CODE, [[0, 1, 2, 5], [3, 4]], k=2, lock=1, m=1.5); mx = simulate(CODE, [[0, 1, 2], [3, 5], [4]], k=2, lock=1, m=1.5)
+    check('challenge N10: ABCF → DE, the tests start at 1.8 s and both edits at 7.3 s; ABC → DF → E, D runs with the tests, E later',
+          r1(f1['start'][5]) == 1.8 and r1(f1['start'][3]) == r1(f1['start'][4]) == 7.3 and f1['not_begun'] == {5: [3, 4]}
+          and mx['early_by'] == {5: [3, 4]} and mx['not_begun'] == {5: [4]} and abs(mx['start'][3] - mx['start'][5]) < 1e-9, (f1['not_begun'], mx['not_begun']))
+    # the card's rule (F starts after D and E are done) picks the same right arrangements as “F in a later model call than D and E”,
+    # under letter order and slowest first, so either reading of the rule gives the same answers
+    def turn_rule_right(k, order):
+        t = [order([int(c) for c in g]) for g in k.split('|')]; R = simulate(CODE, t, k=2, lock=1, m=1.5)
+        return not [w for w in R['wrong'] if w[1] != 'early'] and all(R['turn_of'][j] < R['turn_of'][5] for j in CODE[5][3])
+    for nm, order in (('letter order', lambda x: x), ('slowest first', slow_first)):
+        by_clock = set(k for k in keys if not simulate(CODE, [order([int(c) for c in g]) for g in k.split('|')], k=2, lock=1, m=1.5)['wrong'])
+        check(f'challenge P1: the clock rule and the model-call rule pick the same {len(by_clock)} right arrangements ({nm})', by_clock == set(k for k in keys if turn_rule_right(k, order)), len(by_clock))
+    a = simulate(CODE, [[0, 1, 2], [3, 4, 5]], k=2, lock=1, m=1.5)
+    check('challenge P1: ABC → DEF, the tests start at 4.9 s, after D (4.9 s) and before E (5.7 s); 10.4 s, wrong',
+          r1(a['start'][5]) == 4.9 and r1(a['end'][3]) == 4.9 and r1(a['end'][4]) == 5.7 and a['early_by'] == {5: [4]} and r1(a['total']) == 10.4, a['early_by'])
     # the teaser: five calls, one at a time against by dependency
     T5 = [('w', .6, [], [], None), ('f', 2.5, [], [], None), ('h', 2.0, [], [], None), ('bf', 3.0, [1], [], None), ('bh', 2.0, [2], [], None)]
     check('teaser: 19.1 s one at a time, 10.0 s by dependency', r1(simulate(T5, batches(T5, 'seq'))['total']) == 19.1 and r1(simulate(T5, batches(T5, 'dep'))['total']) == 10.0)
@@ -192,6 +235,23 @@ with sync_playwright() as p:
             pg.evaluate(f"()=>document.querySelector('#tls-rail [data-preset=\"{i}\"]').click()"); pg.wait_for_timeout(150)
             t = pg.evaluate("()=>document.querySelector('#tls-insight').innerText")
             check(f'{lang} scenario {i} names {want}', all(x in t for x in want), t[:200])
+        pg.click('#tls-app .modes button[data-mode="challenge"]'); pg.wait_for_timeout(300)
+        for i, v in enumerate([1, 1, 1, 2, 2, 2]): pg.click(f'#tls-ch-{i} button[data-v="{v}"]'); pg.wait_for_timeout(60)
+        pg.click('#tls-rail [data-act="submit"]'); pg.wait_for_timeout(300)
+        t = pg.evaluate("()=>document.querySelector('#tls-ch-res').innerText")
+        e_nm, d_nm = (('E edit test_parser.py', 'D edit parser.py') if lang == 'en' else ('E 改 test_parser.py', 'D 改 parser.py'))
+        check(f'{lang} challenge P1: the ABC → DEF verdict names E still editing, not D', e_nm in t and d_nm not in t.split('\n')[0], t[:200])
+        for i, v in enumerate([1, 1, 1, 2, 2, 1]): pg.click(f'#tls-ch-{i} button[data-v="{v}"]'); pg.wait_for_timeout(60)
+        pg.click('#tls-rail [data-act="submit"]'); pg.wait_for_timeout(300)
+        t = pg.evaluate("()=>document.querySelector('#tls-ch-res').innerText").split('\n')[0]
+        want = '“F run the tests” started before “D edit parser.py” and “E edit test_parser.py” had begun' if lang == 'en' else '“F 跑测试”开始时，“D 改 parser.py”和“E 改 test_parser.py”还没改，测试读到的是改之前的文件'
+        check(f'{lang} challenge N10: ABCF → DE says both edits had not begun', want in t and ('still editing' not in t if lang == 'en' else '还没改完' not in t), t[:200])
+        for i, v in enumerate([1, 1, 1, 2, 3, 2]): pg.click(f'#tls-ch-{i} button[data-v="{v}"]'); pg.wait_for_timeout(60)
+        pg.click('#tls-rail [data-act="submit"]'); pg.wait_for_timeout(300)
+        t = pg.evaluate("()=>document.querySelector('#tls-ch-res').innerText").split('\n')[0]
+        want = 'while “D edit parser.py” was still editing and before “E edit test_parser.py” had begun' if lang == 'en' else '“D 改 parser.py”还没改完，“E 改 test_parser.py”还没改，'
+        check(f'{lang} challenge N10: ABC → DF → E says D was still editing and E had not begun', want in t, t[:200])
+        pg.click('#tls-app .modes button[data-mode="sandbox"]'); pg.wait_for_timeout(300)
     b.close()
 for e in errs: print('ERR', e)
 print(f'{n - len(fails)}/{n} passed')

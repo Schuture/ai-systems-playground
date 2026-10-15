@@ -59,7 +59,6 @@
 .sw.tls-sw-crit{width:14px;height:9px;background:var(--ink-3);border:2px solid var(--ink);border-radius:2px;box-sizing:border-box}
 .sw.tls-sw-wait{width:16px;height:0;border-top:2px dotted var(--ink-3);background:none}
 .sw.tls-sw-hang{width:14px;height:9px;border:1px solid var(--ink-3);border-radius:2px;background:repeating-linear-gradient(45deg,var(--ink-3) 0 1.5px,transparent 1.5px 4px)}
-.sw.tls-sw-head{width:2px;height:12px;background:var(--ink)}
 .tls-metrics .metric.tls-bad .v{color:var(--c-oom)}
 .tls-mb{padding:6px 0;border-bottom:1px solid var(--line);container-type:inline-size}
 .tls-mb:last-child{border-bottom:0}
@@ -83,3 +82,54 @@
 .tls-dk{height:8px;background:var(--sunken);border-radius:4px;overflow:hidden;min-width:60px}
 .tls-dk i{display:block;height:100%;background:var(--ink-3)}
 @media (max-width:420px){.tls-times{columns:1}}
+/* polish r1: the timeline drawn 1:1, its marks, the step-2 selection, compact metrics, one-line transport */
+.tls-mcu{font-family:var(--font-mono);font-size:9.5px;fill:var(--ink-2)}
+.tls-mk{font-size:11px;font-weight:650;fill:var(--c-oom)}
+.tls-mk.ok{fill:var(--c-ok)}
+.tls-dot{fill:var(--ink);stroke:var(--surface);stroke-width:1.2}
+.tls-early{stroke:var(--c-oom);stroke-width:1.6;stroke-dasharray:3 2}
+.sw.tls-sw-dot{width:8px;height:8px;border-radius:50%;background:var(--ink)}
+.sw.tls-sw-early{width:0;height:12px;border-left:1.6px dashed var(--c-oom);background:none}
+.tls-node.sel rect{fill:color-mix(in srgb,var(--c-weights) 24%,var(--surface));stroke:var(--c-weights);stroke-width:2}
+.tls-node.up rect,.tls-node.peer rect{fill:color-mix(in srgb,var(--c-weights) 10%,var(--surface));stroke:var(--c-weights);stroke-width:1.3;stroke-dasharray:4 2}
+.tls-edge.hi{stroke:var(--c-weights);stroke-width:2.2}
+.tls-conf.hi{stroke:var(--c-weights)}
+.sw.tls-sw-sel{width:14px;height:9px;border-radius:3px;box-sizing:border-box;background:color-mix(in srgb,var(--c-weights) 24%,var(--surface));border:2px solid var(--c-weights)}
+.sw.tls-sw-up{width:14px;height:9px;border-radius:3px;box-sizing:border-box;background:color-mix(in srgb,var(--c-weights) 10%,var(--surface));border:1.3px dashed var(--c-weights)}
+.tls-ns.chg{fill:var(--c-weights);font-weight:700}
+.tls-ph{padding:14px 12px}
+.tls-ch-res.tls-dim{opacity:.55}
+.tls-transport{gap:6px 12px}
+.tls-transport .ctl,.tls-transport .inline-ctl{display:flex;align-items:center;gap:6px;margin:0;border:0;padding:0;background:none}
+.tls-transport .ctl>.lbl,.tls-transport .inline-ctl>label{display:flex;justify-content:flex-start;align-items:center;gap:6px;font-size:12.5px;white-space:nowrap}
+.tls-transport .inline-ctl input[type=range]{flex:1 1 auto;min-width:70px;width:auto}
+.tls-transport .inline-ctl output{min-width:4ch}
+.tls-stage .tls-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px}
+@container (min-width:480px){.tls-stage .tls-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tls-metrics .metric{position:relative;padding:6px 9px}
+.tls-metrics .metric .sub{font-size:11.5px}
+.tls-metrics .metric .d{position:absolute;top:6px;right:8px;min-height:0;height:auto;margin:0}
+@container (max-width:519px){.tls-ax{font-size:11px}}
+.tls-head{flex-wrap:nowrap}
+.tls-head .tls-st-title{flex:1 1 auto}
+.tls-head .stage-actions{flex:0 0 auto}
+/* polish r2: desktop text in the pictures (N11), the faster tool's dot (N7), the play head's cap (T3), the end hint (T1), part 2's mini graph (T2) */
+.tls-wide .tls-rl{font-size:13px}
+.tls-wide .tls-ax{font-size:12px}
+.tls-wide .tls-mcn{font-size:12px}
+.tls-wide .tls-mcu{font-size:11px}
+.tls-wide .tls-mk{font-size:12px}
+.tls-wide .tls-x{font-size:13px}
+.tls-wide .tls-nt{font-size:13px}
+.tls-wide .tls-ns{font-size:12px}
+.tls-wide .tls-cl{font-size:12px}
+.tls-chgd{fill:var(--c-weights);stroke:var(--surface);stroke-width:1.5}
+.sw.tls-sw-chg{width:9px;height:9px;border-radius:50%;background:var(--c-weights);border:0}
+.tls-head-t{fill:var(--ink)}
+.sw.tls-sw-head{position:relative;width:8px;height:12px;border:0;border-radius:0;background:linear-gradient(var(--ink),var(--ink)) 50% 100%/2px 9px no-repeat}
+.sw.tls-sw-head::before{content:'';position:absolute;left:0;top:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--ink)}
+.tls-endhint{display:block;margin:2px 0 4px;font-size:13px;text-align:left}
+.tls-dkg{display:block}
+.tls-dkg rect{fill:var(--surface);stroke:var(--ink-3);stroke-width:7}
+.tls-dkg rect.sel{fill:var(--c-weights);stroke:var(--c-weights)}
+.tls-dkg rect.up{fill:color-mix(in srgb,var(--c-weights) 18%,var(--surface));stroke:var(--c-weights)}

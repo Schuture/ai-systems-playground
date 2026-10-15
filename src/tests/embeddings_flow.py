@@ -3,11 +3,13 @@
 - no page errors, no horizontal overflow, no text wider than its box, a tooltip for every help cursor;
 - part 1: the keyword-search picture names how many passages come before the right one; no transport; Next enabled;
 - part 2: Next waits for a second held-out question, with the kit's why line; the missed right passage is ringed red (R5.11);
-  Show me picks question 10; the observation names the untrained recall@1 and recall@5;
+  Show me picks question 10; the observation names the untrained recall@1, the recall@5 card and its tooltip the untrained recall@5;
 - part 3: Next waits for a prediction; no trained result is shown before it (R3.8);
-- part 4: the verdict on the prediction, the loss typeset (R6.29); Next waits for 50 steps; Train plays the run at 中 in about 3 s
-  (R3.9); the main pictures come before the metric cards (R7.12); the observation names the recall@1 the engine gives; the mission
-  question's own passage is ringed green once it ranks first; Back and Next replay nothing (R3.20);
+- part 4: the verdict on the prediction, the loss typeset (R6.29); Next waits for 50 steps; Train at 中 plays the first 10 steps
+  slowly, each step about 1.6 s with no step under 0.5 s (a mechanism, R3.9, R7.11): its own batch with the push arrows, then the
+  same batch after the update; then the rest of the run fast with the table and the rows held at step 10 (R7.11); the observation waits for the
+  end and the stage title keeps its height (R7.9); the main pictures come before the metric cards (R7.12); the observation names the
+  recall@1 the engine gives; the mission question's rows end green once its passage ranks first; Back and Next replay nothing (R3.20);
 - part 5: entering replays nothing; a new batch size plays its run; picking the one already shown, or one already watched, replays
   nothing; 重放 replays from step 0 (R3.20); the observation names the 16-start averages of B = 8 and 16 and the 800-pair range;
 - part 6: the chart switches to the loss on a log scale; τ = 0.01 plays and the observation names the step its loss falls under 0.01;
@@ -17,7 +19,7 @@
   hash round trip; the language switch keeps the setup;
 - the challenge (an average recall@1 of 55% over 16 starts, in the fewest steps): starts at B = 2 × 25 steps with no result before
   Submit, also after another B is chosen; Submit trains, then the verdict; a new choice after a miss needs a new Submit; a goal met
-  with more steps names B = 16 × 10; B = 16 × 10 is met with the fewest steps; the chart of the choices with the initial setup and
+  with more steps names B = 16 × 10; B = 16 × 10 is met with the fewest steps; the chart of the choices with the challenge's default and
   the pick tagged; the capability card;
 - every formula line in a part's card fits its box at 1440, 900 and 390 (no clipped formula);
 - the dock at 390 once the stage scrolls away; every chart label inside its picture;
@@ -220,6 +222,16 @@ def go_next(pg):
     click(pg, sel, 300)
 
 
+# part 4's run, sampled every 100 ms from the click to its end: the step, the slow phase, the table shown, the observation, the title
+PROBE4 = """async (sel)=>{const W=ms=>new Promise(r=>setTimeout(r,ms)), E=window.__emb, obs=()=>{const o=document.querySelector('#emb-rail [data-obs]'); return !!o&&!o.hidden;};
+  const snap=t0=>{const a=E.animState(), tb=E.table(); return {t:(performance.now()-t0)/1000,steps:E.state().steps,slow:!!(a&&a.slow),k:a?a.k:null,ph:a?a.ph:null,frozen:a?a.frozen:null,
+    kind:tb&&tb.kind,tk:tb?tb.k:null,push:!!(tb&&tb.push),title:document.querySelector('#emb-h-title').textContent,headH:Math.round(document.querySelector('#emb-st-title').getBoundingClientRect().height)};};
+  const t0=performance.now(); document.querySelector(sel).click(); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  const out={samples:[],obsDuring:false};
+  while(E.animState()){out.samples.push(snap(t0)); if(obs()) out.obsDuring=true; await W(100); if(performance.now()-t0>45000) break;}
+  out.dt=(performance.now()-t0)/1000; out.end=snap(t0); out.obsEnd=obs(); return out;}"""
+
+
 def timed_run(pg, sel, end_js, timeout=20000):
     t0 = pg.evaluate('()=>performance.now()'); a = pg.evaluate(CLICK_ANIM, sel)
     pg.wait_for_function(end_js, timeout=timeout)
@@ -250,7 +262,8 @@ with sync_playwright() as pw:
             check(f'{tag} part 2: the right passage ranks {rk0 + 1} and is ringed red (R5.11)', rk0 > 0 and 'bad' in ring, ring)
             click(pg, '#emb-rail .seg-ctl[data-key="q"] button[data-v="17"]')
             ob = text(pg, '#emb-rail [data-obs]')
-            check(f'{tag} part 2: after a second question Next is enabled; the observation names {pct(D["r1"][0])} and {pct(D["r5"][0])}', not any(nexts(pg)) and pct(D['r1'][0]) in ob and pct(D['r5'][0]) in ob and state(pg)['q'] == 17, ob[:300])
+            r5t = pg.evaluate("()=>{const e=document.querySelector('#emb-metrics [data-k=\"r5\"]'); return e?e.getAttribute('data-tipx')+' | '+e.innerText:''}")   # recall@5: its card and the card's tooltip (P6)
+            check(f'{tag} part 2: after a second question Next is enabled; the observation names {pct(D["r1"][0])}, the recall@5 card and its tooltip {pct(D["r5"][0])}', not any(nexts(pg)) and pct(D['r1'][0]) in ob and r5t.count(pct(D['r5'][0])) >= 2 and state(pg)['q'] == 17, (ob[:300], r5t))
             click(pg, '#emb-rail .step.current [data-nav="showme"]')
             check(f'{tag} part 2: Show me picks question 10', state(pg)['q'] == 9, state(pg))
             mathfit(pg, f'{tag} part 2')
@@ -275,15 +288,28 @@ with sync_playwright() as pw:
             check(f'{tag} part 4: the run speed defaults to 中 (R3.9)', speed(pg) == 'mid', speed(pg))
             al = pg.evaluate(ALIGN)
             check(f'{tag} part 4: Train, the speed buttons and 重放 share one height and one baseline', al['n'] == 3 and not al['bad'], al)
-            a, dt = timed_run(pg, '#emb-transport [data-act="play"]', "()=>window.__emb.state().steps>=200&&!window.__emb.animState()")
-            check(f'{tag} part 4: Train plays the run', a is not None, a)
-            check(f'{tag} part 4: the 200 steps take about 3 s (R3.9)', 2.4 <= dt <= 4.5, dt)
+            SL = pg.evaluate("()=>window.__emb.slow"); NS = SL['n']
+            exp4 = NS * SL['sec']['mid'] + (200 - NS) / (200 / 3)
+            pr = pg.evaluate(PROBE4, '#emb-transport [data-act="play"]'); sm = pr['samples']; dt = pr['dt']
+            slow = [x for x in sm if x['slow']]; fast = [x for x in sm if not x['slow']]
+            check(f'{tag} part 4: Train plays the run', len(sm) > 10 and pr['end']['steps'] == 200, (len(sm), pr['end']))
+            check(f'{tag} part 4: the first {NS} steps play slowly, then the rest at the result speed: about {exp4:.1f} s in all (R3.9)', 0.85 * exp4 <= dt <= 1.25 * exp4, dt)
+            ch = [x['t'] for a_, x in zip(slow, slow[1:]) if x['steps'] != a_['steps']]
+            gaps = [b_ - a_ for a_, b_ in zip(ch, ch[1:])]
+            check(f'{tag} part 4: in the slow steps the step count turns about every {SL["sec"]["mid"]} s, never under 0.5 s (R7.11)', len(ch) >= NS - 2 and gaps and min(gaps) >= 0.5 and max(x['steps'] for x in slow) <= NS, (ch[:12], gaps[:10]))
+            check(f'{tag} part 4: a slow step shows the batch it trains, first with the push arrows, then after the update without them', slow and all(x['kind'] == 'slow' and x['tk'] == x['k'] for x in slow) and any(x['push'] for x in slow) and any(not x['push'] for x in slow) and all(Z(lang, f"Step {x['k']}, training this batch", f"第 {x['k']} 步，训练这个 batch") in x['title'] for x in slow), [(x['k'], x['kind'], x['tk'], x['push'], x['title'][:30]) for x in slow[:6]])
+            nr = pg.evaluate("()=>document.querySelectorAll('#emb-rows li').length")   # the mission question's rows, held with the table (N4)
+            check(f'{tag} part 4: the fast steps hold the table and the {nr} rows at step {NS} and say so (R7.11)', fast and nr > 0 and all(x['frozen'] == NS and x['kind'] == 'frozen' and x['tk'] == NS for x in fast) and all(Z(lang, f'Steps {NS + 1} to 200 play fast: the table and the {nr} rows stay at step {NS}', f'快放第 {NS + 1} 到 200 步：表格和 {nr} 行停在第 {NS} 步') in x['title'] for x in fast), [(x['steps'], x['frozen'], x['kind'], x['title'][:60]) for x in fast[:4]])
+            check(f'{tag} part 4: the observation waits for the end of the run, then shows (R7.9)', not pr['obsDuring'] and pr['obsEnd'], (pr['obsDuring'], pr['obsEnd']))
+            hh = {x['headH'] for x in sm} | {pr['end']['headH']}
+            check(f'{tag} part 4: the stage title keeps its height while the run plays (R7.9)', max(hh) - min(hh) <= 1, sorted(hh))
+            check(f'{tag} part 4: at rest the table is the batch step 201 would train, with its own probability and loss on the cards', pr['end']['kind'] == 'rest' and pr['end']['tk'] is None, pr['end'])
             pg.wait_for_timeout(200)
             ob = text(pg, '#emb-rail [data-obs]')
             check(f'{tag} part 4: the observation names {pct(D["r1"][0])} to {pct(D["r1"][200])}; Next enabled', pct(D['r1'][0]) in ob and pct(D['r1'][200]) in ob and not any(nexts(pg)), ob[:300])
-            ring = pg.evaluate("()=>{const r=document.querySelector('#emb-map .emb-own'); return r?r.getAttribute('class'):''}")
+            res = pg.evaluate("()=>{const r=document.querySelector('#emb-r-res'); return r&&r.getClientRects().length?r.getAttribute('class'):''}")
             q = state(pg)['q']
-            check(f'{tag} part 4: the ring is green once the right passage ranks first, red otherwise', ('ok' in ring) == (D['rank'][200][q] == 0) and ('bad' in ring) == (D['rank'][200][q] > 0), (ring, D['rank'][200][q]))
+            check(f'{tag} part 4: the mission question’s rows end green once its passage ranks first, red otherwise', ('ok' in res) == (D['rank'][200][q] == 0) and ('bad' in res) == (D['rank'][200][q] > 0), (res, D['rank'][200][q]))
             mathfit(pg, f'{tag} part 4')
             shot(pg, f'{tag}_p4', full=phone); rules(pg, f'{tag} part 4', lang)
             click(pg, BACK)
@@ -292,6 +318,10 @@ with sync_playwright() as pw:
             # ---- part 5
             a = click_anim(pg, NEXT); st = state(pg)
             check(f'{tag} part 5: nothing plays on entry; Next waits for another batch size', a is None and st['steps'] == 200 and all(nexts(pg)) and any(Z(lang, 'another batch size', '换一个 batch 大小') in x for x in why(pg)), (a, st, why(pg)))
+            if not phone:
+                dk = pg.evaluate("()=>{const d=document.getElementById('dock'); return !!d&&!d.hidden&&d.getBoundingClientRect().height>0}")
+                check(f'{tag} part 5: no mini bar over the sticky stage on entry (P13)', not dk, dk)
+            check(f'{tag} part 5: the card links back up to the chart on a phone only (P20)', vis(pg, '#emb-rail .step.current .emb-see') == phone)
             a = click_anim(pg, '#emb-rail .seg-ctl[data-key="B"] button[data-v="8"]')
             check(f'{tag} part 5: picking the batch size already shown replays nothing (R3.20)', a is None and state(pg)['steps'] == 200, (a, state(pg)))
             a = click_anim(pg, '#emb-rail .seg-ctl[data-key="B"] button[data-v="16"]')
@@ -395,7 +425,7 @@ with sync_playwright() as pw:
             res = text(pg, '#emb-ch-res')
             check(f'{tag} challenge: B = 16 × 10 is met in the fewest steps; the chart of the choices appears', Z(lang, 'no choice reaches 55% in fewer steps', '没有哪种选择能用更少的步数到 55%') in res and vis(pg, '#emb-ch-res .cmp'), res[:300])
             rows = pg.evaluate("()=>[...document.querySelectorAll('#emb-ch-res .cmp-row')].filter(r=>!r.closest('details')).map(r=>({ok:r.classList.contains('ok'),me:r.classList.contains('me'),tag:(r.querySelector('.cmp-tag,.cmp-you')||{}).textContent||'',lab:r.querySelector('.cmp-lab').textContent}))")
-            check(f'{tag} challenge: the chart tags the initial setup and the pick; every other row reaches 55%', sum(r['me'] for r in rows) == 1 and any(Z(lang, 'initial setup', '初始设置') in r['tag'] for r in rows) and all(r['ok'] or r['me'] or r['tag'] for r in rows), [r for r in rows if not (r['ok'] or r['me'] or r['tag'])] or rows)
+            check(f'{tag} challenge: the chart tags the initial setup and the pick; every other row reaches 55%', sum(r['me'] for r in rows) == 1 and any(Z(lang, 'the challenge’s default', '挑战的默认选择') in r['tag'] for r in rows) and all(r['ok'] or r['me'] or r['tag'] for r in rows), [r for r in rows if not (r['ok'] or r['me'] or r['tag'])] or rows)
             check(f'{tag} challenge: the capability card', vis(pg, '#emb-rail [data-exits]'))
             shot(pg, f'{tag}_challenge', full=phone); rules(pg, f'{tag} challenge', lang)
             check(f'{tag}: no horizontal overflow at the end', overflow(pg) <= 0, overflow(pg))

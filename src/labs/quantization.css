@@ -6,15 +6,15 @@
 .qz-stage .stage-head>div:first-child{min-width:0}
 .qz-stage .meter-title{overflow-wrap:anywhere}
 #qz-ctl-sch-wrap .seg-ctl button{padding:7px 2px}
-.qz-graph{padding:12px 14px 14px;display:grid;gap:14px;min-width:0}
+.qz-graph{padding:12px 14px 14px;display:grid;gap:12px;min-width:0}
 .qz-graph>[hidden]{display:none!important}
 .qz-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
 .qz-phone:empty{display:none}
 @media (min-width:761px){.qz-phone{display:none}}
-.qz-graph>.qz-blockv:not([hidden])~.qz-chart:not([hidden]){border-top:1px solid var(--line);padding-top:12px}
+.qz-graph>.qz-blockv:not([hidden])~.qz-chart:not([hidden]){border-top:1px solid var(--line);padding-top:10px}
 
 /* ---------- the block of weights ---------- */
-.qz-blockv{min-width:0;display:grid;gap:6px}
+.qz-blockv{min-width:0;display:grid;gap:5px}
 .qz-tp{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;min-width:0}
 .qz-tp:empty{display:none}
 .qz-phs{display:flex;flex-wrap:wrap;gap:4px}
@@ -29,8 +29,17 @@
 .qz-plot{fill:var(--surface);stroke:var(--line-2);stroke-width:1}
 .qz-ax{stroke:var(--line);stroke-width:1}
 .qz-zero{stroke:var(--ink-3);stroke-width:1}
-.qz-yl,.qz-xl{font-size:10.5px;fill:var(--ink-3);font-family:var(--font-mono)}
-.qz-xl{font-family:var(--font-ui)}
+.qz-yl,.qz-xl,.qz-yt{font-size:10.5px;fill:var(--ink-3);font-family:var(--font-mono)}
+.qz-xl,.qz-yt{font-family:var(--font-ui)}
+/* round 1 polish (P6, P9): the grid of each block, the half step around 0 that rounds to 0, the part too dense to draw, and the sum
+   one weight carries through each phase */
+.qz-band{fill:var(--ink);fill-opacity:.08;stroke:none}
+.qz-hl{stroke:var(--ink-3);stroke-width:1}
+.qz-dense{stroke:none;opacity:.55}
+.qz-gtl{font-size:10.5px;fill:var(--ink-2);font-family:var(--font-mono);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.qz-call{font-size:11px;font-weight:650;fill:var(--ink);font-family:var(--font-mono)}
+/* round 1 polish check (N3): the callout sits on a backing of its own, so the points under it do not show through */
+.qz-callbg{fill:var(--surface);fill-opacity:.94;stroke:var(--line-2);stroke-width:1}
 .qz-seg{fill:var(--surface-2);stroke:var(--line-2);stroke-width:1}
 .qz-seg2{fill:var(--sunken)}
 .qz-grid{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 3;opacity:.55}
@@ -39,31 +48,45 @@
 .qz-orig.qz-set{stroke-width:2.4}
 .qz-q{fill:var(--c-weights);stroke:none}
 .qz-x{stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+.qz-x.qz-xs{stroke-width:1.6}
 .qz-ol{font-size:10.5px;fill:var(--ink-2);font-family:var(--font-mono)}
 .qz-orig.qz-red{stroke:var(--c-oom)}
 .qz-q.qz-red{fill:var(--c-oom)}
 .qz-mv.qz-red{stroke:var(--c-oom)}
 .qz-redt{fill:var(--c-oom);font-weight:650}
 .qz-legend{flex-wrap:wrap;gap:4px 14px}
+.qz-blockv .qz-legend{margin-top:0}
 .qz-sw{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:5px;vertical-align:-2px;font-style:normal;text-align:center;line-height:12px;font-size:12px}
 .qz-sw-o{border:1.6px solid var(--c-weights);border-radius:50%;box-sizing:border-box}
 .qz-sw-q{background:var(--c-weights);border-radius:50%;transform:scale(.8)}
 .qz-sw-x{color:var(--ink);font-weight:700}
 .qz-sw-g{border-top:1px dashed var(--ink-3);height:0;width:14px;vertical-align:3px;border-radius:0}
 .qz-sw-r{border:1.6px solid var(--c-oom);border-radius:50%;box-sizing:border-box}
+.qz-sw-set{border:2.6px solid var(--c-weights);border-radius:50%;box-sizing:border-box}
+.qz-sw-mv{width:0;border-left:1.5px solid var(--ink-3);border-radius:0;margin:0 10px 0 5px}
+.qz-sw-band{background:var(--ink);opacity:.14}
+.qz-sw-hatch{background:repeating-linear-gradient(45deg,var(--ink-3) 0 1px,transparent 1px 4px);opacity:.75}
 .qz-sw-b{background:var(--surface-2);border:1px solid var(--line-2)}
 .qz-sw-w{background:var(--c-weights)}
 .qz-sw-kv{background:var(--c-kv)}
 .qz-sw-c{background:var(--ink-3)}
 .qz-sw-long{border:2px solid var(--ink);box-sizing:border-box}
 .qz-sw-gl{border-left:2px dashed var(--ink);width:0;height:12px;border-radius:0}
-.qz-note{color:var(--ink-2);line-height:1.45;min-height:1.45em}
+.qz-note{color:var(--ink-2);line-height:1.45;min-height:1.45em;display:grid}
 .qz-note:empty{display:none}
+/* the note of every phase sits in one cell and only the current one shows, so the height holds through the replay (R7.9) */
+.qz-nt{grid-area:1/1;min-width:0}
+.qz-nt.off{visibility:hidden}
 
 /* ---------- the schemes ---------- */
 .qz-chart{min-width:0}
-.qz-crows{display:grid;gap:4px}
-.qz-crow{display:grid;grid-template-columns:minmax(0,1.6fr) 44px minmax(60px,2fr) 50px 50px;gap:8px;align-items:center;padding:3px 6px;border-radius:4px;font-size:12.5px;min-width:0}
+.qz-crows{display:grid;gap:2px}
+.qz-crow,.qz-chdr{display:grid;grid-template-columns:minmax(0,1.6fr) 44px minmax(60px,2fr) 50px 58px;gap:8px;align-items:center;padding:2px 6px;border-radius:4px;font-size:12.5px;line-height:1.35;min-width:0}
+/* the columns' names (P13) */
+.qz-chdr{align-items:end;padding-bottom:4px;margin-bottom:2px;border-bottom:1px solid var(--line);border-radius:0;font-size:11px;color:var(--ink-3);line-height:1.25}
+.qz-chdr>span{min-width:0}
+.qz-chdr>span:nth-child(2),.qz-chdr>span:nth-child(4){text-align:right}
+.qz-chdr>span:nth-child(3){grid-column:span 2}
 .qz-crow.me{background:var(--surface-2);outline:1px solid var(--line-2)}
 .qz-cl{color:var(--ink);min-width:0;overflow-wrap:anywhere;line-height:1.3}
 .qz-cl em{font-style:normal;font-size:10.5px;color:var(--ink-3);margin-left:6px;white-space:nowrap}
@@ -71,8 +94,7 @@
 .qz-crow.me .qz-cl{font-weight:650}
 .qz-ct{position:relative;height:12px;background:var(--surface-2);border-radius:2px;min-width:0}
 .qz-ct i{position:absolute;left:0;top:0;bottom:0;background:var(--c-weights);border-radius:2px;transition:width .25s ease-out}
-.qz-chead{margin-top:6px;line-height:1.4}
-@media (max-width:480px){.qz-crow{grid-template-columns:minmax(0,1.4fr) 36px minmax(36px,1.2fr) 44px 46px;gap:5px;padding:3px 2px;font-size:11.5px}.qz-cl em{display:block;margin-left:0}}
+@media (max-width:480px){.qz-crow,.qz-chdr{grid-template-columns:minmax(0,1.4fr) 36px minmax(36px,1.2fr) 44px 46px;gap:5px;padding:3px 2px;font-size:11.5px}.qz-chdr{font-size:10.5px}.qz-cl em{display:block;margin-left:0}}
 
 /* ---------- step times and memory ---------- */
 .qz-serve{display:flex;flex-direction:column;gap:14px;min-width:0}
@@ -98,17 +120,20 @@
 .qz-skv{font-family:var(--font-mono);text-align:right;color:var(--ink-2);white-space:nowrap}
 .qz-mem{min-width:0}
 .qz-mrows{display:grid;gap:5px}
-.qz-mrow{display:grid;grid-template-columns:62px minmax(0,1fr) 64px;grid-template-areas:"l t v" ". n n";gap:2px 8px;align-items:center;padding:3px 6px;border-radius:4px;font-size:12px}
+.qz-mrow{display:grid;grid-template-columns:96px minmax(0,1fr) 64px;grid-template-areas:"l t v" ". n n";gap:2px 8px;align-items:center;padding:3px 6px;border-radius:4px;font-size:12px}
 .qz-mrow.me{background:var(--surface-2);outline:1px solid var(--line-2)}
 .qz-ml{grid-area:l;color:var(--ink)}
 .qz-mrow.me .qz-ml{font-weight:650}
 .qz-mt{grid-area:t;position:relative;height:12px;background:var(--surface-2);border-radius:2px;min-width:0}
 .qz-mt i{position:absolute;left:0;top:0;bottom:0;background:var(--c-weights);border-radius:2px;transition:width .25s ease-out}
+.qz-mt i.qz-kv{background:var(--c-kv);border-radius:0 2px 2px 0}
 .qz-gl{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed var(--ink);z-index:1}
 .qz-mv2{grid-area:v;font-family:var(--font-mono);text-align:right;color:var(--ink);white-space:nowrap}
 .qz-mn{grid-area:n;color:var(--ink-3);font-size:11px}
-.qz-gls{position:relative;height:16px;margin:2px 0 0 76px;margin-right:78px}
+.qz-gls{position:relative;height:16px;margin:2px 0 0 110px;margin-right:78px}
 .qz-gls span{position:absolute;transform:translateX(-50%);white-space:nowrap;font-family:var(--font-mono);font-size:10.5px}
+/* a wide stage puts each format's GPUs on its bar's line (P35) */
+@container (min-width:640px){.qz-mrow{grid-template-columns:96px minmax(0,1fr) 64px 176px;grid-template-areas:"l t v n";padding:2px 6px}.qz-mn{white-space:nowrap}.qz-gls{margin-right:262px}}
 
 /* ---------- rail ---------- */
 .qz-lead{margin:6px 0 4px}
@@ -148,5 +173,10 @@
 .qz-dk{position:relative;height:10px;background:var(--surface-2);border-radius:2px;min-width:60px}
 .qz-dk i{position:absolute;left:0;top:0;bottom:0;background:var(--c-weights);border-radius:2px}
 .qz-dk b{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed var(--ink)}
-/* five cards share the row: the change note under a value wraps inside its card */
+/* up to five cards share the row: the change note under a value wraps inside its card */
 .qz-metrics .metric .d{white-space:normal;overflow-wrap:anywhere}
+/* the stage shows two to five cards (P3, P32): as many columns as cards, four in two rows on a narrow stage */
+.qz-metrics[data-n="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+.qz-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.qz-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.qz-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}

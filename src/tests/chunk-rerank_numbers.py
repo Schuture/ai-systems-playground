@@ -1,6 +1,7 @@
 """Numbers test for the chunk-rerank lab: an independent Python twin of the page's engine (tokens, chunks, BM25 as Lucene computes it,
 the small hand-written encoder, reciprocal rank fusion, the stand-in reranker, recall@k, context tokens, the latency assumption, the
-challenge's feasible settings) compared with the page for every chunking in both languages; the numbers in the page's text; the
+challenge's feasible settings) compared with the page for every chunking in both languages; the numbers in the page's text (part 1,
+part 2's cards, and each scenario's conclusion against the ranking on the stage beside it, P1 of the polish review of 2026-10-15); the
 interview drill; the lesson the challenge must teach (only hybrid search + rerank is cheapest, in both languages, and no guided state or
 scenario shows it); and the quoted source wordings re-read from sources/b10src/chunk-rerank/raw/. The English stop words are read from
 the pinned copy of Lucene's EnglishAnalyzer, not from the page.
@@ -312,9 +313,99 @@ with sync_playwright() as p:
         pg.evaluate("()=>{const b=document.querySelector('#ckr-rail [data-go=\"0\"]'); if(b) b.click();}"); pg.wait_for_timeout(150)
         init = T.measure(lang, {'size': 64, 'ov': 0, 'ret': 'vec', 'rr': 0, 'k': 1})
         body = txt('#ckr-rail .step.current')
-        low = 20 - init['hits'] - init['splits']
-        check(f'{lang} part 1 names {init["hits"]} found, {init["splits"]} cut, {low} below first', ((f'that is {init["hits"]} of the 20' in body and f'{init["splits"]} are cut apart and {low} rank below first' in body) if lang == 'en' else
-              (f'找到了 {init["hits"]} 个' in body and f'{init["splits"]} 个答案被切开，{low} 个没排到第一' in body)), body[-400:])
+        low = 20 - init['hits'] - init['splits']; en = lang == 'en'
+        R0 = T.setup(lang, 64, 0); q5 = R0['Q'][5]; vl = q5['lists']['vec']
+        pr = sorted(vl.index(j) + 1 for j in q5['part'] if j in vl); one = vl[0] in q5['part']; hr = (' and ' if en else '、').join(map(str, pr))
+        want = ([f'{init["hits"]} of the 20 are found now', f'the recall@1 of {round(init["rec"] * 100)}%', f'The halves rank {hr}', 'holds only one of them' if one else 'holds neither'] if en else
+                [f'现在找到 {init["hits"]} 个', f'recall@1 {round(init["rec"] * 100)}%', f'两半在舞台上的列表里排第 {hr} 名', '只有其中一半' if one else '一样也没有'])
+        check(f'{lang} part 1 names {init["hits"]} found (recall@1 {round(init["rec"] * 100)}%) and the halves at {pr} of the vector list, from the twin', len(pr) == 2 and all(w in body for w in want), [w for w in want if w not in body])
+        # the counts part 1 no longer names live in part 2's cards and in the initial setup's scenario
+        pg.evaluate("()=>{const b=document.querySelector('#ckr-rail [data-go=\"1\"]'); if(b) b.click();}"); pg.wait_for_timeout(150)
+        if pg.evaluate("()=>window.__ckr.state().step") != 1: pg.evaluate("()=>document.querySelector('#ckr-rail .step.current [data-nav=\"next\"]').click()"); pg.wait_for_timeout(150)
+        met = txt('#ckr-metrics')
+        check(f'{lang} part 2: the cards name {init["splits"]} of 20 answers cut and {R0["N"]} chunks, from the twin', ((f'{init["splits"]} of 20' in met and f'the help center is cut into {R0["N"]} chunks' in met) if en else
+              (f'20 个里 {init["splits"]} 个' in met and f'帮助中心一共切成 {R0["N"]} 块' in met)), met)
+        Z_ = lambda e, a, b: a if e else b
+        # part 4 (N3 and N2 of the polish check): the sentence under the small table and the stairs question's reason, from the twin
+        pg.evaluate("()=>{const b=document.querySelector('#ckr-rail [data-go=\"3\"]'); if(b) b.click();}"); pg.wait_for_timeout(200)
+        R2 = T.setup(lang, 64, 2); Q2 = R2['Q']; two = lambda q, x: x in q['lists']['kw'][:NCAND] and x in q['lists']['vec'][:NCAND]
+        wonQ = [qi for qi in range(20) if Q2[qi]['rk']['hyb0'] == 0 and Q2[qi]['rk']['vec0'] != 0]; lostQ = [qi for qi in range(20) if Q2[qi]['rk']['vec0'] == 0 and Q2[qi]['rk']['hyb0'] != 0]
+        codes_ = bool(wonQ) and all(T.qs[qi][6] == 'code' for qi in wonQ); lr = sorted({Q2[qi]['rk']['hyb0'] + 1 for qi in lostQ})
+        def how(q):   # 2: every chunk above the right one is on both lists; 1: or ties with it (and comes first by order); 0: neither
+            r = q['rk']['hyb0']; j = q['lists']['hyb'][r]; ab = q['lists']['hyb'][:r]
+            return 2 if all(two(q, x) for x in ab) else (1 if all(two(q, x) or abs(q['rrf'][x] - q['rrf'][j]) < 1e-12 for x in ab) else 0)
+        hw = [how(Q2[qi]) for qi in lostQ]; both = bool(lostQ) and all(h == 2 for h in hw); ortie = bool(lostQ) and not both and all(h >= 1 for h in hw)
+        orl = lambda a: str(a[0]) if len(a) < 2 else ', '.join(map(str, a[:-1])) + ' or ' + str(a[-1])
+        if en: want = [f'puts {len(wonQ)} more {"error-code " if codes_ else ""}question', f'{len(lostQ)} question{"s" if len(lostQ) != 1 else ""} that vector search ranks first drop to rank {orl(lr)}',
+                       'the chunks above them are on both lists, with two shares that add up to at least the right chunk’s score' if both else ('each chunk above them is on both lists with two shares, or ties with the right chunk and comes first in the help center' if ortie else 'the ranks of other chunks can add up')]
+        else: want = [f'多把 {len(wonQ)} 道{"错误码题" if codes_ else "题"}排到第一', f'有 {len(lostQ)} 道向量检索排第一的题掉到第 {"、".join(map(str, lr))} 名',
+                      '排在它们前面的块在两个列表里都有，两份分加起来不低于正确的块' if both else ('排在它们前面的块，要么两个列表里都有、拿两份分，要么和正确的块同分、按块的先后排在前面' if ortie else '别的块的名次加起来可能压过正确的块')]
+        sm = txt('#ckr-sum')
+        check(f'{lang} part 4: under the table, hybrid search gains {len(wonQ)} questions (error codes: {codes_}) and drops {len(lostQ)} to rank {lr}, behind chunks on both lists: {both}, or those and ties: {ortie}, from the twin (N3)', bool(wonQ) and bool(lostQ) and all(w in sm for w in want), ([w for w in want if w not in sm], sm))
+        pg.evaluate("()=>document.querySelector('#ckr-rail .step.current .seg-ctl[data-key=\"q\"] button[data-v=\"8\"]').click()"); pg.wait_for_timeout(200)
+        q8 = Q2[8]; r8 = q8['rk']['hyb0']; j8 = q8['lists']['hyb'][r8]; ab = q8['lists']['hyb'][:r8]; nn = len(ab); n2 = sum(1 for x in ab if two(q8, x)); ob = txt('#ckr-rail [data-obs]')
+        tie8 = any(abs(q8['rrf'][x] - q8['rrf'][j8]) < 1e-12 for x in ab)
+        if en: w8 = 'In RRF it has a rank on the vector list only, so it gets one share' + ('; ' + (('the chunk above it is on both lists and gets two shares' if nn == 1 else f'the {nn} chunks above it are on both lists and get two shares each') if n2 == nn else f'{n2} of the {nn} chunks above it {"is" if n2 == 1 else "are"} on both lists and get{"s" if n2 == 1 else ""} two shares') if n2 else '')
+        else: w8 = 'RRF 合并时，它只在向量列表里有名次，拿一份分' + ('；' + (('排在它前面的那一块两个列表里都有，拿两份分' if nn == 1 else f'排在它前面的 {nn} 块两个列表里都有，各拿两份分') if n2 == nn else f'排在它前面的 {nn} 块里，有 {n2} 块两个列表里都有，{"拿" if n2 == 1 else "各拿"}两份分') if n2 else '')
+        check(f'{lang} part 4, the stairs question: keyword search does not return its answer; hybrid search ranks it {r8 + 1}, behind {n2} of {nn} chunks on both lists{" and a tie" if tie8 else ""}, and the reason says so, from the twin (N2)', q8['rk']['kw0'] < 0 and r8 >= 1 and w8 in ob and (Z_(en, 'it ties with', '同分，按块的先后排在后面') in ob) == tie8, (w8, ob))
+        # the scenarios: each conclusion is the page's own computation, for the question on the stage (P1 of the polish review)
+        pg.evaluate("()=>document.querySelector('#ckr-app .modes button[data-mode=\"sandbox\"]:not([data-flow=free])').click()"); pg.wait_for_timeout(200)
+        setq = lambda qi: (pg.evaluate(f"()=>{{const s=document.querySelector('#ckr-qsel'); s.value='{qi}'; s.dispatchEvent(new Event('change',{{bubbles:true}}));}}"), pg.wait_for_timeout(80))
+        preset = lambda i: (pg.evaluate(f"()=>document.querySelector('#ckr-rail [data-preset=\"{i}\"]').click()"), pg.wait_for_timeout(150))
+        setq(5); preset(0); ins = txt('#ckr-insight')
+        check(f'{lang} scenario “initial setup”: {init["splits"]} cut apart, {low} below first, from the twin', ((f'{init["splits"]} answers are cut apart' in ins and f'Of the others, {low} rank below first' in ins) if en else
+              (f'有 {init["splits"]} 个答案被切开' in ins and f'有 {low} 个在向量检索里没排到第一' in ins)), ins)
+        R16 = T.setup(lang, 16, 0); ln = [q['sb'] - q['sa'] for q in R16['Q']]; lng = sum(1 for x in ln if x > 16); sh = [q for q, x in zip(R16['Q'], ln) if x <= 16]; shc = sum(1 for q in sh if not q['right'])
+        preset(1); ins = txt('#ckr-insight')
+        check(f'{lang} scenario “small chunks”: {lng} answers longer than 16 tokens, {shc} of the {len(sh)} no longer than a chunk cut, from the twin', ((f'{lng} answers here are longer than a 16-token chunk' in ins and f'of the {len(sh)} no longer than a chunk, the cut still falls inside {shc}' in ins) if en else
+              (f'这里有 {lng} 个答案比一块（16 个 token）还长' in ins and f'不比一块长的 {len(sh)} 个里，也有 {shc} 个' in ins)), ins)
+        mh = T.measure(lang, {'size': 'h', 'ov': 0, 'ret': 'vec', 'rr': 0, 'k': 1}); i0, ih = round(init['rec'] * 100), round(mh['rec'] * 100)
+        preset(2); ins = txt('#ckr-insight')
+        # N8 of the polish check: which of the answers the initial setup cuts apart now rank first, and how many whole answers miss first place
+        Rh = T.setup(lang, 'h', 0); cut0 = [qi for qi in range(20) if not R0['Q'][qi]['right']]; now = sum(1 for qi in cut0 if Rh['Q'][qi]['rk']['vec0'] == 0); lowh = 20 - mh['hits'] - mh['splits']
+        wh = ([f'No answer is cut apart', (f'recall@1 rises from {i0}% (the initial setup) to {ih}%' if mh['rec'] > init['rec'] else f'the initial setup reaches {i0}%'),
+               f'Of the {len(cut0)} answer{"" if len(cut0) == 1 else "s"} the initial setup cuts apart, {now} now {"ranks" if now == 1 else "rank"} first' + (f', but whole answers that do not rank first grow from {low} to {lowh}.' if lowh > low else '.')] if en else
+              ['没有答案被切开', (f'recall@1 从初始设置的 {i0}% 升到 {ih}%' if mh['rec'] > init['rec'] else f'初始设置的 recall@1 是 {i0}%'),
+               f'原来被切开的 {len(cut0)} 个里有 {now} 个现在排第一' + (f'，可答案完整却没排第一的，从 {low} 个变成了 {lowh} 个。' if lowh > low else '。')])
+        check(f'{lang} scenario “cut by heading”: no answer cut, recall@1 {i0}% → {ih}%, {now} of the {len(cut0)} cut before now first, {low} → {lowh} whole but not first, from the twin', mh['splits'] == 0 and len(cut0) == init['splits'] and all(w in ins for w in wh), ([w for w in wh if w not in ins], ins))
+        R2 = T.setup(lang, 64, 2); kind = lambda x: [qi for qi in range(20) if T.qs[qi][6] == x]; codes, paras = kind('code'), kind('para')
+        first = sum(1 for qi in codes if R2['Q'][qi]['rk']['kw0'] == 0); pf = sum(1 for qi in paras if R2['Q'][qi]['rk']['kw0'] == 0)
+        for qi in (5, 0, 8):
+            setq(qi); preset(3); ins = txt('#ckr-insight'); tg = f'{lang} scenario “keyword search only”, question {qi + 1} on the stage'
+            head = (f'Of the {len(codes)} error-code questions, keyword search puts {"all" if first == len(codes) else first} first.' if en else
+                    f'{len(codes)} 道错误码题里，关键词检索{"都排第一" if first == len(codes) else f"把 {first} 道排第一"}。')
+            check(f'{tg}: the conclusion counts {first} of {len(codes)} error codes first, from the twin, and says “all” only then', head in ins and (('puts all first' in ins) if en else ('都排第一' in ins)) == (first == len(codes)), ins)
+            rows = pg.evaluate("()=>[...document.querySelectorAll('#ckr-cols .ckr-col[data-c=\"kw0\"] .ckr-li')].map(li=>({c:li.className.split(' '), b:li.querySelector('b').textContent}))")
+            q = R2['Q'][qi]; r = q['rk']['kw0']
+            if T.qs[qi][6] == 'code':
+                code = re.search(r'[A-Za-z]-\d+', T.qs[qi][1 if lang == 'zh' else 0]).group(0).upper()
+                say = ((f'The question on the stage, {code}, ranks first too.' if r == 0 else f'The question on the stage, {code}, ranks {r + 1}.') if en else
+                       (f'舞台上这一问（{code}）也排第一。' if r == 0 else f'舞台上这一问（{code}）排第 {r + 1}。'))
+                seen = 0 <= r < len(rows) and ('ok' if r == 0 else 'bad') in rows[r]['c'] and not any('ok' in x['c'] for x in rows[:r])
+                check(f'{tg}: “{say}” and the keyword list beside it agree (rank {r + 1})', say in ins and seen, (ins, rows))
+                if r > 0: check(f'{tg}: the chunk it names first is the list’s first row ({rows[0]["b"]})', (f'The first chunk, {rows[0]["b"]},' in ins) if en else (f'排第一的{rows[0]["b"]}讲的是' in ins), ins)
+            else:
+                check(f'{tg}: no sentence about the stage for a question without a code', 'The question on the stage' not in ins and '舞台上这一问' not in ins, ins)
+            para = (f'of {len(paras)}, it puts {pf} first' if en else (f'{len(paras)} 道里只有 {pf} 道排第一' if pf < first else f'{len(paras)} 道里有 {pf} 道排第一'))
+            check(f'{tg}: questions in other words, {pf} of {len(paras)} first, from the twin', para in ins, ins)
+        g = {'both': 0, 'kw': 0, 'vec': 0}; gk = {'kw': set(), 'vec': set()}
+        for qi, q in enumerate(R2['Q']):
+            r = q['rk']['hyb0']
+            if not 0 <= r < 3: continue
+            j = q['lists']['hyb'][r]; a_, v_ = j in q['lists']['kw'][:NCAND], j in q['lists']['vec'][:NCAND]; k_ = 'both' if a_ and v_ else ('kw' if a_ else 'vec'); g[k_] += 1
+            if k_ in gk: gk[k_].add(T.qs[qi][6])
+        preset(4); ins = txt('#ckr-insight')
+        want = ([f'on both lists: {g["both"]}', f'on the keyword list only: {g["kw"]}', f'on the vector list only: {g["vec"]}'] if en else
+                [f'两个列表都有：{g["both"]} 个', f'只在关键词列表：{g["kw"]} 个', f'只在向量列表：{g["vec"]} 个'])
+        tags = ([('all error codes', gk['kw'] == {'code'}), ('all in the customer’s own words', gk['vec'] == {'para'})] if en else [('都是错误码题', gk['kw'] == {'code'}), ('都是换了说法的题', gk['vec'] == {'para'})])
+        check(f'{lang} scenario “hybrid, keep 3”: where the answers in the context come from {g}, from the twin', all(w in ins for w in want) and all((t in ins) == ok for t, ok in tags), (ins, gk))
+        Rb = T.setup(lang, 128, 0); cut = [q for q in Rb['Q'] if not q['right']]; allp = [q for q in cut if all(j in q['lists']['vec'][:5] for j in q['part'])]
+        mb = T.measure(lang, {'size': 128, 'ov': 0, 'ret': 'vec', 'rr': 0, 'k': 5})
+        preset(5); ins = txt('#ckr-insight')
+        if en: wb = [f'from {round(init["rec"] * 100)}% (the initial setup) to {round(mb["rec"] * 100)}%'] + ([f'{len(cut)} answer{"s are" if len(cut) > 1 else " is"} still cut apart'] if cut else []) + (['all the pieces are among the 5 chunks kept' if len(allp) == len(cut) else f'for {len(allp)} of them all the pieces are'] if allp else [])
+        else: wb = [f'召回率从初始设置的 {round(init["rec"] * 100)}% 升到 {round(mb["rec"] * 100)}%'] + ([f'还有 {len(cut)} 个答案被切开' if allp else f'而且还有 {len(cut)} 个答案被切开'] if cut else []) + ([('不过它们的' if len(allp) == len(cut) else f'其中 {len(allp)} 个的') + ('两半' if all(len(q['part']) == 2 for q in allp) else '几部分') + '都在取回的 5 块里'] if allp else [])
+        check(f'{lang} scenario “big chunks, keep 5”: {len(cut)} cut apart, {len(allp)} of them with every piece kept, from the twin (P17)', all(w in ins for w in wb), ([w for w in wb if w not in ins], ins))
+        pg.evaluate("()=>document.querySelector('#ckr-app .modes button[data-mode=\"guided\"]').click()"); pg.wait_for_timeout(200)
         sumL = lambda l: sum(len(d[0]) for d in T.build(l))
         more = round((sumL('zh') / sumL('en') - 1) * 20) * 5
         # the share of extra tokens on the Chinese pages was in the Fidelity card’s “Modeled” list, deleted with it (owner, 2026-10-11 19:28 UTC)

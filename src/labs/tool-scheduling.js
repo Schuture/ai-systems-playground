@@ -13,7 +13,8 @@ const TO=5;                 // the timeout of one attempt, seconds (the lab's as
 const MS=[0.5,1.5,3];       // model call times to choose from, seconds (assumed; 1.5 is the default)
 const KS=[1,2,3,0];         // concurrency limit k; 0 = no limit
 /* a call: key, the tool's name, a short name, its time in seconds (assumed), the calls whose output it needs, the calls whose
-   writes it must see (after), and the one thing it writes that another call also writes (w) */
+   writes it must see (after), the one thing it writes that another call also writes (w), and the thing it is built from (r: only
+   drawn, so a lost line shows up where it is read) */
 const TRIP={id:'trip',calls:[
  {k:'cal',fn:'get_calendar',n:{en:'Check calendar',zh:'查日历'},t:0.4,needs:[]},
  {k:'sfl',fn:'search_flights',n:{en:'Search flights',zh:'查航班'},t:2.5,needs:[]},
@@ -23,13 +24,13 @@ const TRIP={id:'trip',calls:[
  {k:'bfl',fn:'book_flight',n:{en:'Book flight',zh:'订机票'},t:3.0,needs:[0,4],w:'sheet'},
  {k:'bho',fn:'book_hotel',n:{en:'Book hotel',zh:'订酒店'},t:2.0,needs:[4],w:'sheet'},
  {k:'evt',fn:'add_event',n:{en:'Add to calendar',zh:'写日程'},t:0.4,needs:[5,6]},
- {k:'eml',fn:'send_email',n:{en:'Send email',zh:'发邮件'},t:0.8,needs:[3,5,6]}]};
+ {k:'eml',fn:'send_email',n:{en:'Send email',zh:'发邮件'},t:0.8,needs:[3,5,6],r:'sheet'}]};
 const CODE={id:'code',calls:[
  {k:'A',fn:'read_file',n:{en:'A read parser.py',zh:'A 读 parser.py'},t:0.3,needs:[]},
  {k:'B',fn:'read_file',n:{en:'B read test_parser.py',zh:'B 读 test_parser.py'},t:0.3,needs:[]},
  {k:'C',fn:'search',n:{en:'C search parse_date',zh:'C 搜 parse_date'},t:1.2,needs:[]},
  {k:'D',fn:'edit_file',n:{en:'D edit parser.py',zh:'D 改 parser.py'},t:0.4,needs:[0,2]},
- {k:'E',fn:'edit_file',n:{en:'E edit test_parser.py',zh:'E 改 test_parser.py'},t:0.4,needs:[1]},
+ {k:'E',fn:'edit_file',n:{en:'E edit test_parser.py',zh:'E 改 test_parser.py'},t:1.2,needs:[1]},
  {k:'F',fn:'run_tests',n:{en:'F run the tests',zh:'F 跑测试'},t:4.0,needs:[],after:[3,4]}]};
 const deps=c=>c.needs.concat(c.after||[]);
 /* the level of a call: 1 if it waits for nobody, else one more than the deepest call it waits for */
@@ -44,7 +45,11 @@ const r3=v=>Math.round(v*1000)/1000;
 /* schedule: each turn is one model call (time m), then your code runs that call's tools. In a turn, calls start in the order
    the model wrote them, as soon as fewer than k run (k 0: no limit) and, with the lock, no call that writes the same thing runs
    or is still waiting ahead of it. A timed-out attempt holds its slot for TO seconds, then one retry runs. After the last turn,
-   one more model call writes the answer. */
+   one more model call writes the answer.
+   What goes wrong: a call asked for before a result it needs came back (miss: by model call, as the model wrote its arguments then);
+   a call that must see another's changes (after) starting before that call has finished (early: by the timeline, so the sentence
+   that names it is true of the picture; wait: those of them that had not even begun then); two writers of one thing overlapping
+   (lost); a write retried without its key (double). */
 function sched(task,turns,o){
   const C=task.calls, n=C.length, cs=C.map(()=>null), T=[], bad=[]; let t=0;
   const dur=i=>(o.half===i?C[i].t/2:C[i].t)+(o.fail===i?TO:0);
@@ -60,9 +65,9 @@ function sched(task,turns,o){
     const end=Math.max(t0,...tn.map(i=>cs[i].e)); T.push({ms,me:t0,calls:tn.slice(),end}); t=end;});
   const total=r3(t+o.m), turnOf=cs.map(c=>c?c.turn:Infinity);
   C.forEach((c,i)=>{if(!cs[i]) return;
-    const miss=c.needs.filter(j=>!(turnOf[j]<turnOf[i])), early=(c.after||[]).filter(j=>!(turnOf[j]<turnOf[i]));
+    const miss=c.needs.filter(j=>!(turnOf[j]<turnOf[i])), early=(c.after||[]).filter(j=>!(cs[j]&&cs[j].e<=cs[i].s+1e-9));
     if(miss.length) bad.push({i,kind:'miss',by:miss,at:cs[i].s});
-    if(early.length) bad.push({i,kind:'early',by:early,at:cs[i].s});});
+    if(early.length) bad.push({i,kind:'early',by:early,wait:early.filter(j=>!cs[j]||cs[j].s>cs[i].s+1e-9),at:cs[i].s});});
   for(let a=0;a<n;a++) for(let b=a+1;b<n;b++){if(!cs[a]||!cs[b]||!C[a].w||C[a].w!==C[b].w) continue;
     const x=cs[a], y=cs[b]; if(x.s<y.e-1e-9&&y.s<x.e-1e-9){const late=y.e>x.e?b:a; bad.push({i:late,kind:'lost',by:[late===a?b:a],at:cs[late].e});}}
   if(o.fail>=0&&C[o.fail].w&&!o.idem&&cs[o.fail]) bad.push({i:o.fail,kind:'double',by:[],at:cs[o.fail].e});
@@ -100,7 +105,8 @@ const D_TU=()=>tx('tool_use is a block in the model’s reply: the name of a too
 const D_HARN=()=>tx('Your code is the harness: the program around the model that runs the agent. It calls the model, runs the tools, hands the results back, and decides when to retry and when to stop.','你的代码就是 harness：包在模型外面、负责运行 agent 的程序。它调用模型、执行工具、把结果交回去，并决定什么时候重试、什么时候停下。');
 const D_SHEET=()=>tx('The trip sheet is one document that collects the confirmations. Each booking tool reads it, adds its line and saves it back. Two saves at the same time: the one saved last overwrites the other’s line.','行程单是一份汇总确认号的文档。每个订票工具都先读出它，加一行，再存回去。两个同时存，后存的会把先存的那行盖掉。');
 const D_LOCK=()=>tx('A lock lets one call at a time change a given thing: a second call that wants to change it waits until the first is done. Calls that change nothing never wait for it.','锁：同一时间只让一个调用改某样东西；第二个要改的，等第一个做完再开始。不改它的调用不用等。');
-const D_CRIT=()=>tx('The critical path is the chain of waits that sets the total time: in each batch the tool that finishes last (and whatever it queued behind), joined by the model calls between batches.','关键路径是决定总耗时的那条等待链：每一批里最后做完的那个工具（以及它排队等过的调用），再用两批之间的模型调用连起来。');
+/* the same words as part 4's card; the trip's example only where the trip is shown (N6) */
+const D_CRIT=()=>{const ex=curTask()===TRIP; return tx(`The critical path is the chain of waits that sets the total time: in each batch the tool that finishes last (with any call it queued behind${ex?', such as the flight booking the hotel booking waits for':''}), joined by the model calls between batches.`,`关键路径是决定总耗时的那条等待链：每一批里最后做完的那个工具（以及它排队等过的调用${ex?'，比如订酒店等的订机票':''}），再用两批之间的模型调用连起来。`);};
 const D_K=()=>tx('The concurrency limit k: at most k tool calls run at the same moment. A call over the limit starts when one of the running calls finishes, in the order the model wrote them.','并发上限 k：同一时刻最多有 k 个工具调用在跑。超出的，等正在跑的有一个做完再开始，按模型写下它们的顺序。');
 const D_TO=()=>tx(`A timeout is how long your code waits for one attempt of a tool call; here ${TO} s, the lab’s assumption. When it passes, your code gives up on that attempt and counts it as failed.`,`超时：你的代码等一次工具调用的最长时间，这里 ${TO} 秒（本 Lab 的假设）。到时还没有回复，就放弃这次尝试，当它失败了。`);
 const D_RETRY=()=>tx('A retry sends the same tool call once more after an attempt failed. Here your code retries once, right after the timeout.','重试：一次尝试失败后，把同一个工具调用再发一次。这里你的代码在超时后马上重试一次。');
@@ -126,9 +132,11 @@ const seqTotal=m=>sched(TRIP,turnsFor(TRIP,'seq'),{k:0,lock:1,m,fail:-1,half:-1,
 /* ---------- names of a setup ---------- */
 const SCH_N={seq:{en:'One at a time',zh:'一个一个来'},all:{en:'All at once',zh:'一次全发'},dep:{en:'By dependency',zh:'按依赖分批'}};
 const kTxt=k=>k?tx(`at most ${k} at once`,`同时最多 ${k} 个`):tx('no limit','并发不限');
-function setTxt(s){const parts=[L(SCH_N[s.sch])];
+/* noK: leave out “no limit” before part 5 has introduced the limit */
+const noKNow=()=>mode==='guided'&&step<SIX('limit');   // the concurrency limit is named from part 5 on (R2.10)
+function setTxt(s,noK){const parts=[L(SCH_N[s.sch])];
   if(s.sch!=='seq') parts.push(s.lock?tx('one booking at a time on the sheet','行程单加锁'):tx('no lock on the sheet','行程单不加锁'));
-  if(s.sch!=='seq') parts.push(kTxt(s.k));
+  if(s.sch!=='seq'&&!(noK&&!s.k)) parts.push(kTxt(s.k));
   if(s.fail) parts.push(s.fail===1?tx('hotel search times out once','查酒店超时一次'):(s.idem?tx('flight booking times out, retried with a key','订机票超时，带幂等键重试'):tx('flight booking times out, retried without a key','订机票超时，不带幂等键重试')));
   if(s.half>=0) parts.push(tx(`${L(TRIP.calls[s.half].n)} twice as fast`,`${L(TRIP.calls[s.half].n)}快一倍`));
   if(s.m!==1.5) parts.push(tx(`model calls ${s1(s.m)} s`,`模型调用 ${s1(s.m)} 秒`));
@@ -137,9 +145,16 @@ function setTxt(s){const parts=[L(SCH_N[s.sch])];
 /* Chinese text keeps a space where a Latin name (D 改 parser.py) meets a Chinese character */
 const CJK=/[\u3400-\u9fff\uff00-\uffef\u3000-\u303f]/;
 const zc=(...p)=>p.reduce((a,b)=>{if(!a||!b) return a+b; const x=a[a.length-1], y=b[0]; return a+((CJK.test(x)!==CJK.test(y))&&!/[\s“”（）、，：；。]/.test(x+y)?' ':'')+b;},'');
-function badTxt(task,b){const q=task===CODE?(j=>tx(`“${CN(task,j)}”`,`“${CN(task,j)}”`)):(j=>CN(task,j)), c=q(b.i), by=listJ(b.by.map(q));
-  if(b.kind==='miss') return tx(`${c} ran before the results of ${by} came back`,zc(c,'在',by,'的结果回来之前就执行了'));
-  if(b.kind==='early') return tx(`${c} ran before ${by} had changed the files it reads`,zc(c,'在',by,'改完它要读的文件之前就跑了'));
+/* each sentence says what the timeline shows: a miss is about when the model asked for the call (its arguments are written then),
+   an early start about the moment the call started while the edit it must see was still running */
+const cap=s=>s?s[0].toUpperCase()+s.slice(1):s;
+function badTxt(task,b){const q=task===CODE?(j=>tx(`“${CN(task,j)}”`,`“${CN(task,j)}”`)):(j=>CN(task,j)), c=q(b.i), by=listJ(b.by.map(q)), pl=b.by.length>1;
+  if(b.kind==='miss') return tx(`the model asked for ${c} before the results of ${by} came back, so it had to guess the arguments`,zc('模型要',c,'时，',by,'的结果还没回来，参数只能猜'));
+  /* an edit still running when the tests start is “not done”; one that has not begun is “not begun” (N10) */
+  if(b.kind==='early'){const w=b.wait||[], run=b.by.filter(j=>!w.includes(j)), nr=listJ(run.map(q)), nw=listJ(w.map(q)), files=pl?'the files':'the file', ws=run.length>1?'were':'was';
+    if(run.length&&w.length) return tx(`${c} started while ${nr} ${ws} still editing and before ${nw} had begun, so the tests read the files before the change`,zc(c,'开始时，',nr,'还没改完，',nw,'还没改，测试读到的是改之前的文件'));
+    if(w.length) return tx(`${c} started before ${nw} had begun, so the tests read ${files} before the change`,zc(c,'开始时，',nw,'还没改，测试读到的是改之前的文件'));
+    return tx(`${c} started while ${nr} ${ws} still editing, so the tests read ${files} before the change`,zc(c,'开始时，',nr,'还没改完，测试读到的是改之前的文件'));}
   if(b.kind==='lost') return tx(`${c} saved the trip sheet over ${by}’s line`,zc(c,'存行程单时盖掉了',by,'写的那行'));
   return tx(`${c} was done twice: two tickets`,zc(c,'做了两次：订了两张票'));}
 const resTxt=R=>R.bad.length?tx('wrong','错'):tx('right','对');
@@ -161,14 +176,13 @@ function lvResTxt(id,v){if(id==='batch'){const o=LV3.find(x=>x.v===v); return o&
   if(id==='crit') return v==='-1'||lvShow(v)?sec(runOf({...DEFAULT,half:+v}).total):'';
   if(id==='fail'){const o=LV6.find(x=>x.v===v); return o&&lvShow(v)?resOf(o.p):'';} return '';}
 function levers(name,opts,val){return A.ui.levers({aria:name,value:val,options:opts});}
-const T_TEX=nm=>`\\text{${nm}} = n \\cdot m + \\sum_{j=1}^{b} w_j`;
+
 const STEPS=[
  {id:'mission',title:{en:'Your mission',zh:'你的任务'},lead:{en:'Nine tool calls, one per model call.',zh:'9 个工具调用，每次模型调用只要一个。'},
-  panels:['graph','gantt'],enter:()=>({...DEFAULT,sch:'seq'}),gate:()=>!!pred,skip:true,nextWhy:{en:'Pick an answer to continue, or Skip.',zh:'选一个答案再继续，或点“跳过”。'},
+  panels:['gantt','graph'],enter:()=>({...DEFAULT,sch:'seq'}),gate:()=>!!pred,skip:true,nextWhy:{en:'Pick an answer to continue, or Skip.',zh:'选一个答案再继续，或点“跳过”。'},
   body:()=>{const R=runOf({...DEFAULT,sch:'seq'}), ch=`<div class="choices" role="group" aria-label="${esc(tx('Your prediction','你的预测'))}">${PRED.map(v=>`<button type="button" class="choice" data-pred="${v}" aria-pressed="${pred===v}">${esc(predTxt(v))}</button>`).join('')}</div>`;
-   return tx(`<p>A travel agent gets a task (an example): “Book my trip to Shanghai on Friday and email me the plan.” It needs nine tool calls: check the calendar, search flights, search hotels, get the weather, compare prices, book the flight, book the hotel, add the trip to the calendar, send the email.</p><p>Right now it asks for one tool at a time: each ${DEF('model call',D_MC())} returns one ${DEF('tool_use',D_TU())}, ${DEF('your code',D_HARN())} runs it and sends the result back, then the next model call follows (the loop ${LL('agent-anatomy')} takes apart). The timeline plays one such run: ${R.n} model calls.</p><p>${LL('agent-anatomy')} showed that tools that do not depend on each other can be asked for in one reply. This lab answers which calls count as independent, and what can go wrong once they go out together.</p><p>In the dependency graph an arrow means “needs this result”: booking the flight needs the calendar (when is Friday free?) and the price comparison (which flight?).</p><p>Suppose the first model call asked for all nine calls and your code ran them all at once. What would happen?</p>${ch}${pred?'<p class="muted small">Saved. You can still change it until you see the result.</p>':''}`,
-             `<p>一个出差助手 agent 收到任务（示例）：“帮我订周五去上海的出差，订好后把行程发邮件给我。”它要调用 9 次工具：查日历、查航班、查酒店、查天气、比价、订机票、订酒店、写日程、发邮件。</p><p>现在它一次只要一个工具：每次${DEF('模型调用',D_MC())}只回一个 ${DEF('tool_use',D_TU())}，${DEF('你的代码',D_HARN())}执行完，把结果发回去，再进行下一次模型调用（${LL('agent-anatomy')}拆开讲过这个循环）。时间轴上在播这样跑一遍：一共 ${R.n} 次模型调用。</p><p>${LL('agent-anatomy')}里已经看到，互不依赖的工具可以在一次回复里一起要。这个 Lab 要回答的是：哪些调用算互不依赖，一起要以后又会出什么错。</p><p>依赖图里的箭头表示“要用这个结果”：订机票要用查日历（周五哪段时间有空）和比价（订哪一班）的结果。</p><p>如果第一次模型调用就把 9 个调用全要了，你的代码同时执行它们，会怎样？</p>${ch}${pred?'<p class="muted small">已记下。看到结果之前，还可以改。</p>':''}`);},
-  obs:()=>obsMission(),label:{en:'This part’s setup',zh:'这一部分的设置'}},
+   return tx(`<p>A travel agent gets a task (an example): “Book my trip to Shanghai on Friday and email me the plan.” It needs nine tool calls. In the dependency graph an arrow means “needs this result”: for example, booking the flight needs the results of the calendar check and the price comparison.</p><p>Right now it asks for one tool per ${DEF('model call',D_MC())} and waits for the result before asking for the next: ${R.n} model calls (the last one gives the answer), ${sec(R.total)} in all. The tools take only ${sec(R.toolSum)}; the rest is waiting for the model (the top row of the timeline).</p><p>The goal: a right result in as little total time as possible. This lab answers which calls can go out together, and what can go wrong when they do.</p><p>Suppose the first model call asked for all nine and ${DEF('your code',D_HARN())} ran them at once. What would happen?</p>${ch}${pred?'<p class="muted small">Saved. Part 3 shows the answer.</p>':''}<p class="small muted">How an agent loops through model calls and tools: ${LL('agent-anatomy')}.</p>`,
+             `<p>一个出差助手 agent 收到任务（示例）：“帮我订周五去上海的出差，订好后把行程发邮件给我。”它要调用 9 个工具。依赖图里的箭头表示“要用这个结果”，比如订机票要用查日历和比价的结果。</p><p>现在它每次${DEF('模型调用',D_MC())}只要一个工具，等结果回来再要下一个：${R.n} 次模型调用（最后一次给出答案），一共 ${sec(R.total)}。工具只用了 ${sec(R.toolSum)}，其余时间都在等模型（时间轴最上面一行）。</p><p>目标：结果不出错，总耗时尽量短。这个 Lab 要回答：哪些调用可以一起发，一起发又会出什么错。</p><p>如果第一次模型调用就把 9 个全要了，${DEF('你的代码',D_HARN())}同时执行它们，会怎样？</p>${ch}${pred?'<p class="muted small">已记下，第 3 部分揭晓。</p>':''}<p class="small muted">agent 怎样一次次调用模型和工具，见 ${LL('agent-anatomy')}。</p>`);}},
  {id:'deps',title:{en:'Who waits for whom',zh:'谁要等谁'},lead:{en:'Two reasons to wait: a result, or a shared thing.',zh:'两种等法：等结果，或者等同一样东西。'},
   panels:['graph'],enter:()=>({...DEFAULT,sch:'seq'}),expect:()=>tried.size>1,obsAt:()=>!!pick2,label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Pick two calls to continue.',zh:'选两个调用再继续。'},
   body:()=>tx(`<p>One call waits for another for one of two reasons.</p><ul><li><b>It needs the other’s result.</b> To book the flight the model must know when Friday is free and which flight is cheapest. Until those results are in the conversation, it cannot write the booking’s arguments.</li><li><b>Both change the same thing.</b> Booking the flight and booking the hotel both write their confirmation into one ${DEF('trip sheet',D_SHEET())}. Run them at the same moment and the later save wipes out the earlier line.</li></ul><p>In the dependency graph, a solid arrow is the first reason; the dashed line between the two bookings is the second.</p><p>Pick a call and see what it waits for.</p>`,
@@ -178,31 +192,31 @@ const STEPS=[
  {id:'batch',title:{en:'All at once, or in batches',zh:'一次全发，还是分批'},lead:{en:'Only calls whose inputs are ready go out together.',zh:'输入齐了的调用才能一起发。'},
   panels:['gantt','graph','metrics'],enter:()=>({...DEFAULT,sch:'all',lock:0}),expect:()=>tried.has('dep1'),obsAt:()=>true,label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Try “by dependency, with a lock” to continue.',zh:'试一下“按依赖分批，行程单加锁”再继续。'},
   body:()=>{const R=runOf({...DEFAULT,sch:'all',lock:0}), ok=pred==='wrong';
-   const v=pred?tx(`<p class="${ok?'okline':'badline'}"><b>${ok?'Right.':'Not quite.'}</b> ${ok?'':`You predicted “${esc(predTxt(pred))}”; the answer is “${esc(predTxt('wrong'))}”. `}All at once takes only ${sec(R.total)}, but ${R.bad.filter(b=>b.kind==='miss').length} calls ran before the results they need came back, so the model had to guess their arguments.</p>`,`<p class="${ok?'okline':'badline'}"><b>${ok?'对了。':'不对。'}</b>${ok?'':`你预测的是“${esc(predTxt(pred))}”，正确答案是“${esc(predTxt('wrong'))}”。`}一次全发只要 ${sec(R.total)}，可是有 ${R.bad.filter(b=>b.kind==='miss').length} 个调用在它要用的结果回来之前就执行了，模型只能猜它们的参数。</p>`)
-     :tx(`<p>The answer: all at once takes ${sec(R.total)}, but ${R.bad.filter(b=>b.kind==='miss').length} calls run before the results they need come back.</p>`,`<p>答案：一次全发要 ${sec(R.total)}，但有 ${R.bad.filter(b=>b.kind==='miss').length} 个调用在它要用的结果回来之前就执行了。</p>`);
-   return v+tx(`<p>One reply of the model can hold several tool_use blocks, and your code can run them at the same time. Both Anthropic’s and OpenAI’s APIs allow this by default. In this lab your code waits until every tool of the batch is back and sends all the tool_result blocks in one message, so the next model call waits for the slowest tool of the batch.</p><p>Batching by dependency means each model call asks for every call whose inputs are already in; a call that needs another’s result is asked for in the next model call. A ${DEF('lock',D_LOCK())} on the trip sheet means the two calls that change it never run at once: your code starts the second only when the first is done. Your code can only lock the whole call, so the hotel booking waits for the entire flight booking. If the trip sheet offered an “add one line” operation, the two bookings could run together and queue only for that line.</p><p>Pick a way to run the task and watch the total time and the result.</p>`,
-                 `<p>模型的一次回复里可以有好几个 tool_use，你的代码可以同时执行它们。Anthropic 和 OpenAI 的 API 默认都允许这样做。在这个 Lab 里，你的代码等这一批全部回来，再把所有 tool_result 放进同一条消息发回去，所以下一次模型调用要等这一批里最慢的那个工具。</p><p>按依赖分批，是说每次模型调用把输入已经齐了的调用全部要出来；要用别人结果的，留到下一次模型调用再要。给行程单加${DEF('锁',D_LOCK())}，是说两个要改行程单的调用不同时跑：你的代码让后一个等前一个做完再开始。你的代码只能锁住整个调用，所以订酒店要等订机票整个做完。如果行程单本身提供“追加一行”的接口，两个订票就能同时跑，只在写那一行时排队。</p><p>选一种跑法，看看总耗时和结果。</p>`)+
+   const v=pred?tx(`<p class="${ok?'okline':'badline'}"><b>${ok?'Right:':'Not quite:'}</b> all at once takes only ${sec(R.total)}, but the result is wrong.</p>`,`<p class="${ok?'okline':'badline'}"><b>${ok?'对了：':'不对：'}</b>一次全发只要 ${sec(R.total)}，结果却是错的。</p>`)
+     :tx(`<p>The answer: all at once takes only ${sec(R.total)}, but the result is wrong.</p>`,`<p>答案：一次全发只要 ${sec(R.total)}，结果却是错的。</p>`);
+   return v+tx(`<p><b>Only calls whose inputs are ready can go out together.</b> Each model call asks for every call whose inputs are already in and leaves the rest for the next one: that is batching by dependency. The two bookings both change the trip sheet, so they also need a ${DEF('lock',D_LOCK())}: the hotel booking starts only when the flight booking is done.</p><p>One reply of the model can hold several ${DEF('tool_use',D_TU())} blocks; your code runs them at the same time, waits until the whole batch is done and sends the results back together.</p><p>Pick a way to run the task and watch the total time and the result.</p>`,
+                 `<p><b>输入齐了的调用才能一起发。</b>每次模型调用只把输入齐了的调用要出来，其余的留到下一次，这叫按依赖分批。两个订票调用都要改行程单，还要${DEF('加锁',D_LOCK())}：订酒店等订机票做完再开始。</p><p>模型的一次回复里可以有好几个 ${DEF('tool_use',D_TU())}；你的代码同时执行它们，等这一批全部做完，再把结果一起发回去。</p><p>选一种跑法，看看总耗时和结果。</p>`)+
     levers(tx('How to run the task','怎么跑这个任务'),[
      {v:'all',title:tx('All at once','一次全发'),desc:tx('All nine in the first model call, run together.','第一次模型调用就要全部 9 个，一起执行。'),result:lvShow('all')?resOf(LV3[0].p):''},
      {v:'dep0',title:tx('By dependency, no lock','按依赖分批，行程单不加锁'),desc:tx('Batches by dependency; the two bookings run together.','按依赖分批；两个订票调用一起跑。'),result:lvShow('dep0')?resOf(LV3[1].p):''},
      {v:'dep1',title:tx('By dependency, with a lock','按依赖分批，行程单加锁'),desc:tx('Batches by dependency; the hotel booking waits for the flight booking.','按依赖分批；订酒店等订机票做完再开始。'),result:lvShow('dep1')?resOf(LV3[2].p):''}],lv3Now());},
   obs:()=>obsBatch()},
- {id:'crit',title:{en:'The critical path',zh:'关键路径'},lead:{en:'Each batch costs as much as its slowest tool.',zh:'每一批花的时间，由它最慢的那个工具决定。'},
+ {id:'crit',title:{en:'The critical path',zh:'关键路径'},lead:{en:'Only tools on the critical path cut the total.',zh:'关键路径上的工具变快，总耗时才变短。'},
   panels:['gantt','graph','metrics'],enter:()=>({...DEFAULT}),expect:()=>[...tried].filter(x=>x!=='-1').length>1,obsAt:()=>acted,label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Speed up two different tools to continue.',zh:'分别让两个工具变快，再继续。'},
-  body:()=>tx(`<p>Your code sends a batch’s results back together, so every model call waits until the previous batch has finished. So the total time is the time of every model call plus, for every batch, the time until its last tool is done:</p>${M(T_TEX('total time'))}<p>Here ${MI('n')} counts the model calls (the last one writes the answer), ${MI('m')} is the time of one, ${MI('b')} is the number of batches and ${MI('w_j')} is how long batch ${MI('j')} takes. The tool that finishes last in each batch, plus any call it queued behind (here the flight booking, which the hotel booking waits for), joined by the model calls, form the ${DEF('critical path',D_CRIT())}, outlined thick in the timeline.</p><p>Make one tool twice as fast and watch the total time.</p>`,
-              `<p>你的代码把一批的结果一起发回去，所以每次模型调用都要等上一批全部做完。总耗时因此是：每次模型调用的时间，加上每一批从开始到最后一个工具做完的时间。</p>${M(T_TEX('总耗时'))}<p>${MI('n')} 是模型调用的次数（最后一次给出答案），${MI('m')} 是一次的时间，${MI('b')} 是批数，${MI('w_j')} 是第 ${MI('j')} 批花的时间。每一批里最后做完的工具，加上它排队等过的调用（比如订酒店等着的订机票），再用模型调用连起来，就是${DEF('关键路径',D_CRIT())}，时间轴上用粗框标出。</p><p>选一个工具，让它快一倍，看看总耗时。</p>`)+
+  body:()=>tx(`<p>Your code sends a batch’s results back only when the whole batch is done, so each batch takes as long as its last tool to finish. Those last tools (with any call they queued behind, such as the flight booking the hotel booking waits for), joined by the model calls, form the ${DEF('critical path',D_CRIT())}, outlined thick in the timeline. <b>Only a tool on the critical path makes the total shorter when it gets faster.</b></p><p>Make one tool twice as fast and watch the total time. How the total adds up is under “${A.t('showMath')}” below the stage.</p>`,
+              `<p>你的代码等一批全部做完，才把结果一起发回去，所以每一批花的时间，由它最后做完的那个工具决定。把每一批最后做完的工具（以及它排队等过的调用，比如订酒店等的订机票）用模型调用连起来，就是${DEF('关键路径',D_CRIT())}，时间轴上用粗框标出。<b>只有关键路径上的工具变快，总耗时才变短。</b></p><p>选一个工具，让它快一倍，看看总耗时。总耗时怎么算，见舞台下方的“${A.t('showMath')}”。</p>`)+
    levers(tx('Make one tool twice as fast','让一个工具快一倍'),LV4.map(o=>{const h=+o.v; return {v:o.v,title:h<0?tx('None (initial setup)','都不变（初始设置）'):tx(`${L(TRIP.calls[h].n)}: ${s1(TRIP.calls[h].t)} → ${s1(TRIP.calls[h].t/2)} s`,`${L(TRIP.calls[h].n)}：${s1(TRIP.calls[h].t)} → ${s1(TRIP.calls[h].t/2)} 秒`),result:h<0||lvShow(o.v)?sec(runOf({...DEFAULT,half:h}).total):''};}),String(S.half)),
   obs:()=>obsCrit()},
  {id:'limit',title:{en:'How many at once',zh:'同时最多跑几个'},lead:{en:'A limit only bites in the widest batch.',zh:'上限只在最宽的那一批起作用。'},
   panels:['gantt','graph','metrics'],enter:()=>({...DEFAULT}),expect:()=>tried.size>1,obsAt:()=>acted,label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Try another limit to continue.',zh:'换一个上限再继续。'},
-  body:()=>tx(`<p>The services your tools call often have rate limits, and every open connection or browser tab takes resources, so your code often caps how many tool calls run at once. The ${DEF('concurrency limit k',D_K())} is the most tool calls that run at the same moment; calls over the limit queue in the order the model wrote them, and each starts when a running one finishes.</p><p>The widest batch of this task has four calls: calendar, flights, hotels and weather. Lower k and watch the total time.</p>`,
-              `<p>被调用的服务往往有限流，每个连接、每个浏览器标签页也都要占资源，所以你的代码常要给同时跑的工具调用设一个上限。${DEF('并发上限 k',D_K())} 是同一时刻最多在跑的工具调用数；超出的按模型写下它们的顺序排队，等正在跑的有一个做完再开始。</p><p>这个任务最宽的一批有 4 个调用：查日历、查航班、查酒店、查天气。把 k 调小，看看总耗时。</p>`)+
+  body:()=>tx(`<p>The services your tools call often have rate limits, and your own connections are limited too, so your code often caps how many tool calls run at once. The ${DEF('concurrency limit k',D_K())} is the most tool calls that run at the same moment; calls over the limit queue in the order the model wrote them, and each starts when a running one finishes.</p><p>The widest batch of this task has four calls: calendar, flights, hotels and weather. Lower k and watch the total time.</p>`,
+              `<p>被调用的服务往往有限流，你这边的连接数也有限，所以你的代码常要给同时跑的工具调用设一个上限。${DEF('并发上限 k',D_K())} 是同一时刻最多在跑的工具调用数；超出的按模型写下它们的顺序排队，等正在跑的有一个做完再开始。</p><p>这个任务最宽的一批有 4 个调用：查日历、查航班、查酒店、查天气。把 k 调小，看看总耗时。</p>`)+
    segIn('k',tx('Concurrency limit k','并发上限 k'),KS.map(k=>[String(k),k?String(k):tx('No limit','不限')]),S.k),
   obs:()=>obsLimit()},
  {id:'fail',title:{en:'Timeouts and retries',zh:'超时和重试'},lead:{en:'Retry reads freely; retry writes with a key.',zh:'读可以放心重试；写要带幂等键。'},
   panels:['gantt','graph','metrics'],enter:()=>({...DEFAULT}),expect:()=>tried.has('bfl0')&&tried.has('bfl1'),obsAt:()=>acted,label:{en:'Observed',zh:'观察到'},nextWhy:{en:'Try both flight-booking cases to continue.',zh:'两种订机票超时的情况都试一下，再继续。'},
-  body:()=>tx(`<p>A tool call sometimes hangs. Your code gives every attempt a ${DEF('timeout',D_TO())} (here ${TO} s): when no reply has come by then, it gives up on that attempt and makes one ${DEF('retry',D_RETRY())} (why retries matter: ${LL('agent-reliability')}).</p><p>Retrying a call that only reads is safe. A write is different: a timeout only says the reply did not arrive, and the work may already be done. An ${DEF('idempotency key',D_IDEM())} is a unique id your code gives the write and sends again with the retry; a service that has seen it returns the first result instead of acting twice.</p><p>Pick a case and see what happens.</p>`,
-              `<p>工具调用有时会卡住不回。你的代码给每次尝试定一个${DEF('超时',D_TO())}（这里 ${TO} 秒）：到时还没有回复，就放弃这次尝试，再${DEF('重试',D_RETRY())}一次（重试为什么重要，见 ${LL('agent-reliability')}）。</p><p>只读的调用，重试没有风险。写的调用不一样：超时只说明回复没到，对方可能已经做完了。${DEF('幂等键',D_IDEM())}是你的代码给这次写操作配的唯一编号，重试时带上同一个；对方见过这个编号，就返回第一次的结果，不会再做一遍。</p><p>选一种情况，看看会怎样。</p>`)+
+  body:()=>tx(`<p><b>Retry a read freely; retry a write only with an ${DEF('idempotency key',D_IDEM())}.</b> A ${DEF('timeout',D_TO())} only says the reply did not arrive in time, and the work may already be done: a flight booking retried without an idempotency key books a second ticket.</p><p>Here your code waits at most ${TO} s for each attempt; with no reply by then, it gives up on that attempt and makes one ${DEF('retry',D_RETRY())}. An idempotency key is a unique id your code gives one write and sends again with the retry; a service that has seen it returns the first result instead of acting twice.</p><p>Pick a case and see what happens.</p>`,
+              `<p><b>读可以放心重试；写要带${DEF('幂等键',D_IDEM())}。</b>${DEF('超时',D_TO())}只说明回复没按时回来，对方可能已经做完了：订机票超时后，不带幂等键重试，会订出第二张票。</p><p>这里你的代码每次尝试最多等 ${TO} 秒，到时没有回复，就放弃这次，再${DEF('重试',D_RETRY())}一次。幂等键是你的代码给一次写操作配的唯一编号，重试时带上同一个；对方见过这个编号，就返回第一次的结果，不再做一遍。</p><p>选一种情况，看看会怎样。</p>`)+
    levers(tx('A call times out','一个调用超时了'),[
     {v:'sho',title:tx('Hotel search times out','查酒店超时'),desc:tx('A read: the retry searches again.','只读：重试就是再查一次。'),result:lvShow('sho')?resOf(LV6[0].p):''},
     {v:'bfl0',title:tx('Flight booking times out, retried without a key','订机票超时，不带幂等键重试'),desc:tx('The first attempt did book the seat; only the reply was lost.','第一次其实订上了，只是回复丢了。'),result:lvShow('bfl0')?resOf(LV6[1].p):''},
@@ -230,26 +244,30 @@ function nowHTML(){if(!offCard()) return ''; const R=runOf(S), c=cardS(), live=!
             `<p><b>时间轴上现在不是这张卡片讲的设置。</b>你在“自由调参”里改了设置，时间轴上现在是：${esc(setTxt(S))}。${res}</p><p>这张卡片里的说明和数字，讲的都是这一部分的设置：${esc(setTxt(c))}。</p><button type="button" class="btn ghost sm" data-act="card">回到这一部分的设置</button>`);}
 
 /* ---------- observations ---------- */
-function obsMission(){const R=runOf({...DEFAULT,sch:'seq'});
-  return tx(`<p><b>One at a time: ${R.n} model calls (nine ask for a tool, the last one answers) and ${sec(R.total)} in all.</b></p><p>The tools themselves take only ${sec(R.toolSum)}; the rest of the time your code is waiting for the model.</p>`,
-            `<p><b>一个一个来：${R.n} 次模型调用（每个工具一次，最后一次给出答案），一共 ${sec(R.total)}。</b></p><p>工具本身只用了 ${sec(R.toolSum)}，其余时间你的代码都在等模型。</p>`);}
+/* part 2: what the picked call waits for, after its name; the observation and the mini result bar say the same (T2) */
+const nK=k=>L(TRIP.calls[TRIP.calls.findIndex(c=>c.k===k)].n);
+function depsRest(k){const n=nK;
+  return ({bfl:tx(`waits for ${n('cal')} and ${n('cmp')}; ${n('cmp')} in turn waits for ${n('sfl')} and ${n('sho')}.`,`要等${n('cal')}和${n('cmp')}；${n('cmp')}又要等${n('sfl')}和${n('sho')}。`),
+    bho:tx(`only waits for ${n('cmp')}, which waits for both searches.`,`只等${n('cmp')}，${n('cmp')}要等两个查询。`),
+    eml:tx(`waits for ${n('bfl')}, ${n('bho')} (the confirmation numbers) and ${n('wea')}.`,`要等${n('bfl')}、${n('bho')}（确认号）和${n('wea')}。`),
+    wea:tx('waits for nobody.','谁也不用等。')})[k]||'';}
 function obsDeps(){const i=TRIP.calls.findIndex(c=>c.k===pick2); if(i<0) return '';
-  const n=k=>L(TRIP.calls[TRIP.calls.findIndex(c=>c.k===k)].n);
-  return ({bfl:tx(`<p><b>${n('bfl')} waits for ${n('cal')} and ${n('cmp')}; ${n('cmp')} in turn waits for ${n('sfl')} and ${n('sho')}.</b></p><p>It also changes the trip sheet, like ${n('bho')}, so the two must not save it at the same moment.</p>`,`<p><b>${n('bfl')}要等${n('cal')}和${n('cmp')}；${n('cmp')}又要等${n('sfl')}和${n('sho')}。</b></p><p>它和${n('bho')}都要改行程单，两个不能同时存。</p>`),
-    bho:tx(`<p><b>${n('bho')} only waits for ${n('cmp')}, which waits for both searches.</b></p><p>It changes the trip sheet too, so it must not run at the same moment as ${n('bfl')}.</p>`,`<p><b>${n('bho')}只等${n('cmp')}，${n('cmp')}要等两个查询。</b></p><p>它也要改行程单，所以不能和${n('bfl')}同时跑。</p>`),
-    eml:tx(`<p><b>${n('eml')} waits for ${n('bfl')}, ${n('bho')} (the confirmation numbers) and ${n('wea')}.</b></p><p>It sits at the end of the longest chain of waiting: calendar or searches, then the comparison, then the bookings, then the email.</p>`,`<p><b>${n('eml')}要等${n('bfl')}、${n('bho')}（确认号）和${n('wea')}。</b></p><p>它在最长那条等待链的末尾：先查询，再比价，再订票，最后发邮件。</p>`),
-    wea:tx(`<p><b>${n('wea')} waits for nobody.</b></p><p>Neither do ${n('cal')}, ${n('sfl')} and ${n('sho')}: these four calls can all go out in the first model call.</p>`,`<p><b>${n('wea')}谁也不用等。</b></p><p>${n('cal')}、${n('sfl')}、${n('sho')}也一样：这 4 个调用在第一次模型调用里就能一起要出来。</p>`)})[pick2]||'';}
+  const n=nK, lead=`<p><b>${esc(n(pick2))}${tx(' ','')}${esc(depsRest(pick2))}</b></p>`;
+  return lead+(({bfl:tx(`<p>It also changes the trip sheet, like ${n('bho')}, so the two must not save it at the same moment.</p>`,`<p>它和${n('bho')}都要改行程单，两个不能同时存。</p>`),
+    bho:tx(`<p>It changes the trip sheet too, so it must not run at the same moment as ${n('bfl')}.</p>`,`<p>它也要改行程单，所以不能和${n('bfl')}同时跑。</p>`),
+    eml:tx(`<p>It waits for the most: first the searches, then the comparison, then the bookings, and only then the email.</p>`,`<p>它要等的最多：先查询，再比价，再订票，最后才轮到它。</p>`),
+    wea:tx(`<p>Neither do ${n('cal')}, ${n('sfl')} and ${n('sho')}: these four calls can all go out in the first model call.</p>`,`<p>${n('cal')}、${n('sfl')}、${n('sho')}也一样：这 4 个调用在第一次模型调用里就能一起要出来。</p>`)})[pick2]||'');}
 function obsBatch(){const s=cardS(), R=runOf(s), q=runOf({...s,sch:'seq',lock:1}), v=lv3Now(), nMiss=R.bad.filter(b=>b.kind==='miss').length;
-  if(v==='all') return tx(`<p><b>All at once: ${R.n} model calls and ${sec(R.total)}, but the result is wrong.</b></p><p>${nMiss} calls ran before the results they need came back, so the model had to guess their arguments. For example, it booked the 8 am flight without waiting for the calendar, but there is a meeting that morning. The email went out before there were any confirmation numbers. And the two bookings saved the trip sheet at the same moment.</p>`,
-                          `<p><b>一次全发：${R.n} 次模型调用，${sec(R.total)}，但结果是错的。</b></p><p>有 ${nMiss} 个调用在它要用的结果回来之前就执行了，参数只能靠模型猜。比如它没等查日历，就订了早上 8 点的航班，可那天上午有会。邮件发出去时，也还没有确认号。另外，两个订票调用同时存了行程单。</p>`);
+  if(v==='all') return tx(`<p><b>All at once: ${R.n} model calls and ${sec(R.total)}, but the result is wrong.</b></p><p>The model asked for ${nMiss} calls before the results they need came back, so it had to guess their arguments (the red bars): it booked the 8 am flight without waiting for the calendar, but there is a meeting that morning, and the email went out before there were any confirmation numbers. The two bookings also saved the trip sheet at the same moment, and the hotel’s line was lost.</p>`,
+                          `<p><b>一次全发：${R.n} 次模型调用，${sec(R.total)}，但结果是错的。</b></p><p>模型要其中 ${nMiss} 个调用时，它们要用的结果还没回来，参数只能靠猜（时间轴上的红条）：比如没等查日历，就订了早上 8 点的航班，可那天上午有会；邮件发出去时也还没有确认号。两个订票调用还同时存了行程单，订酒店写的那行被盖掉了。</p>`);
   if(v==='dep0'){const b=R.bad.find(x=>x.kind==='lost');
     return tx(`<p><b>By dependency, no lock: ${R.n} model calls and ${sec(R.total)}, but the trip sheet is wrong.</b></p><p>Every call now has its inputs. But the two bookings ran together and ${b?badTxt(TRIP,b):''}: the sheet the email is built from has no hotel.</p>`,
               `<p><b>按依赖分批、不加锁：${R.n} 次模型调用，${sec(R.total)}，但行程单是错的。</b></p><p>现在每个调用的输入都齐了。可两个订票调用一起跑，${b?badTxt(TRIP,b):''}：邮件照着它写，里面没有酒店。</p>`);}
-  if(v==='dep1') return tx(`<p><b>By dependency, with a lock: ${R.n} model calls and ${sec(R.total)}, and the result is right.</b></p><p>That is ${sec(q.total-R.total)} less than one at a time, with the same result.</p><p>In this lab every model call takes ${sec(s.m)} however many tools it asks for, so most of the saving comes from ${q.n-R.n} fewer model calls. The price of the lock: the hotel booking waits for the flight booking.</p><p>A real model writes out every tool_use, so a reply that asks for more tools takes longer and the saving is smaller (${LL('agent-anatomy')} shows how a model call grows with what it writes).</p>`,
-                           `<p><b>按依赖分批、行程单加锁：${R.n} 次模型调用，${sec(R.total)}，结果对。</b></p><p>比一个一个来少了 ${sec(q.total-R.total)}，结果一样。</p><p>在这个 Lab 里，一次模型调用不管要几个工具都算 ${sec(s.m)}，所以省下的时间大半来自少了 ${q.n-R.n} 次模型调用。加锁的代价是订酒店要等订机票做完。</p><p>真实的模型要把每个 tool_use 都写出来，一次要的工具多，这次调用也会长一些，省下的就没这么多（${LL('agent-anatomy')}讲过模型调用的时间怎么随写出的内容变长）。</p>`);
+  if(v==='dep1') return tx(`<p><b>By dependency, with a lock: ${R.n} model calls and ${sec(R.total)}, and the result is right.</b></p><p>That is ${sec(q.total-R.total)} less than one at a time, with the same result. Most of the saving comes from ${q.n-R.n} fewer model calls; the price of the lock is that the hotel booking waits for the flight booking.</p>`,
+                           `<p><b>按依赖分批、行程单加锁：${R.n} 次模型调用，${sec(R.total)}，结果对。</b></p><p>比一个一个来少了 ${sec(q.total-R.total)}，结果一样。省下的大半来自少了 ${q.n-R.n} 次模型调用；加锁的代价是订酒店要等订机票做完。</p>`);
   return genObs();}
 function genObs(){const s=cardS(), R=runOf(s);
-  return tx(`<p class="small">${esc(setTxt(s))}.</p><p><b>${R.n} model calls, ${sec(R.total)}, the result is ${resTxt(R)}.</b></p>${R.bad.length?`<p>${badTxt(TRIP,R.bad[0])}.</p>`:''}`,`<p class="small">${esc(setTxt(s))}。</p><p><b>${R.n} 次模型调用，${sec(R.total)}，结果${resTxt(R)}。</b></p>${R.bad.length?`<p>${badTxt(TRIP,R.bad[0])}。</p>`:''}`);}
+  return tx(`<p class="small">${esc(setTxt(s,noKNow()))}.</p><p><b>${R.n} model calls, ${sec(R.total)}, the result is ${resTxt(R)}.</b></p>${R.bad.length?`<p>${cap(badTxt(TRIP,R.bad[0]))}.</p>`:''}`,`<p class="small">${esc(setTxt(s,noKNow()))}。</p><p><b>${R.n} 次模型调用，${sec(R.total)}，结果${resTxt(R)}。</b></p>${R.bad.length?`<p>${badTxt(TRIP,R.bad[0])}。</p>`:''}`);}
 function obsCrit(){const s=cardS(), R=runOf(s), b=runOf({...s,half:-1}), h=s.half;
   if(h<0) return tx(`<p><b>Initial setup: ${sec(R.total)}.</b> The critical path runs through the flight search, the comparison, both bookings and the email.</p>`,`<p><b>初始设置：${sec(R.total)}。</b>关键路径经过查航班、比价、两个订票调用和发邮件。</p>`);
   const c=TRIP.calls[h], nm=L(c.n), d=b.total-R.total;
@@ -263,15 +281,15 @@ function obsLimit(){const s=cardS(), R=runOf(s), u=runOf({...s,k:0}), one=runOf(
   return tx(`<p><b>No limit: ${sec(R.total)}.</b> The first batch runs all four lookups at once.</p>`,`<p><b>不限：${sec(R.total)}。</b>第一批的 4 个查询同时跑。</p>`);}
 function obsFail(){const s=cardS(), R=runOf(s), b=runOf({...s,fail:0}), v=lv6Now();
   if(v==='sho') return tx(`<p><b>Hotel search times out: ${sec(R.total)} instead of ${sec(b.total)}, and the result is right.</b></p><p>The first attempt hangs; after ${TO} s your code gives up and searches again. The whole first batch waits for it. A search changes nothing, so trying again is safe.</p>`,`<p><b>查酒店超时：${sec(R.total)}，原来是 ${sec(b.total)}，结果对。</b></p><p>第一次尝试卡住了；${TO} 秒后你的代码放弃这次，再查一次。整个第一批都在等它。查询不改任何东西，再试一次很安全。</p>`);
-  if(v==='bfl0') return tx(`<p><b>Flight booking retried without a key: ${sec(R.total)}, and two tickets.</b></p><p>The airline booked the seat on the first attempt; only its reply was lost. To the airline the retry is a new booking, so the card is charged twice.</p>`,`<p><b>订机票不带幂等键重试：${sec(R.total)}，订了两张票。</b></p><p>航空公司在第一次尝试时就订上了，只是回复丢了。对它来说，重试是一笔新订单，所以卡被扣了两次钱。</p>`);
-  if(v==='bfl1') return tx(`<p><b>Flight booking retried with the key: ${sec(R.total)}, one ticket.</b></p><p>The retry carries the first attempt’s idempotency key, so the airline returns the booking it already made. The time is the same as without a key: the key changes what happens, not how long it takes.</p>`,`<p><b>订机票带幂等键重试：${sec(R.total)}，只有一张票。</b></p><p>重试带着第一次的幂等键，航空公司认出是同一笔，返回已经订好的那张。时间和不带键一样：幂等键改变的是结果，不是耗时。</p>`);
+  if(v==='bfl0') return tx(`<p><b>Flight booking retried without a key: ${sec(R.total)}, and two tickets.</b></p><p>The airline booked the seat on the first attempt (the ● in the timeline); only its reply was lost. To the airline the retry is a new booking, so the credit card is charged twice.</p>`,`<p><b>订机票不带幂等键重试：${sec(R.total)}，订了两张票。</b></p><p>航空公司在第一次尝试时就订上了（时间轴上的 ●），只是回复丢了。对它来说，重试是一笔新订单，所以信用卡被扣了两次钱。</p>`);
+  if(v==='bfl1') return tx(`<p><b>Flight booking retried with the key: ${sec(R.total)}, one ticket.</b></p><p>The retry carries the first attempt’s idempotency key, so the airline returns the booking it already made (the ✓ in the timeline). The time is the same as without a key: the key changes what happens, not how long it takes.</p>`,`<p><b>订机票带幂等键重试：${sec(R.total)}，只有一张票。</b></p><p>重试带着第一次的幂等键，航空公司认出是同一笔，返回已经订好的那张（时间轴上的 ✓）。时间和不带键一样：幂等键改变的是结果，不是耗时。</p>`);
   return genObs();}
 
 /* ---------- scenarios ---------- */
 const PRESETS=[
  {k:'init',t:{en:'Trip booking (initial setup)',zh:'出差预订（初始设置）'},d:{en:'By dependency, a lock on the trip sheet, no concurrency limit.',zh:'按依赖分批，行程单加锁，并发不限。'},p:{...DEFAULT}},
  {k:'seq',t:{en:'Parallel tool use turned off',zh:'关掉并行工具调用'},d:{en:'At most one tool_use per reply, as disable_parallel_tool_use or parallel_tool_calls=false gives.',zh:'每次回复最多一个 tool_use，就像设了 disable_parallel_tool_use 或 parallel_tool_calls=false。'},p:{...DEFAULT,sch:'seq'}},
- {k:'k2',t:{en:'A harness with a concurrency limit of 2',zh:'并发上限 2 的 harness'},d:{en:'Your code runs at most 2 tools at once (k = 2 from part 5).',zh:'你的代码同时最多跑 2 个工具（第 5 部分的 k = 2）。'},p:{...DEFAULT,k:2}},
+ {k:'k2',t:{en:'A harness with a concurrency limit of 2',zh:'并发上限 2 的 harness'},d:{en:'Your code runs at most 2 tools at once; the rest queue.',zh:'你的代码同时最多跑 2 个工具，多的排队。'},p:{...DEFAULT,k:2}},
  {k:'slow',t:{en:'A long conversation',zh:'对话很长'},d:{en:'Every model call takes 3 s instead of 1.5 s.',zh:'每次模型调用要 3 秒，而不是 1.5 秒。'},p:{...DEFAULT,m:3}},
  {k:'retry',t:{en:'A booking times out',zh:'订机票超时'},d:{en:'The flight booking hangs once; the retry carries an idempotency key.',zh:'订机票卡住一次；重试带着幂等键。'},p:{...DEFAULT,fail:2,idem:1}}];
 const same=(a,b)=>['sch','lock','k','fail','idem','m'].every(x=>a[x]===b[x])&&a.half===-1;
@@ -284,10 +302,10 @@ function sandboxHTML(){const c=presetNow();
    `<p class="small">${tx(`Change anything else under ${J('controls','Settings')}.`,`想改别的，在${J('controls','“自由调参”')}里改。`)}</p>${A.shell.toChallenge()}</div>`;}
 function insightHTML(){const R=runOf(S), i=presetNow(), base=runOf(DEFAULT);
   let h=tx(`<p class="small">${esc(setTxt(S))}.</p><p><b>${R.n} model calls, ${sec(R.total)}, the result is ${resTxt(R)}.</b></p>`,`<p class="small">${esc(setTxt(S))}。</p><p><b>${R.n} 次模型调用，${sec(R.total)}，结果${resTxt(R)}。</b></p>`);
-  if(i<0) return h+(R.bad.length?`<p>${badTxt(TRIP,R.bad[0])}${tx('.','。')}</p>`:'')+tx('<p class="small">The current settings match none of these scenarios.</p>','<p class="small">现在的设置和这几个场景都不一样。</p>');
+  if(i<0) return h+(R.bad.length?`<p>${cap(badTxt(TRIP,R.bad[0]))}${tx('.','。')}</p>`:'')+tx('<p class="small">The current settings match none of these scenarios.</p>','<p class="small">现在的设置和这几个场景都不一样。</p>');
   const k=PRESETS[i].k;
   if(k==='init') h+=tx(`<p>Four lookups go out together, then the comparison, then the two bookings one after the other, then the calendar entry and the email: five model calls in all.</p>`,`<p>先一起发 4 个查询，再比价，再一个接一个地订机票和酒店，最后写日程、发邮件：一共 5 次模型调用。</p>`);
-  else if(k==='seq') h+=tx(`<p>${R.n-base.n} more model calls than the initial setup and ${sec(R.total-base.total)} longer. The API can return one tool_use per reply when parallel tool use is turned off, and some models may be less likely to ask for several at once even when it is on.</p>`,`<p>比初始设置多 ${R.n-base.n} 次模型调用，慢了 ${sec(R.total-base.total)}。关掉并行工具调用时，API 每次回复最多给一个 tool_use；有的模型即使没关，也可能较少一次要几个工具。</p>`);
+  else if(k==='seq') h+=tx(`<p>${R.n-base.n} more model calls than the initial setup and ${sec(R.total-base.total)} longer. Some models may be less likely to ask for several tools at once even when parallel tool use is on.</p>`,`<p>比初始设置多 ${R.n-base.n} 次模型调用，慢了 ${sec(R.total-base.total)}。有的模型即使没关，一次回复里要好几个工具的情况也可能比较少。</p>`);
   else if(k==='k2') h+=tx(`<p>Only ${sec(R.total-base.total)} slower than with no limit: only the first batch has more than two calls, and the slowest call in it, the flight search, starts at once.</p>`,`<p>只比不限慢 ${sec(R.total-base.total)}：只有第一批超过 2 个调用，而这一批里最慢的查航班一开始就在跑。</p>`);
   else if(k==='slow'){const q=runOf({...S,sch:'seq'}); {const d0=sec(runOf({...DEFAULT,sch:'seq'}).total-base.total); h+=tx(`<p>One at a time would now take ${sec(q.total)}, so batching saves ${sec(q.total-R.total)}.</p><p>With slower model calls, every model call saved is worth more: at 1.5 s per model call the saving was ${d0}.</p>`,`<p>这时一个一个来要 ${sec(q.total)}，分批省下 ${sec(q.total-R.total)}。</p><p>模型调用越慢，少一次越值钱：每次 1.5 秒时只省 ${d0}。</p>`);}}
   else h+=tx(`<p>The booking batch waits ${sec(R.total-base.total)} longer for the timeout, but the key keeps it to one ticket. Without the key the same retry books twice.</p>`,`<p>订票那一批为了超时多等了 ${sec(R.total-base.total)}，但幂等键保证只订一张票。不带键，同样的重试会订出两张。</p>`);
@@ -298,17 +316,19 @@ const bestWords=turns=>{const nm=t=>t.map(i=>CODE.calls[i].k), j=xs=>xs.length<3
   if(A.lang()==='zh') return turns.map((t,k)=>`${nm(t).join('、')} 放在第${'一二三四五六'[k]}次${k?'':'模型调用'}`).join('，');
   const ps=turns.map((t,k)=>k?`${j(nm(t))} in the ${['first','second','third','fourth','fifth','sixth'][k]}`:`${j(nm(t))} in the first model call`); return ps.length<2?ps[0]:ps.slice(0,-1).join(', ')+' and '+ps[ps.length-1];};
 const chDone=()=>inCh()&&chSubmitted;
+const chLive=()=>chDone()&&!!anim&&anim.key===runKey();   // the submitted run is still playing: its verdict waits for the end (R7.10)
 const chMe=()=>{const R=sched(CODE,turnsOf(chA),chOpt); return {R,turns:turnsOf(chA),total:R.total,n:R.n,right:!R.bad.length,ok:!R.bad.length&&R.total<=CH_GOAL+1e-9};};
 const tnTxt=tn=>tn.map(x=>x.map(i=>CODE.calls[i].k).join('')).join(' → ');
 function challengeHTML(){
   const rows=CODE.calls.map((c,i)=>A.ui.seg({id:'tls-ch-'+i,key:'ch'+i,label:L(c.n)+tx(` (${s1(c.t)} s)`,`（${s1(c.t)} 秒）`),options:[1,2,3,4,5,6].map(v=>[String(v),String(v)]),value:String(chA[i]),inline:true})).join('');
   const sub=`<div id="tls-ch-sub"${chSubmitted?' hidden':''}><button type="button" class="btn" data-act="submit">${tx('Submit my answer','提交答案')}</button><p class="small muted" style="margin:8px 0 0">${tx('After you submit, the task runs with your arrangement; then you see the time and whether the result is right.','提交后，按你的安排跑一遍，再告诉你耗时和结果对不对。')}</p></div>`;
-  return `<div class="railcard"><div class="eyebrow">${A.t('modeChallenge')}</div><h3 class="rh">${tx(`Get a bug-fixing agent done right in at most ${CH_GOAL} s, with at most ${CH_K} tools at once`,`让修 bug 的 agent 在 ${CH_GOAL} 秒内做完、结果要对，同时最多跑 ${CH_K} 个工具`)}</h3>`+
-   `<p>${tx(`A coding agent fixes a date-parsing bug (an example); the dependency graph shows which of its tool calls waits for which. The tests read both files the edits change. Your code runs at most ${CH_K} tools at once and each model call takes ${s1(CH_M)} s (the lab’s assumptions). Calls asked for in the same model call start in letter order (A first). For each call, choose the model call that asks for it; one more model call writes the answer at the end.`,`一个写代码的 agent 要修一个日期解析的 bug（示例）；依赖图里画着它的工具调用谁要等谁。跑测试要读两个改过的文件。你的代码同时最多跑 ${CH_K} 个工具，每次模型调用 ${s1(CH_M)} 秒（本 Lab 的假设）。同一次模型调用要的工具，按字母顺序开始（A 最先）。给每个调用选“第几次模型调用要它”；最后还有一次模型调用给出答案。`)}</p>`+
+  return `<div class="railcard"><div class="eyebrow">${A.t('modeChallenge')}</div><h3 class="rh">${tx(`Fix the bug right within ${CH_GOAL} s`,`在 ${CH_GOAL} 秒内把 bug 修对`)}</h3>`+
+   `<p>${tx('A coding agent fixes a date-parsing bug (an example); the dependency graph shows which of its 6 tool calls waits for which. For each call, choose the model call that asks for it; one more model call writes the answer at the end.','一个写代码的 agent 要修一个日期解析的 bug（示例）；依赖图里画着它的 6 个工具调用谁要等谁。给每个调用选“第几次模型调用要它”；最后还有一次模型调用给出答案。')}</p>`+
+   `<p>${tx(`Rules (the lab’s assumptions): each model call takes ${s1(CH_M)} s. Your code runs at most ${CH_K} tools at once. The tools of one model call start in letter order: the next one starts as soon as a slot is free, without waiting for all of that call’s tools to finish.`,`规则（本 Lab 的假设）：每次模型调用 ${s1(CH_M)} 秒。你的代码同时最多跑 ${CH_K} 个工具；同一次模型调用要的工具按字母顺序开始：有空位就开始下一个，不会等同一次要的工具全部做完。`)}</p>`+
+   `<p>${tx('The tests (F) read the two files D and E change: when F starts, D and E must both be done, or the result is wrong.','跑测试（F）要读 D、E 改过的两个文件：F 开始时，D、E 都要已经改完，结果才对。')}</p>`+
    `<div class="tls-chrows">${rows}</div>`+
    `<div class="goal mono" id="tls-ch-n"><span>${tx('Model calls, with the answer','模型调用次数（含给出答案的那次）')}</span><span><b id="tls-ch-nv"></b></span></div>`+
-   `<div class="goal mono" id="tls-ch-t"><span>${tx('Total time','总耗时')}</span><span><b id="tls-ch-tv"></b>${tx(` (goal: at most ${CH_GOAL} s, and a right result)`,`（目标：不超过 ${CH_GOAL} 秒，结果要对）`)}</span></div><div class="progress" id="tls-ch-p" aria-hidden="true"><i></i></div>`+
-   `<p class="small muted">${tx(`The ${CH_GOAL} s goal is set for this challenge in this lab.`,`${CH_GOAL} 秒是这个 Lab 为这道题定的目标。`)}</p>`+
+   `<div class="goal mono" id="tls-ch-t"><span>${tx('Total time','总耗时')}</span><span><b id="tls-ch-tv"></b>${tx(` (goal: at most ${CH_GOAL} s, and a right result)`,`（目标：不超过 ${CH_GOAL} 秒，结果要对）`)}</span></div>`+
    sub+`<div id="tls-ch-res" class="tls-ch-res" aria-live="polite"></div></div>`;}
 function chResultHTML(){
   if(!chDone()) return '';
@@ -330,11 +350,10 @@ function chResultHTML(){
   h+=`<p class="small">${tx('In the chart, letters written together are the tools of one model call; an arrow is the next model call.','图里写在一起的字母，是同一次模型调用要的工具；箭头是下一次模型调用。')}</p>`;
   h+=A.ui.cmpChart({brief:true,title:tx(`How long does each arrangement that is right within ${CH_GOAL} s take?`,`哪些安排在 ${CH_GOAL} 秒内做对了，各要多久？`),aria:tx('Total time by arrangement.','各种安排的总耗时。'),rows,goal:CH_GOAL,goalLabel:tx(`goal: ${CH_GOAL} s`,`目标 ${CH_GOAL} 秒`),max:20,
     hiddenText:()=>tx(`The other ${A.fmt.int(other)} arrangements give a wrong result or take longer and are not shown.`,`其余 ${A.fmt.int(other)} 种安排结果错或太慢，图里没有列出。`),
-    okText:tx('right, within the goal','结果对，没超时'),noText:tx('wrong or too slow','结果错或超时'),goalText:tx(`goal: ${CH_GOAL} s`,`目标：${CH_GOAL} 秒`)});
+    okText:tx(`right within ${CH_GOAL} s`,`${CH_GOAL} 秒内做对`),noText:tx(`wrong or over ${CH_GOAL} s`,`做错或超过 ${CH_GOAL} 秒`),goalText:tx(`goal: ${CH_GOAL} s`,`目标：${CH_GOAL} 秒`)});
   const k0=sched(CODE,best.turns,{...chOpt,k:0}), one=sched(CODE,turnsOf([1,2,3,4,5,6]),chOpt);
-  h+=tx(`<p class="small">Why: A, B and C need nothing, so they go out in the first model call; D needs A and C, E needs B, so both go out in the second; the tests must read the edited files, so F waits for the third. That is the fewest model calls that keeps every input ready. In this lab the tools of one model call start in the order A, B, C, at most ${CH_K} at once, so C waits for A, which costs ${sec(best.total-k0.total)}.</p><p class="small">A real harness could start the slowest, C, first: that batch would take ${sec(CODE.calls[2].t)}, and the whole task ${sec(k0.total)}.</p>`,
-        `<p class="small">原因：A、B、C 什么都不用等，放在第一次模型调用；D 要用 A 和 C 的结果，E 要用 B 的，两个放在第二次；跑测试要读改过的文件，F 等到第三次。这是让每个调用的输入都齐了的最少模型调用次数。在这个 Lab 里，同一次模型调用要的工具按 A、B、C 的顺序开始，同时最多 ${CH_K} 个，所以 C 要等 A 做完，多花 ${sec(best.total-k0.total)}。</p><p class="small">真实的 harness 可以先发最慢的 C，这一批就只要 ${sec(CODE.calls[2].t)}，总耗时 ${sec(k0.total)}。</p>`);
-  h+=tx(`<p class="small muted">Note: the times are this lab’s assumptions, fixed for every run. Real tool times vary, and a batch waits for its slowest call, so measure your own tools before planning batches.</p>`,`<p class="small muted">注意：这些时间是本 Lab 的假设，每次运行都一样。真实工具的耗时有波动，而一批要等最慢的那个，所以安排分批之前，先测一测你自己的工具。</p>`);
+  h+=tx(`<p class="small">Why: A, B and C need nothing, so they go out in the first model call; D needs A and C, E needs B, so they go out in the second. If F went out in the second too, it would start as soon as D finished, while E was still editing, so F waits for the third. With at most ${CH_K} at once, C starts after A, which costs ${sec(best.total-k0.total)}; a real harness could start the slowest, C, first, for a total of ${sec(k0.total)}.</p>`,
+        `<p class="small">原因：A、B、C 什么都不用等，放在第一次模型调用；D 要用 A 和 C 的结果，E 要用 B 的，放在第二次。F 也放在第二次的话，D 改完它就开始，E 还没改完，所以 F 要等第三次。同时最多 ${CH_K} 个，C 排在 A 后面开始，多花 ${sec(best.total-k0.total)}；真实的 harness 可以先发最慢的 C，总耗时 ${sec(k0.total)}。</p>`);
   return h;}
 
 /* ---------- capability layer ---------- */
@@ -367,7 +386,7 @@ const EXITS=()=>({
 const DESCS=()=>({
   guided:tx('Seven short parts. See how slow one call at a time is, predict what happens when everything goes out at once, then batch by dependency, find the critical path, set a concurrency limit and handle timeouts.','一共 7 个部分。先看一个一个来有多慢，预测一次全发会怎样，再按依赖分批、找关键路径、设并发上限，最后处理超时和重试。'),
   sandbox:tx('Pick a scenario and see how batching, a concurrency limit and a timeout change the total time and the result.','选一个场景，看看分批方式、并发上限和超时怎样改变总耗时和结果。'),
-  challenge:tx(`Choose which model call asks for each of six tool calls, so that a bug fix comes out right within ${CH_GOAL} s.`,`给 6 个工具调用各选一次模型调用，让修 bug 的任务在 ${CH_GOAL} 秒内做对。`)});
+  challenge:tx(`For each of six tool calls, choose which model call asks for it, so that a bug fix comes out right within ${CH_GOAL} s.`,`给 6 个工具调用各选“第几次模型调用要它”，让修 bug 的任务在 ${CH_GOAL} 秒内做对。`)});
 const PIN={asdk:'b4b7916deaf4e5570cd627b1ae7ee4394a4de39f',opy:'ef676dbc199bc09d12a1d051f3b8b2486aa53dc2',acb:'d7265d6ae994ccd8429db0594b000073b2f9ad43',ocb:'5bd6cb40b6b84b69b2032d810610aa85064102df',cx:'4bad6d78e9b50f9fa8bd941f1db012ed491ad2da',stp:'29363094b09a67f8b1b50f577b463edbbb27ec9a'};
 const GH=(repo,pin,path)=>`https://github.com/${repo}/blob/${pin}/${path}`;
 const SRC=(u,t)=>`<a href="${u}" target="_blank" rel="noopener">${t}</a>`;
@@ -380,8 +399,8 @@ const U_CX=GH('openai/codex',PIN.cx,'codex-rs/core/src/tools/parallel.rs');
 const U_STP=GH('stripe/stripe-python',PIN.stp,'stripe/_api_requestor.py');
 const U_OBC=GH('openai/openai-python',PIN.opy,'src/openai/_base_client.py');
 const U_OCN=GH('openai/openai-python',PIN.opy,'src/openai/_constants.py');
-const FIDPOP=()=>tx(`<p><b>Toy run:</b> the page schedules every call from the lab’s assumed times.</p><div class="pop-grid"><div><div class="eyebrow">Modeled</div><ul><li>Nine tool calls of an example trip task, each with a fixed time (the lab’s assumption), the results it needs and the trip sheet the two bookings write.</li><li>Each model call takes the same time (1.5 s unless changed) and asks for one batch; your code sends the results of a batch back together, so the next model call waits for the slowest tool.</li><li>A concurrency limit; a lock for each thing that gets changed; a ${TO}-s timeout followed by one retry; idempotency keys.</li></ul></div><div><div class="eyebrow">Simplified</div><ul><li>Times never vary. Real tool times do, and since a batch waits for its slowest call, variation makes batches wait longer than the averages say.</li><li>A model call takes the same time however long the conversation is (${LL('agent-anatomy')} shows it grows).</li><li>A model call takes the same time however many tools it asks for. A real model writes out every tool_use, so a reply that asks for more takes longer, and one model call fewer saves mostly the fixed cost and the re-reading of the conversation, less than a whole call.</li><li>The lock holds the whole booking call, not only the moment it writes the trip sheet.</li><li>The model always batches as told. Real models sometimes ask for one tool at a time even when parallel calls are allowed: Anthropic’s cookbook says Claude 3.7 Sonnet may be less likely to ask for several tools in one reply, even without disable_parallel_tool_use.</li><li>What goes wrong is described in words: a wrong argument, a lost line, a second booking.</li></ul></div></div><p class="small">Sources: Anthropic’s ${SRC(U_ATC,'<code>disable_parallel_tool_use</code>')} and ${SRC(U_ACB,'parallel tools cookbook')}; OpenAI’s ${SRC(U_OCC,'<code>parallel_tool_calls</code>')} and ${SRC(U_OCB,'function calling cookbook')}; Stripe’s ${SRC(U_STP,'idempotency keys')}.</p>`,
-  `<p><b>玩具实跑：</b>页面按本 Lab 假设的耗时，排出每个调用什么时候跑。</p><div class="pop-grid"><div><div class="eyebrow">建模了什么</div><ul><li>一个出差任务（示例）的 9 个工具调用，每个有固定的耗时（本 Lab 的假设）、要用哪些结果，以及两个订票调用都要写的行程单。</li><li>每次模型调用的时间一样（默认 1.5 秒），每次要一批工具；你的代码把一批的结果一起发回去，所以下一次模型调用要等最慢的那个。</li><li>并发上限；每份会被改的东西各配一把锁；${TO} 秒超时后重试一次；幂等键。</li></ul></div><div><div class="eyebrow">简化了什么</div><ul><li>耗时从不波动。真实工具的耗时有波动，而一批要等最慢的那个，所以波动会让每批等得比平均值更久。</li><li>模型调用的时间不随对话变长（${LL('agent-anatomy')}里讲过它会变长）。</li><li>一次模型调用不管要几个工具，都算一样长。真实的模型要把每个 tool_use 都写出来，一次要得多，这次调用也会长一些，所以少一次模型调用省下的，主要是固定开销和重读对话的时间，比整整一次少。</li><li>锁住的是整个订票调用，不只是写行程单的那一下。</li><li>模型总是按要求分批。真实的模型即使允许并行，有时也一次只要一个工具：Anthropic 的 cookbook 说，Claude 3.7 Sonnet 即使没设 disable_parallel_tool_use，也可能较少在一次回复里要几个工具。</li><li>出错只用文字描述：参数猜错、行程单丢了一行、订了第二张票。</li></ul></div></div><p class="small">来源：Anthropic 的 ${SRC(U_ATC,'<code>disable_parallel_tool_use</code>')} 和 ${SRC(U_ACB,'并行工具 cookbook')}；OpenAI 的 ${SRC(U_OCC,'<code>parallel_tool_calls</code>')} 和 ${SRC(U_OCB,'function calling cookbook')}；Stripe 的 ${SRC(U_STP,'幂等键')}。</p>`);
+const FIDPOP=()=>tx(`<p><b>Toy run:</b> the page schedules every call from the lab’s assumed times.</p><div class="pop-grid"><div><div class="eyebrow">Modeled</div><ul><li>Nine tool calls of an example trip task, each with a fixed time (the lab’s assumption), the results it needs and the trip sheet the two bookings write.</li><li>Each model call takes the same time (1.5 s unless changed) and asks for one batch; your code sends the results of a batch back together, so the next model call waits for the slowest tool.</li><li>A concurrency limit; a lock for each thing that gets changed; a ${TO}-s timeout followed by one retry; idempotency keys.</li></ul></div><div><div class="eyebrow">Simplified</div><ul><li>Times never vary. Real tool times do, and since a batch waits for its slowest call, variation makes batches wait longer than the averages say; measure your own tools before planning batches.</li><li>A model call takes the same time however long the conversation is (${LL('agent-anatomy')} shows it grows).</li><li>A model call takes the same time however many tools it asks for. A real model writes out every tool_use, so a reply that asks for more takes longer, and one model call fewer saves mostly the fixed cost and the re-reading of the conversation, less than a whole call.</li><li>The lock holds the whole booking call, not only the moment it writes the trip sheet.</li><li>The model always batches as told. Real models sometimes ask for one tool at a time even when parallel calls are allowed: Anthropic’s cookbook says Claude 3.7 Sonnet may be less likely to ask for several tools in one reply, even without disable_parallel_tool_use.</li><li>What goes wrong is only drawn: red bars and marks in the timeline, plus a sentence (a wrong argument, a lost line, a second booking).</li></ul></div></div><p class="small">Sources: Anthropic’s ${SRC(U_ATC,'<code>disable_parallel_tool_use</code>')} and ${SRC(U_ACB,'parallel tools cookbook')}; OpenAI’s ${SRC(U_OCC,'<code>parallel_tool_calls</code>')} and ${SRC(U_OCB,'function calling cookbook')}; Stripe’s ${SRC(U_STP,'idempotency keys')}.</p>`,
+  `<p><b>玩具实跑：</b>页面按本 Lab 假设的耗时，排出每个调用什么时候跑。</p><div class="pop-grid"><div><div class="eyebrow">建模了什么</div><ul><li>一个出差任务（示例）的 9 个工具调用，每个有固定的耗时（本 Lab 的假设）、要用哪些结果，以及两个订票调用都要写的行程单。</li><li>每次模型调用的时间一样（默认 1.5 秒），每次要一批工具；你的代码把一批的结果一起发回去，所以下一次模型调用要等最慢的那个。</li><li>并发上限；每份会被改的东西各配一把锁；${TO} 秒超时后重试一次；幂等键。</li></ul></div><div><div class="eyebrow">简化了什么</div><ul><li>耗时从不波动。真实工具的耗时有波动，而一批要等最慢的那个，所以波动会让每批等得比平均值更久；安排分批之前，先测一测你自己的工具。</li><li>模型调用的时间不随对话变长（${LL('agent-anatomy')}里讲过它会变长）。</li><li>一次模型调用不管要几个工具，都算一样长。真实的模型要把每个 tool_use 都写出来，一次要得多，这次调用也会长一些，所以少一次模型调用省下的，主要是固定开销和重读对话的时间，比整整一次少。</li><li>锁住的是整个订票调用，不只是写行程单的那一下。</li><li>模型总是按要求分批。真实的模型即使允许并行，有时也一次只要一个工具：Anthropic 的 cookbook 说，Claude 3.7 Sonnet 即使没设 disable_parallel_tool_use，一次回复里要好几个工具的情况也可能比较少。</li><li>出错的地方只画出来：红条、时间轴上的标记，加一句话说明（参数猜错、行程单丢了一行、订了第二张票）。</li></ul></div></div><p class="small">来源：Anthropic 的 ${SRC(U_ATC,'<code>disable_parallel_tool_use</code>')} 和 ${SRC(U_ACB,'并行工具 cookbook')}；OpenAI 的 ${SRC(U_OCC,'<code>parallel_tool_calls</code>')} 和 ${SRC(U_OCB,'function calling cookbook')}；Stripe 的 ${SRC(U_STP,'幂等键')}。</p>`);
 const PRIPOP=()=>tx(`<p>An agent is a loop: your code sends the conversation and the tool descriptions to the model; the model replies with tool_use blocks (which tool, which arguments); your code runs the tools and appends their output as tool_result blocks, then calls the model again. ${LL('agent-anatomy')} takes this loop apart; ${LL('agent-reliability')} covers retries.</p>`,
                     `<p>agent 是一个循环：你的代码把对话和工具说明发给模型；模型回复 tool_use（用哪个工具、参数是什么）；你的代码执行工具，把输出作为 tool_result 接在对话后面，再调用一次模型。${LL('agent-anatomy')}把这个循环一步步拆开；${LL('agent-reliability')}讲了重试。</p>`);
 function headerHTML(){return A.shell.header({id:ID,world:'agents',outcome:esc(OUTCOME()),short:tx('Tool scheduling','工具调用调度'),title:tx('Which tool calls can run in parallel?','哪些工具调用可以并行？'),
@@ -392,7 +411,8 @@ function stageHTML(){
   return `<div class="panel stage tls-stage" id="tls-stage">`+
    `<div class="stage-head tls-head"><div class="tls-st-title" id="tls-st-title"></div><div class="stage-actions"><span class="status" id="tls-status" tabindex="0"></span></div></div>`+
    `<section class="tls-pan" id="tls-pan-gantt"><div class="tls-pt" id="tls-g-title"></div><div class="tls-transport" id="tls-transport"></div>`+
-     `<div class="tls-ph" id="tls-g-ph" hidden></div><svg class="tls-gantt" id="tls-gantt" role="img" aria-label=""></svg><div class="legend-row tls-leg" id="tls-g-leg"></div></section>`+
+     `<div class="tls-ph" id="tls-g-ph" hidden></div><svg class="tls-gantt" id="tls-gantt" role="img" aria-label=""></svg><div class="legend-row tls-leg" id="tls-g-leg"></div>`+
+     `<button type="button" class="linkbtn tls-endhint" id="tls-endhint" data-act="to-res" hidden></button></section>`+
    `<section class="tls-pan" id="tls-pan-graph"><div class="tls-pt" id="tls-d-title"></div><svg class="tls-graph" id="tls-graph" role="img" aria-label=""></svg><div class="legend-row tls-leg" id="tls-d-leg"></div></section>`+
    `<div class="metrics tls-metrics" id="tls-metrics"></div>`+
    `<details class="math" id="tls-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="tls-mathbody"></div></details></div>`;}
@@ -442,7 +462,7 @@ async def run_batch(uses, tools, k=3, timeout=5.0):
     return await asyncio.gather(*(one(u) for u in uses))`;
 function connectHTML(){
   return `<section class="wrap connect" aria-labelledby="tls-connH"><div class="eyebrow">${A.t('connEyebrow')}</div><h2 id="tls-connH">${A.t('connTitle')}</h2><div class="connect-grid">`+
-   `<article class="panel c-card"><h3>${A.t('cMin')}</h3><p>${tx('One batch of tool calls in Python: a concurrency limit, a lock for each thing that gets changed, a timeout with one retry, and an idempotency key passed to the tool.','用 Python 跑一批工具调用：并发上限、每份会被改的东西各配一把锁、超时后重试一次，并把幂等键交给工具。')}</p><pre class="code" id="tls-code">${esc(CODE_PY)}</pre><button class="btn ghost sm" type="button" data-act="copy">${A.t('copyCode')}</button></article>`+
+   `<article class="panel c-card"><h3>${A.t('cMin')}</h3><p>${tx('One batch of tool calls in Python: a concurrency limit, a lock for each thing that gets changed, a timeout with one retry, and an idempotency key passed to the tool.','用 Python 跑一批工具调用：并发上限、每份会被改的东西各配一把锁、超时后重试一次，并把幂等键交给工具。')}</p><pre class="code" id="tls-code">${esc(CODE_PY)}</pre><button class="btn ghost sm" type="button" data-act="copy">${A.t('copyCode')}</button><p class="small muted">${tx(`Why retries matter for a task of many steps: ${LL('agent-reliability')}.`,`多步任务里重试为什么重要，见 ${LL('agent-reliability')}。`)}</p></article>`+
    `<article class="panel c-card"><h3>${A.t('cProd')}</h3><ul class="tls-prod">`+
    tx(`<li>Anthropic’s API: ${SRC(U_ATC,'<code>disable_parallel_tool_use</code>')} “Defaults to <code>false</code>. If set to <code>true</code>, the model will output at most one tool use.” The ${SRC(U_ACB,'parallel tools cookbook')}: by default the model may “call more than one of them in a single assistant turn”; one call at a time “required ‘back and forth’”.</li>`+
       `<li>OpenAI’s API: the ${SRC(U_ORC,'Responses API’s')} <code>parallel_tool_calls</code>, “Whether to allow the model to run tool calls in parallel.”; Chat Completions has a ${SRC(U_OCC,'parameter of the same name')}. The ${SRC(U_OCB,'cookbook')}: newer models “can call multiple functions in one turn”.</li>`+
@@ -460,10 +480,10 @@ function connectHTML(){
    `</div></section>`;}
 function viewHTML(){return `<div class="tls-app m2" id="tls-app">`+headerHTML()+`<div class="wrap bench"><aside class="rail" id="tls-rail" aria-label="${esc(tx('Lab parts','Lab 各部分'))}"></aside>`+stageHTML()+controlsHTML()+`</div>`+connectHTML()+`</div>`;}
 
-/* which panels the stage shows now */
+/* which panels the stage shows now: the timeline first everywhere, so what plays is at the top of the stage (R7.12) */
 function ctx(){
   if(mode==='guided') return STEPS[step].panels;
-  if(inCh()) return chSubmitted?['graph','gantt','metrics']:['graph','gantt'];
+  if(inCh()) return chSubmitted?['gantt','graph','metrics']:['gantt','graph'];
   return ['gantt','graph','metrics'];}
 
 /* ---------- drawing ---------- */
@@ -471,80 +491,141 @@ const isWide=()=>{const st=app&&$('#tls-stage',app); return !st||st.clientWidth>
 const clockNow=R=>anim&&anim.key===runKey()?anim.t:R.total;
 const playing=()=>!!anim&&!anim.paused;
 /* graph layouts, hand-placed: [x, y] of each node's top-left corner; edges that skip a column get a route */
-const GL={trip:{wide:{W:600,H:180,w:116,h:36,pos:[[6,4],[6,48],[6,92],[6,136],[164,70],[322,26],[322,114],[478,26],[478,114]],route:{'3-8':[[122,152],[300,172],[462,144]]},two:true},
+/* wide: nodes 40 high for a 13-px name over a 12-px time (N11); wideC, the round-1 layout, where a wide stage is under 600 px and the
+   picture is drawn smaller than 1:1 anyway (a 900-px window), so it does not grow taller there */
+const GL={trip:{wide:{W:600,H:192,w:116,h:40,pos:[[6,4],[6,52],[6,100],[6,148],[164,76],[322,28],[322,124],[478,28],[478,124]],route:{'3-8':[[122,168],[300,186],[470,186]]},two:true},
+               wideC:{W:600,H:180,w:116,h:36,pos:[[6,4],[6,48],[6,92],[6,136],[164,70],[322,26],[322,114],[478,26],[478,114]],route:{'3-8':[[122,152],[300,172],[462,144]]},two:true},
                narrow:{W:360,H:262,w:82,h:46,pos:[[2,4],[92,4],[184,4],[276,4],[139,72],[60,140],[220,140],[60,212],[220,212]],route:{'3-8':[[352,50],[352,196],[302,222]],'0-5':[[30,100]]}}},
-          code:{wide:{W:600,H:136,w:170,h:36,pos:[[4,6],[4,50],[4,94],[215,26],[215,92],[426,59]],route:{},two:true},
+          code:{wide:{W:600,H:148,w:170,h:40,pos:[[4,6],[4,54],[4,102],[215,30],[215,102],[426,66]],route:{},two:true},
+               wideC:{W:600,H:136,w:170,h:36,pos:[[4,6],[4,50],[4,94],[215,26],[215,92],[426,59]],route:{},two:true},
                narrow:{W:360,H:192,w:108,h:46,pos:[[4,4],[126,4],[248,4],[60,74],[192,74],[126,142]],route:{}}}};
-const estW=t=>[...t].reduce((a,ch)=>a+(/[\u3400-\u9fff]/.test(ch)?12:6.6),0);
+const estW=t=>[...t].reduce((a,ch)=>a+(/[㐀-鿿＀-￯]/.test(ch)?12:6.6),0);
 function split2(t,maxW){if(estW(t)<=maxW) return [t]; const ws=t.split(' '); if(ws.length<2) return [t]; let best=null;
   for(let i=1;i<ws.length;i++){const a=ws.slice(0,i).join(' '), b=ws.slice(i).join(' '), m=Math.max(estW(a),estW(b)); if(!best||m<best[0]) best=[m,a,b];} return [best[1],best[2]];}
 function nodeState(R,i,clock){const c=R.cs[i]; if(!c) return 'idle'; const b=R.bad.find(x=>x.i===i&&clock>=x.at-1e-9); if(b) return 'bad'; if(clock>=c.e-1e-9) return 'done'; if(clock>=c.s-1e-9) return 'run'; return 'idle';}
+/* the panel's own width in px: the pictures are drawn 1:1 to it, so their text keeps its size and they do not grow taller on a wide screen */
+const panW=id=>{const el=app&&$(id,app); return el?Math.round(el.clientWidth):0;};
+/* wide stage: the class gives the pictures' text its desktop size (13 px names, 12 px numbers; N11) */
+const wideNow=()=>{const w=isWide(), st=app&&$('#tls-stage',app); if(st&&st.classList.contains('tls-wide')!==w) st.classList.toggle('tls-wide',w); return w;};
+/* part 2: the call picked, the calls it waits for, and (for a call that waits for nobody) the others that wait for nobody */
+function pickSets(task,sel){const up=new Set(), peer=new Set(); if(sel<0) return {up,peer};
+  const walk=i=>deps(task.calls[i]).forEach(j=>{if(!up.has(j)){up.add(j); walk(j);}}); walk(sel);
+  if(!deps(task.calls[sel]).length) task.calls.forEach((c,i)=>{if(i!==sel&&!deps(c).length) peer.add(i);});
+  return {up,peer};}
 function drawGraph(){
-  const task=curTask(), lay=GL[task.id][isWide()?'wide':'narrow'], {W,H,w,h,pos}=lay, svg=$('#tls-graph',app), R=curRun(), clock=clockNow(R);
-  const showState=!(mode==='guided'&&['mission','deps'].includes(STEPS[step].id))&&!(inCh()&&!chSubmitted);
-  const sel=mode==='guided'&&STEPS[step].id==='deps'?TRIP.calls.findIndex(c=>c.k===pick2):-1;
-  const up=new Set(); if(sel>=0){const walk=i=>deps(task.calls[i]).forEach(j=>{if(!up.has(j)){up.add(j); walk(j);}}); walk(sel);}
+  const task=curTask(), wide=wideNow(), cmpct=wide&&panW('#tls-pan-graph')<600, L0=GL[task.id][wide?(cmpct?'wideC':'wide'):'narrow'], svg=$('#tls-graph',app), R=curRun(), clock=clockNow(R);
+  const f=wide?Math.max(1,panW('#tls-pan-graph')/L0.W):1, sx=([x,y])=>[x*f,y];   // wider than the layout: spread it sideways only
+  const lay=f===1?L0:{...L0,W:Math.round(L0.W*f),w:Math.round(L0.w*f),pos:L0.pos.map(sx),route:Object.fromEntries(Object.entries(L0.route).map(([k,r])=>[k,r.map(sx)]))};
+  const {W,H,w,h,pos}=lay, sid=mode==='guided'&&STEPS[step].id;
+  const showState=sid!=='deps'&&!(inCh()&&!chSubmitted);
+  const sel=sid==='deps'?TRIP.calls.findIndex(c=>c.k===pick2):-1;
+  const {up,peer}=pickSets(task,sel);
   const cx=i=>pos[i][0]+w/2, cy=i=>pos[i][1]+h/2;
-  const edgePt=(i,tx2,ty2)=>{const x=cx(i), y=cy(i), dx=tx2-x, dy=ty2-y, sx=dx?Math.abs((w/2)/dx):1e9, sy=dy?Math.abs((h/2)/dy):1e9, s=Math.min(sx,sy); return [x+dx*s,y+dy*s];};
+  const edgePt=(i,tx2,ty2)=>{const x=cx(i), y=cy(i), dx=tx2-x, dy=ty2-y, sx2=dx?Math.abs((w/2)/dx):1e9, sy=dy?Math.abs((h/2)/dy):1e9, s=Math.min(sx2,sy); return [x+dx*s,y+dy*s];};
   let g=`<defs><marker id="tls-ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" class="tls-ahp"/></marker></defs>`;
   task.calls.forEach((c,i)=>{deps(c).forEach(j=>{const r=lay.route[j+'-'+i]||[], first=r[0]||[cx(i),cy(i)], last=r.length?r[r.length-1]:[cx(j),cy(j)];
     const a=edgePt(j,first[0],first[1]), b=edgePt(i,last[0],last[1]), pts=[a,...r,b].map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' ');
     const dashed=(c.after||[]).includes(j), hi=sel>=0&&(i===sel&&up.has(j)||up.has(i)&&up.has(j));
     g+=`<polyline class="tls-edge${dashed?' dash':''}${hi?' hi':''}" points="${pts}" marker-end="url(#tls-ah)"/>`;});});
-  if(task.id==='trip'){const a=5,b=6, x=cx(a)+(isWide()?0:0), hi=sel===5||sel===6;
-    if(isWide()) g+=`<line class="tls-conf${hi?' hi':''}" x1="${x}" y1="${pos[a][1]+h}" x2="${x}" y2="${pos[b][1]}"/><text class="tls-cl" x="${x-6}" y="${(pos[a][1]+h+pos[b][1])/2+4}" text-anchor="end">${esc(tx('same trip sheet','同一份行程单'))}</text>`;
+  if(task.id==='trip'){const a=5,b=6, x=cx(a), hi=sel===5||sel===6;
+    if(wide) g+=`<line class="tls-conf${hi?' hi':''}" x1="${x}" y1="${pos[a][1]+h}" x2="${x}" y2="${pos[b][1]}"/><text class="tls-cl" x="${x-6}" y="${(pos[a][1]+h+pos[b][1])/2+4}" text-anchor="end">${esc(tx('same trip sheet','同一份行程单'))}</text>`;
     else g+=`<line class="tls-conf${hi?' hi':''}" x1="${pos[a][0]+w}" y1="${cy(a)}" x2="${pos[b][0]}" y2="${cy(b)}"/><text class="tls-cl" x="${(pos[a][0]+w+pos[b][0])/2}" y="${cy(a)-6}" text-anchor="middle">${esc(tx('same sheet','同一份行程单'))}</text>`;}
-  task.calls.forEach((c,i)=>{const [x,y]=pos[i], st=showState?nodeState(R,i,clock):'idle', cls=['tls-node',st,i===sel?'sel':'',up.has(i)?'up':''].join(' ');
-    const nm=L(c.n), one=isWide()&&!lay.two;
+  task.calls.forEach((c,i)=>{const [x,y]=pos[i], st=showState?nodeState(R,i,clock):'idle', chg=!inCh()&&S.half===i;
+    const cls=['tls-node',st,i===sel?'sel':'',up.has(i)?'up':'',peer.has(i)?'peer':''].join(' ');
+    /* a tool made faster in part 4 shows its new time, and a blue dot that stays in every state; the legend gives the old time (N7) */
+    const nm=L(c.n), tt=sec(chg?c.t/2:c.t), one=wide&&!lay.two;
     g+=`<g class="${cls}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>`;
-    if(one) g+=`<text class="tls-nt" x="${x+8}" y="${y+h/2+4}">${esc(nm)}</text><text class="tls-ns" x="${x+w-6}" y="${y+h/2+4}" text-anchor="end">${esc(sec(c.t))}</text>`;
-    else {const ls=isWide()?[nm]:split2(nm,w-8), y0=ls.length>1?y+14:y+(isWide()?15:19), ys=ls.length>1?y+41:y+(isWide()?30:35);
-      g+=`<text class="tls-nt" text-anchor="middle">${ls.map((l,k)=>`<tspan x="${x+w/2}" y="${y0+k*13}">${esc(l)}</tspan>`).join('')}</text><text class="tls-ns" x="${x+w/2}" y="${ys}" text-anchor="middle">${esc(sec(c.t))}</text>`;}
+    if(one) g+=`<text class="tls-nt" x="${x+8}" y="${y+h/2+4}">${esc(nm)}</text><text class="tls-ns${chg?' chg':''}" x="${x+w-6}" y="${y+h/2+4}" text-anchor="end">${esc(tt)}</text>`;
+    else {const ls=wide?[nm]:split2(nm,w-8), y0=ls.length>1?y+14:y+(wide?(cmpct?15:17):19), ys=ls.length>1?y+41:y+(wide?(cmpct?31:33):35);
+      g+=`<text class="tls-nt" text-anchor="middle">${ls.map((l,k)=>`<tspan x="${x+w/2}" y="${y0+k*13}">${esc(l)}</tspan>`).join('')}</text><text class="tls-ns${chg?' chg':''}" x="${x+w/2}" y="${ys}" text-anchor="middle">${esc(tt)}</text>`;}
+    if(chg) g+=`<circle class="tls-chgd" cx="${x+w-3}" cy="${y+3}" r="5"/>`;
     g+=`</g>`;});
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML=g;
   svg.setAttribute('aria-label',tx('Dependency graph: an arrow points from a call to a call that waits for it.','依赖图：箭头从一个调用指向等它的调用。'));
   $('#tls-d-title',app).textContent=task.id==='trip'?tx('Which call waits for which? (the trip task, an example)','哪个调用要等哪个？（出差任务，示例）'):tx('Which call waits for which? (the bug fix, an example)','哪个调用要等哪个？（修 bug 的任务，示例）');
-  const leg=$('#tls-d-leg',app), lk=A.lang()+task.id+showState; if(leg._k!==lk){leg._k=lk;
+  const leg=$('#tls-d-leg',app), anyChg=!inCh()&&S.half>=0, lk=[A.lang(),task.id,showState,sel,up.size,peer.size,anyChg?S.half:-1].join(); if(leg._k!==lk){leg._k=lk;
     const items=[`<span class="lg" data-tipx="${esc(tx('A solid arrow points from a call to a call that needs its result.','实线箭头从一个调用指向要用它结果的调用。'))}"><i class="sw tls-sw-arr"></i>${tx('needs its result','要用它的结果')}</span>`];
     if(task.id==='trip') items.push(`<span class="lg" data-tipx="${esc(D_SHEET())}"><i class="sw tls-sw-conf"></i>${tx('write the same trip sheet','改同一份行程单')}</span>`);
     else items.push(`<span class="lg" data-tipx="${esc(tx('A dashed arrow points from an edit to the tests that must read the edited file.','虚线箭头从改文件的调用指向要读改过的文件的测试。'))}"><i class="sw tls-sw-dash"></i>${tx('must see its changes','要读它改过的文件')}</span>`);
+    if(sel>=0) items.push(`<span class="lg"><i class="sw tls-sw-sel"></i>${tx('the call you picked','你选的调用')}</span>`+(up.size?`<span class="lg"><i class="sw tls-sw-up"></i>${tx('the calls it waits for','它要等的调用')}</span>`:'')+(peer.size?`<span class="lg"><i class="sw tls-sw-up"></i>${tx('also wait for nobody','同样谁也不用等')}</span>`:''));
     if(showState) items.push(`<span class="lg" data-tipx="${esc(tx('A call that is running now in the timeline.','时间轴上正在跑的调用。'))}"><i class="sw tls-sw-run"></i>${tx('running','在跑')}</span><span class="lg" data-tipx="${esc(tx('A call that has finished.','已经做完的调用。'))}"><i class="sw tls-sw-done"></i>${tx('done','做完了')}</span><span class="lg" data-tipx="${esc(tx('A call whose result is wrong, from the moment it goes wrong.','结果错了的调用，从出错的那一刻起标红。'))}"><i class="sw tls-sw-bad"></i>${tx('wrong','出错')}</span>`);
+    if(anyChg){const c=TRIP.calls[S.half], nm=L(c.n); items.push(`<span class="lg"><i class="sw tls-sw-chg"></i>${esc(tx(`${nm} twice as fast: was ${sec(c.t)}, now ${sec(c.t/2)}`,`${nm}快一倍：原来 ${sec(c.t)}，现在 ${sec(c.t/2)}`))}</span>`);}
     leg.innerHTML=items.join('');}}
-function axisMax(R){const base=inCh()?17.1:seqTotal(S.m); return Math.ceil(Math.max(base,R.total)/5)*5;}
+/* the time axis: the guided parts keep the one-at-a-time length, every scenario the same 45 s, the challenge its initial setup (R7.14) */
+const chBase=()=>sched(CODE,turnsOf([1,2,3,4,5,6]),chOpt).total;
+function axisMax(R){const base=inCh()?chBase():mode==='sandbox'?45:seqTotal(S.m); return Math.ceil(Math.max(base,R.total)/5)*5;}
+/* nouns for the marks that say what a lost line or a retried booking did */
+const LOSTN={bho:{en:'hotel',zh:'酒店'},bfl:{en:'flight',zh:'机票'}};
 function drawGantt(){
   const svg=$('#tls-gantt',app), ph=$('#tls-g-ph',app), tEl=$('#tls-transport',app);
-  if(inCh()&&!chSubmitted){svg.style.display='none'; tEl.hidden=true; ph.hidden=false; ph.textContent=tx('Your arrangement runs here once you submit it.','提交以后，你的安排会在这里跑一遍。'); $('#tls-g-leg',app).innerHTML=''; $('#tls-g-title',app).textContent=tx('When does each call run?','每个调用什么时候跑？'); return;}
+  if(inCh()&&!chSubmitted){svg.style.display='none'; tEl.hidden=true; ph.hidden=false; ph.textContent=tx('Your arrangement runs here once you submit it.','提交以后，你的安排会在这里跑一遍。'); $('#tls-g-leg',app).innerHTML=''; $('#tls-g-leg',app)._k=''; $('#tls-g-title',app).textContent=tx('When does each call run?','每个调用什么时候跑？'); return;}
   svg.style.display=''; tEl.hidden=false; ph.hidden=true;
-  const task=curTask(), R=curRun(), wide=isWide(), W=wide?600:360, LW=wide?124:96, X0=LW+6, X1=W-10, RH=wide?19:20, n=task.calls.length, top=8, H=top+RH*(n+1)+30;
-  const T=axisMax(R), X=t=>X0+(X1-X0)*t/T, clock=clockNow(R), Y=r=>top+r*RH;
+  const task=curTask(), R=curRun(), wide=wideNow(), pw=panW('#tls-pan-gantt'), W=Math.max(wide?600:300,pw||(wide?600:360));
+  /* text sizes, as the CSS gives them: row names 13 px on a wide stage and 11.5 px on a phone, marks 12 and 11 px (N11) */
+  const fRL=wide?13:11.5, fMK=wide?12:11;
+  /* the row names get the room they need, so “E 改 test_parser.py” is whole on a phone too; a longer one is cut with … */
+  const rw=t=>estW(t)*fRL/12, lw0=Math.ceil(Math.max(...task.calls.map(c=>rw(L(c.n)))))+8, LW=wide?Math.min(170,Math.max(124,lw0)):Math.min(140,Math.max(64,lw0));
+  const fit=t=>{if(rw(t)<=LW-2) return t; let u=t; while(u.length>1&&rw(u+'…')>LW-2) u=u.slice(0,-1); return u+'…';};
+  const X0=LW+6, X1=W-10, RH=wide?(pw<600?19:21):20, n=task.calls.length, T=axisMax(R), X=t=>X0+(X1-X0)*t/T, clock=clockNow(R);
+  const numW=wide?(R.n>=10?17:11):13, numUp=X(R.m)-X(0)<numW, top=numUp?17:8, Y=r=>top+r*RH, tY=wide&&pw>=600?15:13, H=top+RH*(n+1)+(wide&&pw>=600?21:18);   // model-call blocks too narrow for their number: it goes above the row
   let g=`<defs><pattern id="tls-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" class="tls-hbg"/><line x1="0" y1="0" x2="0" y2="5" class="tls-hl"/></pattern></defs>`;
-  for(let s=0;s<=T+1e-9;s+=5) g+=`<line class="tls-grid" x1="${X(s)}" y1="${top}" x2="${X(s)}" y2="${Y(n+1)}"/><text class="tls-ax" x="${X(s)}" y="${Y(n+1)+13}" text-anchor="middle">${s}</text>`;
-  g+=`<text class="tls-ax" x="${X1}" y="${Y(n+1)+26}" text-anchor="end">${esc(tx('time (s)','时间（秒）'))}</text>`;
+  for(let s=0;s<=T+1e-9;s+=5) g+=`<line class="tls-grid" x1="${X(s)}" y1="${top}" x2="${X(s)}" y2="${Y(n+1)}"/><text class="tls-ax" x="${X(s)}" y="${Y(n+1)+tY}" text-anchor="middle">${s}</text>`;
+  g+=`<text class="tls-ax" x="${X0-12}" y="${Y(n+1)+tY}" text-anchor="end">${esc(tx('time (s)','时间（秒）'))}</text>`;   // the unit on the tick row, left of 0
   g+=`<text class="tls-rl b" x="${LW}" y="${Y(0)+RH/2+4}" text-anchor="end">${esc(tx('Model','模型'))}</text>`;
-  task.calls.forEach((c,i)=>{const nm=L(c.n); g+=`<text class="tls-rl" x="${LW}" y="${Y(i+1)+RH/2+4}" text-anchor="end">${esc(!wide&&nm.length>13?nm.slice(0,12)+'…':nm)}</text>`;});
-  const bh=RH-7, clip=(s,e)=>Math.max(0,Math.min(e,clock)-s);
+  task.calls.forEach((c,i)=>{g+=`<text class="tls-rl" x="${LW}" y="${Y(i+1)+RH/2+4}" text-anchor="end">${esc(fit(L(c.n)))}</text>`;});
+  const bh=RH-7, clip=(s,e)=>Math.max(0,Math.min(e,clock)-s), cyR=i=>Y(i+1)+3+bh/2;
   const mcs=R.turns.map(t=>[t.ms,t.me]).concat([[R.turns.length?R.turns[R.turns.length-1].end:0,R.total]]);
   mcs.forEach(([s,e],j)=>{const wv=clip(s,e); if(wv<=0) return; const x=X(s), ww=X(s+wv)-x;
     g+=`<rect class="tls-mc" x="${x}" y="${Y(0)+3}" width="${Math.max(ww,1)}" height="${bh}" rx="2"/>`;
-    if(X(e)-x>=13&&wv>=e-s-1e-9) g+=`<text class="tls-mcn" x="${x+(X(e)-x)/2}" y="${Y(0)+3+bh/2+4}" text-anchor="middle">${j+1}</text>`;});
+    if(wv>=e-s-1e-9) g+=numUp?`<text class="tls-mcu" x="${x+(X(e)-x)/2}" y="${Y(0)-1}" text-anchor="middle">${j+1}</text>`:X(e)-x>=numW?`<text class="tls-mcn" x="${x+(X(e)-x)/2}" y="${Y(0)+3+bh/2+4}" text-anchor="middle">${j+1}</text>`:'';});
+  /* words in a row, right of its bar when they fit, else left of its start (R7.14) */
+  const rowR={}, words=[], mkW=t=>estW(t)*fMK/12;
+  const word=(i,xr,xl,t,cls)=>{const wd=mkW(t); let x=Math.max(xr,rowR[i]||0), anc='start'; if(x+wd>W-2&&xl-wd>X0){x=xl; anc='end';} rowR[i]=anc==='start'?x+wd+4:rowR[i]||0;
+    words.push(`<text class="tls-mk${cls?' '+cls:''}" x="${x}" y="${cyR(i)+4}" text-anchor="${anc}">${esc(t)}</text>`);};
   task.calls.forEach((c,i)=>{const z=R.cs[i]; if(!z) return; const y=Y(i+1)+3, tn=R.turns[z.turn], badB=R.bad.find(b=>b.i===i), isBad=badB&&clock>=badB.at-1e-9, cr=R.crit.has(i)&&!anim;
     if(z.s>tn.me+1e-9&&clock>tn.me) g+=`<line class="tls-wait" x1="${X(tn.me)}" y1="${y+bh/2}" x2="${X(Math.min(z.s,clock))}" y2="${y+bh/2}"/>`;
     if(z.hang!=null){const w1=clip(z.s,z.hang); if(w1>0) g+=`<rect class="tls-hang" x="${X(z.s)}" y="${y}" width="${X(z.s+w1)-X(z.s)}" height="${bh}" rx="2"/>`;
+      const done1=z.s+(z.e-z.hang);   // a write that hangs: the other side finished at its usual time, only the reply was lost (P8)
+      if(c.w&&clock>=done1-1e-9) g+=`<circle class="tls-dot" cx="${X(done1)}" cy="${y+bh/2}" r="3.6"/>`;
       const w2=clip(z.hang,z.e); if(w2>0) g+=`<rect class="tls-bar${isBad?' bad':''}${cr?' crit':''}" x="${X(z.hang)}" y="${y}" width="${Math.max(1,X(z.hang+w2)-X(z.hang))}" height="${bh}" rx="2"/>`;}
     else{const wv=clip(z.s,z.e); if(wv>0) g+=`<rect class="tls-bar${isBad?' bad':''}${cr?' crit':''}" x="${X(z.s)}" y="${y}" width="${Math.max(1,X(z.s+wv)-X(z.s))}" height="${bh}" rx="2"/>`;}
-    if(isBad) g+=`<text class="tls-x" x="${X(z.e)+4}" y="${y+bh/2+4}">✗</text>`;});
-  if(anim&&anim.key===runKey()) g+=`<line class="tls-head-l" x1="${X(clock)}" y1="${top}" x2="${X(clock)}" y2="${Y(n+1)}"/>`;
+    /* the bar turns red the moment it goes wrong; its ✗ waits until the call has finished (R7.10) */
+    if(isBad&&clock>=z.e-1e-9){g+=`<text class="tls-x" x="${X(z.e)+4}" y="${y+bh/2+4}">✗</text>`; rowR[i]=X(z.e)+(wide?18:16);}
+    if(z.hang!=null&&c.w&&clock>=z.e-1e-9&&task===TRIP){const dbl=R.bad.some(b=>b.kind==='double'&&b.i===i);
+      word(i,X(z.e)+4,X(z.s)-4,dbl?tx('2nd ticket','第 2 张票'):tx('✓ same ticket','✓ 同一张票'),dbl?'':'ok');}});
+  /* a call that started before an edit it reads was done: a red dashed line at its start, up to the edit's row (P1). An edit still
+     running gets its words when it ends; one that had not begun gets them at once, beside the line, in its still empty row (N10) */
+  R.bad.filter(b=>b.kind==='early'&&clock>=b.at-1e-9).forEach(b=>b.by.forEach(j=>{
+    g+=`<line class="tls-early" x1="${X(b.at)}" y1="${cyR(j)}" x2="${X(b.at)}" y2="${cyR(b.i)}"/>`;
+    const zj=R.cs[j], k=task.calls[b.i].k;
+    if((b.wait||[]).includes(j)){const long=tx(`not begun when ${k} started`,`${k} 开始时还没改`), room=(zj?X(zj.s):X1)-X(b.at)-10, t=mkW(long)<=room?long:tx('not yet','还没改');
+      if(mkW(t)<=room||X(b.at)-4-mkW(t)<X0) word(j,X(b.at)+4,X(b.at)-4,t,'');
+      else words.push(`<text class="tls-mk" x="${X(b.at)-4}" y="${cyR(j)+4}" text-anchor="end">${esc(t)}</text>`);}   // no room before the edit's bar: left of the line
+    else if(zj&&clock>=zj.e-1e-9) word(j,X(zj.e)+4,X(zj.s)-4,tx(`not done when ${k} started`,`${k} 开始时还没改完`),'');}));
+  /* two saves of the trip sheet at once: at the later save, the earlier line is gone, and the email built from the sheet lacks it (P10) */
+  R.bad.filter(b=>b.kind==='lost'&&clock>=b.at-1e-9).forEach(b=>{const v=b.by[0], nv=LOSTN[task.calls[v].k];
+    g+=`<line class="tls-early" x1="${X(b.at)}" y1="${cyR(b.i)}" x2="${X(b.at)}" y2="${cyR(v)}"/>`;
+    word(v,X(b.at)+4,X(R.cs[v].s)-4,tx('line overwritten','这一行被盖掉'),'');
+    task.calls.forEach((c,r)=>{const z=R.cs[r]; if(!c.r||c.r!==task.calls[v].w||!z||z.s<b.at-1e-9||clock<z.e-1e-9||R.bad.some(x=>x.i===r)) return;
+      word(r,X(z.e)+4,X(z.s)-4,nv?tx(`no ${L(nv)} in it`,`邮件里没有${L(nv)}`):tx('a line is missing','少了一行'),'');});});
+  g+=words.join('');
+  if(anim&&anim.key===runKey()) g+=`<line class="tls-head-l" x1="${X(clock)}" y1="${top}" x2="${X(clock)}" y2="${Y(n+1)}"/><path class="tls-head-t" d="M${X(clock)-4},${top-5}h8l-4,5z"/>`;   // the play head, capped like its legend swatch (T3)
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML=g;
   svg.setAttribute('aria-label',tx(`Timeline: ${R.n} model calls, ${s1(R.total)} s in all.`,`时间轴：${R.n} 次模型调用，一共 ${s1(R.total)} 秒。`));
   $('#tls-g-title',app).textContent=tx('When does each call run? (one row per tool call; the top row is the model)','每个调用什么时候跑？（每行一个工具调用，最上面一行是模型）');
-  const leg=$('#tls-g-leg',app), hasW=R.cs.some((z,i)=>z&&z.s>R.turns[z.turn].me+1e-9), hasH=R.cs.some(z=>z&&z.hang!=null), lk=[A.lang(),hasW,hasH,R.bad.length>0].join();
+  const hasW=R.cs.some((z,i)=>z&&z.s>R.turns[z.turn].me+1e-9), hasH=R.cs.some(z=>z&&z.hang!=null), hasD=R.cs.some((z,i)=>z&&z.hang!=null&&task.calls[i].w);
+  const eb=R.bad.filter(b=>b.kind==='early'), eW=eb.some(b=>(b.wait||[]).length>0), eR=eb.some(b=>b.by.length>(b.wait||[]).length);   // edits not begun, edits not done
+  const hasE=eb.length>0, hasL=R.bad.some(b=>b.kind==='lost'), leg=$('#tls-g-leg',app), lk=[A.lang(),hasW,hasH,hasD,hasE,eW,eR,hasL,R.bad.length>0].join();
   if(leg._k!==lk){leg._k=lk;
     leg.innerHTML=`<span class="lg" data-tipx="${esc(tx('A model call: your code sends the conversation and waits for the reply. The number counts the model calls.','模型调用：你的代码把对话发出去，等模型回复。数字是第几次模型调用。'))}"><i class="sw tls-sw-mc"></i>${tx('model call','模型调用')}</span>`+
      `<span class="lg" data-tipx="${esc(tx('A tool call your code runs, from start to finish.','你的代码执行的一个工具调用，从开始到结束。'))}"><i class="sw tls-sw-bar"></i>${tx('tool call','工具调用')}</span>`+
      `<span class="lg" data-tipx="${esc(D_CRIT())}"><i class="sw tls-sw-crit"></i>${tx('critical path','关键路径')}</span>`+
      (hasW?`<span class="lg" data-tipx="${esc(tx('The call was asked for but waits: for the lock on the trip sheet, or for a free slot under the concurrency limit.','这个调用已经要了，但在等：等行程单的锁，或者等并发上限下空出一个位置。'))}"><i class="sw tls-sw-wait"></i>${tx('waiting to start','等着开始')}</span>`:'')+
      (hasH?`<span class="lg" data-tipx="${esc(D_TO())}"><i class="sw tls-sw-hang"></i>${tx('hung attempt, until the timeout','卡住的尝试，直到超时')}</span>`:'')+
-     (R.bad.length?`<span class="lg" data-tipx="${esc(tx('The call whose result is wrong turns red at the moment it goes wrong.','结果错了的调用，在出错的那一刻变红。'))}"><i class="sw tls-sw-bad"></i>${tx('goes wrong','出错')}</span>`:'')+
+     (hasD?`<span class="lg" data-tipx="${esc(tx('The airline finished the booking during the hung attempt; only its reply never arrived.','卡住的那次尝试里，航空公司其实已经订好了，只是回复没有回来。'))}"><i class="sw tls-sw-dot"></i>${tx('booked, but the reply was lost','订上了，回复丢了')}</span>`:'')+
+     (R.bad.length?`<span class="lg" data-tipx="${esc(tx('The call whose result is wrong turns red at the moment it goes wrong; the ✗ marks it once it has finished.','结果错了的调用，在出错的那一刻变红；做完时，末尾画 ✗。'))}"><i class="sw tls-sw-bad"></i>${tx('goes wrong','出错')}</span>`:'')+
+     (hasE?`<span class="lg"><i class="sw tls-sw-early"></i>${eW&&eR?tx('started before the edits it reads were done','开始时，要读的文件还没改或没改完'):eW?tx('started before the edit it reads had begun','开始时，要读的文件还没改'):tx('started before the edit it reads was done','开始时，要读的文件还没改完')}</span>`:'')+
+     (hasL?`<span class="lg"><i class="sw tls-sw-early"></i>${tx('this save overwrites the other line','这次保存盖掉了另一行')}</span>`:'')+
      `<span class="lg" data-tipx="${esc(tx('While the run plays, a vertical line marks the current moment.','播放时，竖线标出现在播到的时刻。'))}"><i class="sw tls-sw-head"></i>${tx('now (while playing)','现在（播放时）')}</span>`;}}
 function drawTransport(){
   const tEl=$('#tls-transport',app); if(tEl.hidden) return; const want=A.lang()+'|'+(playing()?1:0)+'|'+speed;
@@ -566,23 +647,24 @@ function drawMetrics(){
   const nNow=live?R.turns.filter(t=>t.ms<=clock+1e-9).length+(clock>=(R.turns.length?R.turns[R.turns.length-1].end:0)?1:0):R.n;
   const toolNow=live?R.cs.reduce((a,z)=>a+(z?Math.max(0,Math.min(z.e,clock)-z.s):0),0):R.toolSum, badNow=R.bad.filter(b=>clock>=b.at-1e-9);
   const vals={tot:live?sec(clock):sec(R.total),n:String(nNow),tools:sec(toolNow),res:live?(badNow.length?tx('Wrong','错'):tx('Running','还在跑')):(R.bad.length?tx('Wrong','错'):tx('Right','对'))};
-  const subs={tot:live?tx('so far','到现在'):tx('whole run','整次运行'),n:live?tx('so far','到现在'):tx(`${R.turns.length} ask for tools, 1 gives the answer`,`${R.turns.length} 次要工具，1 次给出答案`),tools:live?tx('so far','到现在'):tx(`${task().calls.length} calls`,`${task().calls.length} 个调用`),
+  const subs={tot:live?tx('so far','到现在'):tx('whole run','整次运行'),n:live?tx('so far','到现在'):tx(`${R.turns.length} ask for tools, 1 answers`,`${R.turns.length} 次要工具，1 次给答案`),tools:live?tx('so far','到现在'):tx(`${task().calls.length} calls`,`${task().calls.length} 个调用`),
     res:R.bad.length&&(!live||badNow.length)?tx(`${new Set(R.bad.map(b=>b.i)).size} call${new Set(R.bad.map(b=>b.i)).size>1?'s':''} wrong`,`${new Set(R.bad.map(b=>b.i)).size} 个调用出错`):(live?'':tx('every call right','每个调用都对'))};
   MET.forEach(x=>{const el=host.querySelector(`[data-k="${x.k}"]`), d=el.querySelector('.d');
     el.querySelector('.k').textContent=x.label(); el.querySelector('.v').textContent=vals[x.k]; el.querySelector('.sub').textContent=subs[x.k]; el.dataset.tipx=x.tip();
     el.classList.toggle('tls-bad',x.k==='res'&&vals.res===tx('Wrong','错'));
     let dt=''; const num={tot:Math.round(R.total*10)/10,n:R.n,tools:Math.round(R.toolSum*10)/10}[x.k];
-    if(!live&&userAct&&cfgCh&&num!=null&&shownPrev[x.k]!=null&&shownPrev[x.k]!==num) dt=A.fmt.delta(shownPrev[x.k],num,{dp:x.k==='n'?0:1});
+    if(!live&&userAct&&cfgCh&&num!=null&&shownPrev[x.k]!=null&&shownPrev[x.k]!==num&&!R.bad.length&&!shownPrev._bad) dt=A.fmt.delta(shownPrev[x.k],num,{dp:x.k==='n'?0:1});   // no change against or from a wrong run: a right run is not “slower” than a wrong one
     clearTimeout(d._t); if(dt){d.textContent=dt; d.classList.add('on'); d._t=setTimeout(()=>{d.classList.remove('on'); d.textContent='';},2800);} else if(!live){d.classList.remove('on'); d.textContent='';}
-    if(num!=null&&(!live||shownPrev[x.k]==null)) shownPrev[x.k]=num;});}
+    if(num!=null&&(!live||shownPrev[x.k]==null)) shownPrev[x.k]=num;});
+  if(!live) shownPrev._bad=R.bad.length>0;}
 const task=()=>curTask();
 function drawHead(){
   const st=$('#tls-st-title',app), el=$('#tls-status',app), R=curRun(), live=anim&&anim.key===runKey();
   if(inCh()){st.textContent=chSubmitted?tx(`${live?'Playing':'Played'}: the bug fix with your arrangement, ${tnTxt(turnsOf(chA))}`,`${live?'正在播放':'播放完'}：按你的安排修 bug，${tnTxt(turnsOf(chA))}`):tx('The bug fix (an example): arrange the six calls','修 bug 的任务（示例）：安排 6 个调用');
-    const me=chMe(), done=chDone(); el.hidden=false; el.className='status'+(done?(me.ok?' ok':' bad'):''); el.textContent=done?(me.ok?tx('Goal met','达标'):tx('Not met','没达标')):tx('Not submitted','还没提交');
+    const me=chMe(), done=chDone(), lv=chLive(); el.hidden=false; el.className='status'+(done&&!lv?(me.ok?' ok':' bad'):''); el.textContent=lv?tx('Playing','播放中'):done?(me.ok?tx('Goal met','达标'):tx('Not met','没达标')):tx('Not submitted','还没提交');
     el.dataset.tipx=tx(`Whether your arrangement is right and takes at most ${CH_GOAL} s. It shows once you submit.`,`你的安排是否结果对、而且不超过 ${CH_GOAL} 秒。提交后才显示。`); return;}
   const gOnly=mode==='guided'&&STEPS[step].id==='deps';
-  st.textContent=gOnly?tx('The trip task (an example): who waits for whom','出差任务（示例）：谁要等谁'):tx(`${live?'Playing':'Played'}: the trip task, ${setTxt(S).replace(/^./,x=>x.toLowerCase())}`,`${live?'正在播放':'播放完'}：出差任务，${setTxt(S)}`);
+  st.textContent=gOnly?tx('The trip task (an example): who waits for whom','出差任务（示例）：谁要等谁'):tx(`${live?'Playing':'Played'}: the trip task, ${setTxt(S,noKNow()).replace(/^./,x=>x.toLowerCase())}`,`${live?'正在播放':'播放完'}：出差任务，${setTxt(S,noKNow())}`);
   const hide=gOnly||(mode==='guided'&&STEPS[step].id==='mission'&&!pred);
   el.hidden=hide; if(hide) return;
   el.className='status'+(live?'':(R.bad.length?' bad':' ok'));
@@ -601,11 +683,15 @@ function mathHTML(){
   const q2=i=>task===CODE?tx(`“${CN(task,i)}”`,`“${CN(task,i)}”`):CN(task,i), kk=inCh()?CH_K:S.k; let noted=0;
   R.turns.forEach((tn,j)=>{if(!tn.calls.length) return; let cur=tn.calls.reduce((a,b)=>R.cs[b].e>R.cs[a].e+1e-9?b:a); const chain=[cur];
     while(R.cs[cur].s>tn.me+1e-9){const p=tn.calls.find(q=>q!==cur&&Math.abs(R.cs[q].e-R.cs[cur].s)<1e-9); if(p==null) break; chain.unshift(p); cur=p;}
-    if(chain.length<2||R.cs[chain[0]].s>tn.me+1e-9) return;
-    const ds=chain.map(i=>r3(R.cs[i].e-R.cs[i].s)), a=chain[chain.length-2], b=chain[chain.length-1], lk=!!task.calls[b].w&&task.calls[a].w===task.calls[b].w;
+    /* a hung attempt counts as the timeout plus the retry, written out so the number can be found in the picture (P11) */
+    const hung=chain.filter(i=>R.cs[i].hang!=null), term=i=>{const z=R.cs[i]; return z.hang!=null?`(${s1(TO)} + ${s1(r3(z.e-z.hang))})`:s1(r3(z.e-z.s));};
+    const hTxt=hung.map(i=>tx(`${q2(i)} hangs on its first attempt: the timeout comes after ${TO} s, and the retry takes ${sec(r3(R.cs[i].e-R.cs[i].hang))} more`,zc(q2(i),`第一次卡住，${TO} 秒后超时，重试又用 ${sec(r3(R.cs[i].e-R.cs[i].hang))}`))).join(tx('; ','；'));
+    if(chain.length<2||R.cs[chain[0]].s>tn.me+1e-9){if(!(chain.length===1&&hung.length&&R.cs[cur].s<=tn.me+1e-9)) return;
+      const z=R.cs[cur]; h+=blk(tx(`Batch ${j+1}: ${hTxt}.`,zc(`第 ${j+1} 批：`,hTxt,'。')),[[`w_{${j+1}}`,`= ${s1(TO)} + ${s1(r3(z.e-z.hang))} = ${s1(ws[j])}${U}`]]); noted++; return;}
+    const a=chain[chain.length-2], b=chain[chain.length-1], lk=!!task.calls[b].w&&task.calls[a].w===task.calls[b].w;
     const why=lk?tx(`${q2(b)} waits for ${q2(a)} to finish and free the lock on the trip sheet`,`${q2(b)}要等${q2(a)}做完、放开行程单的锁才开始`)
                 :tx(`${kk===1?'only one tool runs at a time':`at most ${kk} tools run at once`}, so ${listJ(chain.map(q2))} run one after the other`,`同时最多 ${kk} 个，所以${listJ(chain.map(q2))}只能一个接一个地跑`);
-    h+=blk(tx(`Batch ${j+1} takes longer than its slowest tool: ${why}.`,zc(`第 ${j+1} 批比它最慢的工具还长：`,why,'。')),[[`w_{${j+1}}`,`= ${ds.map(s1).join(' + ')} = ${s1(ws[j])}${U}`]]); noted++;});
+    h+=blk(tx(`Batch ${j+1} takes longer than its slowest tool: ${hTxt?hTxt+'; ':''}${why}.`,zc(`第 ${j+1} 批比它最慢的工具还长：`,hTxt?hTxt+'；':'',why,'。')),[[`w_{${j+1}}`,`= ${chain.map(term).join(' + ')} = ${s1(ws[j])}${U}`]]); noted++;});
   if(!noted&&ws.length>1){const jx=ws.indexOf(Math.max(...ws)), tn=R.turns[jx], last=tn.calls.reduce((a,b)=>R.cs[b].e>R.cs[a].e+1e-9?b:a);
     h+=`<div class="tls-mb"><p class="tls-mb-lead">${tx(`The longest batch is batch ${jx+1}: ${q2(last)} finishes last, ${sec(ws[jx])} after the batch starts.`,zc(`最长的是第 ${jx+1} 批：`,q2(last),`最后做完，在这一批开始后 ${sec(ws[jx])}。`))}</p></div>`;}
   if(!inCh()&&S.sch!=='seq'){const q=runOf({...S,sch:'seq'});
@@ -617,7 +703,7 @@ function syncControls(){
   $$('#tls-rail .levers button[data-lever]',app).forEach(b=>{const id=STEPS[step]&&STEPS[step].id, v=b.dataset.lever, on=id==='batch'?v===lv3Now():id==='crit'?v===String(S.half):id==='fail'?v===lv6Now():false; b.setAttribute('aria-pressed',String(on)); const rr=b.querySelector('.lv-r'); if(rr){const t=lvResTxt(id,v); if(rr.textContent!==t) rr.textContent=t;}});
   const lock=inCh(), c=$('#tls-controls',app); c.classList.toggle('locked',lock);
   const ln=$('#tls-lock',app); ln.hidden=!lock;
-  if(lock) ln.textContent=tx(`In the challenge you choose in the task card when each call goes out. Fixed: at most ${CH_K} tools at once, started in letter order, ${s1(CH_M)} s per model call, a lock on files, no timeouts.`,`挑战中，你在任务卡里安排每个调用什么时候发。固定的：同时最多 ${CH_K} 个工具，按字母顺序开始，每次模型调用 ${s1(CH_M)} 秒，改文件加锁，没有超时。`);
+  if(lock) ln.textContent=tx(`In the challenge you choose in the task card when each call goes out. Fixed: at most ${CH_K} tools at once, started in letter order, ${s1(CH_M)} s per model call, no timeouts. No two calls here change the same file, so no lock comes into play.`,`挑战中，你在任务卡里安排每个调用什么时候发。固定的：同时最多 ${CH_K} 个工具，按字母顺序开始，每次模型调用 ${s1(CH_M)} 秒，没有超时。这道题里没有两个调用改同一个文件，所以用不上锁。`);
   $$('#tls-controls .lockable, #tls-controls .tls-assumed',app).forEach(e=>{e.hidden=lock;});}
 
 /* ---------- rail ---------- */
@@ -640,9 +726,10 @@ function updateRail(){
     const me=chMe(), done=chDone(), nv=$('#tls-ch-nv',rail); if(!nv) return;
     nv.textContent=String(me.n);
     $('#tls-ch-tv',rail).textContent=done?sec(me.total):tx('shown after you submit','提交后才知道');
-    $('#tls-ch-p i',rail).style.width=(done?Math.min(100,CH_GOAL/Math.max(me.total,CH_GOAL)*100):0)+'%'; $('#tls-ch-t',rail).classList.toggle('met',done&&me.ok); $('#tls-ch-p',rail).classList.toggle('met',done&&me.ok);
+    $('#tls-ch-t',rail).classList.toggle('met',done&&me.ok&&!chLive());
     const sub=$('#tls-ch-sub',rail); if(sub) sub.hidden=chSubmitted;
-    const res=$('#tls-ch-res',rail), html=chResultHTML(); if(res._h!==html){const again=res._h!=null&&res._h!==''&&html!==''; res.innerHTML=html; res._h=html; if(again) A.ui.obsBump(res);}}}
+    const res=$('#tls-ch-res',rail), html=chResultHTML(); if(res._h!==html){const again=res._h!=null&&res._h!==''&&html!==''; res.innerHTML=html; res._h=html; if(again) A.ui.obsBump(res);}
+    res.classList.toggle('tls-dim',chLive());}}
 function railHTML(){
   if(mode==='guided'){const s=STEPS[step]; return A.ui.steps({steps:STEPS.map(x=>({title:L(x.title),lead:x.lead?esc(L(x.lead)):''})),m2:true,current:step,body:s.body()+'<div class="obs tls-now" data-now hidden></div>',back:step>0,showMe:false,next:step<STEPS.length-1,nextDisabled:isNextDisabled(),nextWhy:s.nextWhy?L(s.nextWhy):undefined,skip:!!s.skip});}
   return mode==='sandbox'?sandboxHTML():challengeHTML();}
@@ -659,6 +746,8 @@ function render(){
   if(!$('#tls-metrics',app).hidden) drawMetrics();
   const mb=$('#tls-mathbody',app), mh=mathHTML(); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}
   $('#tls-math',app).hidden=mode==='guided'&&['mission','deps'].includes(STEPS[step].id)||inCh()&&!chSubmitted;
+  /* phones, once the submitted run has played: the verdict is in the card below the stage (R3.2) */
+  const eh=$('#tls-endhint',app), ehOn=phone()&&chDone()&&!chLive(); eh.hidden=!ehOn; if(ehOn) eh.textContent=tx('Done: the verdict is in the task card below ↓','跑完了，结论在下面的任务卡里 ↓');
   syncControls(); updateRail();
   A.hash.write(token()); A.dock.refresh(); announce();} // the kit drops the settings from the address outside Scenarios, so a reload in another mode is not taken for a shared link
 function announce(){clearTimeout(annT); annT=setTimeout(()=>{if(!app) return; const R=curRun(); A.announce(tx(`${R.n} model calls, ${s1(R.total)} seconds, result ${resTxt(R)}.`,`${R.n} 次模型调用，${s1(R.total)} 秒，结果${resTxt(R)}。`));},400);}
@@ -692,6 +781,13 @@ function revealBox(box){
   if(rc.bottom<=innerHeight-8) return;
   const dy=Math.min(rc.bottom-innerHeight+16,rc.top-top); if(dy>0) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
 const revealObs=()=>requestAnimationFrame(()=>{if(!app) return; if(mode==='guided') revealBox($('#tls-rail [data-obs]',app)); else if(mode==='sandbox') revealBox($('#tls-insight',app)); else revealBox($('#tls-ch-res',app));});
+/* phones: the stage sits above the card, so a click in the card can start or change a picture off the screen. Bring the picture's
+   top right below the top bar, unless it is already whole on the screen (R7.12, R3.2; T1, T2) */
+const phone=()=>innerWidth<=760;
+const revealPic=sel=>requestAnimationFrame(()=>{const el=app&&$(sel,app); if(!el||el.hidden) return;
+  const bar=document.querySelector('.topbar'), top=(bar?bar.offsetHeight:56)+8, r=el.getBoundingClientRect();
+  if(r.top>=top-2&&r.bottom<=innerHeight-8) return;
+  window.scrollBy({top:r.top-top,behavior:A.reduceMotion()?'auto':'smooth'});});
 function setMode(m){
   if(m===mode) return; stopAnim();
   const was=mode; mode=m;
@@ -711,7 +807,8 @@ function act(a,btn){
   if(a==='replay'){startRun(0); render(); return;}
   if(a==='reset'){stopAnim(); byLearner(()=>{Object.assign(S,mode==='guided'?partBase():DEFAULT); render();}); return;}   // in a guided part: the setup its card explains (R09)
   if(a==='card'){stopAnim(); byLearner(()=>{Object.assign(S,cardS()); render();}); return;}
-  if(a==='submit'){chSubmitted=true; render(); revealObs(); return;}
+  if(a==='submit'){chSubmitted=true; render(); if(phone()&&anim) revealPic('#tls-stage'); else revealObs(); return;}   // phones: watch the run play (T1)
+  if(a==='to-res'){A.ui.reveal($('#tls-ch-res',app)); return;}
   if(a==='reveal'){chReveal=true; render(); return;}
   if(a==='drill-new'){drillSeed++; drillOpen=false; renderDrill(); return;}
   if(a==='drill-reveal'){drillOpen=true; renderDrill(); return;}
@@ -766,7 +863,7 @@ function bind(el){
     const seg=b.closest('.seg-ctl[data-key]');
     if(seg&&d.v!=null){if(b.disabled) return; const k=seg.dataset.key, inRail=!!seg.closest('#tls-rail');
       if(k==='speed'){speed=d.v; drawTransport(); syncControls(); return;}
-      if(k==='pick2'){pick2=d.v; tried.add(pick2); render(); revealObs(); return;}
+      if(k==='pick2'){pick2=d.v; tried.add(pick2); render(); if(phone()) revealPic('#tls-pan-graph'); else revealObs(); return;}   // phones: the highlight in the graph (T2)
       if(/^ch\d$/.test(k)){chA[+k.slice(2)]=+d.v; if(chSubmitted&&!chReveal) chSubmitted=false; byLearner(render); return;}
       const v=k==='sch'?d.v:+d.v;
       byLearner(()=>{S[k]=v; if(mode==='guided'){tried.add(tryKey()); if(inRail) acted=true;} render();});
@@ -821,9 +918,14 @@ A.registerLab({
   dock:{
     anchor:()=>app&&($('#tls-pan-gantt:not([hidden])',app)||$('#tls-pan-graph',app)), bench:()=>app&&$('.bench',app), target:()=>app&&$('#tls-stage',app),
     render({status,vis,read}){if(!app) return; const R=curRun(), clock=clockNow(R), T=axisMax(R);
-      vis.innerHTML=`<div class="tls-dk"><i style="width:${(Math.min(clock,R.total)/T*100).toFixed(1)}%"></i></div>`;
-      if(inCh()){const me=chMe(), done=chDone(); status.className='status'+(done?(me.ok?' ok':' bad'):''); status.textContent=done?(me.ok?tx('Goal met','已达标'):tx('Not yet','未达标')):tx('Not submitted','未提交');
-        read.textContent=done?tx(`Your arrangement: ${s1(me.total)} s, ${me.n} model calls, the result is ${resTxt(me.R)}.`,`你的安排：${s1(me.total)} 秒，${me.n} 次模型调用，结果${resTxt(me.R)}。`):tx(`Your arrangement uses ${me.n} model calls.`,`你的安排用 ${me.n} 次模型调用。`); return;}
+      /* part 2 shows no run: the bar names the call picked and what it waits for, beside a small copy of the graph (T2) */
+      if(mode==='guided'&&STEPS[step].id==='deps'){const i=TRIP.calls.findIndex(c=>c.k===pick2), L0=GL.trip.narrow, {up,peer}=pickSets(TRIP,i);
+        status.className='status neutral'; status.textContent=i<0?tx('None picked','还没选'):L(TRIP.calls[i].n);
+        vis.innerHTML=`<svg class="tls-dkg" viewBox="0 0 ${L0.W} ${L0.H}" width="44" height="${Math.round(L0.H*44/L0.W)}" aria-hidden="true">${L0.pos.map(([x,y],j)=>`<rect x="${x}" y="${y}" width="${L0.w}" height="${L0.h}" rx="8" class="${j===i?'sel':up.has(j)||peer.has(j)?'up':''}"/>`).join('')}</svg>`;
+        read.textContent=i<0?tx('Pick a call to see what it waits for.','选一个调用，看看它要等谁。'):depsRest(pick2); return;}
+      vis.innerHTML=`<div class="tls-dk"><i style="width:${(inCh()&&!chSubmitted?0:Math.min(clock,R.total)/T*100).toFixed(1)}%"></i></div>`;   // nothing has played before Submit
+      if(inCh()){const me=chMe(), done=chDone(), lv=chLive(); status.className='status'+(done&&!lv?(me.ok?' ok':' bad'):''); status.textContent=lv?tx('Playing','播放中'):done?(me.ok?tx('Goal met','达标'):tx('Not met','没达标')):tx('Not submitted','还没提交');   // the stage's own words (T4)
+        read.textContent=lv?tx(`${s1(clock)} s so far, your arrangement.`,`已经 ${s1(clock)} 秒：你的安排。`):done?tx(`Your arrangement: ${s1(me.total)} s, ${me.n} model calls, the result is ${resTxt(me.R)}.`,`你的安排：${s1(me.total)} 秒，${me.n} 次模型调用，结果${resTxt(me.R)}。`):tx(`Your arrangement uses ${me.n} model calls.`,`你的安排用 ${me.n} 次模型调用。`); return;}
       const live=clock<R.total-1e-9; status.className='status'+(live?'':(R.bad.length?' bad':' ok')); status.textContent=live?tx('Playing','播放中'):(R.bad.length?tx('Wrong','结果错'):tx('Right','结果对'));
       read.textContent=live?tx(`${s1(clock)} s so far, ${L(SCH_N[S.sch]).toLowerCase()}.`,`已经 ${s1(clock)} 秒：${L(SCH_N[S.sch])}。`):tx(`${L(SCH_N[S.sch])}: ${R.n} model calls, ${s1(R.total)} s.`,`${L(SCH_N[S.sch])}：${R.n} 次模型调用，${s1(R.total)} 秒。`);}}
 });

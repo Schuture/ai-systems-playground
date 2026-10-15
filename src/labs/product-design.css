@@ -1,8 +1,9 @@
 /* ---------- Product capstone lab (prefix pdz-) ----------
    Colours: red = the component during which the time passes the budget, an answer shown before it is checked, a design that misses a
    goal (failure, R5.11); green = within budget (success). Everything else is grayscale: the model's queue + prefill dark, the other
-   components mid-grey, decode light, the hold for the output check hatched; the large model's GPUs dark, the small model's light, the
-   output checks hatched. Blue, amber and violet are not used (they mean weights, KV cache and runtime overhead elsewhere). */
+   components mid-grey, decode light with a tick per token, the hold for the output check hatched, each check dark; the large model's GPUs
+   dark, the small model's light, the output checks hatched, the small model's GPUs on hard messages red. Blue, amber and violet are not
+   used (they mean weights, KV cache and runtime overhead elsewhere). */
 .pdz-app .stage-head>div:first-child{min-width:0}
 .pdz-st-title{font-weight:680;font-size:15.5px;line-height:1.3;min-height:2.6em}
 .pdz-app [data-tipx]{cursor:help}
@@ -10,6 +11,8 @@
 .pdz-app [hidden]{display:none!important}
 .pdz-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .pdz-main{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.pdz-main>.pdz-blk{order:2}.pdz-main>#pdz-trace{order:0}
+.pdz-main>#pdz-metrics{order:3;margin-top:0}.pdz-main.pdz-mup>#pdz-metrics{order:1}
 .pdz-blk{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--surface);min-width:0}
 .pdz-ch-t{font-size:13px;font-weight:620;line-height:1.35;margin-bottom:6px}
 .pdz-svg{display:block;width:100%;height:auto;overflow:visible}
@@ -24,15 +27,17 @@
 .pdz-bar.dec{fill:var(--line-2)}
 .pdz-bar.hold{fill:url(#pdz-hatch);stroke:var(--ink-2);stroke-width:1}
 .pdz-hb{fill:var(--surface-2)}.pdz-hp{stroke:var(--ink-3);stroke-width:2}
+.pdz-bar.chk{fill:var(--ink)}
 .pdz-bar.red{fill:var(--c-oom)!important;stroke:none}
-.pdz-tick{stroke:var(--ink);stroke-width:1.5}
-.pdz-goal{stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:4 3}
+.pdz-tok{stroke:var(--ink-3);stroke-width:1}
+.pdz-tok.full{stroke:var(--ink);stroke-width:1.6}
+.pdz-goal{stroke:var(--ink-2);stroke-width:2;stroke-dasharray:6 3}
 .pdz-vis{stroke:var(--ink);stroke-width:2.5}
 .pdz-cur{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:2 2}
 .pdz-ax{stroke:var(--line-2);stroke-width:1}
 .pdz-svg .pdz-tk{font-size:10.5px;fill:var(--ink-3)}
 .pdz-svg .pdz-gl{font-size:10.5px;fill:var(--ink-2)}
-.pdz-svg .pdz-note{font-size:11px;fill:var(--ink-3);font-style:italic}
+.pdz-svg .pdz-note{font-size:11px;fill:var(--ink-3);font-style:italic;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 .pdz-svg .pdz-note.bad,.pdz-svg .pdz-dur.bad{fill:var(--c-oom);font-style:normal;font-weight:650}
 .pdz-svg .pdz-dur{font-size:11px;fill:var(--ink-2)}
 .pdz-leg{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px 14px}
@@ -40,7 +45,8 @@
 .pdz-sw{display:inline-block;width:14px;height:10px;border-radius:2px;flex:none;background:var(--ink-3)}
 .pdz-sw-cmp{background:var(--ink-3)}.pdz-sw-mdl{background:var(--ink)}.pdz-sw-dec{background:var(--line-2);height:6px}
 .pdz-sw-hold{background:repeating-linear-gradient(45deg,var(--ink-3) 0 2px,var(--surface-2) 2px 4px);border:1px solid var(--ink-2)}
-.pdz-sw-tick{width:2px;height:12px;background:var(--ink)}
+.pdz-sw-dec{background:repeating-linear-gradient(90deg,var(--line-2) 0 3px,var(--ink-3) 3px 4px)}
+.pdz-sw-chk{width:5px;height:12px;background:var(--ink)}
 .pdz-sw-goal{height:0;width:14px;border-top:2px dashed var(--ink-2);background:none;transform:rotate(90deg)}
 .pdz-sw-vis{width:3px;height:14px;background:var(--ink)}
 .pdz-sw-bad{background:var(--c-oom)}
@@ -50,13 +56,16 @@
 .pdz-speed{display:inline-flex;align-items:center;gap:6px;flex:none}
 .pdz-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
 .pdz-player .btn{height:30px;padding-top:0;padding-bottom:0}
-.pdz-scrub{flex:1 1 140px;min-width:120px;display:flex;align-items:center}
-.pdz-scrub input{width:100%}
+/* the slider sits under the time axis, its ends at the axis' 0 and end (set by alignScrub); the play button keeps one width (P20, P22) */
+.pdz-scrub{display:block;margin-top:3px}
+.pdz-scrub input{display:block;width:100%;max-width:100%;height:24px}
+.pdz-player #pdz-play{min-width:7.4em;justify-content:center}
 .pdz-tbtns{margin:8px 0 4px}
 /* prompt bar */
 .pdz-pbar{display:flex;width:100%;height:30px;border-radius:4px;overflow:hidden;border:1px solid var(--line-2)}
-.pdz-ps{display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--surface);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;min-width:0}
-.pdz-ps.sys{background:var(--ink-2)}.pdz-ps.own{background:var(--ink-3)}.pdz-ps.ret{background:var(--ink)}
+/* every part prefill computes has the same colour as “computed in prefill”; the cached part is hatched; a thin gap separates the parts (P29) */
+.pdz-ps{display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--surface);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;min-width:0;background:var(--ink-3)}
+.pdz-ps+.pdz-ps{border-left:2px solid var(--surface)}
 .pdz-ps.sys.hit{background:repeating-linear-gradient(45deg,var(--line-2) 0 3px,var(--surface) 3px 6px);color:var(--ink)}
 .pdz-pl{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;margin-top:6px}
 .pdz-pl>span{display:inline-flex;align-items:center;gap:6px}
@@ -66,9 +75,19 @@
 .pdz-fl{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;margin-bottom:4px}
 .pdz-fl b{font-family:var(--font-mono);font-weight:650;white-space:nowrap}
 .pdz-sqs{display:flex;flex-wrap:wrap;gap:2px}
-.pdz-sq{display:block;width:9px;height:9px;border-radius:1.5px}
+.pdz-sq{display:block;width:11px;height:11px;border-radius:1.5px}
 .pdz-sq.l{background:var(--ink)}.pdz-sq.s{background:var(--ink-3)}
 .pdz-sq.f{background:repeating-linear-gradient(45deg,var(--ink-3) 0 1.5px,var(--surface) 1.5px 3px);box-shadow:inset 0 0 0 1px var(--ink-3)}
+.pdz-sq.hard{background:var(--c-oom)}
+.pdz-sqh{display:flex;flex-wrap:wrap;gap:2px;margin-left:4px}
+.pdz-fkey{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:12px;color:var(--ink-2);margin:0 0 4px}
+.pdz-fkey>span{display:inline-flex;align-items:center;gap:5px}
+.pdz-sqk{display:inline-block;width:11px;height:11px;border-radius:1.5px;background:var(--ink);flex:none}
+.pdz-sqk.hard{background:var(--c-oom)}
+.pdz-fh{margin-top:4px}
+/* Scenarios and Settings: the prompt bar and the sizing sheet fold (P15) */
+.pdz-more>summary{cursor:pointer;margin-bottom:0}
+.pdz-more[open]>summary{margin-bottom:6px}
 /* sizing sheet */
 .pdz-tw{overflow-x:auto}
 .pdz-tab{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -77,8 +96,20 @@
 .pdz-tab th{font-weight:600;white-space:nowrap}
 .pdz-tab td.mono{text-align:right;white-space:nowrap;font-weight:650}
 .pdz-tab td:nth-child(2){color:var(--ink-2)}
-/* metrics, rail */
+/* metrics, rail: four cards in one row, two by two on phones (P35) */
+.pdz-app .pdz-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:560px){.pdz-app .pdz-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .pdz-metrics .metric.pdz-mbad .v{color:var(--c-oom)}
+/* a change named after a scenario takes two lines in a narrow card: they break between phrases, not inside the scenario's name (N13) */
+.pdz-metrics .metric .d{word-break:keep-all;overflow-wrap:anywhere}
+#pdz-ctls{display:grid;gap:15px}
+/* the challenge readout: one line per goal (P32) */
+.pdz-chg{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:3px 8px;font-size:13px;margin-top:10px;align-items:baseline}
+.pdz-chg .mono{font-size:12.5px}
+.pdz-chm{font-weight:700}
+.pdz-chp{display:flex;align-items:center;gap:10px;margin:6px 0 12px}
+.pdz-chp .progress{flex:1;margin:0}
+.pdz-chp span{white-space:nowrap;color:var(--ink-2)}
 .pdz-ok{color:var(--c-ok)}.pdz-bad{color:var(--c-oom)}
 .pdz-prod li{margin-bottom:6px}
 .pdz-sub{margin-top:6px}
@@ -96,7 +127,11 @@
 .pdz-dk{position:relative;height:8px;border-radius:4px;background:var(--line);overflow:visible}
 .pdz-dk i{display:block;height:100%;border-radius:4px;background:var(--ink-2)}
 .pdz-dk b{position:absolute;top:-3px;width:2px;height:14px;background:var(--ink)}
-@media (max-width:760px){.pdz-st-title{font-size:14.5px}}
+/* the stage title changes during a play; the picture under it must not move (N5). Phones: the badge always has its own row under the
+   title. Wider screens: the badge stays right of the title, which wraps inside its two lines */
+@media (max-width:760px){.pdz-st-title{font-size:14.5px}.pdz-app .stage-head>div:first-child{flex:1 1 100%}}
+@media (min-width:761px){.pdz-app .stage-head{flex-wrap:nowrap}.pdz-app .stage-head>.stage-actions{flex:none}}
+@media (min-width:761px) and (max-width:1023px){.pdz-app .stage-head .status{white-space:normal;max-width:15em;line-height:1.15}}
 .pdz-prod code{overflow-wrap:anywhere;word-break:break-all}
 .pdz-app .seg-ctl[data-key="filt"]{flex-wrap:wrap}
 .pdz-app .seg-ctl[data-key="filt"] button{flex:1 0 auto;min-width:2.8em;border-bottom:1px solid var(--line)}

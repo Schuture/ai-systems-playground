@@ -86,7 +86,7 @@ def run(lang):
             stage(pg, d, f'Part {i + 1}'); d.tipsOf(pg, '#qz-stage')
             acted = False
             if pg.query_selector('#qz-ic-p1s'):
-                for v in ('fp8', 'int4-128'):
+                for v in ('int8', 'int4-128'):
                     if pg.query_selector(f'#qz-ic-p1s button[data-v="{v}"]'):
                         click(pg, f'#qz-ic-p1s button[data-v="{v}"]', 200); d.add(f'After {v}', txt(pg, '#qz-rail [data-obs]'))
                 acted = True

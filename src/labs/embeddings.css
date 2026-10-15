@@ -5,16 +5,32 @@
 .emb-app [hidden]{display:none!important}
 .emb-c-t{--tc:var(--emb-t)}.emb-c-l{--tc:var(--emb-l)}.emb-c-v{--tc:var(--emb-v)}.emb-c-a{--tc:var(--emb-a)}.emb-c-e{--tc:var(--emb-e)}.emb-c-w{--tc:var(--emb-w)}
 .emb-stage{container-type:inline-size}
-.emb-head{align-items:flex-start;gap:10px}
-.emb-st-title{font-weight:650;font-size:15px;min-width:0}
+.emb-head{align-items:flex-start;gap:10px;flex-wrap:nowrap}
+.emb-st-title{font-weight:650;font-size:15px;line-height:1.35;min-width:0;flex:1 1 auto}
+.emb-head .stage-actions{flex:none}
+@media (max-width:760px){.emb-st-title{min-height:2.7em}.emb-cfg{display:none}}   /* two lines kept on a phone, and while a run plays only its step count, so the title never pushes the stage down (P10) */
 .emb-transport{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0 4px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .emb-transport .seg-ctl,.emb-transport .inline-ctl,.emb-transport .ctl{margin:0}
 .emb-transport .btn.sm,.emb-transport .seg-ctl{height:32px;box-sizing:border-box}
 .emb-transport .btn.sm{padding-top:0;padding-bottom:0;line-height:1.2}
+.emb-transport [data-act="play"]{min-width:6.2em}   /* Train and Pause take the same width, so the controls beside it do not shift when a run starts (R7.9) */
 .emb-transport .seg-ctl button{padding:0 10px;font-size:13px;line-height:1.2}
 .emb-transport .inline-ctl{flex:1 1 180px;min-width:160px;border:0;padding:0;background:none}
 .emb-pan{border-top:1px solid var(--line);padding-top:8px;margin-top:8px;min-width:0}
-.emb-pan:first-of-type,.emb-transport+.emb-pan{border-top:0}
+/* the panels of a part sit in one grid, in the part's order (R7.12): a pair side by side on a wide stage; part 4 puts the table on the
+   left and the question's rows over the curve on the right */
+.emb-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px;align-items:start}
+.emb-body>*{grid-column:1 / -1}
+.emb-body>.half{grid-column:auto}
+@container (max-width:600px){.emb-body>.half{grid-column:1 / -1}}
+@container (min-width:640px){
+  .emb-body.l3{grid-template-areas:"heat rows" "heat chart" "met met"}
+  .emb-body.l3>#emb-pan-heat{grid-area:heat}
+  .emb-body.l3>#emb-pan-rows{grid-area:rows}
+  .emb-body.l3>#emb-pan-chart{grid-area:chart}
+  .emb-body.l3>.emb-metrics{grid-area:met}}
+.emb-pan.first{border-top:0;margin-top:0;padding-top:4px}
+.emb-frozen .emb-heat,.emb-frozen .emb-rows,.emb-frozen .emb-rres{opacity:.45;transition:opacity .2s}
 .emb-pt{font-weight:600;font-size:13px;line-height:1.35;margin-bottom:4px;min-width:0}
 .emb-leg{margin:2px 0 6px;flex-wrap:wrap;gap:4px 12px;font-size:12px}
 .emb-leg .lg{display:inline-flex;align-items:center;gap:5px}
@@ -24,12 +40,17 @@
 .sw.emb-sw-me{background:transparent;border:2.5px solid var(--ink);border-radius:50%;width:10px;height:10px}
 .sw.emb-sw-ok{background:transparent;border:2px solid var(--c-ok);border-radius:50%;width:10px;height:10px}
 .sw.emb-sw-bad{background:transparent;border:2px solid var(--c-oom);border-radius:50%;width:10px;height:10px}
-.emb-row{display:grid;grid-template-columns:minmax(0,1fr);gap:0 16px;align-items:start}
-.emb-row.two{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
-@container (max-width:560px){.emb-row.two{grid-template-columns:minmax(0,1fr)}}
-.emb-row>.emb-pan{border-top:0}
-.emb-row:not(.two) .emb-map{max-width:420px}
-.emb-map{display:block;width:100%;height:auto}
+.emb-map{display:block;width:100%;max-width:420px;height:auto}
+/* the map alone (part 2): the search list beside it on a wide stage */
+@container (min-width:640px){
+  #emb-pan-map:not(.half){display:grid;grid-template-columns:minmax(0,376px) minmax(0,1fr);gap:0 18px;align-items:start}   /* 376 px keeps the part's metrics on a 1440 × 900 screen too (P2) */
+  #emb-pan-map:not(.half)>.emb-pt{grid-column:1 / -1}
+  #emb-pan-map:not(.half)>.emb-side{margin-top:0}}
+.emb-note{margin:2px 0 4px}
+.emb-legs .legend-row{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:3px 8px;margin:2px 0}
+.emb-lgk{font-weight:600;color:var(--ink)}
+.emb-lgi{display:flex;flex-wrap:wrap;gap:3px 12px;min-width:0}
+.emb-rkl{stroke:var(--ink-2);stroke-width:1}
 .emb-frame{fill:none;stroke:var(--line);stroke-width:1}
 .emb-pl{stroke:var(--tc);stroke-width:1;opacity:.45}
 .emb-tl{stroke:var(--ink);stroke-width:1.3;stroke-dasharray:4 3}
@@ -49,35 +70,85 @@
 .emb-top li.emb-hit span:first-child{font-weight:650}
 .emb-miss{margin:4px 0 0}
 .emb-miss.ok{color:var(--c-ok)}.emb-miss.bad{color:var(--c-oom)}
-.emb-heat{display:block;width:100%;height:auto;margin:4px 0}
+.emb-heat{display:block;max-width:100%;height:auto;margin:4px 0}   /* drawn at its own pixel size (R7.14) */
+.emb-capon .emb-ht{min-height:2.7em}
+.emb-cap{margin:2px 0 4px}
+.emb-capon .emb-cap{min-height:4.65em}   /* three lines, its room kept while a run plays (R7.9): an English row caption takes three lines on a phone */
+.emb-rowmk{fill:none;stroke:var(--ink);stroke-width:1.5;stroke-dasharray:3 2}
+.emb-ax.mk{font-weight:700;fill:var(--ink)}
+.emb-ar{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.emb-ar.halo{stroke:var(--surface);stroke-width:4.2}
+.emb-ar.up{stroke:var(--c-ok)}
+.emb-ar.dn{stroke:var(--ink)}
+.emb-arw{display:inline-flex;gap:1px;font-weight:700;font-size:13px;line-height:1}
+.emb-arw .up{color:var(--c-ok)}.emb-arw .dn{color:var(--ink)}
 .emb-cell{fill:var(--ink);stroke:none}
 .emb-cell.dg{stroke:var(--ink);stroke-width:2}
 .emb-cv{font-family:var(--font-mono);font-size:11px;fill:var(--ink)}
 .emb-cv.inv{fill:var(--surface)}
 .emb-pbt{fill:var(--sunken);stroke:var(--line-2);stroke-width:.6}
 .emb-pb{fill:var(--ink-2)}
-.emb-ax{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-3)}
+.emb-ax{font-family:var(--font-mono);font-size:11px;fill:var(--ink-3)}
 .sw.emb-sw-cell{background:linear-gradient(90deg,var(--sunken),var(--ink))}
 .sw.emb-sw-dg{background:transparent;border:2px solid var(--ink)}
 .sw.emb-sw-pb{background:var(--ink-2)}
 .emb-chead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 10px}
 .emb-chead .seg-ctl{margin:0}
-.emb-chart{display:block;width:100%;height:auto;overflow:visible}
+.emb-chart{display:block;width:100%;height:auto;overflow:visible}   /* its viewBox is its own width in pixels: text stays 11 px (P21) */
+.emb-cviews{display:flex;flex-wrap:wrap;gap:6px 12px}
+.emb-cviews .ctl{display:flex;align-items:center;gap:6px}
+.emb-cviews .seg-ctl button{padding-top:3px;padding-bottom:3px}
+.emb-gll{fill:none;stroke:var(--ink-3);stroke-width:.8}
+.emb-gld{fill:var(--ink-3)}
+.emb-gld.me{fill:var(--ink)}
+.emb-glb{fill:var(--surface);fill-opacity:.94}   /* the label of a line that ends inside the plot (N7) */
 .emb-grid{stroke:var(--line-2);stroke-width:1}
 .emb-line{fill:none;stroke:var(--ink);stroke-width:2.4}
 .emb-r5{fill:none;stroke:var(--ink-2);stroke-width:1.3;stroke-dasharray:5 3}
 .emb-chance{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:1 3}
 .emb-ghost{fill:none;stroke:var(--ink-3);stroke-width:1.3}
-.emb-gl{font-family:var(--font-mono);font-size:9.5px;fill:var(--ink-3)}
+.emb-gl{font-family:var(--font-mono);font-size:11px;fill:var(--ink-2);paint-order:stroke;stroke:var(--surface);stroke-width:3px}   /* the halo keeps a label legible where another line crosses it (P12) */
 .emb-head-l{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
 .emb-dot{fill:var(--ink)}
-.emb-cl{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.emb-cl{font-family:var(--font-mono);font-size:11px;font-weight:650;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
 .sw.emb-sw-line{background:transparent;border-top:2.4px solid var(--ink);height:0;align-self:center}
 .sw.emb-sw-r5{background:transparent;border-top:1.5px dashed var(--ink-2);height:0;align-self:center}
 .sw.emb-sw-ch{background:transparent;border-top:1.5px dotted var(--ink-3);height:0;align-self:center}
 .sw.emb-sw-gh{background:transparent;border-top:1.3px solid var(--ink-3);height:0;align-self:center}
 .sw.emb-sw-head{background:transparent;border-left:1px dashed var(--ink-3);width:0;height:10px}
-.emb-metrics{margin-top:10px}
+.metrics.emb-metrics{margin-top:10px;grid-template-columns:repeat(var(--emb-mn,4),minmax(0,1fr))}
+@container (max-width:560px){.metrics.emb-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* the mission question's rows of the table (parts 4 and 8) */
+.emb-rsub{margin:0 0 2px}
+.emb-rows{list-style:none;margin:6px 0 4px;padding:0;display:grid;gap:3px}
+.emb-rows li{display:grid;grid-template-columns:12px minmax(3.2em,auto) minmax(60px,1fr) 3.4em;align-items:center;gap:6px;font-size:13px}
+.emb-rm{visibility:hidden;color:var(--ink);font-size:10px;line-height:1}
+.emb-rows li.hit .emb-rm{visibility:visible}
+.emb-rows li.hit .emb-rt{font-weight:700}
+.emb-rt{white-space:nowrap}
+.emb-rb{position:relative;height:12px;background:var(--sunken);border-radius:3px}
+.emb-rb i.z{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--ink-3)}
+.emb-rb i.v{position:absolute;top:2px;bottom:2px;background:var(--ink-2);border-radius:2px}
+.emb-rb i.v.neg{background:var(--ink-3)}
+.emb-rv{text-align:right;font-size:12px}
+.emb-rres{margin:4px 0 0}
+.emb-rres.ok{color:var(--c-ok)}.emb-rres.bad{color:var(--c-oom)}
+/* part 7: the two sentences' tokens and their average vectors */
+.emb-trap{font-size:13px}
+.emb-ts{margin:6px 0 10px}
+.emb-chips{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.emb-chip{display:inline-block;padding:1px 6px;border-radius:4px;border:1px solid var(--line-2);font-size:13px;line-height:1.5;background:var(--surface);color:var(--ink)}
+.emb-chip.both{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.emb-chip.only{background:var(--sunken)}
+.emb-chip.skip{text-decoration:line-through;color:var(--ink-3);border-style:dashed}
+.emb-vrow{display:flex;align-items:center;gap:4px 10px;flex-wrap:wrap}
+.emb-vec{display:block;max-width:100%;height:auto}
+.emb-vz{stroke:var(--ink-3);stroke-width:1}
+.emb-vb{fill:var(--ink-2)}
+.emb-tres{margin:6px 0;font-size:14px}
+/* phones: a pick in the card links back up to the picture it changed (P20) */
+.emb-see{display:none;margin:4px 0 0}
+@media (max-width:760px){.emb-see{display:block}}
 .emb-pair{display:grid;gap:10px;font-size:14px}
 .emb-pair p{margin:2px 0}
 .emb-pq,.emb-pp,.emb-kw{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
@@ -91,7 +162,9 @@
 .emb-ib{margin:8px 0}
 .emb-ul{margin:4px 0;padding-left:18px}
 .emb-prod li{margin-bottom:6px}
-.emb-dk{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;min-width:60px}
+.emb-dkw{display:flex;align-items:center;gap:6px;min-width:0}
+.emb-dkl{font-family:var(--font-mono);font-size:11px;color:var(--ink-2);white-space:nowrap}
+.emb-dk{flex:1 1 auto;height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;min-width:40px}
 .emb-dk i{display:block;height:100%;background:var(--ink-2)}
 .emb-ch-res .cmp{margin-top:10px}
 #emb-c-view .seg-ctl button{white-space:nowrap}

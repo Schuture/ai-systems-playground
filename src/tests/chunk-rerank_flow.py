@@ -1,17 +1,26 @@
 """Flow test for the chunk-rerank lab (CONTRACT §6), at 1440×900 and 390×844, in EN and ZH.
 
 - no page errors, no horizontal overflow, no text wider than its box, a tooltip for every help cursor, chart labels inside their picture;
-- part 1: the document strip and the vector list; the cut plays on first open at 中 (R3.9); the mission answer (E-203) is cut apart
-  (red); the card names the engine's found / cut / below-first counts; at 390 the strip's text is drawn at full size (A21); Next enabled;
+- part 1: the document strip and the vector list; the cut plays on first open at 中 (R3.9), recall waiting for its end (R3.8); the
+  mission answer (E-203) is cut apart (red); the card names the engine's found count, recall@1 and the ranks of the two halves; at 390
+  the strip's text is drawn at full size (A21); Next enabled;
 - part 2: entering replays nothing (64 tokens, no overlap was watched); Next waits for another chunking, with the kit's why line;
   picking the chunking already shown replays nothing; a new size plays its cut in about 2.4 s; going back to a watched one replays
-  nothing; 重放 replays from the start; the progress scrubber pauses at the point picked (R3.20); the observation names the engine's
-  count of answers cut apart; Show me picks 64 tokens with half a chunk of overlap;
+  nothing; 重放 replays from the start; the progress scrubber pauses at the point picked (R3.20); while a cut plays, recall, the metric
+  cards and the observation wait, and the ▲▼ come when it ends and stay (R3.8, P4); the observation names the engine's count of
+  answers cut apart; Show me picks 64 tokens with half a chunk of overlap; on a phone, a cut started from the card brings the strip
+  into view and waits for the scroll, the strip stays put when it ends, and a line under it leads back to the observation (R7.12, R3.2);
 - part 3: Next waits for a prediction; no ranking is shown before it (R3.8);
 - part 4: the verdict, with the engine's rank of the E-201 chunk in vector search; RRF typeset; three lists of returned chunks only;
-  Next waits for another question; the observation names the stairs question's three places; Back and Next replay nothing (R3.20);
-- part 5: vector search, the thermostat-battery question; Next waits for rerank; the observation names its move and recall@1 before
-  and after; the E-201 question is outside the candidates;
+  hybrid rows name where their shares come from and the tie that puts the E-201 chunk first is marked; a chunk clicked is marked in
+  every list; Next waits for another question; the observation names the stairs question's three places; Back and Next replay
+  nothing (R3.20);
+- part 5: vector search, the thermostat-battery question; Next waits for rerank; before rerank is on its column holds no ranking and
+  no coverage (R3.8); turning it on plays rerank in about 1.6 s at 中: the readouts wait, the candidates' coverage shows one by one,
+  and the rows reach the rerank column, the right chunk first; the observation names its move and recall@1 before and after; a new
+  question replays it, a watched one does not, 重放 rerank does (R3.20); the E-201 question is outside the candidates; on a phone,
+  turning rerank on from the card brings the lists into view first, and a line under them leads back to the observation (the cut
+  part 1 plays by itself ends without that line);
 - part 6: the chart first, then the lists and the metric cards (R7.12); Next waits for another k or size;
 - part 7: the bullets name the engine's ranks, the scenarios button, the next-lab footer;
 - Scenarios: six; a watched one does not replay, a new one plays; each has its insight; the hash round trip; the language switch
@@ -90,6 +99,40 @@ def click(pg, sel, wait=250):
 
 # the animation state two frames after a click: None means nothing replays
 CLICK_ANIM = """async (sel)=>{document.querySelector(sel).click(); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); return window.__ckr.animState();}"""
+
+
+# the readouts two frames after a click: the cut or rerank under way, recall, the metric cards, the observation, the rerank column
+CLICK_PEND = """async (sel)=>{document.querySelector(sel).click(); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  const col=document.querySelector('#ckr-cols .ckr-col[data-c$="1"]'), rows=col?[...col.querySelectorAll('.ckr-li')]:[], obs=document.querySelector('#ckr-rail [data-obs]');
+  return {cut:window.__ckr.animState(), rr:window.__ckr.rrState(), status:document.querySelector('#ckr-status').innerText,
+    metPend:document.querySelector('#ckr-metrics').classList.contains('ckr-pend'), deltas:[...document.querySelectorAll('#ckr-metrics .d.on')].length,
+    obs:obs&&!obs.hidden&&!obs.classList.contains('ckr-pend')?obs.innerText:'', obsPend:!!obs&&!obs.hidden&&obs.classList.contains('ckr-pend'),
+    rows:rows.length, hidden:rows.filter(r=>getComputedStyle(r).opacity==='0').length};}"""
+RR_NOW = """()=>{const col=document.querySelector('#ckr-cols .ckr-col[data-c$="1"]'), rows=col?[...col.querySelectorAll('.ckr-li')]:[], obs=document.querySelector('#ckr-rail [data-obs]');
+  const cov=[...document.querySelectorAll('#ckr-cols .ckr-cov')];
+  return {rr:window.__ckr.rrState(), rows:rows.length, visible:rows.filter(r=>getComputedStyle(r).opacity==='1').length, first:rows[0]?rows[0].className:'',
+    cov:cov.length, covShown:cov.filter(c=>parseFloat(getComputedStyle(c).opacity)>0.5).length, metPend:document.querySelector('#ckr-metrics').classList.contains('ckr-pend'),
+    status:document.querySelector('#ckr-status').innerText, obs:obs&&!obs.hidden&&!obs.classList.contains('ckr-pend')?obs.innerText:''};}"""
+
+
+# the marks on the list rows (right, part of the answer, tie) and the verdict lines under the lists, with the cut's state
+LIST_MARKS = """()=>({cut:!!window.__ckr.animState(), rows:document.querySelectorAll('#ckr-cols .ckr-li').length, half:document.querySelectorAll('#ckr-cols .ckr-li.half').length,
+  marks:document.querySelectorAll('#ckr-cols .ckr-li.ok, #ckr-cols .ckr-li.bad, #ckr-cols .ckr-li.half, #ckr-cols .ckr-li.also, #ckr-cols .ckr-tie').length, verdicts:document.querySelectorAll('#ckr-cols .ckr-bad').length})"""
+# a new question picked in the select, two frames later: the cut, recall, the metric cards, the scenario's conclusion
+QCHANGE = """async (qi)=>{const s=document.querySelector('#ckr-qsel'); s.value=String(qi); s.dispatchEvent(new Event('change',{bubbles:true})); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  const ins=document.querySelector('#ckr-insight'); return {cut:window.__ckr.animState(), status:document.querySelector('#ckr-status').innerText, metPend:document.querySelector('#ckr-metrics').classList.contains('ckr-pend'), ins:ins?ins.innerText:''};}"""
+# the numbers in front of the worked formulas under “Show the math”: they count 1, 2, 3 … in the language shown
+MATH_NOS = """()=>[...document.querySelectorAll('#ckr-mathbody .ckr-mb > .ckr-mb-lead:first-child')].map(e=>(e.textContent.match(/^(\\d+)\\. /)||[])[1]).filter(Boolean).map(Number)"""
+
+# phones (P35 of the polish review): the current card scrolled up near the top, as a reader has it when using its controls; a panel's
+# top on screen; the line under a panel that leads back to the conclusion
+TO_CARD = "()=>{const c=document.querySelector('#ckr-rail .step.current'); window.scrollTo(0,c.getBoundingClientRect().top+scrollY-130)}"
+PAN_TOP = "s=>Math.round(document.querySelector(s).getBoundingClientRect().top)"
+BACK_LINE = "()=>{const b=document.querySelector('#ckr-back'); return b&&!b.hidden&&b.getClientRects().length?{t:b.innerText, pan:(b.closest('section')||{}).id||''}:null}"
+
+
+def wait_rr(pg, timeout=15000):
+    pg.wait_for_function("()=>!window.__ckr.rrState()", timeout=timeout); pg.wait_for_timeout(150)
 
 
 def click_anim(pg, sel):
@@ -231,14 +274,22 @@ with sync_playwright() as pw:
             check(f'{tag}: opens on part 1 of the guided tour at the initial setup', st['mode'] == 'guided' and st['step'] == 0 and all(st[k] == v for k, v in INIT.items()) and st['q'] == 5, st)
             # ---- part 1
             check(f'{tag} part 1: the cut plays on first open, at 中 (R3.9)', a0 is not None and speed(pg) == 'mid', (a0, speed(pg)))
+            stp = text(pg, '#ckr-status')
+            check(f'{tag} part 1: while the cut plays, recall waits for its end (R3.8, P4)', Z(lang, 'updates when the cut is done', '切完后更新') in stp and '%' not in stp, stp)
+            mk = pg.evaluate(LIST_MARKS)
+            check(f'{tag} part 1: while the cut plays, the list shows its rows only, no answer marks or verdicts under it (R3.8, N11)', mk['cut'] and mk['rows'] > 0 and mk['marks'] == 0 and mk['verdicts'] == 0, mk)
             wait_anim(pg)
+            mk = pg.evaluate(LIST_MARKS)
+            check(f'{tag} part 1: when the cut ends, the list marks the two halves and says no chunk holds the whole answer (N11)', not mk['cut'] and mk['half'] == 2 and mk['verdicts'] == 1, mk)
+            if phone: check(f'{tag} part 1: the cut a part plays by itself ends without the line back to the conclusion (P35: only after the learner’s own playback)', pg.evaluate(BACK_LINE) is None, pg.evaluate(BACK_LINE))
             m0 = meas(pg, lang, INIT)
             cur = text(pg, '#ckr-rail .step.current')
-            low0 = 20 - m0['hits'] - m0['splits']
-            check(f'{tag} part 1: the card names {m0["hits"]} found, {m0["splits"]} cut and {low0} below first, from the engine', Z(lang, f'that is {m0["hits"]} of the 20 questions', f'找到了 {m0["hits"]} 个') in cur and Z(lang, f'{m0["splits"]} are cut apart and {low0} rank below first', f'{m0["splits"]} 个答案被切开，{low0} 个没排到第一') in cur, cur[-500:])
+            q5 = pg.evaluate("l=>{const R=window.__ckr.setup(l,64,0), q=R.Q[5], v=q.lists.vec; return {r:q.part.map(j=>v.indexOf(j)+1).filter(x=>x>0).sort((a,b)=>a-b), one:q.part.includes(v[0]), cut:!q.right.length}}", lang)
+            hr = Z(lang, ' and ', '、').join(map(str, q5['r']))
+            check(f'{tag} part 1: the card names {m0["hits"]} found, recall@1 {pct(m0["rec"])} and the halves at {q5["r"]}, from the engine', q5['cut'] and len(q5['r']) == 2 and Z(lang, f'{m0["hits"]} of the 20 are found now', f'现在找到 {m0["hits"]} 个') in cur and f'recall@1 {pct(m0["rec"])}' in cur.replace(' of ', ' ') and Z(lang, f'The halves rank {hr}', f'两半在舞台上的列表里排第 {hr} 名') in cur and Z(lang, 'holds only one of them' if q5['one'] else 'holds neither', '只有其中一半' if q5['one'] else '一样也没有') in cur, (q5, cur[-500:]))
             check(f'{tag} part 1: the document strip and one list are shown; Next enabled', vis(pg, '#ckr-strip') and vis(pg, '#ckr-pan-lists') and pg.evaluate("()=>document.querySelectorAll('#ckr-cols .ckr-col').length") == 1 and not any(nexts(pg)), nexts(pg))
             cutbad = pg.evaluate("()=>document.querySelectorAll('#ckr-strip .ckr-ans.bad, #ckr-strip .ckr-cut').length")
-            check(f'{tag} part 1: the mission answer is cut apart, marked red (R5.11)', cutbad > 0 and Z(lang, 'the cut falls inside it', '一刀正好切在这句里面') in cur and Z(lang, 'no single chunk can give the whole answer', '没有哪一块能单独给出完整的答案') in text(pg, '#ckr-text'), cutbad)
+            check(f'{tag} part 1: the mission answer is cut apart, marked red (R5.11)', cutbad > 0 and Z(lang, 'The cut falls inside the answer', '一刀正好切在答案中间') in cur and Z(lang, 'no single chunk can give the whole answer', '没有哪一块能单独给出完整的答案') in text(pg, '#ckr-text'), cutbad)
             sc = pg.evaluate("()=>{const s=document.querySelector('#ckr-strip'), vb=s.viewBox.baseVal, t=s.querySelector('text.ckr-chn'); return {scale:s.clientWidth/vb.width, font:t?parseFloat(getComputedStyle(t).fontSize):0, cap:document.querySelector('#ckr-d-cap').textContent, cnt:document.querySelector('#ckr-d-cnt').textContent}}")
             check(f'{tag} part 1: the strip\'s numbers are drawn at {sc["font"] * sc["scale"]:.1f} px, its title and count in HTML (A21)', sc['font'] * sc['scale'] >= 9.5 and sc['cap'].count(':') + sc['cap'].count('：') == 0 and sc['cnt'], sc)
             al = pg.evaluate(ALIGN)
@@ -250,9 +301,16 @@ with sync_playwright() as pw:
             check(f'{tag} part 2: Next disabled with the why line until another chunking is tried', all(nexts(pg)) and any(Z(lang, 'Try another chunk size', '换一种块大小') in x for x in why(pg)), (nexts(pg), why(pg)))
             a = click_anim(pg, SEG('size', 64))
             check(f'{tag} part 2: picking the size already shown replays nothing (R3.20)', a is None and all(nexts(pg)), a)
-            a, dt = timed_run(pg, SEG('size', 32))
+            t0 = pg.evaluate('()=>performance.now()'); pn = pg.evaluate(CLICK_PEND, SEG('size', 32))
+            a = pn['cut']
             check(f'{tag} part 2: a new size plays its cut (R3.20)', a is not None and state(pg)['size'] == 32, a)
+            check(f'{tag} part 2: while it plays, recall and the metric cards wait, with no ▲▼ yet (R3.8, P4)', Z(lang, 'updates when the cut is done', '切完后更新') in pn['status'] and '%' not in pn['status'] and pn['metPend'] and pn['deltas'] == 0 and not pn['obs'], pn)
+            pg.wait_for_function("()=>!window.__ckr.animState()", timeout=20000); dt = (pg.evaluate('()=>performance.now()') - t0) / 1000
             check(f'{tag} part 2: the cut takes about 2.4 s at 中 (R3.9)', 1.9 <= dt <= 3.6, dt)
+            pg.wait_for_timeout(150); dl = pg.evaluate("()=>({pend:document.querySelector('#ckr-metrics').classList.contains('ckr-pend'), d:[...document.querySelectorAll('#ckr-metrics .d.on')].map(e=>e.textContent)})")
+            check(f'{tag} part 2: when the cut ends, the cards show their ▲▼, without “vs last” (P4)', not dl['pend'] and len(dl['d']) >= 1 and not any(('vs last' in x or '比上次' in x) for x in dl['d']), dl)
+            pg.wait_for_timeout(3200)
+            check(f'{tag} part 2: the ▲▼ stay until the next change (P4)', pg.evaluate("()=>document.querySelectorAll('#ckr-metrics .d.on').length") == len(dl['d']))
             m32 = meas(pg, lang, {**INIT, 'size': 32})
             ob = text(pg, '#ckr-rail [data-obs]')
             check(f'{tag} part 2: the observation names {m32["splits"]} answers cut apart; Next enabled', Z(lang, f'answers cut apart: {m32["splits"]} of 20', f'被切开的答案：20 个里有 {m32["splits"]} 个') in ob and not any(nexts(pg)), ob[:300])
@@ -272,6 +330,14 @@ with sync_playwright() as pw:
             st = state(pg)
             check(f'{tag} part 2: Show me picks 64 tokens with half a chunk of overlap; no answer is cut apart', (st['size'], st['ov']) == (64, 2) and meas(pg, lang, {**INIT, 'ov': 2})['splits'] == 0, st)
             wait_anim(pg)
+            if phone:   # R7.12, R3.2; P35 of the polish review
+                pg.evaluate(TO_CARD); pg.wait_for_timeout(300); off = pg.evaluate("()=>Math.round(document.querySelector('#ckr-pan-doc').getBoundingClientRect().bottom)")
+                h0 = pg.evaluate(CLICK_ANIM, SEG('size', 128)); settle(pg); a1 = anim(pg); top = pg.evaluate(PAN_TOP, '#ckr-pan-doc')
+                check(f'{tag} part 2: on a phone, a cut started from the card brings the strip into view first and waits for the scroll (R7.12, P35)', off < 100 and h0 is not None and h0['held'] and h0['p'] == 0 and a1 is not None and a1['p'] < 0.4 and 40 <= top <= 422, (off, h0, a1, top))
+                wait_anim(pg); pg.wait_for_timeout(200); bk = pg.evaluate(BACK_LINE); top2 = pg.evaluate(PAN_TOP, '#ckr-pan-doc')
+                check(f'{tag} part 2: when it ends, the strip stays put and a line under it leads back to the conclusion (R3.2, P35)', bk is not None and bk['pan'] == 'ckr-pan-doc' and Z(lang, 'the conclusion is in part 2 ↓', '结论在第 2 部分 ↓') in bk['t'] and abs(top2 - top) <= 50, (bk, top, top2))
+                click(pg, '#ckr-back'); ob = pg.evaluate("()=>({top:Math.round(document.querySelector('#ckr-rail [data-obs]').getBoundingClientRect().top), vh:innerHeight, back:!document.querySelector('#ckr-back').hidden})")
+                check(f'{tag} part 2: the line brings the observation into view and goes away (P35)', 40 <= ob['top'] <= ob['vh'] - 100 and not ob['back'], ob)
             shot(pg, f'{tag}_p2', full=phone); rules(pg, f'{tag} part 2', lang)
             # ---- part 3
             a = click_anim(pg, NEXT); st = state(pg)
@@ -284,11 +350,22 @@ with sync_playwright() as pw:
             shot(pg, f'{tag}_p3', full=phone); rules(pg, f'{tag} part 3', lang)
             # ---- part 4
             a = click_anim(pg, NEXT); rk = ranks(pg, lang, 64, 2, 0); cur = text(pg, '#ckr-rail .step.current')
-            check(f'{tag} part 4: the verdict names the E-201 chunk first in keyword search and {rk["vec0"] + 1} in vector search', a is None and Z(lang, 'Not quite.', '不对。') in cur and Z(lang, f'Vector search ranks it {rk["vec0"] + 1}', f'向量检索把讲 E-201 的块排第 {rk["vec0"] + 1}') in cur and rk['kw0'] == 0 and rk['vec0'] >= 5, (a, rk, cur[:300]))
+            check(f'{tag} part 4: the verdict names the E-201 chunk first in keyword search and {rk["vec0"] + 1} in vector search', a is None and Z(lang, 'Not quite:', '不对：') in cur and Z(lang, f'vector search ranks it {rk["vec0"] + 1}', f'向量检索排第 {rk["vec0"] + 1}') in cur and Z(lang, 'you predicted “Vector search puts it first; keyword search does not”, but the answer is “Keyword search puts it first; vector search does not”', '你预测的是“向量检索把它排第一，关键词检索不会”，正确答案是“关键词检索把它排第一，向量检索不会”') in cur and rk['kw0'] == 0 and rk['vec0'] >= 5, (a, rk, cur[:300]))
             check(f'{tag} part 4: RRF is typeset with the kit (R6.29)', pg.evaluate("()=>document.querySelectorAll('#ckr-rail .step.current .ckr-math-line math').length") >= 1)
+            nos = pg.evaluate(MATH_NOS)
+            check(f'{tag} part 4: the worked formulas are numbered 1, 2, 3 in order', nos == list(range(1, len(nos) + 1)) and len(nos) == 3, nos)
             check(f'{tag} part 4: three lists side by side or stacked', pg.evaluate("()=>document.querySelectorAll('#ckr-cols .ckr-col').length") == 3)
             zs = pg.evaluate("()=>[...document.querySelectorAll('#ckr-cols .ckr-sc')].map(e=>parseFloat(e.textContent)).filter(v=>v===0).length")
             check(f'{tag} part 4: the lists show only chunks a search returns (no score 0) (A7)', zs == 0, zs)
+            hy = pg.evaluate("()=>[...document.querySelectorAll('#ckr-cols .ckr-col[data-c=\"hyb0\"] .ckr-li')].map(li=>({j:+li.dataset.j, src:(li.querySelector('.ckr-src')||{}).textContent||'', tie:!!li.querySelector('.ckr-tie'), ok:li.classList.contains('ok')}))")
+            q0l = pg.evaluate("l=>{const q=window.__ckr.setup(l,64,2).Q[0]; return {kw:q.lists.kw.slice(0,5), vec:q.lists.vec.slice(0,5), rrf:q.rrf, hyb:q.lists.hyb.slice(0,5)}}", lang)
+            srcok = all(((f'{Z(lang, "keyword ", "关键词第 ")}{q0l["kw"].index(x["j"]) + 1}' in x['src']) if x['j'] in q0l['kw'] else True) and ((f'{Z(lang, "vector ", "向量第 ")}{q0l["vec"].index(x["j"]) + 1}' in x['src']) if x['j'] in q0l['vec'] else True) and x['src'] for x in hy)
+            tie0 = abs(q0l['rrf'][q0l['hyb'][0]] - q0l['rrf'][q0l['hyb'][1]]) < 1e-12
+            check(f'{tag} part 4: each hybrid row names where its shares come from, and the tie that puts the E-201 chunk first is marked (P9, P10)', len(hy) == 5 and srcok and hy[0]['ok'] and (hy[0]['tie'] and hy[1]['tie']) == tie0, (hy, tie0))
+            j1 = q0l['kw'][1]; click(pg, f'#ckr-cols .ckr-col[data-c="kw0"] .ckr-li[data-j="{j1}"] .ckr-rk', 120)
+            same = pg.evaluate("j=>({same:[...document.querySelectorAll('#ckr-cols .ckr-li.same')].map(li=>+li.dataset.j), all:[...document.querySelectorAll('#ckr-cols .ckr-li[data-j=\"'+j+'\"]')].length})", j1)
+            check(f'{tag} part 4: a chunk clicked is marked in every list it is on (P10)', same['same'] and all(x == j1 for x in same['same']) and len(same['same']) == same['all'] >= 2, same)
+            click(pg, f'#ckr-cols .ckr-col[data-c="kw0"] .ckr-li[data-j="{j1}"] .ckr-rk', 120)
             check(f'{tag} part 4: Next waits for another question', all(nexts(pg)) and any(Z(lang, 'Pick another question', '换一个问题') in x for x in why(pg)), why(pg))
             click(pg, SEG('q', 8)); r8 = ranks(pg, lang, 64, 2, 8)
             ob = text(pg, '#ckr-rail [data-obs]')
@@ -303,15 +380,39 @@ with sync_playwright() as pw:
             # ---- part 5
             a = click_anim(pg, NEXT); st = state(pg)
             check(f'{tag} part 5: vector search without rerank, keep 1, the thermostat-battery question; Next waits for rerank', a is None and (st['ret'], st['rr'], st['k'], st['q']) == ('vec', 0, 1, 17) and all(nexts(pg)) and any(Z(lang, 'Turn rerank on', '打开 rerank') in x for x in why(pg)), (a, st, why(pg)))
-            click(pg, SEG('rr', 1)); r17 = ranks(pg, lang, 64, 2, 17)
+            pre = pg.evaluate("()=>({cols:document.querySelectorAll('#ckr-cols .ckr-col').length, rows:document.querySelectorAll('#ckr-cols .ckr-col[data-c$=\"1\"] .ckr-li').length, wait:(document.querySelector('#ckr-cols .ckr-col-wait')||{}).innerText||'', cov:document.querySelectorAll('#ckr-cols .ckr-cov').length})")
+            check(f'{tag} part 5: before rerank is on, its column holds no ranking and no coverage (R3.8, P14)', pre['cols'] == 2 and pre['rows'] == 0 and pre['cov'] == 0 and Z(lang, 'Shown once rerank is on', '打开 rerank 后显示') in pre['wait'], pre)
+            if phone: pg.evaluate(TO_CARD); pg.wait_for_timeout(300)   # a phone reader turns it on from the card, below the stage (P35)
+            t0 = pg.evaluate('()=>performance.now()'); r0 = pg.evaluate(CLICK_PEND, SEG('rr', 1))
+            check(f'{tag} part 5: turning rerank on plays it: its rows start hidden, recall, the cards and the observation wait (R3.8, P14)', r0['rr'] is not None and r0['rr']['p'] < 0.3 and r0['rows'] == 5 and r0['hidden'] == 5 and r0['metPend'] and Z(lang, 'updates when rerank is done', 'rerank 排完后更新') in r0['status'] and not r0['obs'], r0)
+            if phone:   # the playback waits for the lists to come into view; its time counts from there
+                pg.wait_for_function("()=>{const s=window.__ckr.rrState(); return !s||!s.held}", timeout=5000); t0 = pg.evaluate('()=>performance.now()') - 150
+                top5 = pg.evaluate(PAN_TOP, '#ckr-pan-lists'); a5 = pg.evaluate("()=>window.__ckr.rrState()")
+                check(f'{tag} part 5: on a phone, rerank turned on from the card brings the lists into view first and waits for the scroll (R7.12, P35)', r0['rr'] is not None and r0['rr']['held'] and r0['rr']['p'] == 0 and a5 is not None and a5['p'] < 0.3 and 40 <= top5 <= 422, (r0['rr'], a5, top5))
+            pg.wait_for_function("()=>{const s=window.__ckr.rrState(); return !s||s.p>=0.56}", timeout=8000); mid = pg.evaluate(RR_NOW)
+            check(f'{tag} part 5: mid-way the candidates’ coverage has shown one by one, the result still waits', mid['rr'] is not None and mid['cov'] == 5 and mid['covShown'] >= 3 and mid['metPend'] and not mid['obs'], mid)
+            wait_rr(pg); dt = (pg.evaluate('()=>performance.now()') - t0) / 1000 - 0.15
+            check(f'{tag} part 5: rerank plays in about 1.6 s at 中 (R3.9)', 1.2 <= dt <= 2.8, dt)
+            if phone:
+                bk = pg.evaluate(BACK_LINE)
+                check(f'{tag} part 5: when rerank ends, a line under the lists leads back to the conclusion (R3.2, P35)', bk is not None and bk['pan'] == 'ckr-pan-lists' and Z(lang, 'the conclusion is in part 5 ↓', '结论在第 5 部分 ↓') in bk['t'], bk)
+            r17 = ranks(pg, lang, 64, 2, 17)
             ra = meas(pg, lang, {'size': 64, 'ov': 2, 'ret': 'vec', 'rr': 0, 'k': 1}); rb = meas(pg, lang, {'size': 64, 'ov': 2, 'ret': 'vec', 'rr': 1, 'k': 1})
+            end = pg.evaluate(RR_NOW)
+            check(f'{tag} part 5: when it ends, the rerank column ranks the right chunk first and recall shows {pct(rb["rec"])}', end['rows'] == 5 and end['visible'] == 5 and 'ok' in end['first'].split() and not end['metPend'] and pct(rb['rec']) in end['status'], end)
             ob = text(pg, '#ckr-rail [data-obs]')
             check(f'{tag} part 5: the observation names {r17["vec0"] + 1} → {r17["vec1"] + 1} and recall@1 {pct(ra["rec"])} → {pct(rb["rec"])}; Next enabled', Z(lang, f'moves from {r17["vec0"] + 1} to {r17["vec1"] + 1}', f'从第 {r17["vec0"] + 1} 名升到第 {r17["vec1"] + 1} 名') in ob and pct(ra['rec']) in ob and pct(rb['rec']) in ob and r17['vec1'] == 0 and rb['rec'] > ra['rec'] and not any(nexts(pg)), ob[:300])
-            met = text(pg, '#ckr-metrics')
-            check(f'{tag} part 5: the time card names the rerank time and its {rb["nc"]} candidates (B2)', Z(lang, f'({rb["nc"]} candidates)', f'（{rb["nc"]} 块候选）') in met and rb['nc'] <= 5, met)
-            click(pg, SEG('q', 0)); ob = text(pg, '#ckr-rail [data-obs]')
+            met = text(pg, '#ckr-metrics'); ltip = pg.evaluate("()=>document.querySelector('#ckr-metrics .metric[data-k=\"lat\"]').dataset.tipx")
+            check(f'{tag} part 5: the time card names the rerank time, its tip the {rb["nc"]} candidates (B2, N13)', Z(lang, f'rerank takes {round(rb["rerankMs"])} ms', f'rerank 占 {round(rb["rerankMs"])} 毫秒') in met and Z(lang, f'Rerank reads {rb["nc"]} candidates here', f'这里 rerank 读 {rb["nc"]} 块候选') in ltip and rb['nc'] <= 5, (met, ltip))
+            rq = pg.evaluate(CLICK_PEND, SEG('q', 0))
+            check(f'{tag} part 5: a new question replays rerank; the last observation stays greyed (R3.20, P4)', rq['rr'] is not None and rq['obsPend'] and not rq['obs'], rq)
+            wait_rr(pg); ob = text(pg, '#ckr-rail [data-obs]')
             check(f'{tag} part 5: the E-201 question is outside the candidates', Z(lang, 'outside the candidates', '不在候选里') in ob, ob[:300])
-            click(pg, SEG('q', 17))
+            rq = pg.evaluate(CLICK_PEND, SEG('q', 17))
+            check(f'{tag} part 5: going back to a question already watched replays nothing (R3.20)', rq['rr'] is None and rq['hidden'] == 0, rq)
+            rq = pg.evaluate(CLICK_PEND, '#ckr-ltools [data-act="rr-replay"]')
+            check(f'{tag} part 5: 重放 rerank replays it from the start', rq['rr'] is not None and rq['rr']['p'] < 0.3, rq)
+            wait_rr(pg)
             shot(pg, f'{tag}_p5', full=phone); rules(pg, f'{tag} part 5', lang)
             # ---- part 6
             go_next(pg); st = state(pg)
@@ -329,6 +430,8 @@ with sync_playwright() as pw:
             # ---- part 7
             go_next(pg); cur = text(pg, '#ckr-rail .step.current')
             check(f'{tag} part 7: the bullets name the engine’s rank and the scenarios button', state(pg)['step'] == 6 and Z(lang, f'vector search ranks it {rk["vec0"] + 1}', f'向量检索排第 {rk["vec0"] + 1}') in cur and Z(lang, 'keeping 1 chunk, any search returns at most part of it', '只取 1 块时，哪种检索都只能拿回一部分') in cur and vis(pg, '#ckr-rail .step.current [data-mode-go="sandbox"]'), cur[:400])
+            nos = pg.evaluate(MATH_NOS)
+            check(f'{tag} part 7: the worked formulas are numbered 1, 2 in order', nos == [1, 2], nos)
             check(f'{tag} part 7: the next-lab footer', pg.evaluate("()=>[...document.querySelectorAll('#ckr-app .next-lab')].some(e=>e.getBoundingClientRect().height>0)"))
             shot(pg, f'{tag}_p7', full=phone); rules(pg, f'{tag} part 7', lang)
             # ---- scenarios
@@ -351,6 +454,9 @@ with sync_playwright() as pw:
             check(f'{tag} scenarios: picking it again replays nothing (R3.20)', a is None, a)
             hsh = pg.evaluate("()=>location.hash")
             check(f'{tag} scenarios: the hash carries the setup', hsh.startswith('#chunk-rerank~16_0_vec_0_1_'), hsh)
+            qn = pg.evaluate("()=>{const QS=window.__ckr.data().QS, q=window.__ckr.state().q; return QS.findIndex(x=>x[2]!==QS[q][2]);}"); qc = pg.evaluate(QCHANGE, qn)
+            check(f'{tag} scenarios: a question on another page plays its cut, and the numbers it leaves unchanged do not wait (N12)', qc['cut'] is not None and not qc['metPend'] and pct(m16['rec']) in qc['status'] and Z(lang, 'when the cut is done', '切完后') not in qc['ins'] and Z(lang, f'{m16["splits"]} of the 20 answers are cut apart', f'20 个答案里有 {m16["splits"]} 个被切开') in qc['ins'], qc)
+            wait_anim(pg)
             for i in (2, 3, 4, 5):
                 click(pg, f'#ckr-rail [data-preset="{i}"]'); wait_anim(pg)
                 ins = text(pg, '#ckr-insight')

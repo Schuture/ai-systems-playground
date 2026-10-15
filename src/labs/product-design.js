@@ -290,8 +290,9 @@ const live=id=>{const c=A.catalog, l=c&&c.LAB&&c.LAB[id]; return !!l&&(c.labStat
 const LL=id=>{const c=A.catalog, l=c&&c.LAB&&c.LAB[id]; if(live(id)&&A.shell.labLink) return A.shell.labLink(id); return esc(l?L(l.s||{en:id,zh:id}):id);};
 const shareT=v=>pc(v);
 const cpsT=v=>String(+v.toFixed(2));   // checks per answer: 37.5, 18.75, 75 (no trailing zero, never rounded to one decimal)
-const filtT=v=>({off:tx('No output check','不查输出'),after:tx('Check once, after streaming','流式发完以后查一次'),whole:tx('Hold the whole answer, then check','整段写完先查，再发')}[v]||tx(`Check every ${v} tokens`,`每 ${v} 个 token 查一次`));
-const filtName=v=>typeof v==='number'?tx(`check every ${v}`,`每 ${v} 个 token 查`):({off:tx('no check','不查'),after:tx('check after','发完查'),whole:tx('check whole answer','整段查完再发')}[v]);
+/* the output check's options have one set of names everywhere: guided options, Settings, the challenge and its results (P25) */
+const filtT=v=>({off:tx('No check','不查'),after:tx('Check after all is sent','全部发完再查'),whole:tx('Check all, then send','整段先查再发')}[v]||tx(`Check every ${v} tokens`,`每 ${v} 个 token 查一次`));
+const filtName=v=>typeof v==='number'?tx(`check every ${v} tokens`,`每 ${v} 个 token 查一次`):({off:tx('no check','不查'),after:tx('check after all is sent','全部发完再查'),whole:tx('check all, then send','整段先查再发')}[v]);
 /* the option names of the output check, full words so the challenge card alone says what each means (R13) */
 const filtShort=v=>({off:tx('No check','不查'),after:tx('After all is sent','全部发完再查'),whole:tx('Check all, then send','整段先查再发')}[v]||tx(`Every ${v} tokens`,`每 ${v} 个 token`));
 const FILT_L=()=>tx('Output check: when, or every how many tokens','输出检查：什么时候查，或每多少个 token 检查一次');
@@ -320,14 +321,13 @@ const SRC={
 const D_TTFT=()=>tx('Time to first token (TTFT): from the moment a request arrives to its first answer token, queueing included. The serving labs’ goal for a chat request is 1 s.','首 token 延迟（TTFT）：从请求到达，到它的第一个回答 token，包含排队。Serving 各 Lab 给聊天请求定的目标是 1 秒内。');
 const D_VIS=()=>tx('Time to the first visible word: from the moment the user presses Send to the moment the first words of the answer appear on screen. It adds the time of every component on the path, the model’s time to first token, and the time the output check holds the first chunk.','首字可见时间：从用户按下发送，到回答的第一个字出现在屏幕上。它等于路上各部件的时间，加上模型的首 token 延迟，再加上输出检查扣住第一段的时间。');
 const D_GOODPUT=()=>tx('Goodput (DistServe’s definition): the highest rate, in requests per second, that one replica can take while at least 90% of requests meet their goals (first token within 1 s, no gap between tokens over 150 ms). This lab counts it per replica; a 70B replica has 4 GPUs, so its goodput per GPU is a quarter of that.','达标吞吐（goodput，DistServe 的定义）：至少 90% 的请求达标（首 token 在 1 秒内、token 之间最长的间隔不超过 150 毫秒）时，一份副本每秒最多能接的请求数。这个 Lab 按每份副本算；70B 一份占 4 张卡，每张卡的达标吞吐是它的四分之一。');
-const D_SLO=()=>tx('Service target (SLO): at least 90% of requests meet their goals: first token within 1 s, no gap between tokens over 150 ms.','服务目标（SLO）：至少 90% 的请求达标，即首 token 在 1 秒内、token 之间最长的间隔不超过 150 毫秒。');
+const D_MEET=()=>tx('Meeting the goals: at least 90% of requests get their first token within 1 s and never wait more than 150 ms between two tokens.','达标：至少 90% 的请求同时做到两件事，首 token 在 1 秒内出来，token 之间最长的间隔不超过 150 毫秒。');
 const D_STREAM=()=>tx('Streaming: the server sends the answer a few tokens at a time while the model is still writing, instead of waiting for the whole answer.','流式输出：模型每写出几个 token，服务端就把它们发给用户，不等整段写完。');
-const D_SSE=()=>tx('Server-sent events (SSE): one HTTP response that stays open until the answer is done; the server writes one small event after another into it, each one or two lines (“event: …”, “data: …”) followed by a blank line.','server-sent events（SSE）：一个在回答写完之前一直开着的 HTTP 响应；服务端往里一条接一条地写小事件，每条是一两行文字（“event: …”“data: …”），后面跟一个空行。');
 const D_CACHE=()=>tx('Prompt caching (prefix caching): when a new prompt starts with exactly the same tokens as an earlier one, the engine reuses the KV cache it already computed for that beginning and runs prefill only on the rest.','prompt 缓存（prefix caching）：新的 prompt 开头和之前某个 prompt 的开头一字不差时，引擎直接复用已经算好的那一段 KV cache，只对后面的部分做 prefill。');
 const D_ROUTE=()=>tx('Model routing: a small classifier reads each message and sends it to a small, cheap model or to a large one, by how hard it looks.','模型路由：一个小分类器先读每条消息，按它看起来有多难，交给便宜的小模型或大模型。');
 const D_SAFE=()=>tx('Safety filter (moderation): a small classifier that labels a piece of text safe or unsafe and stops what the service must not process or must not send. It runs twice: on the input before the model, and on the output before the user. Examples are small classifiers such as Llama Guard 3-1B or Prompt Guard 2; an 8B classifier costs more per check.','安全过滤（moderation）：一个小的分类模型，判断一段文字安不安全，拦下不该处理或不该发出的内容。它要跑两次：输入在模型之前查，输出在用户之前查。比如 Llama Guard 3-1B 或 Prompt Guard 2 这样的小分类器；用 8B 的分类器，每次检查会更贵。');
-const D_RATE=()=>tx('Rate limit: the most requests and tokens one user, or one API key, may send per minute. Over it, the gateway answers 429 at once and the client retries later.','限流：每个用户（或每个 API key）每分钟最多发多少个请求、多少个 token。超过了，网关马上回 429，客户端过一会儿再试。');
-const D_REPL=()=>tx('Replica: one copy of the model that serves requests on its own. The 8B needs 1 GPU per replica. The 70B’s BF16 weights alone are 141.1 GB (131.4 GiB); on 2 GPUs only about 8.6 GiB would be left for the KV cache, so this lab gives it 4.','副本（replica）：一份能独立服务请求的模型。8B 一份占 1 张卡。70B 光 BF16 权重就有 141.1 GB（131.4 GiB）；用 2 张卡放下权重后只剩约 8.6 GiB 给 KV cache，所以这个 Lab 给它 4 张。');
+const D_REPL=()=>tx('Replica: one copy of the model that serves requests on its own. The 8B needs 1 GPU per replica. The 70B’s weights fill almost all of 2 GPUs and leave little room for the KV cache, so this lab gives it 4.','副本（replica）：一份能独立服务请求的模型。8B 一份占 1 张卡。70B 的权重放进 2 张卡后，几乎没地方放 KV cache，所以这个 Lab 给它 4 张。');
+const D_CHKGPU=()=>tx('The classifier runs many checks together in one batch, so each check uses only about 1 ms of one GPU (this lab’s assumption). Checks per second at peak times 1 ms is the number of GPUs the checks keep busy.','分类器把许多检查拼成一批一起跑，每次检查只占一张卡约 1 ms 的计算（这个 Lab 的假设）。高峰时每秒要查的次数乘以 1 ms，就是检查一直占着的卡数。');
 const D_GPUH=()=>tx('GPU hour: GPUs times hours, so 8 GPUs for one hour are 8 GPU hours. Costs here are for all GPUs together.','GPU 小时：卡数 × 小时数，8 张卡跑 1 小时就是 8 个 GPU 小时。这里的花费都是所有卡加起来。');
 const D_PEAK=()=>tx('Peak factor: the busiest hour’s request rate divided by the day’s average. The fleet must be sized for the peak, or first tokens come late exactly when most people are online.','高峰倍数：一天里最忙的那个小时的请求速率，除以全天的平均速率。卡要按高峰配，否则人最多的时候首 token 来得最晚。');
 
@@ -346,13 +346,17 @@ const COMP={
   back:{n:{en:'Network back',zh:'网络（回程）'},d:()=>tx(`The first words travel back to the user: ${LAT.net} ms, the same as the way in.`,`第一批字传回用户：${LAT.net} ms，和发过来一样。`)},
   log:{n:{en:'Logging and evals',zh:'日志与评测'},sn:{en:'Logs, evals',zh:'日志与评测'},d:()=>tx('After the answer is complete, the conversation, the latency and the token counts are written to logs; a sample is scored offline by evals. None of it is on the path the user waits for.','回答写完以后，对话、延迟和 token 数写进日志，抽一部分离线做评测。这些都不在用户等待的路上。')}};
 const ROWS=['net','gw','hist','ctx','ret','inF','route','model','hold','back','log'];
+const modelTip=r=>{const two=r.used.length>1;
+  return tx(`<p>Queue and prefill until the first token, then decode, one token per step.</p><p>First token: ${msT(r.tModel)}, the 90th percentile the engine measures at peak${two?' on the slower of the two pools':''}; nine messages in ten get theirs no later. Each pool is sized so that this stays within ${f(TTFT_GOAL,0)} s.</p><p>The whole answer is written ${f(r.tEnd,1)} s after Send.</p>`,
+    `<p>先排队、做 prefill，到写出第一个 token；之后 decode，每一步写一个 token。</p><p>首 token：${msT(r.tModel)}，是推理引擎在高峰负载下测到的第 90 百分位${two?'（两组卡里取慢的那组）':''}，十条消息里有九条不比它慢。每组卡都按它不超过 ${f(TTFT_GOAL,0)} 秒来配。</p><p>整段回答在按下发送后第 ${f(r.tEnd,1)} 秒写完。</p>`);};
+const P_=t=>`<p>${t}</p>`;
 const holdTip=r=>{const s=r.s, F=s.filt;
-  if(F==='off') return tx('No output check: whatever the model writes reaches the user.','不查输出：模型写什么，用户就看到什么。');
-  if(!s.stream) return typeof F==='number'?tx(`Without streaming the whole answer is written first, each chunk of ${F} tokens checked as it is written; when the last chunk has been checked (${LAT.chk} ms), the whole answer is sent.`,`不流式输出时，先把整段回答写完，每 ${F} 个 token 一段，写完一段查一段；最后一段查完（${LAT.chk} ms），整段一起发出去。`)
-    :tx(`Without streaming the whole answer is written first, checked once (${LAT.chk} ms) and then sent.`,`不流式输出时，先把整段回答写完，查一次（${LAT.chk} ms），再发出去。`);
-  if(F==='after') return tx('The answer streams to the user unchecked, and the check runs once, after the whole answer has been sent: by then the user has already seen every word.','回答没查就流式发给用户，整段发完以后才查一次：这时用户已经看到了每一个字。');
-  if(F==='whole') return tx(`The whole answer is held back until it is written and checked (${LAT.chk} ms per check), so the user waits for all of it.`,`整段回答先扣着，写完、查完（每次查 ${LAT.chk} ms）才发，所以用户要等整段写完。`);
-  return tx(`The server holds each chunk of ${F} tokens until the classifier has checked it (${LAT.chk} ms per check), then sends it. The first words wait for the first ${F} tokens to be written and checked.`,`服务端每攒够 ${F} 个 token 就交给分类器查（每次 ${LAT.chk} ms），查完才发出这一段。所以第一批字要等前 ${F} 个 token 写完、查完。`);};
+  if(F==='off') return P_(tx('No output check: whatever the model writes reaches the user.','不查输出：模型写什么，用户就看到什么。'));
+  if(!s.stream) return P_(typeof F==='number'?tx(`Without streaming the whole answer is written first, each chunk of ${F} tokens checked as it is written; when the last chunk has been checked (${LAT.chk} ms), the whole answer is sent.`,`不流式输出时，先把整段回答写完，每 ${F} 个 token 一段，写完一段查一段；最后一段查完（${LAT.chk} ms），整段一起发出去。`)
+    :tx(`Without streaming the whole answer is written first, checked once (${LAT.chk} ms) and then sent.`,`不流式输出时，先把整段回答写完，查一次（${LAT.chk} ms），再发出去。`));
+  if(F==='after') return P_(tx('The answer streams to the user unchecked, and the check runs once, after the whole answer has been sent: by then the user has already seen every word.','回答没查就流式发给用户，整段发完以后才查一次：这时用户已经看到了每一个字。'));
+  if(F==='whole') return P_(tx(`The whole answer is held back until it is written and checked (${LAT.chk} ms per check), so the user waits for all of it.`,`整段回答先扣着，写完、查完（每次查 ${LAT.chk} ms）才发，所以用户要等整段写完。`));
+  return P_(tx(`The server holds each chunk of ${F} tokens until the classifier has checked it (${LAT.chk} ms per check), then sends it. The first words wait for the first ${F} tokens to be written and checked.`,`服务端每攒够 ${F} 个 token 就交给分类器查（每次 ${LAT.chk} ms），查完才发出这一段。所以第一批字要等前 ${F} 个 token 写完、查完。`));};
 
 const DESCS=()=>({
   guided:tx('Eight short parts. Follow one message through a chat app, then decide how it streams, what it caches, which model answers and how its output is checked, and size the GPUs for a million users.','一共 8 个部分。先跟着一条消息走一遍聊天应用，再决定怎么流式输出、缓存什么、交给哪个模型、怎么检查输出，最后给每天 1M 用户配卡。'),
@@ -396,11 +400,18 @@ const FIDPOP=()=>tx(
 /* ---------- state ---------- */
 let S={...BASE}, mode='guided', step=0, root=null, app=null, pred=null, saved=null;
 let tried={}, observed={}, userAct=false, annT=0, stageT=0, shownPrev={};
-let chSubmitted=false, chReveal=false, drill=null, drillOpen=false;
-const PL={on:false,raf:0,t:0,last:0,quick:false,sig:'',done:true};
+let chSubmitted=false, chReveal=false, drill=null, drillOpen=false, ro=null;
+/* a choice in the card brings its observation into view once it shows (after the replay), as the kit does for its own levers (P11) */
+let obsReveal=false;
+/* the message player. One clock (PL.t, seconds after Send) drives the cursor, the bars, the slider and the title (B2). The wall time of a
+   play is planned in pieces: before the first word every component is shown for at least DWELL (R7.11: the 5 ms gateway is seen too),
+   longer ones in proportion at the axis rate; the first word holds HOLDFW; then the answer goes on streaming to the end of the axis */
+const PL={on:false,raf:0,t:0,w:0,last:0,quick:false,sig:'',done:true,plan:null};
 let spd='med';
-const SPEEDS={slow:12,med:7,fast:3.5};     // seconds for the whole trace (R3.9: a step-by-step replay defaults to 中)
-const QUICK=1.2;                           // a changed trace in Scenarios, Settings or an option: the end state within 1.5 s
+const SPEEDS={slow:12,med:7,fast:3.5};     // seconds per length of the time axis at the axis rate (R3.9: a step-by-step replay defaults to 中)
+const DWELL={slow:0.8,med:0.5,fast:0.25};  // the least time each component is shown
+const HOLDFW={slow:0.9,med:0.6,fast:0.3};  // the pause on the first word
+const QUICK=1.2;                           // Scenarios, Settings and the challenge, switched back and forth: the end within 1.5 s (R3.9)
 const watched=new Set();
 let nPlays=0;
 const R_=()=>compute(S);
@@ -420,7 +431,7 @@ const LEV={
     res:v=>{const r=compute({...S,cache:v}); return tx(`${I(r.total)} GPUs`,`${I(r.total)} 张卡`);}},
   share:{key:'share',opts:SHARES.filter(v=>v!==0.3).map(v=>({v,t:{en:v?`${pc(v)} to the small model`:'Everything to the large model',zh:v?`${pc(v)} 交给小模型`:'全部交给大模型'},d:{en:v===0?'No router':v===0.9?'More than the easy share':v===EASY?'All the easy messages':'Half of the messages',zh:v===0?'不用路由':v===0.9?'超过了简单消息的比例':v===EASY?'所有简单的消息':'一半的消息'}})),
     res:v=>{const r=compute({...S,share:v}); return tx(`${usd(r.costDay)} a day`,`每天 ${usd(r.costDay)}`);}},
-  filt:{key:'filt',opts:['after','whole',16,8,4].map(v=>({v,t:()=>filtT(v),d:{en:v==='after'?'The user sees it before it is checked':v==='whole'?'One check, then send everything':`${Math.ceil(WL.outMean/v)} checks per 300-token answer`,zh:v==='after'?'用户先看到，后检查':v==='whole'?'查一次，再全部发出':`300 个 token 的回答查 ${Math.ceil(WL.outMean/v)} 次`}})),
+  filt:{key:'filt',opts:['after','whole',16,8,4].map(v=>({v,t:()=>filtT(v),d:{en:v==='after'?'The user sees it before it is checked':v==='whole'?'One check, then send everything':`${cpsT(WL.outMean/v)} checks per answer on average`,zh:v==='after'?'用户先看到，后检查':v==='whole'?'查一次，再全部发出':`每个回答平均查 ${cpsT(WL.outMean/v)} 次`}})),
     res:v=>{const r=compute({...S,filt:v}); return v==='after'?tx('unchecked words shown','没查就显示了'):tx(`first word ${sT(r.vis)}`,`首字 ${sT(r.vis)}`);}},
   dau:{key:'dau',opts:[1e5,1e6,1e7].map(v=>({v,t:()=>tx(`${dauT(v)} daily users`,`每天 ${dauT(v)} 用户`),d:{en:'10 messages each, peak 3 times the average',zh:'每人 10 条消息，高峰是平均的 3 倍'}})),
     res:v=>{const r=compute({...S,dau:v}); return tx(`${I(r.total)} GPUs`,`${I(r.total)} 张卡`);}}};
@@ -429,106 +440,112 @@ const LEAD={
   stream:()=>tx('Pick when the answer is sent and watch when the first word appears in the chart.','选回答什么时候发出去，看看图里第一个字什么时候出现。'),
   cache:()=>tx('Pick whether the shared system prompt is cached and watch the GPUs the same traffic needs.','选要不要缓存共用的 system prompt，看看同样的流量要多少张卡。'),
   share:()=>tx('Pick how much of the traffic the router sends to the small model and watch the GPUs and the daily cost.','选路由把多少流量交给小模型，看看卡数和每天的花费。'),
-  filt:()=>tx('Pick how the output is checked and watch when the first word appears, and whether it was checked first.','选怎么检查输出，看看第一个字什么时候出现、出现之前查过没有。'),
-  dau:()=>tx('Pick the number of daily users and watch the GPUs and the cost.','选每天的用户数，看看卡数和花费。')};
+  filt:()=>tx('Pick how the output is checked and watch when the first word appears, and whether it was checked first (the system prompt stays cached and 70% of messages still go to the small model).','选怎么检查输出，看看第一个字什么时候出现、出现之前查过没有（system prompt 仍然缓存，70% 的消息仍交给小模型）。'),
+  /* part 7 keeps the design built so far, said right above its options (P14), so its first two sentences are the method (N2) */
+  dau:()=>tx(`Pick the number of daily users and watch the GPUs and the cost (all with the design built so far: the system prompt cached, ${pc(EASY)} of the messages to the small model, the output checked every ${BASE.filt} tokens).`,`选每天的用户数，看看卡数和花费（都用前面搭好的设计：缓存 system prompt，${pc(EASY)} 的消息交给小模型，每 ${BASE.filt} 个 token 查一次）。`)};
 const levTried=(k,v)=>!!(tried[k]&&tried[k].has(String(v)));
 function levers(id){const k=PART_LEV[id], lv=LEV[k], cur=String(S[k]);
   return `<p>${LEAD[k]()}</p>`+A.ui.levers({aria:tx('Options: pick one','选项：选一个'),value:cur,
     options:lv.opts.map(o=>({v:String(o.v),title:typeof o.t==='function'?o.t():L(o.t),desc:typeof o.d==='function'?o.d():L(o.d),result:levTried(k,o.v)?esc(lv.res(o.v)):''}))}).replace(/data-lever=/g,`data-lkey="${k}" data-lever=`);}
-const playBtns=()=>`<div class="pdz-tbtns"><button type="button" class="btn sm" data-act="play">${playTxt()}</button></div>`;
-const playTxt=()=>PL.on?tx('❚❚ Pause','❚❚ 暂停'):(watched.has(sigOf(R_()))?tx('▶ Replay the message','▶ 重放这条消息'):(PL.t>0&&!PL.done?tx('▶ Continue','▶ 继续'):tx('▶ Send the message','▶ 发送这条消息')));
+const playBtns=()=>`<div class="pdz-tbtns"><button type="button" class="btn sm" data-act="play" data-card="1">${cardPlayTxt()}</button></div>`;
+const midPlay=()=>!PL.on&&!PL.done&&PL.t>0;
+/* the stage's play button says what it does (P6): pause, continue from where it stopped, or play from the start; fixed width (R7.14) */
+const playTxt=()=>PL.on?tx('❚❚ Pause','❚❚ 暂停'):midPlay()?tx('▶ Continue','▶ 继续'):tx('▶ Play','▶ 播放');
+/* part 1's card button: the first time it sends the message */
+const cardPlayTxt=()=>PL.on||midPlay()?playTxt():(watched.has(sigOf(R_()))?tx('▶ Replay the message','▶ 重放这条消息'):tx('▶ Send the message','▶ 发送这条消息'));
 
 const STEPS=[
  {id:'mission',title:{en:'Your mission',zh:'你的任务'},lead:{en:'One message: where does the time go before the first word?',zh:'一条消息：第一个字出现之前，时间花在哪里？'},expect:()=>watched.has(sigOf(compute(baseFor('mission')))),showMe:'mission',
-  body:()=>tx(`<p>You are designing a chat app like ChatGPT for ${dauT(BASE.dau)} daily users. The product team asks for three things:</p><ul><li>the first words of an answer appear within ${f(BRIEF.vis,1)} s of pressing Send, even at the busiest hour;</li><li>every chunk of an answer is checked by a safety filter before the user sees it;</li><li>the GPUs cost at most ${usd(BRIEF.budget)} a day.</li></ul><p>The user sees one question and one answer. Behind it, each message passes through a chain of components, and each adds a little time and a little cost. The chart draws that chain for one message: every row is one component, and its bar shows when it runs.</p><p>This lab measures the ${DEF('time to the first visible word',D_VIS())} (below also “first word”): from pressing Send to the first word on screen. It is longer than the model’s time to first token, because every component on the path takes time and the output check holds the first chunk. Designing the app means trading this time against GPU cost and safety.</p>${playBtns()}`,
-    `<p>你要设计一个像 ChatGPT 那样的聊天应用，每天有 ${dauT(BASE.dau)} 用户。产品团队提了三条要求：</p><ul><li>即使在最忙的时候，按下发送后 ${f(BRIEF.vis,1)} 秒内也要看到回答的第一个字；</li><li>回答的每一段在用户看到之前都要过安全检查；</li><li>GPU 每天最多花 ${usd(BRIEF.budget)}。</li></ul><p>用户看到的是一问一答。背后，每条消息要经过一串部件，每一环都占一点时间、花一点钱。图里画的就是一条消息走过的这串部件：每一行是一个部件，横条表示它什么时候在工作。</p><p>这个 Lab 看的是${DEF('首字可见时间',D_VIS())}（下面也简称“首字”），即从按下发送到第一个字出现在屏幕上。它比模型的首 token 延迟长，因为路上每个部件都要占时间，输出检查还要扣住第一段。设计就是在这个时间、GPU 花费和安全之间做取舍。</p>${playBtns()}`),
+  body:()=>{const b=compute(baseFor('mission')), k=f(b.costDay/BRIEF.budget,1);
+   return tx(`<p>You are designing a chat app like ChatGPT for ${dauT(BASE.dau)} daily users, with a GPU budget of ${usd(BRIEF.budget)} a day. The design as it stands needs ${usd(b.costDay)} a day, ${k} times the budget: how do you get within the budget and still meet the product team’s two other requirements?</p><ul><li>At the busiest hour, the time from pressing Send to the first word on screen (the ${DEF('time to the first visible word',D_VIS())}, “first word” below) is at most ${f(BRIEF.vis,1)} s.</li><li>Every chunk of an answer passes a safety check before the user sees it.</li></ul>${playBtns()}`,
+    `<p>你要设计一个像 ChatGPT 的聊天应用，每天 ${dauT(BASE.dau)} 用户，GPU 的预算是每天 ${usd(BRIEF.budget)}。现在这套设计每天要 ${usd(b.costDay)}，是预算的 ${k} 倍：怎样把花费降到预算以内，又守住产品团队的另外两条要求？</p><ul><li>高峰时，从按下发送到第一个字出现不超过 ${f(BRIEF.vis,1)} 秒（这段时间叫“${DEF('首字可见时间',D_VIS())}”，简称“首字”）；</li><li>回答的每一段，先过安全检查再给用户看。</li></ul>${playBtns()}`);},
   obs:()=>obsMission()},
  {id:'stream',title:{en:'Streaming',zh:'流式输出'},lead:{en:'Send the answer as it is written, or when it is done?',zh:'回答边写边发，还是写完再发？'},expect:()=>levTried('stream',1)&&levTried('stream',0),showMe:'stream',
-  body:()=>tx(`<p>The model writes an answer one token per step, about 50 ms a step here, so a 300-token answer takes more than ten seconds to finish. ${DEF('Streaming',D_STREAM())} sends the words as they are written (each chunk is checked first; the safety part shows how), so the user starts reading after the first chunk instead of after the last one.</p><p>Anthropic’s and OpenAI’s APIs stream over ${DEF('server-sent events',D_SSE())}: Anthropic’s stream sends <code>message_start</code>, then a <code>content_block_delta</code> for each piece of text, and ends with <code>message_stop</code>; OpenAI’s sends <code>chat.completion.chunk</code> objects and ends with <code>data: [DONE]</code>.</p>${levers('stream')}`,
-    `<p>模型一步只写一个 token，这里每一步约 50 ms，所以 300 个 token 的回答要十几秒才写完。${DEF('流式输出',D_STREAM())}在字写出来的同时就发出去（发之前先查过，后面的“安全过滤”部分讲怎么查），用户读到第一段就能开始看，不用等最后一段。</p><p>Anthropic 和 OpenAI 的 API 都用 ${DEF('server-sent events',D_SSE())} 做流式输出：Anthropic 的流先发 <code>message_start</code>，每段文字发一个 <code>content_block_delta</code>，最后是 <code>message_stop</code>；OpenAI 的流发一个个 <code>chat.completion.chunk</code>，最后是 <code>data: [DONE]</code>。</p>${levers('stream')}`),
+  body:()=>tx(`<p>The model writes an answer one token per step, about 50 ms a step here, so a 300-token answer takes more than ten seconds to finish. ${DEF('Streaming',D_STREAM())} sends the words as they are written (each chunk is checked first; the safety part shows how), so the user starts reading after the first chunk instead of after the whole answer.</p>${levers('stream')}`,
+    `<p>模型一步只写一个 token，这里每一步约 50 ms，所以 300 个 token 的回答要十几秒才写完。${DEF('流式输出',D_STREAM())}写出几个 token 就发出去（发之前先查过，后面的“安全过滤”部分讲怎么查），用户读到第一段就能开始看，不用等整段写完。</p>${levers('stream')}`),
   obs:()=>obsStream()},
  {id:'context',title:{en:'Context and caching',zh:'上下文和缓存'},lead:{en:'Every message resends the conversation: cache the part every prompt shares.',zh:'每条消息都要重发整段对话：把每个 prompt 都有的那部分缓存起来。'},expect:()=>levTried('cache',0)&&levTried('cache',1),showMe:'context',
-  body:()=>tx(`<p>The model remembers nothing between messages, so every message sends the whole context again: the system prompt (instructions and tool definitions, 2,048 tokens here), the recent history and the new message. History grows with every turn, so the context builder keeps it under a token limit by dropping or summarising the oldest turns (the lab ${LL('context-eng')} shows how).</p><p>The system prompt is the same for every message of every user. With ${DEF('prompt caching',D_CACHE())} (the lab ${LL('prefix-caching')} shows how it works) the engine computes its KV cache once and reuses it, so prefill only processes the history and the new message. The chart shows one average prompt and the GPUs for this app’s traffic.</p><p>The GPU count works like this: a replica is a group of GPUs running one full copy of the model. First find how many messages per second one replica can take while it still meets the goals: the model’s first token within 1 s, and no more than 150 ms between two tokens after that; the peak rate divided by that is the number of replicas. With less prefill per message, each replica takes more messages, and fewer GPUs are needed.</p>${levers('context')}`,
-    `<p>模型在两条消息之间什么都不记得，所以每条消息都要把整个上下文重发一遍：system prompt（指令和工具定义，这里是 2,048 个 token）、最近的历史和新消息。历史每一轮都在变长，所以上下文构建要把它控制在一个 token 上限以内：删掉或压缩最早的几轮（“${LL('context-eng')}”这个 Lab 讲怎么做）。</p><p>system prompt 对每个用户的每条消息都一样。用了 ${DEF('prompt 缓存',D_CACHE())}（“${LL('prefix-caching')}”这个 Lab 讲过它的原理），引擎只算一次它的 KV cache，之后直接复用，prefill 只需要处理历史和新消息。图里是一个平均长度的 prompt，以及这个应用的流量要多少张卡。</p><p>卡数这样算：一份副本是跑着一份完整模型的一组卡。先看一份副本在达标时每秒最多接几条消息。达标是指：模型的首 token 在 1 秒内出来，之后每两个 token 之间不超过 150 毫秒。再用高峰时每秒的消息数除以它，就是要几份副本。每条消息要算的 prefill 少了，每份副本就能多接消息，要的卡就少。</p>${levers('context')}`),
+  body:()=>tx(`<p>Every message starts with the same 2,048-token system prompt, and the model remembers nothing between messages, so each one runs prefill on it again. With ${DEF('prompt caching',D_CACHE())} its KV cache is computed once and reused; with less to compute, each ${DEF('replica',D_REPL())} takes more messages while still ${DEF('meeting the goals',D_MEET())}, so the same traffic needs fewer GPUs (the lab ${LL('prefix-caching')} shows how caching works).</p>${levers('context')}`,
+    `<p>每条消息开头都是同一段 2,048 个 token 的 system prompt，模型不记得上一条，每条都要重新 prefill 它。用了 ${DEF('prompt 缓存',D_CACHE())}，它的 KV cache 只算一次、之后直接复用；要算的少了，每份${DEF('副本',D_REPL())}在${DEF('达标',D_MEET())}的前提下能多接消息，同样的流量要的卡就少（原理见“${LL('prefix-caching')}”这个 Lab）。</p>${levers('context')}`),
   obs:()=>obsContext()},
  {id:'predict',title:{en:'Predict first',zh:'先预测'},lead:{en:'Send 70% of messages to a model 10 times cheaper: what is left of the cost?',zh:'70% 的消息交给便宜 10 倍的模型：花费还剩多少？'},gate:()=>!!pred,skip:true,
   body:()=>{const ch=`<div class="choices" role="group" aria-label="${esc(tx('Your prediction','你的预测'))}">${PRED.map(v=>`<button type="button" class="choice" data-pred="${v}" aria-pressed="${pred===v}">${esc(predTxt(v))}</button>`).join('')}</div>`;
-   return tx(`<p>So far every message goes to the large model, ${MODELS.l.name}. Many chat messages are easy, though, and a small model such as ${MODELS.s.name} answers them well (this lab assumes ${pc(EASY)} are); per message, it costs about a tenth as much.</p><p>Suppose 70% of the messages go to the small model and the other 30% stay on the large one. The daily cost of all-large is 100%. About how much is it now?</p>${ch}${pred?'<p class="muted small">Saved. You can still change it before the next part shows the result.</p>':''}`,
-     `<p>到现在为止，每条消息都交给大模型 ${MODELS.l.name}。可是很多聊天消息很简单，${MODELS.s.name} 这样的小模型就能答好（这个 Lab 假设有 ${pc(EASY)}）；按每条消息算，它的花费只有大模型的十分之一左右。</p><p>假设 70% 的消息交给小模型，剩下 30% 仍然交给大模型。全部用大模型时每天的花费算 100%，现在大约是多少？</p>${ch}${pred?'<p class="muted small">已记下。下一部分给出结果之前，还可以改。</p>':''}`);}},
+   return tx(`<p>So far every message goes to the large model, ${MODELS.l.name}, with the system prompt cached. Many chat messages are easy, though, and a small model such as ${MODELS.s.name} answers them well (this lab assumes ${pc(EASY)} are); per message, it costs about a tenth as much.</p><p>Suppose 70% of the messages go to the small model and the other 30% stay on the large one. The daily cost of all-large is 100%. About how much is it now?</p>${ch}${pred?'<p class="muted small">Saved. You can still change it before the next part shows the result.</p>':''}`,
+     `<p>到现在为止，每条消息都交给大模型 ${MODELS.l.name}（system prompt 已缓存）。可是很多聊天消息很简单，${MODELS.s.name} 这样的小模型就能答好（这个 Lab 假设有 ${pc(EASY)}）；按每条消息算，它的花费只有大模型的十分之一左右。</p><p>假设 70% 的消息交给小模型，剩下 30% 仍然交给大模型。全部用大模型时每天的花费算 100%，现在大约是多少？</p>${ch}${pred?'<p class="muted small">已记下。下一部分给出结果之前，还可以改。</p>':''}`);}},
  {id:'route',title:{en:'Routing',zh:'模型路由'},lead:{en:'A router picks the model per message; cost falls, but not to a tenth.',zh:'路由按消息选模型：花费降了，但降不到十分之一。'},expect:()=>levTried('share',EASY)&&levTried('share',0.9),showMe:'route',
-  body:()=>tx(`<p>A ${DEF('model router',D_ROUTE())} reads each message and judges how hard it is: easy ones go to the cheap small model, hard ones to the large model. The router is itself a small classifier in front of the two pools of GPUs. RouteLLM trains such routers on preference data; its README reports cutting cost by up to 85% while keeping 95% of GPT-4’s performance on benchmarks such as MT Bench.</p><p>The router can send too much to the small model. This lab assumes that ${pc(EASY)} of the messages are easy enough for it and the rest need the large model; above ${pc(EASY)}, hard messages go to the small model.</p>${levers('route')}`,
-    `<p>${DEF('模型路由',D_ROUTE())}先读每条消息，判断它难不难：简单的交给便宜的小模型，难的交给大模型。路由器本身也是一个小分类器，放在两组卡前面。RouteLLM 用偏好数据训练这样的路由器；它的 README 说，成本最多能降 85%，在 MT Bench 这类基准上的得分仍有 GPT-4 的 95%。</p><p>路由也可能把太多消息交给小模型。这个 Lab 假设 ${pc(EASY)} 的消息小模型能答好，其余的要大模型；交给小模型的超过 ${pc(EASY)}，就有难题交给了小模型。</p>${levers('route')}`),
+  body:()=>tx(`<p>A ${DEF('model router',D_ROUTE())} reads each message: easy ones go to the cheap small model, hard ones to the large model. This lab assumes ${pc(EASY)} of the messages are easy enough for the small model; send more than ${pc(EASY)} to it and hard messages go to a model that answers them badly.</p>${levers('route')}`,
+    `<p>${DEF('模型路由',D_ROUTE())}先读每条消息，简单的交给便宜的小模型，难的交给大模型。这个 Lab 假设 ${pc(EASY)} 的消息小模型能答好；交给小模型的超过 ${pc(EASY)}，就有难题交给了答不好的小模型。</p>${levers('route')}`),
   obs:()=>obsRoute()},
  {id:'safety',title:{en:'Safety filters',zh:'安全过滤'},lead:{en:'Check the input before the model, and the output before the user reads it.',zh:'输入在模型之前查，输出在用户读到之前查。'},expect:()=>levTried('filt','after')&&!!tried.filt&&tried.filt.size>=2,showMe:'safety',
-  body:()=>tx(`<p>A ${DEF('safety filter',D_SAFE())} is a small classifier model that judges whether a piece of text is safe and stops what must not be processed or sent. It runs twice: the input check reads the new message before the model, and the output check reads the answer before the user. Prompt Guard 2 also looks for prompt injection (instructions hidden in the input that try to make the model do something else; see the lab ${LL('prompt-injection')}) and jailbreaks (prompts that try to get around the model’s safety rules).</p><p>The output check must see the answer before the user does, but a streamed answer leaves in pieces. So the server holds the answer back in chunks: it collects N tokens, sends them to the classifier, and releases them only when they pass. A small N shows the first words sooner but needs more checks per answer; checking once after streaming is fast but checks too late.</p><p>This lab assumes each check takes about ${LAT.chk} ms from sending the chunk to getting the verdict back; that is extra time the user waits. The classifier runs many checks together in one batch, so each check uses only about 1 ms of one GPU’s compute; that sets how many GPUs the checks need.</p>${levers('safety')}`,
-    `<p>${DEF('安全过滤',D_SAFE())}是一个小的分类模型，判断一段文字安不安全，拦下不该处理或不该发出的内容。它要跑两次：输入检查在模型之前读新消息，输出检查在用户之前读回答。Prompt Guard 2 还专门识别 prompt 注入（藏在输入里、想让模型改做别的事的指令，见“${LL('prompt-injection')}”这个 Lab）和越狱（想绕开模型安全规则的提示）。</p><p>输出检查必须在用户之前看到回答，可是流式输出的回答是一段一段发出去的。所以服务端把回答分段扣住：每攒够 N 个 token，交给分类器查，查过了才放出这一段。N 越小，第一个字出现得越早，但每个回答要查的次数越多；流式发完以后再查一次虽然快，却查得太晚了。</p><p>这个 Lab 假设每次检查从送出到拿回结果约 ${LAT.chk} ms，这是用户多等的时间。分类器把许多检查拼成一批一起跑，所以每次检查只占用一张卡约 1 ms 的计算，这决定了检查要多少张卡。</p>${levers('safety')}`),
+  body:()=>tx(`<p>The output check must read the answer before the user does, but a streamed answer leaves in pieces. So the server collects N tokens at a time, has a ${DEF('safety filter',D_SAFE())} check them, and sends the piece only when it passes.</p><p>A smaller N shows the first word sooner but needs more checks per answer. Each check takes about ${LAT.chk} ms, which the user waits, and the checks ${DEF('keep some GPUs busy',D_CHKGPU())}.</p>${levers('safety')}`,
+    `<p>输出检查要在用户之前读到回答，可流式输出的回答是一段一段发出去的。所以服务端每攒够 N 个 token，先交给${DEF('安全过滤',D_SAFE())}的分类器查，查过才发出这一段。</p><p>N 越小，第一个字出现得越早，但每个回答要查的次数越多。每次检查约 ${LAT.chk} ms，这是用户多等的时间；检查也要${DEF('占一些卡',D_CHKGPU())}。</p>${levers('safety')}`),
   obs:()=>obsSafety()},
  {id:'size',title:{en:'Sizing: users to GPUs',zh:'估算：从用户数到卡数'},lead:{en:'Daily users → requests per second at peak → GPUs → dollars.',zh:'每天的用户 → 高峰每秒请求数 → 卡数 → 美元。'},expect:()=>!!(tried.dau&&tried.dau.size>=2),showMe:'size',
-  body:()=>tx(`<p>Start from the users and work out how many messages arrive per second in the busiest hour:</p><div class="pdz-eqs pdz-eq1"><span class="pdz-eq-r">${M(`\\lambda_{${tt('peak')}} = \\frac{${tt('users')} \\times ${tt('messages each')}}{86{,}400} \\times ${tt('peak factor')}`)}</span></div><p>The ${DEF('peak factor',D_PEAK())} is the busiest hour’s rate divided by the day’s average.</p><p>Each pool then needs enough ${DEF('replicas',D_REPL())} that none takes more messages than its ${DEF('goodput',D_GOODPUT())}, the most messages per second one replica can take while meeting the goals.</p><p>Meeting the goals means that at least 90% of requests do two things: get their first token within 1 s, and after that never wait more than 150 ms between two tokens.</p><p>At the gateway, a ${DEF('rate limit',D_RATE())} sets how many requests and tokens each user may send per minute, so that one script cannot take the GPUs sized for real users. OpenAI’s API limits requests this way. How to share capacity between users and who waits is the subject of the lab ${LL('admission')}. Costs are in ${DEF('GPU hours',D_GPUH())}.</p>${levers('size')}`,
-    `<p>从用户数算起，先算最忙那个小时每秒有多少条消息：</p><div class="pdz-eqs pdz-eq1"><span class="pdz-eq-r">${M(`\\lambda_{${tt('高峰')}} = \\frac{${tt('用户数')} \\times ${tt('每人消息数')}}{86{,}400} \\times ${tt('高峰倍数')}`)}</span></div><p>其中${DEF('高峰倍数',D_PEAK())}是一天里最忙那个小时的速率除以全天的平均速率。</p><p>然后每一组卡要配够${DEF('副本',D_REPL())}，让每一份接的消息不超过它的${DEF('达标吞吐',D_GOODPUT())}，也就是这一份在达标的前提下每秒最多能接的消息数。</p><p>达标指至少 90% 的请求同时做到两件事：1 秒内拿到第一个 token；之后相邻两个 token 之间的间隔最长不超过 150 毫秒。</p><p>网关上的${DEF('限流',D_RATE())}规定每个用户每分钟最多发多少个请求、多少个 token，免得一个脚本占掉按真实用户配好的卡。OpenAI 的 API 就是这样限流的。怎么在用户之间分配容量、谁该排队，见“${LL('admission')}”这个 Lab。花费按 ${DEF('GPU 小时',D_GPUH())}算。</p>${levers('size')}`),
+  body:()=>tx(`<p>Work out the messages per second in the busiest hour (the ${DEF('peak factor',D_PEAK())} is how many times busier it is than the day’s average):</p><div class="pdz-eqs pdz-eq1"><span class="pdz-eq-r">${M(`\\lambda_{${tt('peak')}} = \\frac{${tt('users')} \\times ${tt('messages each')}}{86{,}400} \\times ${tt('peak factor')}`)}</span></div><p>Then give each pool enough ${DEF('replicas',D_REPL())} that none takes more than its ${DEF('goodput',D_GOODPUT())}.</p>${levers('size')}`,
+    `<p>先算最忙那个小时每秒有多少条消息（${DEF('高峰倍数',D_PEAK())}是它比全天平均忙几倍）：</p><div class="pdz-eqs pdz-eq1"><span class="pdz-eq-r">${M(`\\lambda_{${tt('高峰')}} = \\frac{${tt('用户数')} \\times ${tt('每人消息数')}}{86{,}400} \\times ${tt('高峰倍数')}`)}</span></div><p>再给每组卡配够${DEF('副本',D_REPL())}，让每份接的消息不超过它的${DEF('达标吞吐',D_GOODPUT())}。</p>${levers('size')}`),
   obs:()=>obsSize()},
  {id:'remember',title:{en:'What to remember',zh:'要记住的'},
   body:()=>rememberHTML()}];
 
 /* ---------- observations (R6.20: the trend, one key number, with its baseline) ---------- */
 const okSpan=(ok,t)=>`<b class="${ok?'pdz-ok':'pdz-bad'}">${t}</b>`;
-function obsMission(){const r=R_(), out=r.vis-r.tModel-r.hold-r.gen, rt=r.s.share>0, rv=r.s.ret;
-  const enL=['the two network trips (there and back)','the API gateway','the session service','the context builder','the input check'].concat(rv?['retrieval']:[]).concat(rt?['the router']:[]), zhL=['去程和回程两趟网络','API 网关','会话服务','上下文构建','输入检查'].concat(rv?['检索']:[]).concat(rt?['路由']:[]);
-  const enJ=enL.slice(0,-1).join(', ')+' and '+enL[enL.length-1], zhJ=zhL.slice(0,-1).join('、')+'和'+zhL[zhL.length-1], okB=r.costDay<=BRIEF.budget+1e-9;
-  return tx(`<p>The first word appears ${okSpan(r.vis<=BRIEF.vis,sT(r.vis))} after Send, within the ${f(BRIEF.vis,1)} s budget.</p><p>The model’s first token takes ${sT(r.tModel)}. The inference engine measured this at peak load: nine messages in ten are no slower. The model gets as many GPUs as it takes to keep this time within ${f(TTFT_GOAL,0)} s.</p><p>${enJ[0].toUpperCase()+enJ.slice(1)} add ${sT(out)} together. After the model writes its first token, the output check waits until the first ${S.filt} tokens are all written and checked before it releases them; that adds about ${sT(r.hold+r.gen)} (Part 6 explains why ${S.filt} tokens).</p>`+
-      (okB?'':`<p>But the GPUs cost ${okSpan(false,usd(r.costDay))} a day, far over the ${usd(BRIEF.budget)} budget; the next parts bring it down step by step.</p>`),
-    `<p>按下发送 ${okSpan(r.vis<=BRIEF.vis,sT(r.vis))}后，第一个字出现，在 ${f(BRIEF.vis,1)} 秒的预算以内。</p><p>模型的首 token 占 ${sT(r.tModel)}。这是推理引擎在高峰负载下测到的：十条消息里有九条不比它慢。给模型配多少张卡，就是为了让这个时间不超过 ${f(TTFT_GOAL,0)} 秒。</p><p>${zhJ}，一共占 ${sT(out)}。模型写出第一个 token 之后，输出检查还要等前 ${S.filt} 个 token 都写完、查过才放出来，这又占了约 ${sT(r.hold+r.gen)}（第 6 部分讲为什么是 ${S.filt} 个）。</p>`+
-      (okB?'':`<p>可是 GPU 每天要 ${okSpan(false,usd(r.costDay))}，远超 ${usd(BRIEF.budget)} 的预算；后面几部分一项项把它降下来。</p>`));}
+function obsMission(){const r=R_(), out=r.vis-r.tModel-r.hold-r.gen;
+  return tx(`<p>The first word appears ${okSpan(r.vis<=BRIEF.vis,sT(r.vis))} after Send, within the ${f(BRIEF.vis,1)} s budget.</p><p>Of that, the model’s first token takes ${sT(r.tModel)}. The output check takes ${sT(r.hold+r.gen)}: it waits until the first ${S.filt} tokens are written and checked before it releases the first chunk. All the other rows together take only ${sT(out)}.</p>`,
+    `<p>按下发送 ${okSpan(r.vis<=BRIEF.vis,sT(r.vis))}后，第一个字出现，在 ${f(BRIEF.vis,1)} 秒的预算以内。</p><p>其中模型写出第一个 token 占 ${sT(r.tModel)}；输出检查占 ${sT(r.hold+r.gen)}，它要等前 ${S.filt} 个 token 都写完、查过，才放出第一段；其余几行加起来只占 ${sT(out)}。</p>`);}
 function obsStream(){const on=compute({...S,stream:1}), off=compute({...S,stream:0}), both=levTried('stream',1)&&levTried('stream',0);
   if(!both) return S.stream?tx(`<p>Streaming: the first word appears ${sT(on.vis)} after Send; the rest of the answer follows chunk by chunk.</p>`,`<p>流式输出：按下发送 ${sT(on.vis)}后出现第一个字，回答的其余部分一段段跟上来。</p>`)
     :tx(`<p>Sent when done: the user stares at an empty screen for ${okSpan(false,sT(off.vis))}, while the whole 300-token answer is written.</p>`,`<p>写完再发：用户对着空白的屏幕等了 ${okSpan(false,sT(off.vis))}，等整段 300 个 token 写完。</p>`);
-  return tx(`<p>Streaming shows the first word after ${okSpan(true,sT(on.vis))}; sending the finished answer takes ${okSpan(false,sT(off.vis))}, about ${f(off.vis/on.vis,0)} times as long.</p><p>The GPUs do exactly the same work either way: streaming changes only when the words are sent, so it costs nothing.</p>`,
-    `<p>流式输出 ${okSpan(true,sT(on.vis))}就出现第一个字；写完再发要 ${okSpan(false,sT(off.vis))}，约是前者的 ${f(off.vis/on.vis,0)} 倍。</p><p>两种做法里 GPU 做的事完全一样：流式输出只改变了什么时候把字发出去，所以不多花钱。</p>`);}
-function obsContext(){const a=compute({...S,cache:0}), b=compute({...S,cache:1}), qa=quiet('l',0,0), qb=quiet('l',1,0), both=levTried('cache',0)&&levTried('cache',1);
+  return tx(`<p>Streaming shows the first word after ${okSpan(true,sT(on.vis))}; sending the finished answer takes ${okSpan(false,sT(off.vis))}, about ${f(off.vis/on.vis,0)} times as long.</p><p>Either way the model writes the same tokens and the output is checked the same way (the safety part compares the ways to check), so the GPUs are the same: streaming changes only when the words are sent, and costs nothing.</p>`,
+    `<p>流式输出 ${okSpan(true,sT(on.vis))}就出现第一个字；写完再发要 ${okSpan(false,sT(off.vis))}，约是前者的 ${f(off.vis/on.vis,0)} 倍。</p><p>两种做法里，模型写的 token 一样多，输出检查的做法也一样（后面的“安全过滤”部分再比较几种查法），所以卡数一样：流式输出只改变了什么时候把字发出去，不多花钱。</p>`);}
+function obsContext(){const a=compute({...S,cache:0}), b=compute({...S,cache:1}), both=levTried('cache',0)&&levTried('cache',1);
   if(!both) return tx(`<p>${S.cache?'With the cache':'Without the cache'}, this traffic needs ${I(compute(S).total)} GPUs at peak. Try the other option.</p>`,`<p>${S.cache?'缓存时':'不缓存时'}，这样的流量高峰时要 ${I(compute(S).total)} 张卡。再试另一个选项。</p>`);
-  const fr=1-qb.prefill/qb.prompt, sp=qa.ttft/qb.ttft, gx=b.P.l.g/a.P.l.g;
-  const enFr=fr>0.5?'fewer than half as many':'fewer', zhFr=fr>0.5?'少了一半多':'少了', enSp=sp>1.8&&sp<2.2?'about twice as fast':'faster', zhSp=sp>1.8&&sp<2.2?'快了约一倍':'快了', enG=gx>2&&gx<3?'more than twice as many':'more', zhG=gx>2&&gx<3?'多接一倍多的':'多接', zhG2=gx>2&&gx<3?'多了一倍多':'多了';
-  return tx(`<p>With the system prompt computed only once, each message has ${enFr} prompt tokens to prefill. With one message and nothing else queued, the large model’s prefill is ${enSp}.</p><p>So, still meeting the same goals, each replica can take ${enG} messages, and the same traffic needs ${okSpan(true,I(b.total))} GPUs instead of ${I(a.total)}.</p><p>That is ${usd(b.costDay)} a day instead of ${usd(a.costDay)}.</p><p class="small">Each replica now takes ${enG} requests, so each output token takes a little longer (TPOT).</p><p class="small">The 90th percentile TPOT rises from ${msT(a.tpot)} to ${msT(b.tpot)}.</p><p class="small">With slower tokens, the first chunk of ${S.filt} tokens takes longer to write; the output check releases it only once it is all written and checked, so the first word moves from ${sT(a.vis)} to ${sT(b.vis)}, still within the budget.</p>`,
-    `<p>system prompt 只算一次以后，每条消息要做 prefill 的 token ${zhFr}。只处理一条消息、没有别的请求排队时，大模型做 prefill 也${zhSp}。</p><p>所以在同样达标的前提下，每份副本能${zhG}消息，同样的流量要的卡从 ${I(a.total)} 张降到 ${okSpan(true,I(b.total))} 张。</p><p>每天的花费也从 ${usd(a.costDay)} 降到 ${usd(b.costDay)}。</p><p class="small">每份副本要接的请求${zhG2}，所以每个输出 token 的耗时（TPOT）稍长了一点。</p><p class="small">TPOT 的第 90 百分位从 ${msT(a.tpot)} 升到 ${msT(b.tpot)}。</p><p class="small">每个 token 写得慢了，第一段的 ${S.filt} 个 token 就要更久才写完；输出检查要等这一段全写完、查过才放出来，所以第一个字从 ${sT(a.vis)}推迟到 ${sT(b.vis)}，仍在预算以内。</p>`);}
-function predVerdict(){if(!pred) return ''; const r0=compute({...S,share:0}), r7=compute({...S,share:EASY}), x=r7.costDay/r0.costDay, ok=pred===PRED_RIGHT, T=r0.total, q=n=>pc(n/T);
-  return tx(`<p class="small">${ok?'✓':'✗'} You predicted “${predTxt(pred)}”. Sending ${pc(EASY)} of the messages to the small model (${usd(r7.costDay)} a day) costs ${pc(x)} of before, made of three parts:</p><ul class="small"><li>the large-model pool: about ${q(r7.gpus.l)} (it still serves ${pc(1-EASY)} of the messages)</li><li>the small-model pool: about ${q(r7.gpus.s)}</li><li>the output checks: about ${q(r7.fG)}, which routing does not reduce</li></ul>`,
-    `<p class="small">${ok?'✓':'✗'} 你预测“${predTxt(pred)}”。把 ${pc(EASY)} 的消息交给小模型时（每天 ${usd(r7.costDay)}），花费是原来的 ${pc(x)}，由三部分加起来：</p><ul class="small"><li>大模型那组卡：约 ${q(r7.gpus.l)}（它仍要服务 ${pc(1-EASY)} 的消息）</li><li>小模型那组卡：约 ${q(r7.gpus.s)}</li><li>输出检查的卡：约 ${q(r7.fG)}，不随路由减少</li></ul>`);}
+  const gx=b.P.l.g/a.P.l.g, enG=gx>2&&gx<3?'more than twice as many':'more', zhG=gx>2&&gx<3?'多一倍多':'更多';
+  /* the replicas are sized to the same goals, so the saved compute becomes messages, not a faster first token (P34) */
+  return tx(`<p>With the cache, each replica takes ${enG} messages: the same traffic needs ${okSpan(true,I(b.total))} GPUs instead of ${I(a.total)}, ${usd(b.costDay)} a day instead of ${usd(a.costDay)}.</p><p class="small">The replicas are busier, so each token takes a little longer to write: the first word moves from ${sT(a.vis)} to ${sT(b.vis)}, still within the budget.</p>`,
+    `<p>缓存以后，每份副本能接${zhG}的消息：卡从 ${I(a.total)} 张降到 ${okSpan(true,I(b.total))} 张，每天从 ${usd(a.costDay)} 降到 ${usd(b.costDay)}。</p><p class="small">副本更忙了，每个 token 写得稍慢，首字从 ${sT(a.vis)}变成 ${sT(b.vis)}，仍在预算以内。</p>`);}
+/* the GPUs of a routed design, by pool; they add up to the total, as the fleet draws them (P23) */
+function routeParts(r){const k=r.P.l.gpu?r.P.s.gpu/r.P.l.gpu:0;
+  return tx(`<ul class="small"><li>the large-model pool: ${I(r.gpus.l)}; it still serves ${pc(1-r.s.share)} of the messages, at about ${f(k,0)} times the cost per message</li><li>the small-model pool: ${I(r.gpus.s)}</li><li>the output checks: ${I(r.fG)}, which routing does not reduce</li></ul>`,
+    `<ul class="small"><li>大模型那组 ${I(r.gpus.l)} 张：它仍要服务 ${pc(1-r.s.share)} 的消息，每条消息的花费约是小模型的 ${f(k,0)} 倍</li><li>小模型那组 ${I(r.gpus.s)} 张</li><li>输出检查 ${I(r.fG)} 张：不随路由减少</li></ul>`);}
+function predVerdict(){if(!pred) return ''; const r0=compute({...S,share:0}), r7=compute({...S,share:EASY}), x=r7.costDay/r0.costDay, ok=pred===PRED_RIGHT, at7=Math.abs(S.share-EASY)<1e-9;
+  const you=tx(`${ok?'✓':'✗'} You predicted “${predTxt(pred)}”.`,`${ok?'✓':'✗'} 你预测“${predTxt(pred)}”。`);
+  if(at7) return `<p class="small">${you}${tx(` The result is ${pc(x)}${ok?', closest to your pick':''}.`,`结果是 ${pc(x)}${ok?'，你选的最接近':''}。`)}</p>`;
+  return `<p class="small">${you}${tx(` Sending ${pc(EASY)} of the messages to the small model costs ${pc(x)} of before (${usd(r7.costDay)} a day): the GPUs fall from ${I(r0.total)} to ${I(r7.total)}, which are`,`把 ${pc(EASY)} 的消息交给小模型，花费是原来的 ${pc(x)}（每天 ${usd(r7.costDay)}）：卡从 ${I(r0.total)} 张降到 ${I(r7.total)} 张，其中`)}</p>`+routeParts(r7);}
 function obsRoute(){const r0=compute({...S,share:0}), r=R_(), v=S.share;
   let h;
   if(v===0) h=tx(`<p>Everything on the large model: ${I(r.total)} GPUs, ${usd(r.costDay)} a day.</p>`,`<p>全部用大模型：${I(r.total)} 张卡，每天 ${usd(r.costDay)}。</p>`);
-  else if(v>EASY+1e-9) h=tx(`<p>${pc(v)} to the small model is cheaper still, ${usd(r.costDay)} a day.</p><p>But only ${pc(EASY)} of the messages are easy. The other ${pc(v-EASY)} are hard questions the small model ${okSpan(false,'answers badly')}: the saving is paid in answer quality.</p>`,
-    `<p>${pc(v)} 交给小模型还能更便宜，每天 ${usd(r.costDay)}。</p><p>可是只有 ${pc(EASY)} 的消息是简单的，多出来的 ${pc(v-EASY)} 是难题，小模型${okSpan(false,'答不好')}：省下的钱是拿回答质量换的。</p>`);
+  else if(v>EASY+1e-9) h=tx(`<p>${pc(v)} to the small model is cheaper still, ${usd(r.costDay)} a day.</p><p>But only ${pc(EASY)} of the messages are easy. The other ${pc(v-EASY)} are hard questions the small model ${okSpan(false,'answers badly')} (the red squares in the chart): the saving is paid in answer quality.</p>`,
+    `<p>${pc(v)} 交给小模型还能更便宜，每天 ${usd(r.costDay)}。</p><p>可是只有 ${pc(EASY)} 的消息是简单的，多出来的 ${pc(v-EASY)} 是难题，小模型${okSpan(false,'答不好')}（图里标红的方块）：省下的钱是拿回答质量换的。</p>`);
   else {const inB=r.costDay<=BRIEF.budget+1e-9;
-    h=tx(`<p>With ${pc(v)} to the small model the GPUs drop from ${I(r0.total)} to ${okSpan(true,I(r.total))}.</p><p>The cost is ${usd(r.costDay)} a day, ${pc(r.costDay/r0.costDay)} of all-large${inB?`, within the ${usd(BRIEF.budget)} budget`:''}.</p><p>Most of what is left is the large model’s pool: it still serves ${pc(1-v)} of the messages at about ${f(r.P.l.gpu?r.P.s.gpu/r.P.l.gpu:0,0)} times the cost per message.</p>`,
-    `<p>${pc(v)} 交给小模型以后，卡从 ${I(r0.total)} 张降到 ${okSpan(true,I(r.total))} 张。</p><p>每天的花费是 ${usd(r.costDay)}，是全部用大模型的 ${pc(r.costDay/r0.costDay)}${inB?`，在 ${usd(BRIEF.budget)} 的预算以内`:''}。</p><p>剩下的大头是大模型那组卡：它仍要服务 ${pc(1-v)} 的消息，每条消息的花费约是小模型的 ${f(r.P.l.gpu?r.P.s.gpu/r.P.l.gpu:0,0)} 倍。</p>`);}
+    h=tx(`<p>With ${pc(v)} to the small model the GPUs drop from ${I(r0.total)} to ${okSpan(true,I(r.total))}: ${usd(r.costDay)} a day, ${pc(r.costDay/r0.costDay)} of all-large${inB?`, within the ${usd(BRIEF.budget)} budget`:''}. The ${I(r.total)} GPUs are</p>`,
+      `<p>${pc(v)} 交给小模型以后，卡从 ${I(r0.total)} 张降到 ${okSpan(true,I(r.total))} 张，每天 ${usd(r.costDay)}，是全部用大模型的 ${pc(r.costDay/r0.costDay)}${inB?`，在 ${usd(BRIEF.budget)} 的预算以内`:''}。这 ${I(r.total)} 张卡是：</p>`)+routeParts(r);}
   return h+predVerdict();}
 function obsSafety(){const r=R_(), F=S.filt;
   if(F==='after') return tx(`<p>The first word appears after ${sT(r.vis)}, the fastest option, but ${okSpan(false,'the answer is checked only after all of it has been sent')}. If the classifier flags it, the user has already seen it.</p>`,`<p>第一个字 ${sT(r.vis)}就出现了，是最快的；可是${okSpan(false,'回答整段发给用户以后才查')}。分类器就算查出问题，用户也已经看到了。</p>`);
   if(F==='whole') return tx(`<p>Every word is checked first, but the user waits for the whole answer: ${okSpan(false,sT(r.vis))}, far over the ${f(BRIEF.vis,1)} s budget.</p>`,`<p>每个字都先查过，可是用户要等整段回答写完：${okSpan(false,sT(r.vis))}，远超 ${f(BRIEF.vis,1)} 秒的预算。</p>`);
   const ok=r.vis<=BRIEF.vis+1e-9;
-  return tx((ok?`<p>Checking every ${F} tokens, the first word appears after ${okSpan(true,sT(r.vis))}, within the ${f(BRIEF.vis,1)} s budget.</p>`:`<p>Checking every ${F} tokens, the first chunk is checked only when all of its tokens are written.</p><p>The first word appears after ${okSpan(false,sT(r.vis))}, over the ${f(BRIEF.vis,1)} s budget.</p>`)+`<p>A 300-token answer needs ${Math.ceil(WL.outMean/F)} checks, and at peak the checks take ${I(r.fG)} GPUs.</p>`,
-    (ok?`<p>每 ${F} 个 token 查一次，第一个字 ${okSpan(true,sT(r.vis))}出现，在 ${f(BRIEF.vis,1)} 秒的预算以内。</p>`:`<p>每 ${F} 个 token 查一次，第一段要等这些 token 全写完才查。</p><p>第一个字到 ${okSpan(false,sT(r.vis))}才出现，超过了 ${f(BRIEF.vis,1)} 秒的预算。</p>`)+`<p>300 个 token 的回答要查 ${Math.ceil(WL.outMean/F)} 次，高峰时这些检查要占 ${I(r.fG)} 张卡。</p>`);}
-function obsSize(){const r=R_(), both=tried.dau&&tried.dau.size>=2, rows=[1e5,1e6,1e7].map(d=>[d,compute({...S,dau:d})]);
-  const li=rows.map(([d,x])=>tx(`<li>${dauT(d)} users: ${I(x.total)} GPUs, ${usd(x.perUserMonth)} per user per month</li>`,`<li>${dauT(d)} 用户：${I(x.total)} 张卡，每个用户每月 ${usd(x.perUserMonth)}</li>`)).join(''), k=rows[2][1].total/rows[1][1].total;
-  return tx(`<p>${dauT(S.dau)} daily users send ${bigN(r.msgsDay)} messages a day, ${rT(r.lam)} per second at peak.</p><p>That takes ${I(r.total)} GPUs, ${usd(r.costDay)} a day, ${usd(r.perUserMonth)} per user per month.</p>`+(both?`<p>Ten times the users take ${k>9.5&&k<10.5?'about ten times':f(k,1)+' times'} the GPUs.</p><p>The first word stays at ${sT(r.vis)}: the fleet is sized to the goal, so more users cost GPUs, not latency.</p><ul class="small">${li}</ul><p>With few users, every pool is rounded up to whole replicas and that remainder is a larger share of the fleet, so each user costs more.</p>`:''),
-    `<p>每天 ${dauT(S.dau)} 用户发 ${bigN(r.msgsDay)} 条消息，高峰时每秒 ${rT(r.lam)} 条。</p><p>要 ${I(r.total)} 张卡，每天 ${usd(r.costDay)}，每个用户每月 ${usd(r.perUserMonth)}。</p>`+(both?`<p>用户涨到 10 倍，卡也${k>9.5&&k<10.5?'差不多涨到 10 倍':`涨到 ${f(k,1)} 倍`}。</p><p>第一个字仍在 ${sT(r.vis)}出现：卡是按目标配的，所以用户多了，多花的是卡，而不是延迟。</p><ul class="small">${li}</ul><p>用户少时，每组卡都要向上取整到整份副本，零头占的比例大，所以每个用户每月反而更贵。</p>`:''));}
-function rememberHTML(){const r=compute(baseFor('remember')), path=r.vis-r.tModel-r.hold-r.gen, r0=compute({...baseFor('remember'),share:0});
-  return tx(`<ul><li><b>Budget the time to the first visible word; the model’s first token is one line of it.</b> In the design built so far (system prompt cached, easy messages to the small model, the output checked in chunks) the first word appears ${sT(r.vis)} after Send, and the model’s first token is ${sT(r.tModel)} of that. The network, the gateway, the conversation service, the router and the input check take time too, and the output check holds the first chunk until the model has written a few more tokens and the chunk is checked. A faster first token leaves the path untouched; the hold shrinks only with smaller chunks.</li>`+
-    `<li><b>Check the output as it streams, before each chunk is sent.</b> Sending first and checking once at the end shows the first word soonest, but a flagged answer has already been seen. Holding each chunk of ${r.s.filt} tokens until it passes makes the first word wait ${msT(r.hold)} longer.</li>`+
-    `<li><b>Route by difficulty, not by cost alone.</b> Sending the easy messages to the small model cuts the daily cost from ${usd(r0.costDay)} to ${usd(r.costDay)}. Sending more would be cheaper still, but the extra messages are ones the small model answers badly. Measure the easy share on your own traffic with your own eval set (the lab ${LL('eval-ci')} shows how to tell whether a difference is real), and send the messages the small model fails on to the large model.</li></ul>`+
-    `<p><b>In production.</b> Anthropic’s and OpenAI’s APIs stream over server-sent events; vLLM’s OpenAI-compatible server streams <code>chat.completion.chunk</code> objects the same way and caches shared prefixes automatically. LiteLLM routes between deployments and, when a model group fails or is overloaded, retries and then falls back to another group. Llama Guard 3 classifies both prompts and responses; Prompt Guard 2 screens inputs for prompt attacks.</p>`+
-    `<div class="obs"><div class="eyebrow">Common misconceptions</div><p>✗ “Latency is model inference.” Of the ${sT(r.vis)} before the first word here, the model’s first token is ${sT(r.tModel)}; the rest is the components on the path and the hold for the output check.</p><p>✗ “Run the safety filter once at the end.” With streaming, by the “end” the user has already seen the whole answer.</p><p>✗ “Routing is only about cost.” Past the easy share, every cent saved is a worse answer.</p></div>${A.shell.toScenarios()}`,
-    `<ul><li><b>给首字可见时间做预算，模型的首 token 只是其中一项。</b>在前面搭好的设计里（缓存 system prompt、简单消息交给小模型、输出分段检查），按下发送 ${sT(r.vis)}后出现第一个字，其中模型的首 token 占 ${sT(r.tModel)}。路上的网络、网关、会话服务、路由和输入检查也要占时间，输出检查还要扣住第一段，等模型再写几个 token、查过才放。只把首 token 变快，路上的这些时间一点也不会少；扣住的时间要靠缩短每一段来省。</li>`+
-    `<li><b>输出边流式边查，每一段查过再发。</b>先把回答发出去、最后查一次，第一个字出现得最早，可是有问题的回答用户已经看到了。每 ${r.s.filt} 个 token 扣住一段、查过再放，第一个字要多等 ${msT(r.hold)}。</li>`+
-    `<li><b>路由按难度分，不只看成本。</b>把简单的消息都交给小模型，每天的花费从 ${usd(r0.costDay)} 降到 ${usd(r.costDay)}。再多交一些还能更便宜，可多交的那些是小模型答不好的。先用自己的评测集在自己的流量上量出简单消息占多少（“${LL('eval-ci')}”这个 Lab 讲怎么判断差别是不是真的），小模型答不好的消息，再转给大模型重答。</li></ul>`+
-    `<p><b>生产中怎么做。</b>Anthropic 和 OpenAI 的 API 都用 server-sent events 做流式输出；vLLM 的 OpenAI 兼容服务也这样发 <code>chat.completion.chunk</code>，并自动缓存共用的前缀。LiteLLM 在多个部署之间做路由；某组模型出错或过载时，先重试，再换到另一组模型。Llama Guard 3 既能查 prompt 也能查回答；Prompt Guard 2 专门筛查输入里的 prompt 攻击。</p>`+
-    `<div class="obs"><div class="eyebrow">常见误解</div><p>✗ “延迟就是模型推理。”这里第一个字之前的 ${sT(r.vis)}里，模型的首 token 只占 ${sT(r.tModel)}，其余是路上的部件和输出检查扣住第一段的时间。</p><p>✗ “安全过滤放最后查一次就行。”流式输出时，等到“最后”，整段回答用户都已经看到了。</p><p>✗ “路由只看成本。”超过简单消息的比例以后，省下的每一分钱都换来更差的回答。</p></div>${A.shell.toScenarios()}`);}
+  return tx((ok?`<p>Checking every ${F} tokens, the first word appears after ${okSpan(true,sT(r.vis))}, within the ${f(BRIEF.vis,1)} s budget.</p>`:`<p>Checking every ${F} tokens, the first chunk is checked only when all ${F} of its tokens are written, so the first word appears after ${okSpan(false,sT(r.vis))}, over the ${f(BRIEF.vis,1)} s budget.</p>`)+`<p>An answer is checked ${cpsT(r.cps)} times on average, and at peak the checks keep ${I(r.fG)} GPUs busy.</p>`,
+    (ok?`<p>每 ${F} 个 token 查一次，第一个字 ${okSpan(true,sT(r.vis))}出现，在 ${f(BRIEF.vis,1)} 秒的预算以内。</p>`:`<p>每 ${F} 个 token 查一次，第一段要等这 ${F} 个 token 全写完才查，第一个字到 ${okSpan(false,sT(r.vis))}才出现，超过了 ${f(BRIEF.vis,1)} 秒的预算。</p>`)+`<p>每个回答平均查 ${cpsT(r.cps)} 次，高峰时检查要占 ${I(r.fG)} 张卡。</p>`);}
+function obsSize(){const r=R_(), both=tried.dau&&tried.dau.size>=2, rows=[1e5,1e6,1e7].map(d=>compute({...S,dau:d}));
+  const k1=rows[1].total/rows[0].total, k2=rows[2].total/rows[1].total, ten=k2>9.5&&k2<10.5;
+  return tx(`<p>${dauT(S.dau)} daily users send ${rT(r.lam)} messages per second at peak. That takes ${I(r.total)} GPUs, ${usd(r.costDay)} a day.</p>`+(both?`<p>From ${dauT(1e6)} to ${dauT(1e7)} users the GPUs grow from ${I(rows[1].total)} to ${I(rows[2].total)}, ${ten?'almost exactly ten times':f(k2,1)+' times'}; from ${dauT(1e5)} to ${dauT(1e6)} only ${f(k1,1)} times, because with few users every pool is rounded up to whole replicas and the remainder is a larger share.</p><p>The first word stays at ${sT(r.vis)}: the fleet is sized to the goal, so more users cost GPUs, not latency.</p>`:''),
+    `<p>每天 ${dauT(S.dau)} 用户，高峰时每秒 ${rT(r.lam)} 条消息，要 ${I(r.total)} 张卡，每天 ${usd(r.costDay)}。</p>`+(both?`<p>从 ${dauT(1e6)} 到 ${dauT(1e7)} 用户，卡从 ${I(rows[1].total)} 张涨到 ${I(rows[2].total)} 张，${ten?'差不多正好 10 倍':`是 ${f(k2,1)} 倍`}；从 ${dauT(1e5)} 到 ${dauT(1e6)} 只涨了 ${f(k1,1)} 倍，因为用户少时每组卡都要凑整份副本，零头占比大。</p><p>第一个字一直在 ${sT(r.vis)}出现：卡按目标配，用户多了只多花卡，不多花时间。</p>`:''));}
+/* part 8: the design's result against the brief first, then the three points, each with the misconception it answers (P16) */
+function rememberHTML(){const r=compute(baseFor('remember')), r0=compute({...baseFor('remember'),share:0}), path=r.vis-r.tModel-r.hold-r.gen;   // the other rows of the path (N1)
+  return tx(`<p>The design built so far meets all three requirements: the first word ${sT(r.vis)} after Send (budget ${f(BRIEF.vis,1)} s), every chunk of ${r.s.filt} tokens checked before it is sent, and ${usd(r.costDay)} of GPUs a day (budget ${usd(BRIEF.budget)}).</p>`+
+    `<ul><li><b>Budget the time to the first visible word; the model’s first token is one line of it.</b> ✗ “Latency is model inference”: of the ${sT(r.vis)}, the model’s first token is ${sT(r.tModel)}; the rest is ${msT(path)} on the other components of the path and ${msT(r.hold)} while the output check holds the first chunk, and a faster first token shortens neither.</li>`+
+    `<li><b>Check the output as it streams, before each chunk is sent.</b> ✗ “Run the safety filter once at the end”: with streaming, by the end the user has read the whole answer.</li>`+
+    `<li><b>Route by difficulty, not by cost alone.</b> ✗ “The more goes to the small model, the better”: sending the easy messages to the small model cuts the daily cost from ${usd(r0.costDay)} to ${usd(r.costDay)}; send more and hard messages go to the small model, which answers them badly. Measure the share of easy messages on your own traffic with your own eval set (see the lab ${LL('eval-ci')}).</li></ul>${A.shell.toScenarios()}`,
+    `<p>这套设计三条要求都满足了：${sT(r.vis)}出第一个字（预算 ${f(BRIEF.vis,1)} 秒），每 ${r.s.filt} 个 token 查过再发，每天 ${usd(r.costDay)}（预算 ${usd(BRIEF.budget)}）。</p>`+
+    `<ul><li><b>给首字做预算，模型的首 token 只是其中一项。</b>✗“延迟就是模型推理”：${sT(r.vis)}里首 token 只占 ${sT(r.tModel)}，其余是路上其他部件的 ${msT(path)} 和输出检查扣住第一段的 ${msT(r.hold)}，首 token 再快也省不掉。</li>`+
+    `<li><b>输出边流式边查，每一段查过再发。</b>✗“安全过滤放最后查一次就行”：流式输出时，最后再查，用户早就读完了。</li>`+
+    `<li><b>路由按难度分，不只看成本。</b>✗“交给小模型的越多越好”：简单消息交给小模型，每天从 ${usd(r0.costDay)} 降到 ${usd(r.costDay)}；再多交，难题就给了答不好的小模型。简单消息的比例要在自己的流量上用评测集量（见“${LL('eval-ci')}”这个 Lab）。</li></ul>${A.shell.toScenarios()}`);}
 
 /* ---------- scenarios ---------- */
 const PRESETS=[
  {t:{en:'A new chat app',zh:'刚上线的聊天应用'},d:()=>tx(`${dauT(1e5)} users, one model, cached`,`${dauT(1e5)} 用户，一个模型，有缓存`),p:{dau:1e5,msgs:10,peak:3,stream:1,cache:1,ret:0,share:0,filt:8,price:3}},
  {t:{en:'Consumer assistant at scale',zh:'大规模消费级助手'},d:()=>tx(`${dauT(1e7)} users, routed`,`${dauT(1e7)} 用户，有路由`),p:{dau:1e7,msgs:10,peak:3,stream:1,cache:1,ret:0,share:0.7,filt:8,price:3}},
- {t:{en:'Help-center assistant (example)',zh:'帮助中心助手（示例）'},d:{en:'Lumo Home, with retrieval',zh:'小鹿家居，带检索'},p:{dau:3e5,msgs:5,peak:3,stream:1,cache:1,ret:1,share:0.5,filt:8,price:3}},
+ {t:{en:'Help-center assistant (example)',zh:'帮助中心助手（示例）'},d:{en:'Lumo Home, with retrieval; 5 messages per user a day, half to the small model',zh:'小鹿家居，带检索；每人每天 5 条消息，一半交给小模型'},p:{dau:3e5,msgs:5,peak:3,stream:1,cache:1,ret:1,share:0.5,filt:8,price:3}},
  {t:{en:'No streaming',zh:'不流式输出'},d:()=>tx(`${dauT(1e6)} users, answer sent when done`,`${dauT(1e6)} 用户，写完再发`),p:{dau:1e6,msgs:10,peak:3,stream:0,cache:1,ret:0,share:0.7,filt:8,price:3}},
  {t:{en:'Everything on the large model',zh:'全部交给大模型'},d:()=>tx(`${dauT(1e6)} users, no cache, no router`,`${dauT(1e6)} 用户，不缓存、不路由`),p:{dau:1e6,msgs:10,peak:3,stream:1,cache:0,ret:0,share:0,filt:8,price:3}}];
 const KEYS=['dau','msgs','peak','stream','cache','ret','share','filt','price'];
@@ -537,7 +554,7 @@ function insightHTML(){const r=R_(), i=presetNow(), okV=r.vis<=BRIEF.vis+1e-9;
   let h=tx(`<p>${dauT(S.dau)} daily users, ${rT(r.lam)} messages per second at peak; the first word appears after ${okSpan(okV,sT(r.vis))}.</p><p>The fleet is ${I(r.total)} GPUs, ${usd(r.costDay)} a day, ${usd(r.perUserMonth)} per user per month.</p>`,
     `<p>每天 ${dauT(S.dau)} 用户，高峰每秒 ${rT(r.lam)} 条消息；第一个字 ${okSpan(okV,sT(r.vis))}后出现。</p><p>要 ${I(r.total)} 张卡，每天 ${usd(r.costDay)}，每个用户每月 ${usd(r.perUserMonth)}。</p>`);
   const note={0:tx('One model keeps the design simple; at this size the large model’s replicas are only a few dozen GPUs.','只用一个模型，设计最简单；在这个规模下，大模型的副本也只占几十张卡。'),
-    1:tx('At this size every percent matters: routing and caching decide most of the bill.','到这个规模，每一个百分点都很重要：路由和缓存决定了账单的大部分。'),
+    1:(()=>{const nr=compute({...S,share:0}), nc=compute({...S,cache:0}); return tx(`At this size routing and caching decide most of the bill: without routing it would be ${usd(nr.costDay)} a day, without caching ${usd(nc.costDay)}, against ${usd(r.costDay)} now.`,`到这个规模，账单主要由路由和缓存决定：不路由每天要 ${usd(nr.costDay)}，不缓存要 ${usd(nc.costDay)}，现在是 ${usd(r.costDay)}。`);})(),
     2:tx(`Retrieval adds ${LAT.ret} ms before the model and 1,536 tokens to every prompt, so each replica takes fewer messages. How retrieval finds the passages: the labs ${LL('embeddings')}, ${LL('vector-index')} and ${LL('chunk-rerank')}.`,`检索在模型之前多了 ${LAT.ret} ms，每个 prompt 多了 1,536 个 token，所以每份副本能接的消息变少了。检索怎么找到这几段，见“${LL('embeddings')}”“${LL('vector-index')}”和“${LL('chunk-rerank')}”这几个 Lab。`),
     3:tx('The GPUs are exactly the same as with streaming; only the wait for the first word changes.','卡和流式输出时一模一样，变的只是等第一个字的时间。'),
     4:tx('Without the cache every prompt is computed in full, and every message pays the large model’s price.','不缓存时每个 prompt 都要从头算，每条消息都按大模型的价钱付。')}[i];
@@ -585,14 +602,15 @@ function stageHTML(){
   return `<div class="panel stage pdz-stage" id="pdz-stage">`+
    `<div class="stage-head"><div class="pdz-st-title" id="pdz-st-title"></div><div class="stage-actions"><span class="status" id="pdz-status" tabindex="0"></span></div></div>`+
    `<div id="pdz-main" class="pdz-main">`+
-    `<section class="pdz-blk" id="pdz-trace"><div class="pdz-ch-t" id="pdz-trace-t"></div><div id="pdz-wf"></div><div class="pdz-player" id="pdz-player">`+
-      `<button type="button" class="btn sm" data-act="play" id="pdz-play"></button><button type="button" class="btn ghost sm pdz-ib" data-act="back" aria-label="${esc(tx('Back to the previous component','退回上一个部件'))}">◂</button><button type="button" class="btn ghost sm pdz-ib" data-act="fwd" aria-label="${esc(tx('On to the next component','前进到下一个部件'))}">▸</button><button type="button" class="btn ghost sm" data-act="replay">${tx('Replay','重放')}</button>${spdCtl()}`+
-      `<label class="pdz-scrub"><span class="pdz-sr">${tx('Progress','进度')}</span><input type="range" id="pdz-pos" min="0" max="1000" step="1" value="1000" aria-label="${esc(tx('Progress of the message','这条消息的进度'))}"></label></div><div class="pdz-leg legend-row" id="pdz-leg1"></div></section>`+
+    `<section class="pdz-blk" id="pdz-trace"><div class="pdz-ch-t" id="pdz-trace-t"></div><div id="pdz-wf"></div>`+
+      `<label class="pdz-scrub"><span class="pdz-sr">${tx('Progress','进度')}</span><input type="range" id="pdz-pos" min="0" max="1000" step="1" value="1000" aria-label="${esc(tx('Progress of the message, in seconds after Send','这条消息的进度，按下发送后的秒数'))}"></label>`+
+      `<div class="pdz-player" id="pdz-player"><button type="button" class="btn sm" data-act="play" id="pdz-play"></button><button type="button" class="btn ghost sm pdz-ib" data-act="back" aria-label="${esc(tx('Back to the previous component','退回上一个部件'))}">◂</button><button type="button" class="btn ghost sm pdz-ib" data-act="fwd" aria-label="${esc(tx('On to the next component','前进到下一个部件'))}">▸</button><button type="button" class="btn ghost sm" data-act="replay" data-tipx="${esc(tx('Play the message again from Send.','从按下发送开始，把这条消息再播一遍。'))}">${tx('Replay','重放')}</button>${spdCtl()}</div>`+
+      `<div class="pdz-leg legend-row" id="pdz-leg1"></div></section>`+
     `<section class="pdz-blk" id="pdz-prompt" hidden></section>`+
     `<section class="pdz-blk" id="pdz-fleet" hidden></section>`+
     `<section class="pdz-blk" id="pdz-sheet" hidden></section>`+
+    `<div class="metrics pdz-metrics" id="pdz-metrics"></div>`+
    `</div>`+
-   `<div class="metrics pdz-metrics" id="pdz-metrics"></div>`+
    `<details class="math" id="pdz-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="pdz-mathbody"></div></details></div>`;}
 const segOpts=(arr,fn)=>arr.map(v=>[String(v),fn(v)]);
 function controlsHTML(){const di=Math.max(0,DAUS.indexOf(S.dau));
@@ -614,10 +632,11 @@ const CODE=`async def stream_reply(conv, msg, send):
         return await send({"error": "blocked"})
     prompt = build_context(conv, msg)      # trim history
     model = route(msg)                     # small or large
-    chunk, N = [], 16
+    # smaller N: first word sooner, more checks
+    chunk, N = [], 8
     async for tok in model.generate(prompt):
         chunk.append(tok)
-        if len(chunk) == N:                # hold N tokens
+        if len(chunk) == N:                # hold N tokens, then check
             if not await output_check(conv, chunk):
                 return await send({"error": "stopped"})
             await send({"delta": "".join(chunk)})
@@ -638,13 +657,17 @@ function connectHTML(){
       `<li>${fl(SRC.vsrv,'vllm/entrypoints/openai/chat_completion/serving.py',': vLLM’s OpenAI-compatible chat server, the streaming path that open-weight deployments use.')}</li>`+
       `<li>${fl(SRC.apc,'vLLM automatic prefix caching',': reuses the KV cache of a shared prefix so a new query can “skip the computation of the shared part”.')}</li>`+
       `<li>${fl(SRC.llr,'LiteLLM routing',' and '+cite(SRC.llf,'fallbacks')+': load balancing across deployments (simple-shuffle by default), retries, then fallback to another model group.')}</li>`+
-      `<li>${fl(SRC.lg,'Llama Guard 3 model card',': an 8B classifier for prompts and responses over 14 hazard categories (S1–S14); the 1B version covers 13.')}</li>`,
+      `<li>${fl(SRC.lg,'Llama Guard 3 model card',': an 8B classifier for prompts and responses over 14 hazard categories (S1–S14); the 1B version covers 13.')}</li>`+
+      `<li>${fl(SRC.pg,'Llama Prompt Guard 2 model card',`: 86M and 22M classifiers that run at the input check and flag prompt injection (instructions hidden in the input that try to make the model do something else; the lab ${LL('prompt-injection')} shows the attack) and jailbreaks (prompts that try to get around the model’s safety rules).`)}</li>`+
+      `<li>${fl(SRC.rate,'OpenAI cookbook: rate limits',`: the gateway limits each user or API key to so many requests (RPM) and tokens (TPM) a minute and answers 429 at once over it, so one script cannot take the GPUs sized for real users; the client retries with exponential backoff. Who should wait when the peak is over capacity: the lab ${LL('admission')}.`)}</li>`,
       `<li>${fl(SRC.aev,'anthropic types/raw_message_stream_event.py','：SDK 定义了 6 种消息事件，即 message_start、content_block_start、content_block_delta、content_block_stop、message_delta 和 message_stop。')}</li>`+
       `<li>${fl(SRC.ostr,'openai/_streaming.py','：事件的 data 以 <code>[DONE]</code> 开头时，客户端停止读取；<code>stream_options.include_usage</code> 会在它之前多发一个用量块。')}</li>`+
       `<li>${fl(SRC.vsrv,'vllm/entrypoints/openai/chat_completion/serving.py','：vLLM 的 OpenAI 兼容聊天服务，自己部署开源模型时走的就是这条流式输出的路径。')}</li>`+
       `<li>${fl(SRC.apc,'vLLM automatic prefix caching','：复用共同前缀的 KV cache，新请求可以跳过共同部分的计算（原文 skip the computation of the shared part）。')}</li>`+
       `<li>${fl(SRC.llr,'LiteLLM routing',' 和 '+cite(SRC.llf,'fallbacks')+'：在多个部署之间做负载均衡（默认 simple-shuffle），先重试，再换到另一组模型。')}</li>`+
-      `<li>${fl(SRC.lg,'Llama Guard 3 model card','：8B 的分类模型按 14 类风险（S1–S14）检查 prompt 和回答，1B 的版本是 13 类。')}</li>`)+
+      `<li>${fl(SRC.lg,'Llama Guard 3 model card','：8B 的分类模型按 14 类风险（S1–S14）检查 prompt 和回答，1B 的版本是 13 类。')}</li>`+
+      `<li>${fl(SRC.pg,'Llama Prompt Guard 2 model card',`：86M 和 22M 两个分类器，放在输入检查这一步，识别 prompt 注入（藏在输入里、想让模型改做别的事的指令，“${LL('prompt-injection')}”这个 Lab 讲这种攻击）和越狱（想绕开模型安全规则的提示）。`)}</li>`+
+      `<li>${fl(SRC.rate,'OpenAI cookbook: rate limits',`：网关给每个用户或每个 API key 限定每分钟最多多少个请求（RPM）、多少个 token（TPM），超过了马上回 429，免得一个脚本占掉按真实用户配好的卡；客户端用指数退避重试。高峰超出容量时谁该排队，见“${LL('admission')}”这个 Lab。`)}</li>`)+
    `</ul></article>`+
    `<article class="panel c-card"><h3>${A.t('cPapers')}</h3><ul class="refs">`+
    `<li><a href="https://arxiv.org/abs/2406.18665" target="_blank" rel="noopener">RouteLLM: Learning to Route LLMs with Preference Data</a><span>${tx('Ong et al., 2024 (arXiv 2406.18665)','Ong 等，2024（arXiv 2406.18665）')}</span></li>`+
@@ -666,111 +689,171 @@ function challengeHTML(){
    A.ui.seg({id:'pdz-ic-cache',key:'cache',label:tx('Prompt caching','prompt 缓存'),options:[['0',tx('Off','关')],['1',tx('On','开')]],value:String(S.cache),inline:true})+
    A.ui.seg({id:'pdz-ic-share',key:'share',label:tx('To the small model','交给小模型'),options:segOpts(SHARES,v=>pc(v)),value:String(S.share),inline:true})+
    A.ui.seg({id:'pdz-ic-filt',key:'filt',label:FILT_L(),options:FILTS.map(v=>[String(v),filtShort(v)]),value:String(S.filt),inline:true,note:FILT_N()})+
-   `<div class="goal mono" id="pdz-ch-g"><span>${tx('First word / cost per day / to the small model','首字 / 每天花费 / 交给小模型')}</span><span><b id="pdz-ch-v"></b></span></div><div class="progress" id="pdz-ch-p" aria-hidden="true"><i></i></div>`+
+   `<div class="pdz-chg" id="pdz-ch-g"></div><div class="pdz-chp"><div class="progress" id="pdz-ch-p" aria-hidden="true"><i></i></div><span class="small mono" id="pdz-ch-n"></span></div>`+
    `<p class="small muted">${tx(`Users, messages, peak, retrieval (off) and the GPU price (${usd(CH.price)} per GPU hour) are fixed in this challenge.`,`这道题里，用户数、消息数、高峰倍数、检索（关）和 GPU 价格（每 GPU 小时 ${usd(CH.price)}）都固定不变。`)}</p>`+submit+`<div id="pdz-ch-res" aria-live="polite"></div></div>`;}
 
 /* ---------- stage drawing ---------- */
-let W=640;
+let W=640, GEO=null;
 const sigOf=r=>r.seg.map(g=>g.k+':'+Math.round(g.d*1000)).join(',')+'|'+r.s.filt+'|'+r.s.stream;
 const rowsOf=r=>ROWS.filter(k=>(k!=='ret'||r.s.ret)&&(k!=='route'||r.s.share>0));
 const segOfK=(r,k)=>r.seg.find(g=>g.k===k);
-function axisMax(r){const goal=goalNow(), m=Math.max(r.vis,goal)*1.12; const st=[0.5,1,2,2.5,5,10,20]; for(const s of st){if(m/s<=8) return Math.ceil(m/s)*s;} return Math.ceil(m/20)*20;}
+/* the axis reaches past the first word and the budget line, and for a streamed answer checked in chunks past the second check, so the
+   picture shows the hold, the check and the next chunk being checked (P12) */
+function axisMax(r){const goal=goalNow(), c2=r.s.stream&&typeof r.s.filt==='number'?checkTimes(r)[1]||0:0, m=Math.max(r.vis,goal,c2)*1.12; const st=[0.5,1,2,2.5,5,10,20]; for(const s of st){if(m/s<=8) return Math.ceil(m/s)*s;} return Math.ceil(m/20)*20;}
+/* the time axis. Part 2 draws both of its options on one axis, so the wait for a whole answer is drawn, and played, longer than the streamed
+   one (P3). Part 6 draws its ways of checking on one axis too, so a larger N moves the first word to the right (N3); the whole answer
+   checked first goes past that axis, and the picture says where its first word is */
+const AX_SAFE=['after',16,8,4];
+function axisOf(r){const id=mode==='guided'?sid():'';
+  if(id==='stream') return Math.max(axisMax(compute({...r.s,stream:1})),axisMax(compute({...r.s,stream:0})));
+  if(id==='safety') return Math.max(...AX_SAFE.map(v=>axisMax(compute({...r.s,filt:v}))));
+  return axisMax(r);}
 const goalNow=()=>mode==='challenge'?CH.vis:BRIEF.vis;
-function tickStep(X){const n=Math.max(3,Math.min(8,Math.floor(W/90))); for(const s of [0.25,0.5,1,2,5,10]) if(X/s<=n) return s; return 20;}
-function wfSVG(r,tau){
-  const rows=rowsOf(r), narrow=W<480, LW=narrow?96:Math.min(170,Math.round(W*0.27)), DW=narrow?50:58, RH=narrow?24:25, TOP=22, x0=LW+6, x1=W-DW-4, X=axisMax(r), sx=t=>x0+(x1-x0)*Math.min(t,X)/X, H=TOP+rows.length*RH+34, goal=goalNow();
-  const play=tau!=null, cur=play?tau:Infinity;
+function tickStep(X){const n=Math.max(4,Math.min(8,Math.floor(W/80))); for(const s of [0.25,0.5,1,2,5,10]) if(X/s<=n) return s; return 20;}
+/* when each output check starts (seconds after Send): a chunk is checked as soon as its last token is written; “whole” and “after” check
+   once, when the whole answer is written */
+function checkTimes(r){const F=r.s.filt; if(!r.chkOn) return [];
+  if(typeof F!=='number') return [r.tEnd];
+  const out=[]; for(let j=1;j<=Math.ceil(WL.outMean/F);j++) out.push(r.tFirst+(Math.min(j*F,WL.outMean)-1)*r.tpot); return out;}
+const textW=s=>[...s].reduce((a,c)=>a+(c.charCodeAt(0)>0x2e00?11:6.6),0);
+function wfSVG(r,tau,X){
+  const rows=rowsOf(r), narrow=W<480, LW=narrow?96:Math.min(170,Math.round(W*0.27)), DW=narrow?50:108, RH=narrow?24:23, TOP=22, x0=LW+6, x1=W-DW-4,
+    sx=t=>x0+(x1-x0)*Math.min(Math.max(t,0),X)/X, H=TOP+rows.length*RH+20, goal=goalNow(), over=r.vis>goal+1e-9, play=tau!=null, cur=play?tau:Infinity;
+  const chk=LAT.chk/1000, ck=checkTimes(r), F=r.s.filt, hseg=segOfK(r,'hold'), gen=segOfK(r,'gen'), streamN=!!r.s.stream&&typeof F==='number'&&!!hseg;
+  /* decode ticks: one per token while they are far enough apart, else one per chunk of N tokens, else none; the legend says which (N7, N9) */
+  const px=(x1-x0)*r.tpot/X, N=typeof F==='number'?F:0, tick=px>=4?'tok':N&&N*px>=5?'chunk':'none';
+  GEO={x0,x1,W,tick,N};
+  /* a bar up to the message's time now. When the first word comes too late, the part of a bar on its path that lies past the budget line is
+     red; the part before the line keeps its own look (P19) */
+  const bar=(cls,a,b,y,hh,path)=>{const e=Math.min(b,cur,X); if(e<=a) return ''; let s=`<rect class="pdz-bar ${cls}" x="${sx(a)}" y="${y}" width="${Math.max(sx(e)-sx(a),1.5)}" height="${hh}" rx="1.5"/>`;
+    if(path&&over&&e>goal+1e-9){const a2=Math.max(a,goal); s+=`<rect class="pdz-bar red" x="${sx(a2)}" y="${y}" width="${Math.max(sx(e)-sx(a2),1.5)}" height="${hh}"/>`;} return s;};
   let h=`<defs><pattern id="pdz-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="pdz-hb" width="5" height="5"/><line class="pdz-hp" x1="0" y1="0" x2="0" y2="5"/></pattern></defs>`;
-  const gx=sx(goal), vx=sx(r.vis);
-  h+=`<line class="pdz-goal" x1="${gx}" x2="${gx}" y1="${TOP-6}" y2="${TOP+rows.length*RH}"/>`;
+  const gx=sx(goal), vx=sx(r.vis), yb=TOP+rows.length*RH, visIn=r.vis<=X+1e-9;
+  h+=`<line class="pdz-goal" x1="${gx}" x2="${gx}" y1="${TOP-6}" y2="${yb}"/>`;
   h+=`<text class="pdz-gl" x="${Math.min(gx,x1)}" y="${TOP-9}" text-anchor="${gx>x1-60?'end':'middle'}">${esc(tx(`budget ${f(goal,1)} s`,`预算 ${f(goal,1)} 秒`))}</text>`;
-  const red=r.vis>goal+1e-9?r.seg.find(g=>g.t0+g.d>goal+1e-9):null, genSeg=segOfK(r,'gen');
-  rows.forEach((k,i)=>{const y=TOP+i*RH, g=segOfK(r,k), on=play&&g&&cur>=g.t0&&cur<g.t0+g.d, nm=L(COMP[k].n);
-    const tip=k==='hold'?holdTip(r):k==='model'?COMP[k].d()+tx(` The whole answer is written ${f(r.tEnd,1)} s after Send.`,`整段回答在按下发送后第 ${f(r.tEnd,1)} 秒写完。`):COMP[k].d();
-    h+=`<g class="pdz-row${on?' on':''}" data-k="${k}" data-tipx="${esc(nm+tx(': ','：')+tip.replace(/<[^>]+>/g,''))}" tabindex="0">`;
+  rows.forEach((k,i)=>{const y=TOP+i*RH, g=segOfK(r,k), inSeg=x=>!!x&&cur>=x.t0&&cur<x.t0+x.d, on=play&&(inSeg(g)||(k==='model'&&inSeg(gen))), nm=L(COMP[k].n);
+    const tip=k==='hold'?holdTip(r):k==='model'?modelTip(r):`<p>${COMP[k].d()}</p>`;
+    h+=`<g class="pdz-row${on?' on':''}" data-k="${k}" data-tipx="${esc(`<p><b>${esc(nm)}</b></p>`+tip)}" tabindex="0">`;
     h+=`<rect class="pdz-hit" x="0" y="${y}" width="${W}" height="${RH}"/>`;
     h+=`<text class="pdz-rl" x="${LW}" y="${y+RH/2+4}" text-anchor="end">${esc(narrow&&COMP[k].sn?L(COMP[k].sn):nm)}</text>`;
-    if(k==='log'){h+=`<text class="pdz-note" x="${x0}" y="${y+RH/2+4}">${esc(narrow?tx('after the answer','写完后才记录'):tx('logged after the answer; not part of the wait','回答写完后才记录，不占等待时间'))}</text>`;}
-    else if(k==='hold'&&!r.chkOn){h+=`<text class="pdz-note bad" x="${x0}" y="${y+RH/2+4}">${esc(tx('no output check','不查输出'))}</text>`;}
-    else if(k==='hold'&&r.s.filt==='after'&&r.s.stream){const ok=!play||cur>=r.tFirst; if(ok) h+=`<text class="pdz-note bad" x="${x0+6}" y="${y+RH/2+4}">${esc(narrow?tx('checked after it was sent','发完才查'):tx(`checked once, after all of it was sent (at ${f(r.tEnd,1)} s)`,`整段发完以后（${f(r.tEnd,1)} 秒）才查一次`))}</text>`;}
-    else if(g){const a=sx(g.t0), b=sx(Math.min(g.t0+g.d,cur)), w=Math.max(0,b-a), cls=k==='model'?'mdl':k==='hold'?'hold':'cmp';
-      if(cur>=g.t0){h+=`<rect class="pdz-bar ${cls}${red===g?' red':''}" x="${a}" y="${y+5}" width="${Math.max(w,1.5)}" height="${RH-10}" rx="2"/>`;}
-      if(k==='model'&&cur>=r.tFirst){const e=Math.min(r.tEnd,cur,X), b2=sx(e); h+=`<rect class="pdz-bar dec${genSeg&&red===genSeg?' red':''}" x="${sx(r.tFirst)}" y="${y+8}" width="${Math.max(0,b2-sx(r.tFirst))}" height="${RH-16}" rx="2"/>`;
-        const nt=narrow?tx(`done at ${f(r.tEnd,1)} s`,`第 ${f(r.tEnd,1)} 秒写完`):tx(`the answer is done at ${f(r.tEnd,1)} s`,`回答在第 ${f(r.tEnd,1)} 秒写完`), nw=[...nt].reduce((a,c)=>a+(c.charCodeAt(0)>0x2e00?11:6.2),0)+8, clash=[gx,vx].some(x=>x>x1-2-nw&&x<x1+2);
-        if(r.tEnd>X&&!clash&&(!play||cur>=X)) h+=`<text class="pdz-note" x="${x1-2}" y="${y+4}" text-anchor="end">${esc(nt)}</text>`;}
-      if(k==='hold'&&typeof r.s.filt==='number'&&r.s.stream){const N=r.s.filt; for(let j=1;j<=Math.ceil(WL.outMean/N);j++){const tc=r.tFirst+(Math.min(j*N,WL.outMean)-1)*r.tpot+LAT.chk/1000; if(tc>X||tc>cur) break; h+=`<line class="pdz-tick" x1="${sx(tc)}" x2="${sx(tc)}" y1="${y+3}" y2="${y+RH-3}"/>`;}}
-      const gx2=k==='model'&&genSeg?genSeg:null, redRow=red===g||(gx2&&red===gx2);
-      if(!play||cur>=(gx2?gx2.t0+gx2.d:g.t0+g.d)) h+=`<text class="pdz-dur${redRow?' bad':''}" x="${W-4}" y="${y+RH/2+4}" text-anchor="end">${esc(gx2?dur(g.d+gx2.d):dur(g.d))}</text>`;}
+    const note=(t,cls,x)=>`<text class="pdz-note${cls?' '+cls:''}" x="${x==null?x0:x}" y="${y+RH/2+4}">${esc(t)}</text>`;
+    let end=g?g.t0+g.d:0, redRow=false;
+    if(k==='log') h+=note(narrow?tx('after the answer','写完后才记录'):tx('logged after the answer; not part of the wait','回答写完后才记录，不占等待时间'));
+    else if(k==='hold'&&!r.chkOn) h+=note(tx('no output check','不查输出'),'bad');
+    else if(k==='hold'&&F==='after'&&r.s.stream){if(!play||cur>=r.tFirst) h+=note(narrow?tx('checked after it was sent','发完才查'):tx(`checked once, after all of it was sent (at ${f(r.tEnd,1)} s)`,`整段发完以后（${f(r.tEnd,1)} 秒）才查一次`),'bad',x0+6);}
+    else if(k==='hold'){
+      /* the first chunk: hatched while its N tokens are being written, then its check (dark); every later check appears as the time reaches it (P12) */
+      if(streamN){h+=bar('hold',hseg.t0,ck[0],y+5,RH-10,true);
+        const lab=tx(`${F} tokens, then a check`,`攒够 ${F} 个 token 再查`), lx=sx(hseg.t0)-6;
+        if(!narrow&&(!play||cur>=hseg.t0)&&lx-x0>=textW(lab)+4) h+=`<text class="pdz-note" x="${lx}" y="${y+RH/2+4}" text-anchor="end">${esc(lab)}</text>`;}
+      ck.forEach(tc=>{if(tc<X) h+=bar('chk',tc,tc+chk,y+4,RH-8,!!hseg&&tc>=hseg.t0-1e-9&&tc<hseg.t0+hseg.d);});
+      redRow=over&&!!hseg&&end>goal+1e-9;}
+    else if(k==='model'&&g){h+=bar('mdl',g.t0,r.tFirst,y+5,RH-10,true);
+      /* decode: one short tick per token while the ticks are far enough apart, a long tick where a chunk of N tokens is full */
+      const dEnd=Math.min(r.tEnd,X); h+=bar('dec',r.tFirst,dEnd,y+8,RH-16,!!gen);
+      const lim=Math.min(dEnd,cur);
+      if(cur>=r.tFirst&&tick!=='none') for(let i=1;i<=WL.outMean;i++){const t=r.tFirst+(i-1)*r.tpot; if(t>lim+1e-9) break; const full=!!N&&(i%N===0||i===WL.outMean);
+        if(tick==='tok'||full) h+=`<line class="pdz-tok${full?' full':''}" x1="${sx(t)}" x2="${sx(t)}" y1="${y+(full?5:8)}" y2="${y+RH-(full?5:8)}"/>`;}
+      if(gen) end=gen.t0+gen.d; redRow=over&&end>goal+1e-9;
+      const nt=narrow?tx(`done at ${f(r.tEnd,1)} s`,`第 ${f(r.tEnd,1)} 秒写完`):tx(`the answer is done at ${f(r.tEnd,1)} s`,`回答在第 ${f(r.tEnd,1)} 秒写完`), clash=(visIn?[gx,vx]:[gx]).some(x=>x>x1-10-textW(nt)&&x<x1+2);
+      if(r.tEnd>X&&!clash&&(!play||cur>=X)) h+=`<text class="pdz-note" x="${x1-2}" y="${y+4}" text-anchor="end">${esc(nt)}</text>`;}
+    else if(g){h+=bar('cmp',g.t0,end,y+5,RH-10,true); redRow=over&&end>goal+1e-9;
+      /* the first word past the end of the axis (part 6, the whole answer checked first): the row that ends with it says when (N3) */
+      if(k==='back'&&!visIn&&(!play||cur>=X-1e-9)){const ls=[tx(`first word at ${sT(r.vis)} →`,`首字在 ${sT(r.vis)} →`),tx(`first word ${sT(r.vis)} →`,`首字 ${sT(r.vis)} →`),`${sT(r.vis)} →`];
+        h+=note(ls.find(t=>textW(t)<=x1-x0-8)||ls[2],'bad',x1-2).replace('<text ','<text text-anchor="end" ');}}
+    /* the right column: the row's time once the row is done; the model's says what it counts (P18) */
+    if(g&&(!play||cur>=end)){const d=k!=='model'?dur(g.d):gen?(narrow?dur(end-g.t0):tx(`whole ${dur(end-g.t0)}`,`整段 ${dur(end-g.t0)}`)):(narrow?dur(g.d):tx(`TTFT ${dur(g.d)}`,`首 token ${dur(g.d)}`));
+      h+=`<text class="pdz-dur${redRow?' bad':''}" x="${W-4}" y="${y+RH/2+4}" text-anchor="end">${esc(d)}</text>`;}
     h+=`</g>`;});
-  const yb=TOP+rows.length*RH;
   h+=`<line class="pdz-ax" x1="${x0}" x2="${x1}" y1="${yb+2}" y2="${yb+2}"/>`;
   const ts=tickStep(X); for(let t=0;t<=X+1e-9;t+=ts) h+=`<text class="pdz-tk" x="${sx(t)}" y="${yb+15}" text-anchor="${t===0?'start':'middle'}">${t===0?'0':f(t,ts<1?2:0)}</text>`;
-  h+=`<text class="pdz-tk" x="${x1}" y="${yb+28}" text-anchor="end">${esc(tx('seconds after Send','按下发送后的秒数'))}</text>`;
-  if(!play||cur>=r.vis){h+=`<line class="pdz-vis" x1="${vx}" x2="${vx}" y1="${TOP-6}" y2="${yb+4}"/>`;}
-  if(play&&cur<r.vis){h+=`<line class="pdz-cur" x1="${sx(cur)}" x2="${sx(cur)}" y1="${TOP-6}" y2="${yb+4}"/>`;}
+  h+=`<text class="pdz-tk" x="${LW}" y="${yb+15}" text-anchor="end">${esc(narrow?tx('s after Send','按下发送后的秒数'):tx('seconds after Send','按下发送后的秒数'))}</text>`;
+  if(visIn&&(!play||cur>=r.vis)) h+=`<line class="pdz-vis" x1="${vx}" x2="${vx}" y1="${TOP-6}" y2="${yb+4}"/>`;
+  if(play&&cur<X) h+=`<line class="pdz-cur" x1="${sx(cur)}" x2="${sx(cur)}" y1="${TOP-6}" y2="${yb+4}"/>`;
   return `<svg class="pdz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(tx(`The path of one message: the first word appears after ${sT(r.vis)}.`,`一条消息的路径：${sT(r.vis)}后出现第一个字。`))}">${h}</svg>`;}
 const lg=(cls,txt,tip)=>`<span data-tipx="${esc(tip)}" tabindex="0"><i class="pdz-sw ${cls}"></i><span>${txt}</span></span>`;
 function legendHTML(){return lg('pdz-sw-cmp',tx('component at work','部件在工作'),tx('A bar is the time the component adds before the first word.','横条是这个部件在第一个字之前占的时间。'))+
-  lg('pdz-sw-mdl',tx('model: queue + prefill','模型：排队 + prefill'),tx('Up to the model’s first token; each pool is sized so that 90% of first tokens come within 1 s.','到模型的第一个 token；每组卡都按 90% 的首 token 在 1 秒内来配。'))+
-  lg('pdz-sw-dec',tx('decode','decode'),tx('The rest of the answer, one token per step.','回答的其余部分，每一步一个 token。'))+
-  lg('pdz-sw-hold',tx('held for the output check','为输出检查扣住'),tx('The first chunk is held until it is written and checked.','第一段要等它写完、查完。'))+
-  lg('pdz-sw-tick',tx('one check','一次检查'),tx('Each tick is one call to the output classifier.','每一道竖线是一次调用输出分类器。'))+
+  lg('pdz-sw-mdl',tx('model: queue + prefill','模型：排队 + prefill'),tx('The time the request queues at the model and runs prefill, until the model writes its first token. The GPUs are sized so that 90% of requests get their first token within 1 s.','这一段是请求在模型那里排队、做 prefill，一直到模型写出第一个 token 的时间。卡是按“90% 的请求首 token 在 1 秒内”来配的。'))+
+  (()=>{const t=GEO&&GEO.tick, n=GEO&&GEO.N;
+    return lg('pdz-sw-dec',t==='tok'?tx('decode: one tick per token, the first at the end of prefill','decode：一道细线一个 token，第 1 个在 prefill 末端'):t==='chunk'?tx(`decode: one tick per chunk of ${n} tokens`,`decode：一道线是一段（${n} 个 token）`):tx('decode: the rest of the answer','decode：写回答的其余部分'),
+      t==='chunk'?tx(`The rest of the answer, one token per step. At this scale the ticks would be too close, so only the end of each chunk of ${n} tokens is drawn.`,`回答的其余部分，每一步写一个 token。这个比例下每个 token 一道线太密，只画每段 ${n} 个 token 的末尾。`)
+        :tx('The rest of the answer, one token per step. The first token is the model’s first token, at the end of prefill; a long tick marks a full chunk of N tokens.','回答的其余部分，每一步写一个 token。第 1 个 token 就是模型的首 token，在 prefill 末端；长竖线表示攒满了一段 N 个 token。'));})()+
+  lg('pdz-sw-hold',tx('held: the first chunk is being written','扣住：第一段还没写完'),tx('The output check can read the first chunk only when all N of its tokens are written; the user waits for that too.','输出检查要等第一段的 N 个 token 都写完才能查，这段时间用户也在等。'))+
+  lg('pdz-sw-chk',tx(`one check (${LAT.chk} ms)`,`一次检查（${LAT.chk} ms）`),tx(`The classifier checks one chunk in ${LAT.chk} ms (an assumption). Only a checked chunk is sent to the user.`,`分类器查一段要 ${LAT.chk} ms（假设）。查过的一段才发给用户。`))+
   lg('pdz-sw-goal',tx('budget for the first word','首字预算'),tx('The product’s goal for the time to the first visible word.','产品对首字可见时间的要求。'))+
   lg('pdz-sw-vis',tx('first word on screen','第一个字出现'),D_VIS())+
-  lg('pdz-sw-bad',tx('the step that breaks the budget','超出预算的那一环'),tx('The component during which the time passes the budget.','时间在这一环越过了预算。'));}
+  lg('pdz-sw-bad',tx('past the budget','超出预算的部分'),tx('The time before the first word that lies past the budget line.','第一个字出现之前、越过预算线以后的那部分时间。'));}
+/* Scenarios and Settings fold the prompt bar and the sizing sheet, so the trace and the fleet fit on the stage (P15); a guided part shows them open */
+const moreOpen={prompt:false,sheet:false};
+const fold=(k,title,body)=>mode==='guided'?`<div class="pdz-ch-t">${title}</div>${body}`:`<details class="pdz-more" data-more="${k}"${moreOpen[k]?' open':''}><summary class="pdz-ch-t">${title}</summary>${body}</details>`;
 function promptHTML(r){const own=(WL.own[0]+WL.own[1])/2, ret=r.s.ret?WL.ret:0, tot=WL.sys+own+ret, q=quiet('l',r.s.cache,r.s.ret), q8=quiet('s',r.s.cache,r.s.ret), w=v=>(100*v/tot).toFixed(2)+'%';
-  return `<div class="pdz-ch-t">${tx('One average prompt, in tokens: what prefill must compute','一个平均长度的 prompt（token 数）：prefill 要算哪些')}</div>`+
+  return fold('prompt',tx('One average prompt, in tokens: what prefill must compute','一个平均长度的 prompt（token 数）：prefill 要算哪些'),
    `<div class="pdz-pbar"><span class="pdz-ps sys${r.s.cache?' hit':''}" style="width:${w(WL.sys)}" data-tipx="${esc(tx(`System prompt: 2,048 tokens, the same for every message.${r.s.cache?' Read from the cache, not computed.':''}`,`system prompt：2,048 个 token，每条消息都一样。${r.s.cache?'从缓存读，不用算。':''}`))}" tabindex="0">${tx('system','system')} ${I(WL.sys)}</span>`+
    `<span class="pdz-ps own" style="width:${w(own)}" data-tipx="${esc(tx('Recent history and the new message: 2,000 tokens on average (500 to 3,500).','最近的历史和新消息：平均 2,000 个 token（500 到 3,500）。'))}" tabindex="0">${tx('history + message','历史 + 新消息')} ${I(own)}</span>`+
-   (ret?`<span class="pdz-ps ret" style="width:${w(ret)}" data-tipx="${esc(tx('Three retrieved passages of 512 tokens.','检索到的 3 段，每段 512 个 token。'))}" tabindex="0">${tx('retrieved','检索')} ${I(ret)}</span>`:'')+`</div>`+
+   (ret?`<span class="pdz-ps ret" style="width:${w(ret)}" data-tipx="${esc(tx('Three retrieved passages of 512 tokens. Prefill computes them too.','检索到的 3 段，每段 512 个 token。prefill 也要算它们。'))}" tabindex="0">${tx('retrieved','检索')} ${I(ret)}</span>`:'')+`</div>`+
    `<div class="pdz-pl"><span><i class="pdz-sw pdz-sw-cmp"></i>${tx('computed in prefill','prefill 要算')}</span><span><i class="pdz-sw pdz-sw-hit"></i>${tx('read from the cache','从缓存读')}</span></div>`+
-   `<p class="small">${tx(r.s.share>0?`Prefill computes ${I(q.prefill)} of ${I(q.prompt)} tokens. On a quiet server it takes ${msT(q8.ttft)} on the small 8B model and ${msT(q.ttft)} on the large 70B model.`:`Prefill computes ${I(q.prefill)} of ${I(q.prompt)} tokens. On a quiet server the 70B model takes ${msT(q.ttft)}.`,r.s.share>0?`prefill 要算 ${I(q.prompt)} 个 token 里的 ${I(q.prefill)} 个。在空闲的服务上，小模型 8B 用 ${msT(q8.ttft)}，大模型 70B 用 ${msT(q.ttft)}。`:`prefill 要算 ${I(q.prompt)} 个 token 里的 ${I(q.prefill)} 个。在空闲的服务上，70B 模型用 ${msT(q.ttft)}。`)}</p>`;}
-function fleetHTML(r){const tot=r.total, per=tot>400?10:1, sq=n=>Math.ceil(n/per), cell=(cls,n)=>`<span class="pdz-sqs">${Array.from({length:sq(n)},()=>`<i class="pdz-sq ${cls}"></i>`).join('')}</span>`;
-  const grp=(cls,name,n,tip)=>n>0?`<div class="pdz-fg" data-tipx="${esc(tip)}" tabindex="0"><div class="pdz-fl"><span>${name}</span><b>${tx(`${I(n)} GPUs`,`${I(n)} 张卡`)}</b></div>${cell(cls,n)}</div>`:'';
+   `<p class="small">${tx(r.s.share>0?`Prefill computes ${I(q.prefill)} of ${I(q.prompt)} tokens. On a quiet server it takes ${msT(q8.ttft)} on the small 8B model and ${msT(q.ttft)} on the large 70B model.`:`Prefill computes ${I(q.prefill)} of ${I(q.prompt)} tokens. On a quiet server the 70B model takes ${msT(q.ttft)}.`,r.s.share>0?`prefill 要算 ${I(q.prompt)} 个 token 里的 ${I(q.prefill)} 个。在空闲的服务上，小模型 8B 用 ${msT(q8.ttft)}，大模型 70B 用 ${msT(q.ttft)}。`:`prefill 要算 ${I(q.prompt)} 个 token 里的 ${I(q.prefill)} 个。在空闲的服务上，70B 模型用 ${msT(q.ttft)}。`)}</p>`);}
+/* the fleet, at one scale everywhere (P1): a square is 4 GPUs, one replica of the 70B model, and a remainder is a narrower square, so the
+   squares' area is in proportion to the GPUs. Past SQCAP squares in all, the rest is counted in words, not drawn: the drawn area never
+   shrinks as the GPUs grow. Hard messages the small model answers badly (more than the easy share) are its GPUs drawn red (P10) */
+const SQ=4, SQCAP=1000;
+const hardOf=r=>r.s.share>EASY+1e-9&&r.gpus.s?Math.round(r.gpus.s*(r.s.share-EASY)/r.s.share):0;
+function fleetCells(r){const hard=hardOf(r), parts=[['l',r.gpus.l],['s',r.gpus.s-hard],['s hard',hard],['f',r.fG]]; let left=SQCAP; const out={};
+  parts.forEach(([cls,n])=>{const u=Math.max(0,Math.min(n/SQ,left)); left-=u; const full=Math.floor(u+1e-9), rem=u-full; let h='';
+    for(let i=0;i<full;i++) h+=`<i class="pdz-sq ${cls}"></i>`;
+    if(rem>1e-9) h+=`<i class="pdz-sq ${cls} part" style="width:${(11*rem).toFixed(2)}px"></i>`;
+    out[cls]={h,u,cut:Math.round(n-u*SQ)};});
+  return out;}
+function fleetHTML(r){const tot=r.total, c=fleetCells(r), hard=hardOf(r);
+  const cut=n=>n>0?`<div class="pdz-fh small muted">${tx(`${I(n)} more GPUs not drawn`,`还有 ${I(n)} 张卡没画出来`)}</div>`:'';
+  const grp=(cls,name,n,tip,inner,more)=>n>0?`<div class="pdz-fg" data-tipx="${esc(tip)}" tabindex="0"><div class="pdz-fl"><span>${name}</span><b>${tx(`${I(n)} GPUs`,`${I(n)} 张卡`)}</b></div><span class="pdz-sqs">${inner}</span>${more||''}</div>`:'';
   return `<div class="pdz-ch-t">${tx(`GPUs at peak for ${dauT(r.s.dau)} daily users: ${I(tot)} GPUs, ${usd(r.costDay)} a day`,`每天 ${dauT(r.s.dau)} 用户、高峰时要的卡：${I(tot)} 张，每天 ${usd(r.costDay)}`)}</div>`+
-   grp('l',tx(`Large model, ${MODELS.l.name}, 4 per replica`,`大模型 ${MODELS.l.name}，每份 4 张`),r.gpus.l,tx(`${I(r.rep.l)} replicas for ${rT(r.rate.l)} messages per second; each takes at most ${f(r.P.l.g,2)} per second (its goodput).`,`${I(r.rep.l)} 份副本，一共接每秒 ${rT(r.rate.l)} 条消息；每份最多接每秒 ${f(r.P.l.g,2)} 条（它的达标吞吐）。`))+
-   grp('s',tx(`Small model, ${MODELS.s.name}, 1 per replica`,`小模型 ${MODELS.s.name}，每份 1 张`),r.gpus.s,tx(`${I(r.rep.s)} replicas for ${rT(r.rate.s)} messages per second; each takes at most ${f(r.P.s.g,2)} per second (its goodput).`,`${I(r.rep.s)} 份副本，一共接每秒 ${rT(r.rate.s)} 条消息；每份最多接每秒 ${f(r.P.s.g,2)} 条（它的达标吞吐）。`))+
-   grp('f',tx('Output checks','输出检查'),r.fG,tx(`${cpsT(r.cps)} checks per answer on average, each taking 1 ms of one GPU (this lab’s assumption).`,`每个回答平均查 ${cpsT(r.cps)} 次，每次占一张卡 1 ms（这个 Lab 的假设）。`))+
-   `<p class="small muted">${per>1?tx('Each square is 10 GPUs, rounded up.','每个方块代表 10 张卡（向上取整）。'):tx('Each square is one H100.','每个方块是一张 H100。')}</p>`;}
+   `<div class="pdz-fkey"><span><i class="pdz-sqk"></i>${tx('= 4 GPUs (one 70B replica); a narrower square is fewer','= 4 张卡（一份 70B 副本）；窄的方块不到 4 张')}</span>${hard?`<span><i class="pdz-sqk hard"></i>${tx('the small model on hard messages','小模型在答难题')}</span>`:''}</div>`+
+   grp('l',tx(`Large model, ${MODELS.l.name}, 4 per replica`,`大模型 ${MODELS.l.name}，每份 4 张`),r.gpus.l,tx(`${I(r.rep.l)} replicas for ${rT(r.rate.l)} messages per second; each takes at most ${f(r.P.l.g,2)} per second (its goodput).`,`${I(r.rep.l)} 份副本，一共接每秒 ${rT(r.rate.l)} 条消息；每份最多接每秒 ${f(r.P.l.g,2)} 条（它的达标吞吐）。`),c.l.h,cut(c.l.cut))+
+   grp('s',tx(`Small model, ${MODELS.s.name}, 1 per replica`,`小模型 ${MODELS.s.name}，每份 1 张`),r.gpus.s,tx(`${I(r.rep.s)} replicas for ${rT(r.rate.s)} messages per second; each takes at most ${f(r.P.s.g,2)} per second (its goodput).`,`${I(r.rep.s)} 份副本，一共接每秒 ${rT(r.rate.s)} 条消息；每份最多接每秒 ${f(r.P.s.g,2)} 条（它的达标吞吐）。`),
+     c.s.h+(c['s hard'].h?`<span class="pdz-sqh">${c['s hard'].h}</span>`:''),cut(c.s.cut+c['s hard'].cut)+(hard?`<div class="pdz-fh small pdz-bad">${tx(`Red: about ${I(hard)} GPUs answer hard messages, the extra ${pc(r.s.share-EASY)} of the messages sent to the small model`,`红色：约 ${I(hard)} 张卡在答难题，也就是多交给小模型的那 ${pc(r.s.share-EASY)} 的消息`)}</div>`:''))+
+   grp('f',tx('Output checks','输出检查'),r.fG,tx(`${cpsT(r.cps)} checks per answer on average, each taking 1 ms of one GPU (this lab’s assumption).`,`每个回答平均查 ${cpsT(r.cps)} 次，每次占一张卡 1 ms（这个 Lab 的假设）。`),c.f.h,cut(c.f.cut));}
 function sheetHTML(r){const s=r.s, row=(a,b,c)=>`<tr><th scope="row">${a}</th><td>${b}</td><td class="mono">${c}</td></tr>`;
-  return `<div class="pdz-ch-t">${tx('Sizing sheet: from users to dollars','估算表：从用户数到美元')}</div><div class="pdz-tw"><table class="pdz-tab"><tbody>`+
+  return fold('sheet',tx('Sizing sheet: from users to dollars','估算表：从用户数到美元'),`<div class="pdz-tw"><table class="pdz-tab"><tbody>`+
    row(tx('Messages per day','每天的消息'),tx(`${dauT(s.dau)} users × ${s.msgs}`,`${dauT(s.dau)} 用户 × ${s.msgs}`),bigN(r.msgsDay))+
    row(tx('At peak, per second','高峰每秒'),tx(`over 86,400 s, × ${s.peak} at the peak`,`分摊到 86,400 秒，高峰再 × ${s.peak}`),rT(r.lam))+
    (r.rate.s>0?row(tx('Small-model replicas','小模型副本'),tx(`${rT(r.rate.s)} per s, ${f(r.P.s.g,2)} per replica, rounded up`,`每秒 ${rT(r.rate.s)} 条，每份接 ${f(r.P.s.g,2)} 条，向上取整`),tx(`${I(r.rep.s)} → ${I(r.gpus.s)} GPUs`,`${I(r.rep.s)} 份 → ${I(r.gpus.s)} 张卡`)):'')+
    (r.rate.l>0?row(tx('Large-model replicas','大模型副本'),tx(`${rT(r.rate.l)} per s, ${f(r.P.l.g,2)} per replica, rounded up`,`每秒 ${rT(r.rate.l)} 条，每份接 ${f(r.P.l.g,2)} 条，向上取整`),tx(`${I(r.rep.l)} → ${I(r.gpus.l)} GPUs`,`${I(r.rep.l)} 份 → ${I(r.gpus.l)} 张卡`)):'')+
-   (r.fG?row(tx('Output checks','输出检查'),tx(`${rT(r.lam)} messages per s × ${cpsT(r.cps)} checks each × 1 ms = ${r.fRaw.toFixed(1)} GPU-seconds every second, rounded up`,`每秒 ${rT(r.lam)} 条 × 每条查 ${cpsT(r.cps)} 次 × 1 ms = 每秒要 ${r.fRaw.toFixed(1)} 秒的卡时，向上取整`),tx(`${I(r.fG)} GPUs`,`${I(r.fG)} 张卡`)):'')+
+   (r.fG?row(tx('Output checks','输出检查'),tx(`${rT(r.lam)} messages per s × ${cpsT(r.cps)} checks each × ${DEF('1 ms of one GPU per check',D_CHKGPU())} = ${r.fRaw.toFixed(1)} GPUs busy all the time on average, rounded up`,`每秒 ${rT(r.lam)} 条 × 每条平均查 ${cpsT(r.cps)} 次 × ${DEF('每次占卡 1 ms',D_CHKGPU())} = 平均 ${r.fRaw.toFixed(1)} 张卡一直在查，向上取整`),tx(`${I(r.fG)} GPUs`,`${I(r.fG)} 张卡`)):'')+
    row(tx('Cost per day','每天花费'),tx(`${I(r.total)} GPUs × 24 h × ${usd(s.price)}`,`${I(r.total)} 张 × 24 小时 × ${usd(s.price)}`),usd(r.costDay))+
    row(tx('Per user per month','每个用户每月'),tx('× 30 days, shared by the daily users','× 30 天，再由每天的用户分摊'),usd(r.perUserMonth))+
    row(tx('Conversation storage','对话存储'),tx('400 tokens × 4 bytes per message','每条消息 400 个 token × 4 字节'),tx(`${f(r.storeGB,1)} GB a day`,`每天 ${f(r.storeGB,1)} GB`))+
-   `</tbody></table></div><p class="small muted">${tx('GB here is 10⁹ bytes. Stored per message: the user’s message (about 100 tokens) and the answer (300 on average), at about 4 bytes per token (the tiktoken README’s average).','这里的 GB 是 10⁹ 字节。每条消息存用户的消息（约 100 个 token）和回答（平均 300 个），tiktoken 的 README 说，平均每个 token 约对应 4 字节。')}</p>`;}
+   `</tbody></table></div><p class="small muted">${tx(`Each message stores the user’s message (about 100 tokens) and the answer (300 on average), about 4 bytes per token; GB here is 10⁹ bytes. ${f(r.storeGB,1)} GB a day costs far less than the GPUs, so the cost above counts the GPUs only.`,`每条消息存用户的消息（约 100 个 token）和回答（平均 300 个），每个 token 约 4 字节；这里的 GB 是 10⁹ 字节。每天 ${f(r.storeGB,1)} GB 的存储比卡便宜得多，所以上面的花费只算 GPU。`)}</p>`);}
 const MET=[
  {k:'vis',label:()=>tx('First word on screen','首字可见时间'),v:r=>sT(r.vis),dp:2,sub:()=>tx(`budget ${f(goalNow(),1)} s`,`预算 ${f(goalNow(),1)} 秒`),tip:()=>D_VIS(),bad:r=>r.vis>goalNow()+1e-9},
- {k:'gpu',label:()=>tx('GPUs at peak','高峰时的卡数'),v:r=>I(r.total),dp:0,sub:r=>tx(`${rT(r.lam)} messages per second`,`每秒 ${rT(r.lam)} 条消息`),tip:()=>tx('H100s for both model pools and the output checks, sized for the busiest hour.','两组模型的卡加上输出检查的卡，按最忙那个小时配。')},
+ /* part 6 says how many GPUs the checks take: the card under the picture shows it (P12) */
+ {k:'gpu',label:()=>tx('GPUs at peak','高峰时的卡数'),v:r=>I(r.total),dp:0,sub:r=>mode==='guided'&&sid()==='safety'?tx(`${I(r.fG)} of them for checks`,`其中输出检查 ${I(r.fG)} 张`):tx(`${rT(r.lam)} messages per second`,`每秒 ${rT(r.lam)} 条消息`),tip:()=>tx('H100s for both model pools and the output checks, sized for the busiest hour.','两组模型的卡加上输出检查的卡，按最忙那个小时配。')},
  {k:'cost',label:()=>tx('GPU cost per day','每天的 GPU 花费'),v:r=>usd(r.costDay),dp:0,sub:r=>tx(`at ${usd(r.s.price)} per GPU hour`,`每 GPU 小时 ${usd(r.s.price)}`),tip:()=>D_GPUH(),bad:r=>mode==='challenge'&&r.costDay>CH.budget+1e-9},
  {k:'user',label:()=>tx('Per user per month','每个用户每月'),v:r=>usd(r.perUserMonth),dp:3,sub:()=>tx('GPU cost only','只算 GPU'),tip:()=>tx('Daily GPU cost times 30, divided by daily users.','每天的 GPU 花费乘以 30，再除以每天的用户数。')}];
 const numOf=s=>parseFloat(String(s).replace(/[$,s ]/g,''));
+let dBase=null;   // a scenario switch says which scenario the change is from (P30); on two lines it breaks before “（比” or “n 倍”, not inside the name (N13)
 function drawMetrics(r){const host=$('#pdz-metrics',app);
   if(!host.children.length) host.innerHTML=MET.map(m=>`<div class="metric" data-k="${m.k}" tabindex="0"><div class="k"></div><div class="v mono"></div><div class="sub"></div><div class="d mono"></div></div>`).join('');
   MET.forEach(m=>{const el=host.querySelector(`[data-k="${m.k}"]`), v=m.v(r), d=el.querySelector('.d');
     el.querySelector('.k').textContent=m.label(); el.querySelector('.v').textContent=v; el.querySelector('.sub').textContent=m.sub(r); el.dataset.tipx=m.tip();
     el.classList.toggle('pdz-mbad',!!(m.bad&&m.bad(r)));
-    const a=numOf(shownPrev[m.k]), b=numOf(v), dt=userAct&&isFinite(a)&&isFinite(b)?(A.fmt.delta(a,b,{dp:m.dp})||''):'';
-    if(dt){d.textContent=dt; d.classList.add('on'); d._at=performance.now(); clearTimeout(d._t); d._t=setTimeout(()=>{d.classList.remove('on'); d.textContent='';},2600);}
+    const a=numOf(shownPrev[m.k]), b=numOf(v), dt=userAct&&isFinite(a)&&isFinite(b)?(A.fmt.delta(a,b,dBase?{dp:m.dp,base:dBase}:{dp:m.dp})||''):'';
+    if(dt){d.textContent=dt.replace(/ 倍$/,'\u00a0倍').replace('（比“','（比\u2060“'); d.classList.add('on'); d._at=performance.now(); clearTimeout(d._t); d._t=setTimeout(()=>{d.classList.remove('on'); d.textContent='';},2600);}
     else if(!userAct||performance.now()-(d._at||0)>50){d.classList.remove('on'); d.textContent='';}
     shownPrev[m.k]=v;});}
 const MB=(lead,rows,res)=>`<div class="pdz-mb"><p>${lead}</p><div class="pdz-eqs">${rows.map(([l,r])=>`<span class="pdz-eq-l">${l?M(l):''}</span><span class="pdz-eq-r">${M(r)}</span>`).join('')}</div>${res?`<p class="pdz-mb-res">${res}</p>`:''}</div>`;
 const tt=s=>`\\text{${s}}`;
 function mathHTML(r){const s=r.s, ms=v=>I(v*1000), parts=r.seg.filter(g=>!['model','gen','hold'].includes(g.k));
   const pre=parts.reduce((a,g)=>a+g.d,0), G=r.gen>0;
-  const terms=[tt(tx('path','路上')),tt('TTFT')].concat(G?[tt(tx('rest of the answer','写完整段'))]:[]).concat(r.hold>0?[tt(tx('hold','扣住'))]:[]).concat([tt(tx('back','回程'))]);
+  const terms=[tt(tx('way in','去程')),tt('TTFT')].concat(G?[tt(tx('rest of the answer','写完整段'))]:[]).concat(r.hold>0?[tt(tx('hold','扣住'))]:[]).concat([tt(tx('way back','回程'))]);
   const vals=[ms(pre-LAT.net/1000),ms(r.tModel)].concat(G?[ms(r.gen)]:[]).concat(r.hold>0?[ms(r.hold)]:[]).concat([ms(LAT.net/1000)]);
-  let h=MB(tx('Time to the first visible word: the components on the way to the model, the model’s first token, the time the output check holds the first chunk, and the network back to the user.','首字可见时间：去程路上各部件的时间，加上模型的首 token，加上输出检查扣住第一段的时间，再加上回程的网络。'),
+  let h=MB(tx('Time to the first visible word: the components on the way in, the model’s first token, the time the output check holds the first chunk, and the network on the way back.','首字可见时间：去程各部件的时间，加上模型的首 token，加上输出检查扣住第一段的时间，再加上回程的网络。'),
     [[`${tt(tx('first word','首字'))}`,`= ${terms.join(' + ')}`],['',`= (${vals.map(v=>String(v).replace(/,/g,'{,}')).join(' + ')})\\,${tt('ms')} = ${f(r.vis,2)}\\,${tt('s')}`]],
-    tx(`On the way: ${parts.filter(g=>g.k!=='back').map(g=>`${L(COMP[g.k].n)} ${ms(g.d)} ms`).join(', ')}. TTFT is the 90th percentile time to first token the engine measures at goodput, ${ms(r.tModel)} ms, within the ${f(TTFT_GOAL,0)} s goal each pool is sized for.`,
+    tx(`Way in: ${parts.filter(g=>g.k!=='back').map(g=>`${L(COMP[g.k].n)} ${ms(g.d)} ms`).join(', ')}. TTFT is the 90th percentile time to first token the engine measures at goodput, ${ms(r.tModel)} ms, within the ${f(TTFT_GOAL,0)} s goal each pool is sized for.`,
       `去程：${parts.filter(g=>g.k!=='back').map(g=>`${L(COMP[g.k].n)} ${ms(g.d)} ms`).join('，')}。TTFT 是引擎在达标吞吐下测到的首 token 延迟的第 90 百分位，${ms(r.tModel)} ms，在每组卡配卡时用的 ${f(TTFT_GOAL,0)} 秒目标以内。`));
   if(r.hold>0&&s.stream&&typeof s.filt==='number') h+=MB(tx('The hold: the first chunk of N tokens is written, then checked.','扣住的时间：第一段 N 个 token 先写完，再查一次。'),
     [[tt(tx('hold','扣住')),`= (N - 1) \\times ${tt('TPOT')} + ${tt(tx('check','检查'))}`],['',`= (${s.filt} - 1) \\times ${f(r.tpot*1000,2)}\\,${tt('ms')} + ${LAT.chk}\\,${tt('ms')} = ${f(r.hold*1000,0)}\\,${tt('ms')}`]],
-    tx(`TPOT is the 90th percentile of the time per output token the engine measures at goodput, ${f(r.tpot*1000,2)} ms; the check takes ${LAT.chk} ms (an assumption).`,`TPOT 是引擎在达标吞吐下测到的每个输出 token 耗时的第 90 百分位，${f(r.tpot*1000,2)} ms；每次检查 ${LAT.chk} ms 是假设。`));
+    tx(`The chunk’s first token is the model’s first token, already counted in TTFT, so the hold waits for only ${s.filt-1} more. TPOT is the 90th percentile of the time per output token the engine measures at goodput, ${f(r.tpot*1000,2)} ms; the check takes ${LAT.chk} ms (an assumption).`,`第一段的第 1 个 token 就是模型的首 token，已经算在 TTFT 里，所以只要再等 ${s.filt-1} 个。TPOT 是引擎在达标吞吐下测到的每个输出 token 耗时的第 90 百分位，${f(r.tpot*1000,2)} ms；每次检查 ${LAT.chk} ms 是假设。`));
   h+=MB(tx('Messages per second at the busiest hour.','最忙那个小时每秒的消息数。'),
     [[`\\lambda_{${tt(tx('peak','高峰'))}}`,`= \\frac{${tt(tx('users','用户数'))} \\times ${tt(tx('messages','消息数'))}}{86{,}400} \\times ${tt(tx('peak factor','高峰倍数'))}`],['',`= \\frac{${I(s.dau).replace(/,/g,'{,}')} \\times ${s.msgs}}{86{,}400} \\times ${s.peak} = ${f(r.lam,2)}`]]);
   const pl=['s','l'].filter(m=>r.rate[m]>0).map(m=>[`${tt(tx(m==='s'?'small model':'large model',m==='s'?'小模型':'大模型'))}`,`= \\operatorname{ceil}(${f(r.lam,2)} \\times ${f(m==='s'?s.share:1-s.share,1)} \\div ${f(r.P[m].g,2)}) \\times ${MODELS[m].n} = ${I(r.gpus[m])}`]);
@@ -787,9 +870,15 @@ function mathHTML(r){const s=r.s, ms=v=>I(v*1000), parts=r.seg.filter(g=>!['mode
 function panels(){const g=mode==='guided'?sid():'';
   if(mode!=='guided') return {trace:true,prompt:mode==='sandbox',fleet:true,sheet:true};
   return {trace:['mission','stream','safety','remember'].includes(g),prompt:g==='context',fleet:['context','predict','route','size','remember'].includes(g),sheet:g==='size'};}
-function curRow(r,t){const g=r.seg.find(x=>t>=x.t0&&t<x.t0+x.d); return g?g.k:null;}
+function curRow(r,t){const g=r.seg.find(x=>t>=x.t0-1e-9&&t<x.t0+x.d-1e-9); return g?g.k:null;}
+/* the stage title says the moment on the picture (P6): playing, paused at a time, or the result. While playing it names the component the
+   message is at, which changes at most once per DWELL (P5) */
 function stageTitle(r){const g=mode==='guided'?sid():'';
-  if(PL.on||(!PL.done&&PL.t>0)){const k=curRow(r,PL.t); return k?tx(`Playing: the message is at “${L(COMP[k].n)}”, ${PL.t<1?f(PL.t*1000,0)+' ms':f(PL.t,2)+' s'} after Send`,`播放中：消息走到“${L(COMP[k].n)}”，按下发送后 ${PL.t<1?f(PL.t*1000,0)+' ms':f(PL.t,2)+' 秒'}`):tx('Playing: one message','播放中：一条消息');}
+  if(!PL.done){const k=curRow(r,PL.t), at=PL.t<1?`${f(PL.t*1000,0)} ms`:sT(PL.t), nm=k?L(W<480&&COMP[k].sn?COMP[k].sn:COMP[k].n):'';
+    if(!PL.on) return k?tx(`Paused ${at} after Send, at “${nm}”`,`停在按下发送后 ${at}：消息在“${nm}”`):tx(`Paused ${at} after Send: the first word is on screen`,`停在按下发送后 ${at}：第一个字已出现`);
+    if(k) return tx(`Playing: the message is at “${nm}”`,`播放中：消息在“${nm}”`);
+    return !r.s.stream||r.s.filt==='whole'?tx(`Playing: the whole answer appears at once, ${sT(r.vis)} after Send`,`播放中：整段回答在按下发送后 ${sT(r.vis)}一起出现`)
+      :tx(`Playing: first word at ${sT(r.vis)}; the rest follows chunk by chunk`,`播放中：第一个字在 ${sT(r.vis)}出现，其余一段一段跟上`);}
   if(g==='context') return tx('What every message sends, and the GPUs it takes','每条消息发出去的内容，和它要的卡');
   if(g==='predict'||g==='route') return tx('The GPUs for this traffic, by pool','这样的流量要的卡，按组分');
   if(g==='size') return tx(`Sizing for ${dauT(S.dau)} daily users`,`为每天 ${dauT(S.dau)} 用户估算`);
@@ -807,7 +896,7 @@ function syncControls(){const c=$('#pdz-controls',app); if(!c) return;
 function isNextDisabled(){const s=STEPS[step]; return (!!s.expect&&!observed[step])||(!!s.gate&&!s.gate());}
 const WHY=()=>({mission:tx('Send the message and watch it to the end to continue, or press Show me.','把这条消息播完才能继续，或点“演示给我看”。'),stream:tx('Try both options to continue, or press Show me.','两个选项都试过才能继续，或点“演示给我看”。'),
   context:tx('Try both options to continue, or press Show me.','两个选项都试过才能继续，或点“演示给我看”。'),predict:tx('Pick an answer to continue, or Skip.','选一个答案才能继续，或点“跳过”。'),
-  route:tx(`Try ${pc(EASY)} and ${pc(0.9)} to continue, or press Show me.`,`试过 ${pc(EASY)} 和 ${pc(0.9)} 才能继续，或点“演示给我看”。`),safety:tx('Try “check once, after streaming” and one more option to continue, or press Show me.','试过“流式发完以后查一次”和另一个选项才能继续，或点“演示给我看”。'),
+  route:tx(`Try ${pc(EASY)} and ${pc(0.9)} to continue, or press Show me.`,`试过 ${pc(EASY)} 和 ${pc(0.9)} 才能继续，或点“演示给我看”。`),safety:tx('Try “Check after all is sent” and one more option to continue, or press Show me.','试过“全部发完再查”和另一个选项才能继续，或点“演示给我看”。'),
   size:tx('Try another number of users to continue, or press Show me.','再试一种用户数才能继续，或点“演示给我看”。')}[STEPS[step].id]||'');
 function railHTML(){
   if(mode==='guided'){const s=STEPS[step]; return A.ui.steps({steps:STEPS.map(x=>({title:L(x.title),lead:x.lead?esc(L(x.lead)):''})),m2:true,current:step,body:s.body(),back:step>0,showMe:!!s.showMe,next:step<STEPS.length-1,nextDisabled:isNextDisabled(),nextWhy:WHY(),skip:!!s.skip});}
@@ -815,65 +904,102 @@ function railHTML(){
 function renderRail(){const rail=$('#pdz-rail',app);
   const nl=(mode!=='guided'||step===STEPS.length-1)?A.shell.nextLab(ID):'';
   rail.innerHTML=railHTML()+(mode==='challenge'?A.ui.exits(ID,EXITS()):'')+nl; A.ui.initRanges(rail); render();}
+/* the challenge readout: one line per goal, with its mark, and how many of the four are met (P32) */
+function chReadHTML(e){const row=(ok,k,v)=>`<span class="pdz-chm ${ok?'pdz-ok':'pdz-bad'}">${ok?'✓':'✗'}</span><span>${k}</span><span class="mono">${v}</span>`;
+  return row(e.okV,tx('First word','首字'),tx(`${sT(e.r.vis)} (goal ${f(CH.vis,1)} s)`,`${sT(e.r.vis)}（目标 ${f(CH.vis,1)} 秒）`))+
+    row(e.okB,tx('Cost per day','每天花费'),tx(`${usd(e.r.costDay)} (budget ${usd(CH.budget)})`,`${usd(e.r.costDay)}（预算 ${usd(CH.budget)}）`))+
+    row(e.okS,tx('Output check','输出检查'),e.okS?tx('checked before it is shown','先查过再显示'):tx('shown before it is checked','没查就显示了'))+
+    row(e.okQ,tx('To the small model','交给小模型'),tx(`${pc(e.share)} (at most ${pc(EASY)})`,`${pc(e.share)}（上限 ${pc(EASY)}）`));}
 function updateRail(r){const rail=$('#pdz-rail',app); if(!rail) return;
   if(mode==='guided'){const s=STEPS[step], box=$('[data-obs]',rail);
     if(s.expect&&s.expect()&&!PL.on) observed[step]=true;
     const show=!!s.obs&&(!s.expect||!!observed[step])&&!PL.on;
-    if(box){box.hidden=!show; if(show){const html=`<div class="eyebrow">${tx('Observed','观察到')}</div>`+s.obs(); if(box._h!==html){const again=box._h!=null&&box._step===step; box.innerHTML=html; box._h=html; box._step=step; if(again&&userAct) A.ui.obsBump(box);}}}
+    if(box){box.hidden=!show; if(show){const html=`<div class="eyebrow">${tx('Observed','观察到')}</div>`+s.obs(); if(box._h!==html){const again=box._h!=null&&box._step===step; box.innerHTML=html; box._h=html; box._step=step; if(again&&userAct) A.ui.obsBump(box);}
+      if(obsReveal){obsReveal=false; requestAnimationFrame(revealObs);}}}
     A.ui.setNext(rail,isNextDisabled(),WHY());
     const sm=$('[data-nav="showme"]',rail); if(sm) sm.hidden=!!observed[step];
     $$('[data-lkey]',rail).forEach(b=>{const key=b.dataset.lkey, on=String(S[key])===b.dataset.lever; b.setAttribute('aria-pressed',String(on)); b.classList.toggle('on',on);
       const rr=b.querySelector('.lv-r'), v=b.dataset.lever; if(rr){const vv=isNaN(+v)?v:+v, h=levTried(key,v)?esc(LEV[key].res(vv)):''; if(rr.innerHTML!==h) rr.innerHTML=h;}});
-    $$('[data-act="play"]',rail).forEach(b=>{b.textContent=playTxt();});
+    $$('[data-act="play"]',rail).forEach(b=>{b.textContent=b.dataset.card?cardPlayTxt():playTxt();});
   } else if(mode==='sandbox'){const cur=presetNow(); $$('[data-preset]',rail).forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.preset===cur)));
     const ins=$('#pdz-insight',rail); if(ins){const html=`<div class="eyebrow">${cur>=0?esc(L(PRESETS[cur].t)):tx('Your own setup','你自己的设置')}</div>`+insightHTML(); if(ins._h!==html){ins.innerHTML=html; ins._h=html;}}
-  } else {const e=chMe(), v=$('#pdz-ch-v',rail); if(!v) return; v.textContent=tx(`${sT(e.r.vis)} (goal ${f(CH.vis,1)} s) / ${usd(e.r.costDay)} (budget ${usd(CH.budget)}) / ${pc(S.share)} (at most ${pc(EASY)})`,`${sT(e.r.vis)}（目标 ${f(CH.vis,1)} 秒）/ ${usd(e.r.costDay)}（预算 ${usd(CH.budget)}）/ ${pc(S.share)}（上限 ${pc(EASY)}）`);
-    $('#pdz-ch-g',rail).classList.toggle('met',e.ok); const met=[e.okV,e.okB,e.okS,e.okQ].filter(Boolean).length;
-    $('#pdz-ch-p i',rail).style.width=(met/4*100)+'%'; $('#pdz-ch-p',rail).classList.toggle('met',e.ok);
+  } else {const e=chMe(), g=$('#pdz-ch-g',rail); if(!g) return; const gh=chReadHTML(e); if(g._h!==gh){g.innerHTML=gh; g._h=gh;}
+    g.classList.toggle('met',e.ok); const met=[e.okV,e.okB,e.okS,e.okQ].filter(Boolean).length;
+    $('#pdz-ch-p i',rail).style.width=(met/4*100)+'%'; $('#pdz-ch-p',rail).classList.toggle('met',e.ok); $('#pdz-ch-n',rail).textContent=tx(`${met} of 4 goals met`,`达标 ${met} / 4 项`);
     $$('.seg-ctl[data-key]',rail).forEach(g=>{const k=g.dataset.key; if(S[k]!=null) A.ui.setPressed(g,String(S[k]));});
     const res=$('#pdz-ch-res',rail), html=chResultHTML(); if(res._h!==html){const again=!!res._h&&!!html; res.innerHTML=html; res._h=html; if(again) A.ui.obsBump(res);}}}
+/* the badge in the stage's corner: playing and paused say so (P6); a result names what fails, hard messages on the small model too (P10) */
+function statusOf(r){
+  if(mode==='challenge'){const e=chMe(); return e.ok?['ok',tx('All goals met','全部达标')]:['bad',tx('Not yet','未达标')];}
+  if(PL.on) return ['neutral',tx('Playing','播放中')];
+  if(!PL.done) return ['neutral',tx('Paused','已暂停')];
+  if(!r.before&&r.s.stream) return ['bad',tx('Unchecked output','输出没查过')];
+  if(!r.quality) return ['bad',tx('Hard messages on the small model','难题给了小模型')];
+  return r.vis<=goalNow()+1e-9?['ok',tx('First word in time','首字按时')]:['bad',tx('First word too late','首字超时')];}
 function render(){if(!app) return;
-  const r=R_(), pn=panels(), mw=$('#pdz-main',app).clientWidth; if(mw) W=Math.round(Math.max(300,Math.min(760,mw-26)));
+  const r=R_(), pn=panels(); measureW();
   $('#pdz-st-title',app).textContent=stageTitle(r);
   ['trace','prompt','fleet','sheet'].forEach(k=>{$('#pdz-'+k,app).hidden=!pn[k];});
+  /* with the message on the stage, the metric cards come right under it and the other blocks follow, so the cards stay in view (P15) */
+  $('#pdz-main',app).classList.toggle('pdz-mup',!!(pn.trace&&(pn.prompt||pn.fleet||pn.sheet)));
   if(pn.trace) drawTrace(r);
   if(pn.prompt){const el=$('#pdz-prompt',app), h=promptHTML(r); if(el._h!==h){el.innerHTML=h; el._h=h;}}
   if(pn.fleet){const el=$('#pdz-fleet',app), h=fleetHTML(r); if(el._h!==h){el.innerHTML=h; el._h=h;}}
   if(pn.sheet){const el=$('#pdz-sheet',app), h=sheetHTML(r); if(el._h!==h){el.innerHTML=h; el._h=h;}}
   drawMetrics(r);
-  const st=$('#pdz-status',app); let ok, txt;
-  if(mode==='challenge'){const e=chMe(); ok=e.ok; txt=ok?tx('All goals met','全部达标'):tx('Not yet','未达标');}
-  else if(PL.on){ok=true; txt=tx('Playing','播放中');}
-  else if(!r.before&&r.s.stream){ok=false; txt=tx('Unchecked output','输出没查过');}
-  else {ok=r.vis<=goalNow()+1e-9; txt=ok?tx('First word in time','首字按时'):tx('First word too late','首字超时');}
-  st.className='status '+(ok?'ok':'bad'); st.textContent=txt;
-  st.dataset.tipx=mode==='challenge'?tx('Whether your design meets all four goals: first word, budget, checked output, hard messages on the large model.','你的设计是否四项都达标：首字时间、预算、输出查过、难题交给大模型。'):tx('Whether the first word appears within the time budget, and every chunk is checked before it is shown. The cost is on the cards below.','第一个字是否在时间预算内出现，以及回答的每一段是否在显示前查过。花费看下面的卡片。');
+  const st=$('#pdz-status',app), [cls,txt]=statusOf(r);
+  st.className='status '+cls; st.textContent=txt;
+  st.dataset.tipx=mode==='challenge'?tx('Whether your design meets all four goals: first word, budget, checked output, hard messages on the large model.','你的设计是否四项都达标：首字时间、预算、输出查过、难题交给大模型。'):tx('Whether the first word appears within the time budget, every chunk is checked before it is shown, and no hard message goes to the small model. The cost is on the cards below.','第一个字是否在时间预算内出现，回答的每一段是否在显示前查过，以及有没有难题交给了小模型。花费看下面的卡片。');
   const mb=$('#pdz-mathbody',app), mh=mathHTML(r); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}
   syncControls(); updateRail(r);
   if(!PL.on) A.hash.write(token());
   A.dock.refresh(); announce(r);}
-function drawTrace(r){const wf=$('#pdz-wf',app), tau=(PL.on||(!PL.done&&PL.t>0))?PL.t:null, h=wfSVG(r,tau);
+/* the width is measured on every drawing, so a play that starts before the layout settles is redrawn at the right size (P2) */
+function measureW(){const m=app&&$('#pdz-main',app), mw=m?m.clientWidth:0; if(mw) W=Math.round(Math.max(300,Math.min(800,mw-26)));}
+/* the slider lies under the time axis, from 0 to its end, so the slider and the cursor are one scale (P22) */
+function alignScrub(){const pos=$('#pdz-pos',app), svg=$('#pdz-wf svg',app); if(!pos||!svg||!GEO) return; const bw=svg.getBoundingClientRect().width; if(!bw) return;
+  const k=bw/GEO.W, th=14, ml=Math.round(GEO.x0*k-th/2), w=Math.round((GEO.x1-GEO.x0)*k+th), key=ml+'|'+w;
+  if(pos._g!==key){pos._g=key; pos.style.marginLeft=ml+'px'; pos.style.width=w+'px';}}
+function drawTrace(r){measureW(); const wf=$('#pdz-wf',app), X=axisOf(r), tau=PL.done?null:PL.t, h=wfSVG(r,tau,X);
   if(wf._h!==h){wf.innerHTML=h; wf._h=h;}
-  const tt=$('#pdz-trace-t',app); tt.textContent=traceTitle(r);
-  const lgd=$('#pdz-leg1',app); if(!lgd._h){lgd.innerHTML=legendHTML(); lgd._h=1;}
-  const pb=$('#pdz-play',app); if(pb) pb.textContent=playTxt();
-  const pos=$('#pdz-pos',app); if(pos&&document.activeElement!==pos) pos.value=Math.round(1000*Math.min(1,(tau==null?r.vis:tau)/r.vis));}
+  const tt=$('#pdz-trace-t',app), tl=traceTitle(r); if(tt.textContent!==tl) tt.textContent=tl;
+  const lgd=$('#pdz-leg1',app), lh=legendHTML(); if(lgd._h!==lh){lgd.innerHTML=lh; lgd._h=lh;}
+  $$('[data-act="play"]',app).forEach(b=>{const x=b.dataset.card?cardPlayTxt():playTxt(); if(b.textContent!==x) b.textContent=x;});
+  const pos=$('#pdz-pos',app); if(pos){const t=tau==null?X:tau; if(document.activeElement!==pos){pos.value=Math.round(1000*Math.min(1,t/X)); A.ui.setRange(pos);}
+    pos.setAttribute('aria-valuetext',tx(`${sT(t)} after Send`,`按下发送后 ${sT(t)}`)); alignScrub();}}
 function announce(r){clearTimeout(annT); annT=setTimeout(()=>{if(!app||PL.on) return; A.announce(tx(`First word after ${sT(r.vis)}; ${I(r.total)} GPUs, ${usd(r.costDay)} a day.`,`第一个字 ${sT(r.vis)}后出现；${I(r.total)} 张卡，每天 ${usd(r.costDay)}。`));},400);}
 
 /* ---------- the trace player (R3.9, R3.20) ---------- */
+/* the wall-clock plan of one play: pieces [t0,t1] of the message's time, each shown over [w0,w1] seconds of the reader's time. Before the first
+   word every component gets at least DWELL (R7.11), a longer one its time at the axis rate; the first word holds HOLDFW; then the answer goes
+   on at the axis rate to the end of the axis (P21). One rate for every picture of a part, at the reader's speed (P3). Quick: the whole axis
+   in QUICK seconds */
+function planOf(r,quick){const X=axisOf(r), P=[]; let w=0; const add=(t0,t1,d)=>{P.push({t0,t1,w0:w,w1:w+d}); w+=d;};
+  if(quick){add(0,X,QUICK); return {P,X,total:w,fw:QUICK*Math.min(1,r.vis/X)};}
+  const rate=X/SPEEDS[spd];
+  r.seg.forEach(g=>{const a=Math.min(g.t0,X), b=Math.min(g.t0+g.d,X); if(b>a) add(a,b,Math.max(DWELL[spd],(b-a)/rate));});
+  const v=Math.min(r.vis,X), fw=w; add(v,v,HOLDFW[spd]);
+  if(X>v) add(v,X,(X-v)/rate);
+  return {P,X,total:w,fw};}
+const tOfW=(pl,w)=>{for(const p of pl.P) if(w<p.w1) return p.t0+(p.t1-p.t0)*Math.max(0,w-p.w0)/Math.max(1e-9,p.w1-p.w0); return pl.X;};
+const wOfT=(pl,t)=>{for(const p of pl.P){if(t<p.t1-1e-9||(p.t1===p.t0&&Math.abs(t-p.t0)<1e-9)) return p.w0+(p.w1-p.w0)*(p.t1>p.t0?Math.max(0,t-p.t0)/(p.t1-p.t0):0);} return pl.total;};
 function stopPL(){if(PL.raf) cancelAnimationFrame(PL.raf); PL.on=false; PL.raf=0;}
-function playPL(from,quick){stopPL(); const r=R_(); PL.sig=sigOf(r); PL.t=from>=r.vis?0:from; PL.on=true; PL.done=false; PL.last=0; PL.quick=!!quick; nPlays++;
-  const total=quick?QUICK:SPEEDS[spd], rate=axisMax(r)/total;
+function frame(r){drawTrace(r); const tl=$('#pdz-st-title',app), x=stageTitle(r); if(tl.textContent!==x) tl.textContent=x;}
+/* play from the message's time `from`; again: the same play at a new speed, not counted as a new one */
+function playPL(from,quick,again){stopPL(); const r=R_(), pl=planOf(r,quick);
+  PL.sig=sigOf(r); PL.plan=pl; PL.quick=!!quick; PL.t=from>=pl.X-1e-9?0:Math.max(0,from); PL.w=wOfT(pl,PL.t); PL.on=true; PL.done=false; PL.last=0; if(!again) nPlays++;
   const tick=ts=>{if(!PL.on||!app){PL.raf=0; return;}
-    if(PL.last){PL.t+=Math.min(0.1,(ts-PL.last)/1000)*rate; if(PL.t>=r.vis){PL.t=r.vis; PL.on=false; PL.done=true; PL.raf=0; watched.add(PL.sig); render(); keepStage(); return;}}
-    PL.last=ts; drawTrace(r); $('#pdz-st-title',app).textContent=stageTitle(r); PL.raf=requestAnimationFrame(tick);};
+    if(PL.last){PL.w+=Math.min(0.1,(ts-PL.last)/1000); PL.t=tOfW(pl,PL.w);
+      if(PL.w>=pl.total-1e-9){PL.t=pl.X; PL.on=false; PL.done=true; PL.raf=0; watched.add(PL.sig); render(); keepStage(); return;}}
+    PL.last=ts; frame(r); PL.raf=requestAnimationFrame(tick);};
   PL.raf=requestAnimationFrame(tick); render();}
-/* show the trace: animate it only when this picture has not been watched (R3.20); a watched trace shows its end at once */
+/* show the message: a picture already watched shows its end at once (R3.20). A guided part plays at the reader's speed (P3); Scenarios,
+   Settings and the challenge, where the reader switches back and forth, play the whole axis in QUICK (R3.9) */
 function showTrace(src){stopPL(); const r=R_(), sig=sigOf(r);
-  if(watched.has(sig)||A.reduceMotion()||src==='quiet'||!panels().trace){PL.t=r.vis; PL.done=true; if(src!=='quiet'||watched.has(sig)) watched.add(sig); render(); return;}
-  if(src==='auto'){PL.t=0; PL.done=false; render(); playPL(0,false); return;}
-  playPL(0,true);}
-function stepBounds(r){const b=[0]; r.seg.forEach(g=>b.push(g.t0+g.d)); return b;}
+  if(watched.has(sig)||A.reduceMotion()||src==='quiet'||!panels().trace){PL.t=axisOf(r); PL.done=true; if(src!=='quiet'||watched.has(sig)) watched.add(sig); render(); return;}
+  playPL(0,src==='quick');}
+/* ◂ ▸ stop at the components' ends: the start, each component's end, the first word, the end of the axis */
+function stepBounds(r,X){const b=[0]; r.seg.forEach(g=>{const e=g.t0+g.d; if(e<X-1e-9) b.push(e);}); b.push(X); return b;}
 
 /* ---------- state changes ---------- */
 function baseFor(id){const i=SIX(id), b={...BASE};
@@ -884,13 +1010,29 @@ function baseFor(id){const i=SIX(id), b={...BASE};
 function setState(p){Object.assign(S,p);
   if(mode==='challenge') Object.assign(S,{dau:CH.dau,msgs:CH.msgs,peak:CH.peak,ret:CH.ret,price:CH.price});
   showTrace(mode==='guided'?'lever':'quick');}
-function enterStep(i){stopPL(); step=Math.max(0,Math.min(STEPS.length-1,i)); const s=STEPS[step], k=PART_LEV[s.id];
+function enterStep(i){stopPL(); obsReveal=false; step=Math.max(0,Math.min(STEPS.length-1,i)); const s=STEPS[step], k=PART_LEV[s.id];
   S=baseFor(s.id); if(k&&pick[k]!=null) S[k]=pick[k];
   if(k&&!tried[k]) tried[k]=new Set([String(S[k])]);
   const st=$('#pdz-stage',app); if(st) st.scrollTop=0;
   renderRail();
   showTrace(s.id==='mission'?'auto':'quiet');}
-function revealStep(){A.ui.reveal($('#pdz-rail .step.current',app)||$('#pdz-rail',app));}
+/* a new part: its card's top comes under the header (A.ui.reveal). On a desktop, where the stage is sticky beside the card, the scroll
+   stops where the bench still holds the whole stage: a short card ends the two columns early, and scrolling its top all the way up would
+   push the stage up past the header (N4). The card's top stays on screen */
+function revealStep(){const card=$('#pdz-rail .step.current',app)||$('#pdz-rail',app), st=$('#pdz-stage',app), bn=$('.bench',app);
+  if(!card||!st||!bn||innerWidth<=760||getComputedStyle(st).position!=='sticky'){A.ui.reveal(card); return;}
+  const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:0)+12;
+  const c=card.getBoundingClientRect(), vh=innerHeight, T=parseFloat(getComputedStyle(st).top)||70, y0=scrollY;
+  const end=bn.getBoundingClientRect().bottom-(parseFloat(getComputedStyle(bn).paddingBottom)||0), yMax=y0+end-T-st.offsetHeight;
+  let y=c.top>=top&&c.top<=vh-160?y0:y0+c.top-top;
+  if(y>yMax) y=Math.max(yMax,y0+c.top-(vh-160));
+  y=Math.max(0,Math.round(y)); if(Math.abs(y-y0)<2) return;
+  if(A.tip.quiet) A.tip.quiet(); window.scrollTo({top:y,behavior:A.reduceMotion()?'auto':'smooth'});}
+/* desktop only (the stage stays in view beside the card): below the fold, the observation's top comes under the header; when only its end
+   is cut off, a short scroll shows the end and keeps its first line on screen */
+function revealObs(){const box=app&&$('#pdz-rail [data-obs]',app); if(!box||box.hidden||innerWidth<=760) return;
+  const q=box.getBoundingClientRect(), vh=innerHeight, bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:0)+12;
+  if(q.top>vh-160) A.ui.reveal(box); else if(q.bottom>vh) window.scrollBy({top:Math.max(0,Math.min(q.bottom-vh+12,q.top-top)),behavior:A.reduceMotion()?'auto':'smooth'});}
 /* keepStage (R9.7), as labs/llm-judge.js */
 function stageStop(){if(stageT){clearTimeout(stageT); stageT=0;}}
 function keepStage(){stageStop();
@@ -903,7 +1045,7 @@ function keepStage(){stageStop();
     let dy=r.top-want; if(dy>=-2||c.bottom<want) return;
     dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
   stageT=setTimeout(tick,A.reduceMotion()?30:150);}
-function setMode(m){
+function setMode(m){obsReveal=false;
   if(m===mode) return; stopPL();
   const was=mode; mode=m;
   if(was==='challenge'&&saved){S={...saved}; saved=null;}
@@ -913,7 +1055,8 @@ function setMode(m){
   const st=$('#pdz-stage',app); if(st) st.scrollTop=0;
   if(m==='guided'){enterStep(step); return;}
   renderRail(); showTrace('quiet');}
-function applyPreset(i){userAct=true; try{S={...PRESETS[i].p}; showTrace('quick');}finally{userAct=false;}}
+function applyPreset(i){const was=presetNow(); userAct=true; dBase=was>=0&&was!==i?{en:`“${PRESETS[was].t.en}”`,zh:`“${PRESETS[was].t.zh}”`}:null;
+  try{S={...PRESETS[i].p}; showTrace('quick');}finally{userAct=false; dBase=null;}}
 const token=()=>[DAUS.indexOf(S.dau),S.msgs,S.peak,S.stream,S.cache,S.ret,Math.round(S.share*10),S.filt,Math.round(S.price*10)].join('_');
 function parse(tok){const p=String(tok||'').split('_'); if(p.length!==9) return null;
   const [d,m,pk,st,c,rt,sh,fl,pr]=p, o={dau:DAUS[+d],msgs:+m,peak:+pk,stream:+st,cache:+c,ret:+rt,share:+sh/10,filt:isNaN(+fl)?fl:+fl,price:+pr/10};
@@ -921,15 +1064,15 @@ function parse(tok){const p=String(tok||'').split('_'); if(p.length!==9) return 
   return o;}
 function setLever(key,raw){const v=isNaN(+raw)?raw:+raw; pick[key]=v; (tried[key]=tried[key]||new Set()).add(String(v)); S[key]=v; showTrace('lever');}
 function showMe(id){
-  if(id==='mission'){playPL(PL.done||PL.t>=R_().vis?0:PL.t,true); return;}
+  if(id==='mission'){const X=axisOf(R_()); playPL(!PL.done&&PL.t<X-1e-9?PL.t:0,false); return;}
   const k=PART_LEV[id], seq={stream:[0,1],context:[0,1],route:[0.9,EASY],safety:['after',16,8],size:[1e7,1e6]}[id];
   if(!k||!seq) return; seq.forEach(v=>{(tried[k]=tried[k]||new Set()).add(String(v));}); pick[k]=seq[seq.length-1]; S[k]=pick[k]; renderRail(); showTrace('lever');}
 function act(a,btn){
-  if(a==='play'){if(PL.on){stopPL(); render(); return;} const r=R_(); playPL(PL.done||PL.t>=r.vis?0:PL.t,false); return;}
+  if(a==='play'){if(PL.on){stopPL(); render(); return;} const X=axisOf(R_()); playPL(!PL.done&&PL.t<X-1e-9?PL.t:0,false); return;}
   if(a==='replay'){playPL(0,false); return;}
-  if(a==='back'||a==='fwd'){stopPL(); const r=R_(), b=stepBounds(r), t=PL.done?r.vis:PL.t;
+  if(a==='back'||a==='fwd'){stopPL(); const r=R_(), X=axisOf(r), b=stepBounds(r,X), t=PL.done?X:PL.t;
     if(a==='back'){const prev=b.filter(x=>x<t-1e-9); PL.t=prev.length?prev[prev.length-1]:0; PL.done=false;}
-    else {const nx=b.find(x=>x>t+1e-9); PL.t=nx==null?r.vis:nx; if(PL.t>=r.vis-1e-9){PL.t=r.vis; PL.done=true; watched.add(sigOf(r));} else PL.done=false;}
+    else {const nx=PL.done?b[1]:b.find(x=>x>t+1e-9); PL.t=nx==null?X:nx; if(PL.t>=X-1e-9){PL.t=X; PL.done=true; watched.add(sigOf(r));} else PL.done=false;}   // from the whole run, ▸ lands on the first component's end (R7.10)
     A.tip.quiet&&A.tip.quiet(); render(); return;}
   if(a==='reset'){userAct=true; try{S={...PRESETS[0].p}; showTrace('quick');}finally{userAct=false;} return;}
   if(a==='submit'){chSubmitted=true; {const m=chMe(), b=chBest(); if(m.ok&&b&&m.r.costDay<=b.r.costDay+1e-9) chReveal=true;} renderRail(); keepStage(); return;}
@@ -990,8 +1133,9 @@ const TERM={stream:()=>D_STREAM(),cache:()=>D_CACHE(),share:()=>D_ROUTE(),filt:(
 
 /* ---------- mount ---------- */
 function bind(el){
+  el.addEventListener('toggle',e=>{const d=e.target; if(d&&d.dataset&&d.dataset.more) moreOpen[d.dataset.more]=d.open;},true);
   el.addEventListener('input',e=>{const t=e.target;
-    if(t.id==='pdz-pos'){stopPL(); const r=R_(); PL.t=r.vis*(+t.value)/1000; PL.done=PL.t>=r.vis-1e-9; if(PL.done){PL.t=r.vis; watched.add(sigOf(r));} render(); return;}
+    if(t.id==='pdz-pos'){stopPL(); const r=R_(), X=axisOf(r); PL.t=X*(+t.value)/1000; PL.done=PL.t>=X-1e-9; if(PL.done){PL.t=X; watched.add(sigOf(r));} render(); return;}
     const k=t.dataset&&t.dataset.key;
     if(k==='dau'){userAct=true; try{S.dau=DAUS[+t.value]; render();}finally{userAct=false;}}
     if(k==='price'){userAct=true; try{S.price=Math.round(+t.value*2)/2; render();}finally{userAct=false;}}});
@@ -999,14 +1143,14 @@ function bind(el){
     const b=e.target.closest('button'); if(!b||!el.contains(b)) return; const d=b.dataset, inRail=!!b.closest('#pdz-rail');
     const seg=b.closest('.seg-ctl[data-key]');
     if(seg&&d.v!=null){const k=seg.dataset.key;
-      if(k==='spd'){spd=d.v; A.ui.setPressed(seg,d.v); if(PL.on&&!PL.quick) playPL(PL.t,false); return;}
+      if(k==='spd'){spd=d.v; A.ui.setPressed(seg,d.v); if(PL.on&&!PL.quick) playPL(PL.t,false,true); return;}
       const v=k==='filt'?(isNaN(+d.v)?d.v:+d.v):+d.v;
       userAct=true; try{setState({[k]:v});}finally{userAct=false;} if(inRail) keepStage(); return;}
-    if(d.lever!=null&&d.lkey){userAct=true; try{setLever(d.lkey,d.lever);}finally{userAct=false;} renderRail(); keepStage(); return;}
+    if(d.lever!=null&&d.lkey){obsReveal=true; userAct=true; try{setLever(d.lkey,d.lever);}finally{userAct=false;} renderRail(); keepStage(); return;}
     if(d.go!=null){enterStep(+d.go); revealStep(); return;}
     if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); return;}
     if(d.nav==='back'){enterStep(step-1); revealStep(); return;}
-    if(d.nav==='showme'){const s=STEPS[step]; if(s.showMe) showMe(s.showMe); keepStage(); return;}
+    if(d.nav==='showme'){const s=STEPS[step]; obsReveal=true; if(s.showMe) showMe(s.showMe); keepStage(); return;}
     if(d.pred){pred=d.pred; renderRail(); const fb=$(`#pdz-rail [data-pred="${pred}"]`,app); if(fb) fb.focus(); keepStage(); return;}
     if(d.preset!=null){applyPreset(+d.preset); return;}
     if(d.modeGo){setMode(d.modeGo); A.ui.reveal($('#pdz-rail',app)); return;}
@@ -1039,19 +1183,26 @@ A.registerLab({
     A.ui.initRanges(app);
     A.shell.bindHeader(app,{id:ID,onMode:m=>{setMode(m); A.ui.reveal($('#pdz-rail',app)); keepStage();},token});
     bind(app); renderRail(); renderDrill();
-    if(mode==='guided'&&step===0&&!watched.size) showTrace('auto'); else {const r=R_(); PL.t=r.vis; PL.done=true; render();}},
-  leave(){stopPL(); stageStop(); clearTimeout(annT); root=null; app=null;},
-  onLang(){if(root){const d=$('#pdz-math',app), open=d&&d.open; if(PL.on){stopPL(); const r=R_(); PL.t=r.vis; PL.done=true; watched.add(sigOf(r));} this.mount(root,null); if(open) $('#pdz-math',app).open=true;}},
+    /* the stage's width can settle after the first drawing (fonts, the rail, the page's scroll bar): redraw at the new width (P2) */
+    if(ro) ro.disconnect(); ro=window.ResizeObserver?new ResizeObserver(()=>{if(!app) return; const w0=W; measureW(); if(W!==w0&&!PL.on) render();}):null; if(ro) ro.observe($('#pdz-main',app));
+    if(mode==='guided'&&step===0&&!watched.size) showTrace('auto'); else {PL.t=axisOf(R_()); PL.done=true; render();}},
+  leave(){stopPL(); stageStop(); clearTimeout(annT); if(ro){ro.disconnect(); ro=null;} root=null; app=null;},
+  onLang(){if(root){const d=$('#pdz-math',app), open=d&&d.open; if(PL.on){stopPL(); const r=R_(); PL.t=axisOf(r); PL.done=true; watched.add(sigOf(r));} this.mount(root,null); if(open) $('#pdz-math',app).open=true;}},
   onResize(){if(app) render();},
   termTip(k){const tm=TERM[k]; if(!tm) return ''; return `<div>${tm()}</div><div class="act">${jumpAct(k)}</div>`;},
   jump, jumpAct,
   dock:{
-    anchor:()=>app&&$('#pdz-main',app), bench:()=>app&&$('.bench',app), target:()=>app&&$('#pdz-main',app),
+    /* the bar shows only once the stage's top has gone: on a desktop the sticky stage itself, on a phone its title row, so it never
+       covers the stage's title and badge (P15; the way backprop does it). The whole #pdz-main is taller than the screen in part 8 and
+       the scenarios, so with it as the anchor the bar sat on the sticky stage's title. */
+    anchor:()=>{if(!app) return null; const st=$('#pdz-stage',app), hd=st&&$('.stage-head',st); if(!st||innerWidth<=760) return hd;
+      const cs=getComputedStyle(st); return cs.position==='sticky'&&Math.abs(st.getBoundingClientRect().top-(parseFloat(cs.top)||70))<2?st:hd;},
+    bench:()=>app&&$('.bench',app), target:()=>app&&$('#pdz-main',app),
     render({status,vis,read}){if(!app) return; const r=R_(), g=goalNow();
       vis.innerHTML=`<div class="pdz-dk"><i style="width:${Math.min(100,r.vis/(g*1.5)*100).toFixed(1)}%"></i><b style="left:${(100/1.5).toFixed(1)}%"></b></div>`;
       if(mode==='challenge'){const e=chMe(); status.className='status '+(e.ok?'ok':'bad'); status.textContent=e.ok?tx('Goals met','已达标'):tx('Not yet','未达标');
         read.textContent=tx(`First word ${sT(e.r.vis)}, ${usd(e.r.costDay)} a day`,`首字 ${sT(e.r.vis)}，每天 ${usd(e.r.costDay)}`); return;}
-      const ok=r.vis<=g+1e-9&&(r.before||!r.s.stream); status.className='status '+(ok?'ok':'bad'); status.textContent=ok?tx('In time','按时'):!(r.before||!r.s.stream)?tx('Unchecked','没查过'):tx('Too late','超时');
+      const chk=r.before||!r.s.stream, ok=r.vis<=g+1e-9&&chk&&r.quality; status.className='status '+(ok?'ok':'bad'); status.textContent=ok?tx('In time','按时'):!chk?tx('Unchecked','没查过'):!r.quality?tx('Hard on small model','难题给了小模型'):tx('Too late','超时');
       read.textContent=tx(`First word after ${sT(r.vis)}; ${I(r.total)} GPUs, ${usd(r.costDay)} a day`,`首字 ${sT(r.vis)}；${I(r.total)} 张卡，每天 ${usd(r.costDay)}`);}
   }
 });
@@ -1062,6 +1213,11 @@ window.__pdz=Object.freeze({compute:s=>{const r=compute({...BASE,...s}); return 
   chAll:()=>chAll().map(e=>({stream:e.stream,cache:e.cache,share:e.share,filt:e.filt,cost:e.r.costDay,vis:e.r.vis,ok:e.ok,okV:e.okV,okB:e.okB,okS:e.okS,okQ:e.okQ})),
   chBest:()=>{const b=chBest(); return b?{stream:b.stream,cache:b.cache,share:b.share,filt:b.filt,cost:b.r.costDay,vis:b.r.vis}:null;},
   drill:sd=>{const d=makeDrill(sd); return {s:d.s,gs:d.r.gpus.s,gl:d.r.gpus.l,lam:d.r.lam};},
+  /* the fleet's drawn area, in squares of SQ GPUs, by group (P1): what fleetHTML draws for this setting */
+  fleetUnits:s=>{const r=compute({...BASE,...s}), c=fleetCells(r); return {sq:SQ,cap:SQCAP,l:c.l.u,s:c.s.u+c['s hard'].u,hard:c['s hard'].u,f:c.f.u,units:c.l.u+c.s.u+c['s hard'].u+c.f.u,total:r.total,hardG:hardOf(r)};},
+  /* the play plan for the current picture at the current speed (quick: the Scenarios speed) */
+  plan:q=>{const p=planOf(R_(),!!q); return {X:p.X,total:p.total,fw:p.fw,P:p.P.map(x=>({...x}))};},
+  dwell:Object.freeze({...DWELL}),holdfw:Object.freeze({...HOLDFW}),speeds:Object.freeze({...SPEEDS}),quick:QUICK,
   consts:Object.freeze({LAT,TTFT_GOAL,CHECK_GPU,WL,BASE,BRIEF,CH,CH0,EASY,SHARES,FILTS,DAUS,MSGS,PEAKS,STEP_IDS:STEPS.map(s=>s.id),PRESETS:PRESETS.map(p=>p.p),MODELS:Object.fromEntries(Object.entries(MODELS).map(([k,m])=>[k,{n:m.n,budget:m.budget,M:m.M}]))}),
-  state:()=>({...S,mode,step,pred,playing:PL.on,t:PL.t,done:PL.done,plays:nPlays,spd,watched:[...watched],chSubmitted,chReveal,tried:Object.fromEntries(Object.entries(tried).map(([k,v])=>[k,[...v]]))})});
+  state:()=>({...S,mode,step,pred,playing:PL.on,t:PL.t,w:PL.w,done:PL.done,quick:PL.quick,X:axisOf(R_()),total:PL.plan?PL.plan.total:null,plays:nPlays,spd,watched:[...watched],chSubmitted,chReveal,tried:Object.fromEntries(Object.entries(tried).map(([k,v])=>[k,[...v]]))})});
 })();

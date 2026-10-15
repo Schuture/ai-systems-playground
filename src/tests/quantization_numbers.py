@@ -251,6 +251,8 @@ with sync_playwright() as p:
     pg.evaluate("()=>{location.hash='quantization'}"); pg.wait_for_timeout(400)
     J = lambda expr: pg.evaluate('()=>' + expr)
     js = {
+        # part 1 as the reader meets it: click each weight format, read its name, the step chart and the stage title (round 1 polish P1)
+        'p1': J("(()=>{const out=[]; for(const b of document.querySelectorAll('#qz-ic-p1s button')){b.click(); out.push({v:b.dataset.v,label:b.innerText,steps:document.querySelector('#qz-steps').innerText,title:document.querySelector('#qz-st-title').innerText});} return out;})()"),
         'consts': J("window.__qz.consts"), 'gen1': J("window.__qz.gen(1)"), 'gen2': J("window.__qz.gen(2)"),
         'ev1': J("Object.fromEntries(window.__qz.consts.ALLK.map(k=>[k,window.__qz.evalK(1,k)]))"),
         'ev2': J("Object.fromEntries(window.__qz.consts.ALLK.map(k=>[k,window.__qz.evalK(2,k)]))"),
@@ -329,10 +331,18 @@ check('INT4 per 16: the half without the outlier keeps its weights (18 become 0)
 check('clean block in INT4 per 32: few zeros', view('clean', 'int4-32')['zeros'] <= 8, view('clean', 'int4-32')['zeros'])
 check('error falls with smaller INT4 blocks (row > 128 > 32 > 16)', e['int4-row']['oerr'] > e['int4-128']['oerr'] > e['int4-32']['oerr'] > e['int4-16']['oerr'], [round(e[k]['oerr'], 4) for k in ('int4-row', 'int4-128', 'int4-32', 'int4-16')])
 check('NVFP4 beats MXFP4 at the same 4-bit values', e['nv']['oerr'] < e['mx']['oerr'])
-check('INT4 per row changes the pick for 14.1% of the inputs, NVFP4 for 4.5%', round(1 - e['int4-row']['agree'], 3) == 0.141 and round(1 - e['nv']['agree'], 3) == 0.045, (1 - e['int4-row']['agree'], 1 - e['nv']['agree']))
+check('INT4 per row keeps the pick on 85.9% of the inputs, NVFP4 on 95.5% (part 7)', round(e['int4-row']['agree'], 3) == 0.859 and round(e['nv']['agree'], 3) == 0.955, (e['int4-row']['agree'], e['nv']['agree']))
 check('S7 bits per weight: INT4/128 4.125, MXFP4 4.25, NVFP4 4.5', (RBITS['int4-128'], RBITS['mx'], RBITS['nv']) == (4.125, 4.25, 4.5))
 check('70B in NVFP4 = 37.0 GiB, not 32.9', round(wGiB('70b', 'nv'), 1) == 37.0 and round(wGiB('70b', 'int4-row'), 1) == 32.9, (wGiB('70b', 'nv'), wGiB('70b', 'int4-row')))
 check('8B BF16 decode step 7.60 ms, INT4/128 2.06 ms, prefill 60.0 ms either way', round(step('bf16', 'bf16', 'd1')['t'] * 1e3, 2) == 7.60 and round(step('int4-128', 'bf16', 'd1')['t'] * 1e3, 2) == 2.06 and round(step('bf16', 'bf16', 'pre')['t'] * 1e3, 1) == round(step('int4-128', 'bf16', 'pre')['t'] * 1e3, 1) == 60.0, (step('bf16', 'bf16', 'd1')['t'], step('int4-128', 'bf16', 'd1')['t'], step('int4-128', 'bf16', 'pre')['t']))
+# part 1 (round 1 polish P1): its options are weight-only formats and are named as weights, so the prefill stays the BF16 60.0 ms
+# for each of them and only the decode step moves, as the card and the chart say; FP8 weights and activations come first in part 5
+P1K, p1 = C.get('P1K') or [], js['p1']
+check('part 1: BF16, 8-bit and 4-bit weights, none of them FP8 weights and activations', P1K == ['bf16', 'int8', 'int4-128'] and [x['v'] for x in p1] == P1K, (P1K, [x['v'] for x in p1]))
+check('part 1: each option is named as weights and none as activations, in the button and the stage title', all(any(w in x['label'] and w in x['title'] for w in ('weights', '权重')) and not any(a in x['label'] + x['title'] for a in ('ctivation', '激活')) for x in p1), [(x['label'], x['title']) for x in p1])
+pre0 = step('bf16', 'bf16', 'pre')['t']
+check('part 1: for every option the prefill stays 60.0 ms (weight-only), here and in the page', round(pre0 * 1e3, 1) == 60.0 and all(close(step(k, 'bf16', 'pre')['t'], pre0) and close(js['step'][f'{k}|bf16|pre']['t'], pre0) for k in P1K), [js['step'][f'{k}|bf16|pre']['t'] for k in P1K])
+check('part 1: the chart shows the decode step of the step model for each option (7.60, 3.87, 2.06 ms)', [f"{step(k, 'bf16', 'd1')['t'] * 1e3:.2f}" for k in P1K] == ['7.60', '3.87', '2.06'] and all(f"{step(x['v'], 'bf16', 'd1')['t'] * 1e3:.2f}" in x['steps'] for x in p1), [x['steps'][:90] for x in p1])
 check('FP8 W+A halves the prefill (compute bound)', close(step('fp8', 'bf16', 'pre')['t'] * 2, step('bf16', 'bf16', 'pre')['t'], 0.15))
 check('KV tokens on one H100 for the 8B: 450,907 (BF16) and 512,173 (FP8 weights)', kvTok8('bf16', 'bf16') == 450907 and kvTok8('fp8', 'bf16') == 512173, (kvTok8('bf16', 'bf16'), kvTok8('fp8', 'bf16')))
 tr = js['exits']['transfer'][0]

@@ -346,7 +346,7 @@ const LABS=[
  {id:'moe',w:'models',min:12,st:'planned',fid:'Analytical',s:{en:'MoE',zh:'MoE'},q:{en:'How can a 47B model run like a 13B one?',zh:'47B 的模型怎么跑得像 13B 一样快？'}},
  {id:'flash-attention',w:'models',min:15,st:'planned',fid:'Live',s:{en:'FlashAttention',zh:'FlashAttention'},q:{en:'How does FlashAttention compute exact attention with less memory traffic?',zh:'FlashAttention 怎么在结果不变的情况下少读写显存？'}},
  {id:'rag-failure',w:'apps',min:15,st:'planned',fid:'Replay',s:{en:'Why RAG fails',zh:'RAG 为什么答错'},q:{en:'Why does your RAG system answer wrong?',zh:'你的 RAG 为什么答错？'}},
- {id:'embeddings',w:'apps',min:12,st:'planned',fid:'Live',s:{en:'Embeddings',zh:'Embedding'},q:{en:'How does an embedding know two sentences mean the same?',zh:'embedding 怎么知道两句话意思相同？'}},
+ {id:'embeddings',w:'apps',min:15,st:'planned',fid:'Live',s:{en:'Embeddings',zh:'Embedding'},q:{en:'How does an embedding know two sentences mean the same?',zh:'embedding 怎么知道两句话意思相同？'}},
  {id:'vector-index',w:'apps',min:12,st:'planned',fid:'Simulated',s:{en:'Vector index',zh:'向量索引'},q:{en:'How do you find the nearest of 1B vectors in milliseconds?',zh:'怎么在几毫秒内从 10 亿个向量里找到最近的？'}},
  {id:'chunk-rerank',w:'apps',min:12,st:'planned',fid:'Simulated',s:{en:'Chunking & rerank',zh:'切块与 rerank'},q:{en:'Why does your retriever miss the right passage?',zh:'检索为什么漏掉了对的那段？'}},
  {id:'agent-reliability',w:'agents',min:10,st:'next',fid:'Simulated',s:{en:'Agent reliability',zh:'Agent 可靠性'},q:{en:'95% reliable per step, 20 steps: how often does the agent succeed?',zh:'每步 95% 可靠，20 步的 agent 还剩多少成功率？'}},

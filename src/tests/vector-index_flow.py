@@ -1,23 +1,35 @@
 """Flow test for the vector-index lab (CONTRACT §6), at 1440×900 and 390×844, in EN and ZH.
 
 - no page errors, no horizontal overflow, no text wider than its box, a tooltip for every help cursor;
-- part 1: the exact search plays in the picture on entry; Play, Step, the speed buttons and 重放 share one height and one baseline;
-  重放 plays the search again at 中 in about 3 s (R3.9); Next enabled;
-- part 2: the same picture, so entering replays nothing (R3.20); Next waits for another number of vectors, with the kit's why line;
-  picking one replays nothing; Show me picks 1B and the observation names 3,072 GB and 30.7 s;
-- part 3: the k-d tree picture and bars, no transport; Next waits for another number of dimensions; the observation names the
-  share the engine gives; Show me picks 32 dimensions;
-- part 4: Next waits for a prediction, with its why line; no result before it: no rings in the picture, no metric cards, no
-  verdict (R3.8); after a pick the card says it is saved;
+- part 1: a still picture: the vectors, the question and its true 10 nearest ringed; no transport, no recall badge and no metric
+  cards (review polish r1, P2, P4); Next enabled; the zoom box in the corner repeats the rings that crowd together, uncoloured
+  (review polish check r1, P25);
+- part 2: the exact search plays in the picture on entry (P2); Play, Step, the speed buttons and 重放 share one height and one
+  baseline; 重放 plays the search again at 中 in the time the lab scripts for it, 5 to 20 s (R3.9); no recall badge and no metric
+  cards yet (P4); Next waits for another number of vectors, with the kit's why line; picking one replays nothing and adds its bars,
+  and the observation says 100M still fits one server (P3); Show me picks 1B and the observation names 3,072 GB and 30.7 s;
+- part 3: the k-d tree search plays on entry, with the transport; its bars show only the dimensions picked so far (P6); picking a
+  number of dimensions does not stop the search (the picture is the same); Next waits for another number of dimensions; the
+  observation names the share the engine gives; Show me picks 32 dimensions; the observation does not say that the next
+  indexes miss neighbours, the answer part 4 asks for (R3.8; review polish check r1, P7);
+- part 4: Next waits for a prediction, with its why line; no result before it: no rings in the picture or its zoom box, no
+  metric cards, no verdict, and the dock's result line does not say that IVF misses (R3.8, P7); after a pick the card says it
+  is saved;
 - part 5: the verdict on the prediction; the recall formula typeset (R6.29); the IVF search plays on entry; the missed true
-  neighbours are ringed red (R5.11); the picture comes before the chart and the chart before the metric cards (R7.12); picking the
+  neighbours are ringed red (R5.11); the picture comes before the chart (left of it when they sit side by side) and both before the
+  metric cards (R7.12); at 1440 × 900 the picture, the chart with its legend and the metric cards fit the screen (P23); on a phone a
+  new nprobe brings the playing picture into view and, once the search ends, the observation (P24); picking the
   nprobe already shown, or one already watched, replays nothing; a new nprobe plays; 重放 replays from the start; Step shows one
   step; the scrubber goes to the end (R3.9, R3.20); the observation names the engine's recall and comparisons; Back and Next
   replay nothing;
-- part 6: the HNSW walk plays on entry; ef 64 plays, ef 10 again does not (R3.20); the observation names ef 64's numbers;
-- part 7: the PQ grid, no transport; 16 bytes names its recall and 72 GB;
+- part 6: the HNSW walk plays on entry, with the picture in view on a phone after Next (P24, R3.7); ef 64 plays, ef 10 again does
+  not (R3.20); the observation names ef 64's numbers;
+- part 7: the PQ search plays on entry: the points move to the grid (P16); 16 bytes names its recall and 72 GB, and the memory card
+  shows the same 72 GB (P15);
 - part 8: the chart first, no picture, the bullets name the engine's numbers, the scenarios button, the next-lab footer;
 - Scenarios: six; one already watched does not replay, a new one plays; each has its insight; the hash carries the setup;
+- 自由调参: on a wide screen the settings panel's top is in view and the whole stage fits (P23); on a phone the settings panel comes up, and
+  neither entering nor picking an index there plays the picture off screen (P24, R3.2, R7.12);
   the language switch keeps the setup; the hash round trip opens the same setup;
 - the challenge: starts at exact search with no result before Submit, also after another index is chosen; exact search misses
   with a hint and “Show the answer”; a new choice after a miss needs a new Submit; M = 32, ef = 32 is met but names M = 16,
@@ -79,7 +91,9 @@ text = lambda pg, sel: pg.evaluate("s=>{const e=document.querySelector(s); retur
 nexts = lambda pg: pg.evaluate("()=>[...document.querySelectorAll('#vix-rail [data-nav=\"next\"]')].filter(b=>b.getClientRects().length).map(b=>b.disabled)")
 why = lambda pg: pg.evaluate("()=>[...document.querySelectorAll('#vix-rail [data-next-why]')].filter(p=>!p.hidden&&getComputedStyle(p).visibility!=='hidden'&&p.getClientRects().length).map(p=>p.textContent)")
 speed = lambda pg: pg.evaluate("()=>{const b=document.querySelector('#vix-transport .seg-ctl[data-key=\"speed\"] button[aria-pressed=\"true\"]'); return b?b.dataset.v:null}")
-rings = lambda pg, cls='': pg.evaluate(f"()=>document.querySelectorAll('#vix-pic .vix-ring{cls}').length")
+# the rings of the picture itself; the zoom box in its corner repeats the crowded ones and is counted apart (review polish check r1, P25)
+rings = lambda pg, cls='': pg.evaluate(f"()=>document.querySelectorAll('#vix-pic .vix-ring{cls}:not(.vix-zoom .vix-ring)').length")
+zrings = lambda pg, cls='': pg.evaluate(f"()=>document.querySelectorAll('#vix-pic .vix-zoom .vix-ring{cls}').length")
 
 
 def settle(pg, ms=2000):
@@ -224,7 +238,27 @@ def timed_run(pg, sel, timeout=20000):
 
 
 def tops(pg):
-    return pg.evaluate("()=>{const q=s=>{const e=document.querySelector(s); return e&&e.getClientRects().length?Math.round(e.getBoundingClientRect().top):null}; return {pic:q('#vix-pan-pic'), chart:q('#vix-pan-chart'), metrics:q('#vix-metrics')}}")
+    return pg.evaluate("()=>{const q=(s,k)=>{const e=document.querySelector(s); return e&&e.getClientRects().length?Math.round(e.getBoundingClientRect()[k||'top']):null}; return {pic:q('#vix-pan-pic'), chart:q('#vix-pan-chart'), metrics:q('#vix-metrics'), pic_l:q('#vix-pan-pic','left'), chart_l:q('#vix-pan-chart','left')}}")
+
+
+def in_view(pg, sel, need=0.6):
+    """the share of the box between the top bar and the bottom of the screen is at least need"""
+    return pg.evaluate("([s,need])=>{const e=document.querySelector(s); if(!e||!e.getClientRects().length) return false; const r=e.getBoundingClientRect(), bar=document.querySelector('.topbar'), t=bar?bar.getBoundingClientRect().bottom:0;"
+                       " const h=Math.min(r.bottom,innerHeight)-Math.max(r.top,t); return h>=need*Math.min(r.height,innerHeight-t)}", [sel, need])
+
+
+# 自由调参: the bench's step, the scroll, the settings panel and its index row, the stage's inner scroll, the chart legend and the cards
+FREE = """()=>{const r=s=>{const e=document.querySelector(s); return e&&e.getClientRects().length?e.getBoundingClientRect():null}, st=document.querySelector('#vix-stage'),
+  c=r('#vix-app .bench>.controls'), np=r('#vix-app .bench>.controls .seg-ctl[data-key="np"]'), lg=r('#vix-c-leg'), m=r('#vix-metrics:not([hidden])');
+  return {flow:document.querySelector('#vix-app .bench').dataset.flow, y:Math.round(scrollY), h:innerHeight, inner:st.scrollHeight-st.clientHeight, bar:Math.round(document.querySelector('.topbar').getBoundingClientRect().bottom),
+    ctl:c?Math.round(c.top):null, np:np?Math.round(np.top):null, leg:lg?Math.round(lg.bottom):0, met:m?Math.round(m.bottom):0};}"""
+
+
+def order_ok(tp):
+    # the picture first: above the chart, or left of it in the same row; both above the metric cards (R7.12)
+    if None in (tp['pic'], tp['chart'], tp['metrics']): return False
+    first = tp['pic'] < tp['chart'] or (abs(tp['pic'] - tp['chart']) <= 2 and tp['pic_l'] < tp['chart_l'])
+    return first and max(tp['pic'], tp['chart']) < tp['metrics']
 
 
 with sync_playwright() as pw:
@@ -235,41 +269,48 @@ with sync_playwright() as pw:
             pg = page(b, w, h, lang)
             st = state(pg)
             check(f'{tag}: opens on part 1 of the guided tour', st['mode'] == 'guided' and st['step'] == 0, st)
-            # ---- part 1: the exact search plays on entry
-            check(f'{tag} part 1: the search plays in the picture on entry, Next enabled', st['anim'] and vis(pg, '#vix-pic') and vis(pg, '#vix-transport') and not any(nexts(pg)), (st, nexts(pg)))
-            check(f'{tag} part 1: the speed defaults to 中 (R3.9)', speed(pg) == 'mid', speed(pg))
-            al = pg.evaluate(ALIGN)
-            check(f'{tag} part 1: Play, Step, the speed buttons and 重放 share one height and one baseline', al['n'] == 4 and not al['bad'], al)
-            wait_anim(pg)
-            a, dt = timed_run(pg, '#vix-transport [data-act="replay"]')
-            check(f'{tag} part 1: 重放 plays the search again in about 3 s (R3.9, R3.20)', a and 2.4 <= dt <= 4.5, (a, dt))
+            # ---- part 1: a still picture of the vectors, the question and its true 10 nearest (review polish r1, P2, P4)
+            check(f'{tag} part 1: a still picture with the true 10 nearest ringed, no transport, Next enabled', not st['anim'] and vis(pg, '#vix-pic') and not vis(pg, '#vix-transport') and rings(pg) == 10 and rings(pg, '.ok') + rings(pg, '.bad') == 0 and 2 <= zrings(pg) <= 10 and zrings(pg, '.ok') + zrings(pg, '.bad') == 0 and not any(nexts(pg)), (st, rings(pg), zrings(pg), nexts(pg)))
+            check(f'{tag} part 1: no recall badge and no metric cards before recall@10 is explained (P4)', not vis(pg, '#vix-status') and not vis(pg, '#vix-metrics'), text(pg, '#vix-status'))
             shot(pg, f'{tag}_p1', full=phone); rules(pg, f'{tag} part 1', lang)
-            # ---- part 2: exact search at real scale
+            # ---- part 2: exact search; its search plays on entry (P2), and the bars show the real scale (P3)
             a = click_anim(pg, NEXT); st = state(pg)
-            check(f'{tag} part 2: the same picture, so nothing replays on entry (R3.20)', st['step'] == 1 and not a, (a, st))
-            check(f'{tag} part 2: Next waits for another number of vectors, with the why line', all(nexts(pg)) and any(Z(lang, 'Pick another number of vectors', '换一个向量数') in x for x in why(pg)), why(pg))
+            check(f'{tag} part 2: the exact search plays in the picture on entry', a and st['step'] == 1 and vis(pg, '#vix-pic') and vis(pg, '#vix-transport'), (a, st))
+            check(f'{tag} part 2: the speed defaults to 中 (R3.9)', speed(pg) == 'mid', speed(pg))
+            al = pg.evaluate(ALIGN)
+            check(f'{tag} part 2: Play, Step, the speed buttons and 重放 share one height and one baseline', al['n'] == 4 and not al['bad'], al)
+            check(f'{tag} part 2: no recall badge and no metric cards yet (P4)', not vis(pg, '#vix-status') and not vis(pg, '#vix-metrics'))
+            wait_anim(pg)
+            exp = pg.evaluate("()=>window.__vix.picDur(0)")
+            a, dt = timed_run(pg, '#vix-transport [data-act="replay"]')
+            check(f'{tag} part 2: 重放 plays the search again at 中 in the {exp:.1f} s the lab scripts for it, between 5 and 20 s (R3.9, R3.20)', a and 5 <= exp <= 20 and 0.9 * exp <= dt <= exp + 1.5, (a, dt, exp))
+            nkb = lambda s_: pg.evaluate("s=>document.querySelectorAll(s+' .vix-kb').length", s_)
+            check(f'{tag} part 2: Next waits for another number of vectors, with the why line; the bars show 1M only', all(nexts(pg)) and any(Z(lang, 'Pick another number of vectors', '换一个向量数') in x for x in why(pg)) and nkb('#vix-scale') == 2, (why(pg), nkb('#vix-scale')))
             a = click_anim(pg, '#vix-rail .seg-ctl[data-key="rn"] button[data-v="1e8"]')
+            ob = text(pg, '#vix-rail [data-obs]')
             check(f'{tag} part 2: another number of vectors replays nothing (the picture is the same) and enables Next', not a and not any(nexts(pg)) and state(pg)['realN'] == 1e8, (a, state(pg)))
+            check(f'{tag} part 2: 100M adds its bars, and the observation says 307 GB still fits one server (P3)', nkb('#vix-scale') == 4 and '307 GB' in ob and Z(lang, 'still holds them', '还放得下') in ob, (nkb('#vix-scale'), ob[:300]))
             click(pg, '#vix-rail .step.current [data-nav="showme"]')
             ob = text(pg, '#vix-rail [data-obs]')
-            check(f'{tag} part 2: Show me picks 1B; the observation names 3,072 GB and 30.7 s', state(pg)['realN'] == 1e9 and '3,072 GB' in ob and Z(lang, '30.7 s', '30.7 秒') in ob, ob[:300])
+            check(f'{tag} part 2: Show me picks 1B; the observation names 3,072 GB and 30.7 s', state(pg)['realN'] == 1e9 and '3,072 GB' in ob and Z(lang, '30.7 s', '30.7 秒') in ob and nkb('#vix-scale') == 6, ob[:300])
             shot(pg, f'{tag}_p2', full=phone); rules(pg, f'{tag} part 2', lang)
             # ---- part 3: k-d tree
-            go_next(pg); st = state(pg)
-            check(f'{tag} part 3: the tree picture and bars, no transport, Next waits for another number of dimensions', st['step'] == 2 and vis(pg, '#vix-pic') and vis(pg, '#vix-pan-pic .vix-kdbars') and not vis(pg, '#vix-transport') and all(nexts(pg)) and any(Z(lang, 'another number of dimensions', '换一个维数') in x for x in why(pg)), (st, why(pg)))
+            a = click_anim(pg, NEXT); st = state(pg)
+            check(f'{tag} part 3: the k-d tree search plays on entry, with the transport and one bar (2 dimensions); Next waits for another number of dimensions (P6)', a and st['step'] == 2 and vis(pg, '#vix-pic') and vis(pg, '#vix-pan-kd .vix-kdbars') and vis(pg, '#vix-transport') and nkb('#vix-kdbars') == 1 and all(nexts(pg)) and any(Z(lang, 'another number of dimensions', '换一个维数') in x for x in why(pg)), (a, st, nkb('#vix-kdbars'), why(pg)))
             kd = pg.evaluate("()=>window.__vix.kd()")
             click(pg, '#vix-rail .seg-ctl[data-key="kd"] button[data-v="8"]')
             ob = text(pg, '#vix-rail [data-obs]')
-            check(f'{tag} part 3: 8 dimensions names {pc1(kd["8"])}; Next enabled', pc1(kd['8']) in ob and not any(nexts(pg)), ob[:200])
+            check(f'{tag} part 3: 8 dimensions adds its bar and names {pc1(kd["8"])}; the search goes on; Next enabled', pc1(kd['8']) in ob and nkb('#vix-kdbars') == 2 and state(pg)['anim'] and not any(nexts(pg)), (ob[:200], nkb('#vix-kdbars'), state(pg)))
             click(pg, '#vix-rail .step.current [data-nav="showme"]')
             ob = text(pg, '#vix-rail [data-obs]')
             check(f'{tag} part 3: Show me picks 32 dimensions, over 99.9% compared ({kd["32"]:.6f})', state(pg)['kdD'] == 32 and 0.999 < kd['32'] < 1 and Z(lang, 'over 99.9%', '99.9% 以上') in ob, ob[:200])
+            check(f'{tag} part 3: the observation does not give away the answer of part 4 (R3.8, P7)', ob and not re.search(Z(lang, r'\bmiss', '漏'), ob), ob[-200:])
             shot(pg, f'{tag}_p3', full=phone); rules(pg, f'{tag} part 3', lang)
             # ---- part 4: predict
             go_next(pg); st = state(pg)
             check(f'{tag} part 4: Next waits for a prediction, with its why line', st['step'] == 3 and all(nexts(pg)) and any(Z(lang, 'Pick an answer', '选一个答案') in x for x in why(pg)), why(pg))
             cur = text(pg, '#vix-rail .step.current')
-            check(f'{tag} part 4: no result before the prediction (R3.8): no rings, no metric cards, no verdict', rings(pg) == 0 and not vis(pg, '#vix-metrics') and not vis(pg, '#vix-transport') and Z(lang, 'Right.', '对了。') not in cur and '%' not in text(pg, '#dock'), (rings(pg), cur[:200]))
+            check(f'{tag} part 4: no result before the prediction (R3.8, P7): no rings, no metric cards, no verdict, no miss in the dock', rings(pg) + zrings(pg) == 0 and not re.search(Z(lang, r'\bmiss', '漏'), text(pg, '#dock')) and not vis(pg, '#vix-metrics') and not vis(pg, '#vix-transport') and Z(lang, 'Right.', '对了。') not in cur and '%' not in text(pg, '#dock'), (rings(pg), cur[:200]))
             click(pg, '#vix-rail [data-pred="all"]')
             check(f'{tag} part 4: after a pick, Next is enabled and the card says it is saved', not any(nexts(pg)) and Z(lang, 'Saved', '已记下') in text(pg, '#vix-rail .step.current'))
             shot(pg, f'{tag}_p4', full=phone); rules(pg, f'{tag} part 4', lang)
@@ -282,13 +323,21 @@ with sync_playwright() as pw:
             wait_anim(pg)
             check(f'{tag} part 5: the true neighbours the search missed are ringed red (R5.11)', rings(pg, '.bad') > 0 and rings(pg, '.ok') > 0, (rings(pg, '.bad'), rings(pg, '.ok')))
             tp = tops(pg)
-            check(f'{tag} part 5: the picture first, then the chart, then the metric cards (R7.12)', None not in tp.values() and tp['pic'] < tp['chart'] < tp['metrics'], tp)
+            check(f'{tag} part 5: the picture first, then the chart (beside it on a wide stage), then the metric cards (R7.12)', order_ok(tp), tp)
+            if not phone:
+                fit = pg.evaluate("()=>{const st=document.querySelector('#vix-stage'), b=e=>document.querySelector(e).getBoundingClientRect().bottom; return {inner:st.scrollHeight-st.clientHeight, leg:b('#vix-c-leg'), met:b('#vix-metrics'), h:innerHeight}}")
+                check(f'{tag} part 5: the picture, the chart with its legend and the metric cards fit the screen, no scrolling inside the stage (P23)', fit['inner'] <= 2 and fit['leg'] <= fit['h'] and fit['met'] <= fit['h'], fit)
             check(f'{tag} part 5: Next waits for another nprobe', all(nexts(pg)) and any(Z(lang, 'another nprobe', '换一个 nprobe') in x for x in why(pg)), why(pg))
             a = click_anim(pg, '#vix-rail .seg-ctl[data-key="np"] button[data-v="1"]')
             check(f'{tag} part 5: picking the nprobe already shown replays nothing (R3.20)', not a, a)
             a = click_anim(pg, '#vix-rail .seg-ctl[data-key="np"] button[data-v="4"]')
             check(f'{tag} part 5: a new nprobe plays its search (R3.20)', a and state(pg)['np'] == 4, (a, state(pg)))
+            if phone:
+                check(f'{tag} part 5: on a phone the playing picture comes into view (P24, R7.12)', state(pg)['anim'] and in_view(pg, '#vix-pic', 0.9), pg.evaluate("()=>document.querySelector('#vix-pic').getBoundingClientRect().toJSON()"))
             wait_anim(pg)
+            if phone:
+                pg.wait_for_timeout(700); settle(pg)
+                check(f'{tag} part 5: and once the search ends, the observation (P24)', in_view(pg, '#vix-rail [data-obs]', 0.6), pg.evaluate("()=>document.querySelector('#vix-rail [data-obs]').getBoundingClientRect().toJSON()"))
             a = click_anim(pg, '#vix-rail .seg-ctl[data-key="np"] button[data-v="1"]')
             check(f'{tag} part 5: back to a watched nprobe replays nothing (R3.20)', not a and state(pg)['picF'] == -1, (a, state(pg)))
             a = click_anim(pg, '#vix-rail .seg-ctl[data-key="np"] button[data-v="4"]')
@@ -314,6 +363,8 @@ with sync_playwright() as pw:
             # ---- part 6: HNSW
             a = click_anim(pg, NEXT); st = state(pg)
             check(f'{tag} part 6: the HNSW walk plays on entry (M = 16, ef = 10)', a and (st['ix'], st['M'], st['ef']) == ('hnsw', 16, 10), (a, st))
+            if phone:
+                check(f'{tag} part 6: on a phone, Next brings the parts\' bar and the playing picture into view (P24, R3.7)', in_view(pg, '#vix-app .bench .pbar', 1) and in_view(pg, '#vix-pic', 0.5), pg.evaluate("()=>[document.querySelector('#vix-app .bench .pbar').getBoundingClientRect().top, document.querySelector('#vix-pic').getBoundingClientRect().toJSON()]"))
             wait_anim(pg)
             a = click_anim(pg, '#vix-rail .seg-ctl[data-key="ef"] button[data-v="64"]')
             check(f'{tag} part 6: ef 64 plays its walk (R3.20)', a, a)
@@ -326,11 +377,15 @@ with sync_playwright() as pw:
             check(f'{tag} part 6: the observation names ef 64: {pc1(s["rec"])} and {round(s["comps"])} compared', pc1(s['rec']) in ob and f'{round(s["comps"]):,}' in ob and not any(nexts(pg)), ob[:300])
             shot(pg, f'{tag}_p6', full=phone); rules(pg, f'{tag} part 6', lang)
             # ---- part 7: PQ
-            go_next(pg); st = state(pg)
-            check(f'{tag} part 7: the PQ grid, no transport, Next waits for another number of bytes', st['ix'] == 'pq' and pg.evaluate("()=>document.querySelectorAll('#vix-pic .vix-grid').length") > 4 and not vis(pg, '#vix-transport') and all(nexts(pg)), (st, nexts(pg)))
+            a = click_anim(pg, NEXT); st = state(pg)
+            check(f'{tag} part 7: the PQ search plays on entry, with the transport; Next waits for another number of bytes', a and st['ix'] == 'pq' and vis(pg, '#vix-transport') and all(nexts(pg)), (a, st, nexts(pg)))
+            wait_anim(pg)
+            gr = pg.evaluate("()=>[document.querySelectorAll('#vix-pic .vix-grid').length, document.querySelectorAll('#vix-pic .vix-trail').length]")
+            check(f'{tag} part 7: at the end, the grid and a line from each ringed point to where it moved (P16)', gr[0] > 4 and gr[1] >= 10, gr)
             click(pg, '#vix-rail .seg-ctl[data-key="m"] button[data-v="16"]')
             s = stat(pg, 'pq', 16, 16); ob = text(pg, '#vix-rail [data-obs]')
             check(f'{tag} part 7: 16 bytes names {pc1(s["rec"])} and 72 GB; Next enabled', pc1(s['rec']) in ob and '72 GB' in ob and not any(nexts(pg)), ob[:300])
+            check(f'{tag} part 7: the memory card shows the same 72 GB (P15)', '72 GB' in text(pg, '#vix-metrics'), text(pg, '#vix-metrics')[:300])
             shot(pg, f'{tag}_p7', full=phone); rules(pg, f'{tag} part 7', lang)
             # ---- part 8
             go_next(pg); cur = text(pg, '#vix-rail .step.current'); hn = stat(pg, 'hnsw', 16, 64); tp = tops(pg)
@@ -348,7 +403,7 @@ with sync_playwright() as pw:
             ins = text(pg, '#vix-insight'); s = stat(pg, 'ivf', 16, 0)
             check(f'{tag} scenarios: the insight names {pc1(s["rec"])}', pc1(s['rec']) in ins, ins[:200])
             a, dt = timed_run(pg, '#vix-rail [data-preset="4"]')
-            # the first M = 32 graph is built on this click (about 0.5–1 s), then the search plays at 中 (3 s)
+            # the first M = 32 graph is built on this click (about 0.5–1 s), then the part of the search that changes plays at 中 (1.5 s, R3.9)
             check(f'{tag} scenarios: a search not yet watched plays (FAISS defaults, ef 16), building M = 32 first', a and dt <= 5.5, (a, dt))
             for i in (1, 3, 5):
                 click(pg, f'#vix-rail [data-preset="{i}"]'); wait_anim(pg)
@@ -367,6 +422,19 @@ with sync_playwright() as pw:
                 dk = pg.evaluate("()=>{const d=document.getElementById('dock'); return d&&!d.hidden&&d.getBoundingClientRect().height>0?d.innerText:''}")
                 check(f'{tag}: the dock shows once the stage scrolls away', bool(dk) and '%' in dk, dk)
                 shot(pg, f'{tag}_dock'); rules(pg, f'{tag} dock', lang); pg.evaluate("()=>window.scrollTo(0,0)"); pg.wait_for_timeout(200)
+            # ---- 自由调参, the kit's settings step of the sandbox: the settings panel takes the rail's place. On a wide screen its top comes
+            # into view as the kit's reveal does and the whole stage stays in view; a phone goes to the panel, and neither entering nor a
+            # change there plays the picture off screen (review polish r1, P23, P24)
+            click(pg, '#vix-app [data-flow="free"]', 1200); fr = pg.evaluate(FREE)
+            if phone:
+                check(f'{tag} 自由调参: the settings panel comes up under the top bar and nothing plays off screen (P24)', fr['flow'] == 'free' and fr['ctl'] is not None and 0 <= fr['ctl'] < 200 and not state(pg)['anim'], (fr, state(pg)))
+                click(pg, '#vix-app .bench>.controls .seg-ctl[data-key="ix"] button[data-v="ivf"]', 900); fr1 = pg.evaluate(FREE)
+                # nprobe 8 has not been watched yet, so anywhere else it would play
+                seen0 = pg.evaluate("()=>window.__vix.seen()")
+                click(pg, '#vix-app .bench>.controls .seg-ctl[data-key="np"] button[data-v="8"]', 900); fr2 = pg.evaluate(FREE)
+                check(f'{tag} 自由调参: nprobe 8 (not watched yet) picked in the settings panel stays under the finger and the picture shows its end, no search off screen (R3.2, R7.12)', 'ivf|8' not in seen0 and (state(pg)['ix'], state(pg)['np']) == ('ivf', 8) and not state(pg)['anim'] and fr1['np'] is not None and abs(fr2['np'] - fr1['np']) <= 2, (seen0, fr1, fr2, state(pg)))
+            else:
+                check(f'{tag} 自由调参: the settings panel\'s top is in view; the picture, the chart with its legend and the metric cards fit the screen (P23)', fr['flow'] == 'free' and fr['ctl'] is not None and fr['bar'] <= fr['ctl'] <= fr['h'] - 160 and fr['inner'] <= 2 and 0 < fr['leg'] <= fr['h'] and 0 < fr['met'] <= fr['h'], fr)
             pg.close()
             pg = page(b, w, h, lang, hash_='vector-index~pq_16_16_64_16'); st = state(pg)
             check(f'{tag}: the hash round trip opens the same setup in scenarios', st['mode'] == 'sandbox' and (st['ix'], st['np'], st['M'], st['ef'], st['m']) == ('pq', 16, 16, 64, 16), st)
