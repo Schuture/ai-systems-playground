@@ -10,6 +10,7 @@ Independent derivations:
   rate (the page finds it by bisection);
 - the first-word budget, the fleet sizing and the cost sheet written out again from the lab's stated assumptions;
 - the challenge: all 140 combinations, the ones that pass, the cheapest one; the drill's random draws.
+- the GPU squares (polish round 1): one scale of 4 GPUs a square in every setup, so fewer GPUs never draw more squares.
 Run: python3 tests/product-design_numbers.py"""
 import importlib.util, math, pathlib, subprocess, sys
 from playwright.sync_api import sync_playwright
@@ -188,6 +189,27 @@ with sync_playwright() as pw:
             bad += 1
             if bad < 4: print('  mismatch', s, {k: (js[k], py[k]) for k in ('total', 'costDay', 'vis')})
     check(f'compute: {len(states)} setups agree', bad == 0, bad)
+    # the GPU squares (polish round 1, P1): one scale everywhere, 4 GPUs (one 70B replica) a square, a narrower square for a remainder,
+    # so the drawn area is GPUs / 4 in every setup and fewer GPUs never draw more squares than more GPUs
+    fs = states + [dict(BASE, **p_) for p_ in C['PRESETS']] + [dict(BASE, **CH, stream=st, cache=c, share=sh, filt=f) for st in (1, 0) for c in (0, 1) for sh in SHARES for f in FILTS]
+    fu = J('ss=>ss.map(s=>window.__pdz.fleetUnits(s))', fs)
+    SQ, CAP = fu[0]['sq'], fu[0]['cap']
+    prop = all(u['total'] == compute(s)['total'] and close(u['units'], min(u['total'] / SQ, CAP), 1e-9, 1e-9) for s, u in zip(fs, fu))
+    groups = all(close(u['l'], r['gpus']['l'] / SQ, 1e-9, 1e-9) and close(u['s'], r['gpus']['s'] / SQ, 1e-9, 1e-9) and close(u['f'], r['fG'] / SQ, 1e-9, 1e-9)
+                 for u, r in ((u, compute(s)) for s, u in zip(fs, fu)) if u['total'] / SQ <= CAP)
+    srt = sorted((u['total'], u['units']) for u in fu)
+    mono = all(b_[1] >= a_[1] - 1e-9 for a_, b_ in zip(srt, srt[1:]))
+    check(f'fleet squares: {len(fs)} setups, one scale of {SQ} GPUs a square; each group and the whole drawn in proportion to its GPUs', SQ == 4 and prop and groups, (SQ, prop, groups))
+    check(f'fleet squares: fewer GPUs never draw more squares than more GPUs ({srt[0][0]} to {srt[-1][0]} GPUs)', mono and max(u['total'] for u in fu) > 400 and min(u['total'] for u in fu) < 400)
+    u3 = [J('s=>window.__pdz.fleetUnits(s)', dict(BASE, cache=c)) for c in (0, 1)]
+    u7 = [J('s=>window.__pdz.fleetUnits(s)', dict(BASE, cache=1, share=0.7, dau=d)) for d in (1e5, 1e6, 1e7)]
+    check('fleet squares, part 3: 634 GPUs draw 158.5 squares, 294 with the cache draw 73.5', (u3[0]['units'], u3[1]['units']) == (158.5, 73.5), (u3[0]['units'], u3[1]['units']))
+    check('fleet squares, part 7: 16 / 115 / 1,135 GPUs draw 4 / 28.75 / 283.75 squares', [u['units'] for u in u7] == [4, 28.75, 283.75], [u['units'] for u in u7])
+    # the hard messages on the small model (P10): past 70%, the small pool's GPUs for the extra share are drawn red, in the same scale
+    hard_ok = all((u['hardG'] == (math.floor(r['gpus']['s'] * (s['share'] - EASY) / s['share'] + 0.5) if s['share'] > EASY + 1e-9 and r['gpus']['s'] else 0))
+                  and (u['total'] / SQ > CAP or close(u['hard'], u['hardG'] / SQ, 1e-9, 1e-9)) for s, u, r in ((s, u, compute(s)) for s, u in zip(fs, fu)))
+    u9 = J('s=>window.__pdz.fleetUnits(s)', dict(BASE, cache=1, share=0.9))
+    check(f'fleet squares: the hard messages on the small model are drawn red only past 70% (90%: {u9["hardG"]} of {compute(dict(BASE, cache=1, share=0.9))["gpus"]["s"]} small-model GPUs)', hard_ok and u9['hardG'] == 5, u9)
     # the guided parts' numbers
     base = compute(BASE); cache = compute(dict(BASE, cache=1)); route = compute(dict(BASE, cache=1, share=0.7))
     check('every pool meets the sizing goal: ttft90 at goodput within 1 s', all(p['ttft90'] <= TTFT_GOAL for p in POOL.values()), {k: round(p['ttft90'], 3) for k, p in POOL.items()})
