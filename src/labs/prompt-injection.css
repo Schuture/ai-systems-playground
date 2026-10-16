@@ -107,10 +107,10 @@ mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;pad
    the 100 tasks show a change first; at 1440 × 900 the cards are in the sticky stage's own scroll, under the 100 tasks ---------- */
 .pin-stage>.pin-metrics{margin:10px 0 4px;gap:6px}
 .pin-metrics .metric{padding:5px 8px 4px}
-.pin-metrics .metric .k{font-size:10.5px;line-height:1.3}
+.pin-metrics .metric .k{line-height:1.14}   /* 12 px (kit polish r2, M1; was 10.5 px), each line as tall as before */
 .pin-metrics .metric .v{font-size:16px;line-height:1.2;margin-top:1px}
 .pin-metrics .metric .sub{font-size:11px;line-height:1.3}
-.pin-metrics .metric .d{font-size:10.5px;min-height:13px;line-height:1.25}
+.pin-metrics .metric .d{min-height:13px;line-height:1.1}
 .metric.pin-bad .v{color:var(--c-oom)}
 .pin-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
 .pin-fx{margin:8px 0 10px;overflow-x:auto}

@@ -189,7 +189,8 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 /* the three counters, each with a bar: tokens recomputed and the time (gray, of the prompt and of no cache), new blocks (amber: KV cache) */
 .px-ctrs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
 .px-ctr{border:1px solid var(--line-2);border-radius:4px;padding:8px 9px;background:var(--surface);min-width:0;cursor:help}
-.px-ctr .k{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.02em;color:var(--ink-3);line-height:1.3}
+/* a counter's name as a metric card's (kit polish r2, M1): 12 px in the text's font (was 10.5 px, and 10 px on phones, in the numbers' font) */
+.px-ctr .k{font-family:var(--font-ui);font-size:12px;color:var(--ink-3);line-height:1.2}
 .px-ctr .v{font-size:clamp(15px,4cqi,18px);font-weight:500;margin-top:2px;white-space:nowrap}
 .px-cbar{height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin:5px 0 4px}
 .px-cbar i{display:block;height:100%;width:0;background:var(--ink-3)}
@@ -238,7 +239,6 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
   .px-same{font-size:11px;gap:4px}
   .px-ctrs{gap:6px}
   .px-ctr{padding:7px 7px}
-  .px-ctr .k{font-size:10px}
   .px-ctr .sub{font-size:11px}
 }
 

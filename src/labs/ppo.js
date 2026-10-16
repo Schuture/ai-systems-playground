@@ -714,6 +714,7 @@ function drawMetrics(r){
   if(!host.children.length) host.innerHTML=MET.map(m=>`<div class="metric" data-k="${m.k}" tabindex="0"><div class="k"></div><div class="v mono"></div><div class="sub"></div><div class="d mono"></div></div>`).join('');
   MET.forEach(m=>{const el=host.querySelector(`[data-k="${m.k}"]`), v=m.v(r), d=el.querySelector('.d');
     el.querySelector('.k').textContent=m.label(); el.querySelector('.v').textContent=v; el.querySelector('.sub').textContent=m.sub(r); el.dataset.tipx=m.tip();
+    el.querySelector('.v').classList.toggle('ppo-vlong',String(v).length>9);   // “about 3300 times”: smaller and wrapping, inside its card (kit polish r2)
     el.hidden=(m.k==='kl'&&!seen('kl'))||(m.k==='rho'&&(!seen('clip')||clipShown()));
     const a=numOf(shownPrev[m.k]), b=numOf(v), dt=userAct&&!RUN.on&&isFinite(a)&&isFinite(b)&&A.fmt.delta?(A.fmt.delta(a,b,{dp:2})||''):'';
     if(dt){d.textContent=dt; d.classList.add('on'); clearTimeout(d._t); d._t=setTimeout(()=>{d.classList.remove('on'); d.textContent='';},2600);}

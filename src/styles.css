@@ -70,7 +70,7 @@ h2{font-size:clamp(26px,3.2vw,36px);font-stretch:112%;font-weight:720;line-heigh
 .langsw button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 html[lang^="zh"] .hero h1{line-height:1.12;letter-spacing:0}
 html[lang^="zh"] h2,html[lang^="zh"] .labtitle{line-height:1.2;letter-spacing:0}
-html[lang^="zh"] .eyebrow,html[lang^="zh"] .metric .k,html[lang^="zh"] .meter-title{letter-spacing:.04em}
+html[lang^="zh"] .eyebrow,html[lang^="zh"] .meter-title{letter-spacing:.04em}
 html[lang^="zh"] .eyebrow,html[lang^="zh"] .metric .k{text-transform:none}
 
 /* buttons */
@@ -329,11 +329,16 @@ button.tag:hover{border-color:var(--ink);color:var(--ink)}
 .stage-note{font-size:13px;color:var(--ink-2);margin:12px 0 0}
 .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
 @container (min-width:560px){.metrics{grid-template-columns:repeat(5,minmax(0,1fr))}}
-.metric{border:1px solid var(--line-2);border-radius:4px;padding:9px 9px;background:var(--surface);min-width:0}
-.metric .k{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.02em;color:var(--ink-3)}
+/* a card's name (.k) and its change line (.d) are 12 px in the text's font (kit polish r2, M1; they were 10.5 and 11 px in the numbers'
+   font): in the numbers' font 12 px is a seventh wider, and over every lab, part and size it put about 1,100 more names on a second line.
+   The value keeps the numbers' font; the colours are as before. The side padding is 7 px (was 9 px), so a name of 7 Chinese characters
+   (12 px each) still fits on one line in a phone's three-column card (103 px wide at 390 px). Each line keeps its height (a name line
+   16.2 px, a change line 15 px), so a card is no taller unless its text wraps more. A lab sets nothing smaller (CONTRACT §19). */
+.metric{border:1px solid var(--line-2);border-radius:4px;padding:9px 7px;background:var(--surface);min-width:0}
+.metric .k{font-family:var(--font-ui);font-size:12px;line-height:1.35;color:var(--ink-3)}
 .metric .v{font-size:clamp(15px,4cqi,18px);font-weight:500;margin-top:1px;white-space:nowrap}
 .metric .sub{font-size:12px;color:var(--ink-3);line-height:1.35}
-.metric .d{font-size:11px;color:var(--ink-2);height:15px;opacity:0;transition:opacity .35s}
+.metric .d{font-family:var(--font-ui);font-size:12px;color:var(--ink-2);height:15px;opacity:0;transition:opacity .35s}
 .metric .d.on{opacity:1}
 details.math{margin-top:12px;border-top:1px solid var(--line-2);padding-top:10px}
 details.math summary,details.adv summary{cursor:pointer;font-weight:650;list-style:none;display:flex;align-items:center;gap:8px;font-size:14px}
@@ -584,7 +589,7 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--surface-2);pa
 .cmp-leg i{display:inline-block;width:14px;height:9px;border-radius:2px;background:var(--ink-3)}
 .cmp-leg i.ok{background:var(--c-ok)}
 .cmp-leg i.g{width:0;height:12px;border-radius:0;background:none;border-left:1.5px dashed var(--ink-2)}
-.metric .d{height:auto;min-height:15px;line-height:1.35}
+.metric .d{height:auto;min-height:15px;line-height:1.25}
 .tip p{margin:0}
 /* formulas (A.ui.math): real maths, not TeX source */
 math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sans Math',serif;font-size:1.12em}
@@ -676,7 +681,8 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
   .m2 .bench>.stage,.m2 .bench>.controls,.m2 .bench>.rail>*{width:100%;min-width:0}
   .m2 .bench>.rail{display:contents}
   .m2 .bench>.rail>*{order:3}
-  .m2 .bench>.rail>.pbar{order:1;display:block;padding:10px 12px;border:1px solid var(--ink);border-radius:6px;background:var(--surface);box-shadow:var(--shadow)}
+  .m2 .bench>.rail>.pbar{order:1;display:block;padding:8px 12px;border:1px solid var(--ink);border-radius:6px;background:var(--surface);box-shadow:var(--shadow)}
+  .m2 .bench>.rail>.pbar .pb-t{margin-top:6px}   /* 10 px and 8 px before kit polish r2 (M2, the first screen) */
   .m2 .bench>.rail>.rail-top{display:none}
   .m2 .bench>.stage{order:2}
   .m2 .bench>.controls{order:4}
@@ -697,6 +703,24 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
 /* ---------- Batch 2 (Codex review 1 #5): what you can do after the lab; three ways to show it transfers ---------- */
 .lab-outcome{margin:-4px 0 12px;font-size:14.5px;color:var(--ink-2);max-width:62em;line-height:1.45}
 .lab-outcome b{color:var(--ink);font-weight:650}
+/* phones (≤ 760 px), the first screen (kit polish r2, M2): the header is set tighter so the stage and its figure come up (390×844 zh:
+   the stage's top, median over the labs, from 496 to about 420 px). Nothing is removed and the order stays: the breadcrumbs, the title
+   (22 px, the size of a path's name on the home page), “You will be able to …”, then the minutes tag, which runs on at the end of that
+   paragraph: on its last line when there is room, else at the start of the next line. It is a space (with word-spacing) from the text,
+   not a margin, so a tag that wraps is not indented. The header takes the paragraph's font size and line height, so a line the tag shares
+   is the paragraph's height (the tag, 19.6 px tall with 1 px padding, fits inside the 21 px line); the breadcrumbs keep their line height,
+   and the title keeps its 10 px top margin (the previous / next links' tap boxes reach into it). The paragraph and the tag are broken into
+   lines the plain way (text-wrap-style auto): a lab's “pretty” wrapping (eval-capstone, English) would even out the lines of the paragraph
+   and the tag together and leave a short first line. Desktop (> 760 px) is unchanged. */
+@media (max-width:760px){
+  .labhead:not(.ls-labhead){padding-block:12px 6px;font-size:14.5px;line-height:1.45;text-wrap-style:auto}
+  .labhead:not(.ls-labhead)>.crumbs{line-height:1.55}
+  .labhead>.labtitle{font-size:22px;margin-bottom:8px}
+  .labhead>.lab-outcome:has(+.labmeta){display:inline;margin:0}
+  .labhead>.lab-outcome:has(+.labmeta)::after{content:" ";word-spacing:4px}
+  .labhead>.lab-outcome+.labmeta{display:inline-flex;vertical-align:1px}
+  .labhead>.lab-outcome+.labmeta>.tag{padding-block:1px}
+}
 .exits{margin-top:12px}
 .exits .ex-tabs{margin:4px 0 12px;flex-wrap:wrap}
 .exits .ex-tabs button{flex:1 1 auto}
@@ -932,6 +956,7 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
 .flow .fl-sub a:hover{color:var(--ink)}
 .flow .fl-sub a.on{color:var(--ink);border-left-color:var(--ink);font-weight:620}
 .flow .fl-see{margin:8px 4px 0;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+@media (max-width:760px){.flow .fl-see{margin-top:6px}}   /* phones: the first screen (kit polish r2, M2) */
 .flow .fl-see a{color:var(--ink);font-weight:620;text-underline-offset:2px}
 /* the outline column is wide so the guided cards' text runs in fewer lines (owner 2026-10-14; the stage gave up the room when Settings left the right rail) */
 :is(#view-dyn,#view-lab) .bench.flowed,:is(#view-dyn,#view-lab) .bench.flowed.no-ctl{grid-template-columns:400px minmax(0,1fr)}

@@ -82,9 +82,9 @@
 
 /* metrics: labels hold Greek letters, so no uppercase (π would turn into Π) */
 .dpo-metrics .metric{cursor:help}
-.dpo-metrics .metric .k{text-transform:none;letter-spacing:0;font-size:10.5px}
+.dpo-metrics .metric .k{text-transform:none;letter-spacing:0}
 .dpo-metrics .metric .sub{overflow-wrap:anywhere}
-.dpo-metrics .metric .d{height:auto;min-height:15px;line-height:1.3}
+.dpo-metrics .metric .d{height:auto;min-height:15px;line-height:1.2}   /* 12 px since kit polish r2 (M1); a line about as tall as before (14.4 px, was 14.3 px) */
 
 /* show the math (H2): short blocks, each a lead line, the formula and the reader's numbers in an aligned display */
 .dpo-app .mathbody{font-family:var(--font-ui);font-size:13.5px;line-height:1.55}
