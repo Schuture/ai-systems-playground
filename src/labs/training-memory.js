@@ -148,10 +148,11 @@ const BASE={m:'8b',gpu:'h100',opt:'adamw',seq:4096,mb:1,acc:1,rc:0};
 let S={...BASE}, mode='guided', step=0, pred=null, observed={}, root=null, app=null;
 let optTried=new Set(['adamw']), rcTried=new Set([0]), acTried=new Set(['a8x1']), acSel='a8x1', tokMoved=false, remView='states';
 let saved=null, chSubmitted=false, chReveal=false, sbTouched=false, userAct=false, wantObs=false, annT=null, drillSeed=1, drillOpen=false;
-/* the replay of one update: a mechanism replay, Medium by default (R3.9): 40 / 20 / 10 s */
-let playT=1, playing=false, spd='mid', raf=0, lastT=0, relang=false;
+/* the replay of one update: a mechanism replay, Medium by default (R3.9): 16 / 8 / 4 s (B6: it plays within a few seconds;
+   the owner, 2026-10-15: 40 / 20 / 10 s was far too slow, and Next waits for it in part 2) */
+let playT=1, playing=false, spd='mid', raf=0, lastT=0, relang=false, dockK='';
 const watched=new Set();
-const DUR={slow:40000,mid:20000,fast:10000};
+const DUR={slow:16000,mid:8000,fast:4000};
 const shownPrev={};
 const sigOf=s=>`${s.m}|${s.rc?1:0}|${s.acc}`;
 
@@ -225,33 +226,33 @@ const STEPS=[
  {id:'states',title:{en:'Four more numbers per parameter',zh:'每个参数还要带四样东西'},expect:()=>watched.has(sigOf(BASE)),showMe:()=>finishPlay(),label:{en:'Result',zh:'结果'},
   lead:()=>tx('Add FP32 gradients, an FP32 copy of the weights, and Adam’s m and v: 18 bytes per parameter.','加上 FP32 梯度、FP32 权重副本，以及 Adam 的 m 和 v，每个参数 18 字节。'),
   enter:()=>({...BASE}),
-  body:()=>tx(`<p>The chart plays one training step. The large block at the bottom that never moves is the ${DEF('model states',TIP.states())}. Besides its BF16 weight (2 bytes), every parameter carries four more numbers:</p>`+
-     `<ul class="tmem-four"><li><b>FP32 gradient</b><span>worked out in the backward pass and kept in FP32, 4 bytes. Gradients are often added together, and adding them in FP32 loses no precision.</span></li>`+
-     `<li><b>FP32 copy</b><span>an FP32 copy of the weights, 4 bytes. The updates are added to it, because a small update added to a BF16 weight is often ${DEF('rounded away',TIP.round())} (see ${labLink('number-formats')}).</span></li>`+
+  body:()=>tx(`<p>In training, every parameter carries the four numbers below besides its BF16 weight (2 bytes). With the weight they make up the ${DEF('model states',TIP.states())}, the large block at the bottom of the chart that never moves.</p>`+
+     `<ul class="tmem-four"><li><b>FP32 gradient</b><span>4 bytes, held for the whole step; the backward pass writes the gradients into it. Gradients are often added up, and FP32 keeps that precise.</span></li>`+
+     `<li><b>FP32 copy</b><span>the weight kept in FP32, 4 bytes. The updates are added to it, because a small update added straight to a BF16 weight is often ${DEF('rounded away',TIP.round())} (see ${labLink('number-formats')}).</span></li>`+
      `<li><b>Adam’s m</b><span>the ${DEF('running average of the gradient',TIP.m())}, 4 bytes (FP32).</span></li>`+
      `<li><b>Adam’s v</b><span>the ${DEF('running average of the squared gradient',TIP.v())}, 4 bytes (FP32). For m and v, see ${labLink('optimizers')}.</span></li></ul>`+
-     M('2 + 4 + 4 + 4 + 4 = 18 \\, \\text{bytes per parameter}')+
-     `<p>The FP32 copy, m and v are what the optimizer uses. Together they are called the optimizer state, 12 bytes per parameter.</p>`+
+     M('2 + 4 + 4 + 4 + 4 = 18 \\, \\text{bytes/parameter}')+
+     `<p>Of these, the FP32 copy, m and v are what the optimizer uses: together the optimizer state, 12 bytes per parameter.</p>`+
      `<p>How m and v are stored depends on the optimizer. Pick an optimizer and see how much memory the model states take.</p>`,
-     `<p>图里在播放训练的一步。最下面一直不动的那一大块，叫${DEF('模型状态',TIP.states())}。每个参数除了 BF16 权重（2 字节），还带着四样东西：</p>`+
-     `<ul class="tmem-four"><li><b>FP32 梯度</b><span>反向时算出来，用 FP32 存，4 字节。梯度常常要一份份加起来，用 FP32 加才不丢精度。</span></li>`+
-     `<li><b>FP32 权重副本</b><span>权重的一份 FP32 拷贝，4 字节。更新都加在它上面，因为很小的更新加到 BF16 权重上，常常被${DEF('舍入掉',TIP.round())}（见${labLink('number-formats')}）。</span></li>`+
+     `<p>训练时，每个参数除了 BF16 权重（2 字节），还带着下面四样东西。它们和权重合起来叫${DEF('模型状态',TIP.states())}，就是图里最下面一直不动的那一大块。</p>`+
+     `<ul class="tmem-four"><li><b>FP32 梯度</b><span>4 字节，整步都占着，反向时把算出的梯度写进去。梯度常要累加，用 FP32 才不丢精度。</span></li>`+
+     `<li><b>FP32 权重副本</b><span>4 字节。更新都加在它上面，因为很小的更新直接加到 BF16 权重上，常常被${DEF('舍入掉',TIP.round())}（见${labLink('number-formats')}）。</span></li>`+
      `<li><b>Adam 的 m</b><span>${DEF('梯度的滑动平均',TIP.m())}，4 字节（FP32）。</span></li>`+
      `<li><b>Adam 的 v</b><span>${DEF('梯度平方的滑动平均',TIP.v())}，4 字节（FP32）。m 和 v 见${labLink('optimizers')}。</span></li></ul>`+
      M('2 + 4 + 4 + 4 + 4 = 18 \\, \\text{字节/参数}')+
-     `<p>FP32 权重副本，加上 Adam 的 m 和 v，是给优化器用的，合称优化器状态，每个参数 12 字节。</p>`+
+     `<p>其中 FP32 权重副本、m 和 v 是给优化器用的，合称优化器状态，每个参数 12 字节。</p>`+
      `<p>m 和 v 怎么存，取决于优化器。选一种优化器，看看模型状态要占多少显存。</p>`)+optLever(),
   obs:()=>obsStates()},
  {id:'acts',title:{en:'What the forward pass keeps',zh:'前向留给反向的中间结果'},expect:()=>tokMoved,showMe:{seq:16384},label:{en:'Result',zh:'结果'},
   lead:()=>tx('Activations grow with the tokens processed at once.','激活随一次处理的 token 数一起涨。'),
   enter:()=>({...BASE}),
-  body:()=>tx(`<p>Above the model states sit the ${DEF('activations',TIP.act())}: what every layer computes in the forward pass and keeps until the backward pass has used it to work out the gradients (see ${labLink('backprop')}). For example, the ${DEF('MLP block',A.terms&&A.terms.mlp?A.terms.mlp():'')} first widens every token’s vector with two matrices (the gate and up projections in Llama). Both results are kept for the backward pass.</p>`+
-     `<p>Every token leaves its own set in every layer, so the more tokens are processed at once, the more activations there are. Longer sequences, or more sequences at once, both make them grow. After the last layer the model also gives each token 128,256 ${DEF('logits',TIP.logit())}, counted here in FP32. The logits grow with the tokens too.</p>`,
-     `<p>模型状态上面那一块是${DEF('激活',TIP.act())}，也就是前向时每一层算出的中间结果。它们要一直留到反向，用来算梯度（见${labLink('backprop')}）。比如 ${DEF('MLP 块',A.terms&&A.terms.mlp?A.terms.mlp():'')}先用两个矩阵，把每个 token 的向量变宽（Llama 里叫 gate 投影和 up 投影）。这两个结果都要留到反向。</p>`+
-     `<p>每个 token 在每一层都留下自己的一份，所以一次处理的 token 越多，激活越大。序列越长，或者一次送进 GPU 的序列越多，激活都会变大。最后一层之后，模型还要给每个 token 算出 128,256 个 ${DEF('logit',TIP.logit())}，这里按 FP32 算。logits 也跟着 token 数一起涨。</p>`)+
+  body:()=>tx(`<p>Above the model states sit the ${DEF('activations',TIP.act())}: what every layer computes in the forward pass, kept until the backward pass uses it to work out the gradients (see ${labLink('backprop')}). Every token leaves its own set in every layer, so the more tokens processed at once (longer sequences, or more sequences at once), the more activations, while the model states stay the same.</p>`+
+     `<p>At the end the model also gives each token 128,256 ${DEF('logits',TIP.logit())} (kept in FP32), so the logits grow with the tokens too.</p>`,
+     `<p>模型状态上面那一块是${DEF('激活',TIP.act())}：前向时每一层算出的中间结果，要留到反向用来算梯度（见${labLink('backprop')}）。每个 token 在每一层都留下自己的一份，所以一次处理的 token 越多（序列更长，或者一次送进更多序列），激活越大，模型状态不变。</p>`+
+     `<p>模型最后还要给每个 token 算出 128,256 个 ${DEF('logit',TIP.logit())}（按 FP32 存），所以 logits 也跟着 token 数涨。</p>`)+
      seqCtl('tmem-ic-seq',true)+mbCtl('tmem-ic-mb',true)+
-     tx(`<p class="small muted">The attention weights (one score for every pair of tokens) are not kept: FlashAttention recomputes them in the backward pass instead (see ${labLink('flash-attention')}).</p>`,
-        `<p class="small muted">注意力权重（每两个 token 之间一个得分）不在其中。FlashAttention 不存它们，反向时重新算（见 ${labLink('flash-attention')}）。</p>`),
+     tx(`<p class="small muted">The attention weights (one score for every pair of tokens) are not kept: ${labLink('flash-attention')} recomputes them in the backward pass instead.</p>`,
+        `<p class="small muted">注意力权重（每两个 token 之间一个得分）不在其中：${labLink('flash-attention')} 不存它们，反向时重新算。</p>`),
   obs:()=>obsActs()},
  {id:'rc',title:{en:'Recompute instead of storing',zh:'不存了，反向时再算一遍'},expect:()=>rcTried.has(1),showMe:{rc:1},label:{en:'Result',zh:'结果'},
   lead:()=>tx('Keep only each layer’s input; pay one more forward pass.','每层只留输入，代价是多算一遍前向。'),
@@ -281,6 +282,9 @@ const leadOf=s=>typeof s.lead==='function'?s.lead():L(s.lead);
 function verdict(){
   if(!pred) return '';
   const pt=esc(predT(pred)), rt=esc(predT(PRED_RIGHT));
+  /* A8: part 1 asked about AdamW; with another optimizer shown, its peak may fall in the reader's range, so say which step was asked */
+  if(S.opt!=='adamw'){const b=C0(); return pred===PRED_RIGHT?tx(`<p>Part 1 asked about AdamW, which peaks at ${GB(b.peak)}: your prediction, “${pt}”, was right.</p>`,`<p>第 1 部分问的是 AdamW，它的峰值是 ${GB(b.peak)}：你的预测“${pt}”是对的。</p>`)
+    :tx(`<p>Part 1 asked about AdamW, which peaks at ${GB(b.peak)}, so the right answer was “${rt}”. You predicted “${pt}”.</p>`,`<p>第 1 部分问的是 AdamW，它的峰值是 ${GB(b.peak)}，所以正确答案是“${rt}”。你预测的是“${pt}”。</p>`);}
   return pred===PRED_RIGHT?tx(`<p><span class="okc">Your prediction, “${pt}”, was right.</span></p>`,`<p><span class="okc">你的预测“${pt}”是对的。</span></p>`)
     :tx(`<p>You predicted “${pt}”. The right answer is “${rt}”.</p>`,`<p>你预测的是“${pt}”，正确答案是“${rt}”。</p>`);
 }
@@ -293,8 +297,8 @@ function obsStates(){
   else s=tx(`<p><b>With ${optName(S.opt)}, the model states drop from ${GB(b.states)} to ${GB(c.states)}, and the step peaks at ${GB(c.peak)}: ${c.fits?'it fits':'it still does not fit'}.</b></p>`,
             `<p><b>换成${optName(S.opt)}后，模型状态从 ${GB(b.states)} 降到 ${GB(c.states)}，峰值 ${GB(c.peak)}，${c.fits?'装得下了':'还是放不下'}。</b></p>`);
   s+=verdict();
-  if(S.opt==='adamw') s+=tx(`<p>${GB(b.states)} of it is the model states, held from the first layer’s forward pass to the end of the update. At 18 bytes per parameter, that is 9 times the weights alone, which is all that inference holds.</p>`,
-                            `<p>其中 ${GB(b.states)} 是模型状态，从第一层前向一直占到参数更新完。每个参数 18 字节，是推理时只放权重的 9 倍。</p>`);
+  if(S.opt==='adamw') s+=tx(`<p>${GB(b.states)} of it is the model states. At 18 bytes per parameter, that is 9 times the weights alone, which is all that inference holds.</p>`,
+                            `<p>其中 ${GB(b.states)} 是模型状态，每个参数 18 字节，是推理时只放权重的 9 倍。</p>`);
   else if(S.opt==='adam8') s+=tx('<p>It saves only on Adam’s m and v, from 8 bytes per parameter to 2. The BF16 weights, the FP32 gradients and the FP32 copy stay as they were.</p>','<p>它省下的只有 Adam 的 m 和 v，每个参数从 8 字节压到 2 字节。BF16 权重、FP32 梯度和 FP32 权重副本都没变。</p>');
   else s+=tx('<p>It saves only the 4 bytes of v. SGD with momentum often trains large Transformers worse than AdamW, which is why AdamW is the usual choice.</p>','<p>它只省下 v 的 4 字节。训练大型 Transformer 时，带 momentum 的 SGD 往往不如 AdamW，所以大家通常还是用 AdamW。</p>');
   return s;
@@ -303,11 +307,11 @@ function obsActs(){
   const c=compute(S), b=C0();
   if(c.T===b.T) return tx(`<p><b>${tokS(c.T)} tokens at once: the activations take ${GB(c.acts)} and the logits ${GB(c.logits)}.</b> Drag the length, or send more sequences at once.</p>`,`<p><b>一次 ${tokS(c.T)} 个 token：激活占 ${GB(c.acts)}，logits 占 ${GB(c.logits)}。</b>拖动序列长度，或者一次多送几条试试。</p>`);
   const r=c.T/b.T, rs=r>=1?tx(`${fixd(r,r%1?1:0)} times`,`${fixd(r,r%1?1:0)} 倍`):tx(`1/${fixd(1/r,0)}`,`1/${fixd(1/r,0)}`);
-  return tx(`<p><b>${tokS(c.T)} tokens at once: the activations take ${GB(c.acts)} (${GB(b.acts)} at 4,096 tokens), and the step peaks at ${GB(c.peak)}.</b></p><p>The tokens became ${rs} as many, and so did the activations and the logits. The ${GB(c.states)} of model states did not move. The activations are what every token leaves in every layer, so:</p>`,
-            `<p><b>一次 ${tokS(c.T)} 个 token：激活占 ${GB(c.acts)}（4,096 个 token 时是 ${GB(b.acts)}），峰值 ${GB(c.peak)}。</b></p><p>token 数变成了原来的 ${rs}，激活和 logits 也跟着变成 ${rs}。${GB(c.states)} 的模型状态一点没动。激活是每个 token 在每一层留下的一份，所以：</p>`)+
+  return tx(`<p><b>${tokS(c.T)} tokens at once: the activations take ${GB(c.acts)} (${GB(b.acts)} at 4,096 tokens), and the step peaks at ${GB(c.peak)}.</b></p><p>The tokens became ${rs} as many, and so did the activations and the logits; the ${GB(c.states)} of model states did not move. Counting one set per token per layer:</p>`,
+            `<p><b>一次 ${tokS(c.T)} 个 token：激活占 ${GB(c.acts)}（4,096 个 token 时是 ${GB(b.acts)}），峰值 ${GB(c.peak)}。</b></p><p>token 数变成了原来的 ${rs}，激活和 logits 也跟着变成 ${rs}，${GB(c.states)} 的模型状态一点没动。按每个 token 每层一份来算：</p>`)+
     M(tx('\\text{activations} = \\text{tokens} \\times \\text{layers} \\times a','\\text{激活} = \\text{token 数} \\times \\text{层数} \\times a'))+
-    tx(`<p>Here “tokens” means the tokens processed at once. a is what one token leaves in one layer. ${c.m.name} has ${c.m.L} layers, and a is ${fixd(c.aL/1000,0)} KB. ${J('math','Show the math','Opens the tensor-by-tensor count.')} lists the tensors that make it up.</p>`,
-       `<p>这里的 token 数，指一次处理的 token 数。a 是一个 token 在一层里留下的字节数。${c.m.name} 有 ${c.m.L} 层，a 是 ${fixd(c.aL/1000,0)} KB。它由哪些张量组成，见${J('math','“展开公式”','打开逐个张量的清单。')}。</p>`);
+    tx(`<p>Here “tokens” means the tokens processed at once, and a is what one token leaves in one layer. ${c.m.name} has ${c.m.L} layers, and a is ${fixd(c.aL/1000,0)} KB; ${J('math','Show the math','Opens the tensor-by-tensor count.')} lists the tensors that make it up.</p>`,
+       `<p>这里的 token 数是一次处理的 token 数，a 是一个 token 在一层里留下的字节数。${c.m.name} 有 ${c.m.L} 层，a 是 ${fixd(c.aL/1000,0)} KB，它由哪些张量组成，见${J('math','“展开公式”','打开逐个张量的清单。')}。</p>`);
 }
 function obsRc(){
   const c=compute(S), b=C0();
@@ -669,7 +673,7 @@ function challengeHTML(){
 }
 function isNextDisabled(){const s=STEPS[step]; return (!!s.expect&&!observed[step])||(!!s.gate&&!s.gate());}
 function nextWhy(){
-  const w={mission:{en:'Pick an answer to continue, or Skip.',zh:'选一个答案才能继续，也可以跳过。'},states:{en:'Let the step finish playing to continue (“Fast” takes 10 seconds).',zh:'等这一步播完才能继续（选“快”只要 10 秒）。'},
+  const w={mission:{en:'Pick an answer to continue, or Skip.',zh:'选一个答案才能继续，也可以跳过。'},states:{en:'Let the step finish playing to continue (“Fast” takes 4 seconds).',zh:'等这一步播完才能继续（选“快”只要 4 秒）。'},
     acts:{en:'Change the length or the sequences at once to continue.',zh:'改一下序列长度或一次送的条数，才能继续。'},rc:{en:'Pick “Recompute every layer” to continue.',zh:'选“每一层都重算”才能继续。'},accum:{en:'Pick the last option, all three tricks, to continue.',zh:'选最后一项“三个办法一起用”，才能继续。'}}[STEPS[step].id];
   return w?L(w):'';
 }
@@ -771,7 +775,7 @@ function drawColumn(c,tl,x){
 function colAria(c,hw){if(hidden0()) return tx(`Inference holds ${GB(c.infer)} of weights; training is hidden until you predict.`,`推理放 ${GB(c.infer)} 的权重；训练的那一栏等你预测后再显示。`);
   return tx(`Highest so far: ${GB(c.states+hw.acts+hw.lg)}, of which model states ${GB(c.states)}, activations ${GB(hw.acts)}, logits ${GB(hw.lg)}. The ${c.g.name} holds ${GB(c.cap)}.`,`到此刻的最高点：${GB(c.states+hw.acts+hw.lg)}，其中模型状态 ${GB(c.states)}，激活 ${GB(hw.acts)}，logits ${GB(hw.lg)}。${c.g.name} 有 ${GB(c.cap)}。`);}
 const colH=()=>innerWidth<=760?220:250;
-const yMax=c=>Math.max(c.cap,c.peak,c.infer)*1.1;
+const yMax=c=>Math.max(c.cap,c.peak,c.infer,isP('states')?C0().peak:0)*1.1;   // part 2: AdamW's scale for every optimizer, so the drop shows
 /* S8: the GPU line's label sits in a right gutter outside the plot, so it never covers the curve */
 const capGut=c=>Math.ceil(Math.max(String(c.g.name).length,GB(c.cap).length)*6.4)+10;
 function curveStatic(c,tl,W,H){
@@ -804,7 +808,7 @@ function drawCurve(c,tl,x){
   const host=$('#tmem-curve',app), box=$('#tmem-vis',app);
   const W=Math.max(220,Math.round(host.clientWidth||420)), H=colH();
   if(hidden0()){host.innerHTML=`<div class="tmem-curve0" style="height:${H}px"><p>${esc(tx('One training step plays here in part 2, after your prediction.','作答之后，第 2 部分在这里播放训练的一步。'))}</p></div>`; host._k=''; $('#tmem-cv-cap',app).textContent=tx('Memory over one training step','训练一步时显存怎么变'); return;}
-  const key=[TLkey,W,H,A.lang()].join('|');
+  const key=[TLkey,W,H,A.lang(),yMax(c)].join('|');
   if(host._k!==key){host._k=key; host.innerHTML=`<svg class="tmem-cvsvg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img"><g class="tmem-static">${curveStatic(c,tl,W,H)}</g><g class="tmem-dyn"></g></svg>`;}
   const top=12, bot=H-26, lx=34, rx=W-6-capGut(c), ymax=yMax(c), Y=v=>bot-(v/ymax)*(bot-top), X=u=>lx+u*(rx-lx);
   const cur=atX(tl,x), memNow=c.states+cur.acts+cur.lg;
@@ -870,7 +874,7 @@ function drawHead(){
   const t=$('#tmem-st-title',app), sub=$('#tmem-st-sub',app), st=$('#tmem-status',app), c=compute(S);
   t.textContent=mode==='challenge'?tx(`Does one step fit on the RTX 4090’s 24 GB?`,'一步能不能放进 RTX 4090 的 24 GB？'):tx(`Does one training step fit on one ${c.g.name} (${GB(c.cap)})?`,`训练一步，一张 ${c.g.name}（${GB(c.cap)}）放得下吗？`);
   sub.textContent=tx(`${c.m.name} with ${optName(S.opt)}, ${S.mb===1?`1 sequence of ${tokS(S.seq)} tokens at once`:`${S.mb} sequences of ${tokS(S.seq)} tokens at once`}${S.acc>1?`, ${S.acc} passes per update`:''}${S.rc?', every layer recomputed':''}`,
-    `${c.m.name}，用 ${optName(S.opt)}，${S.mb===1?`每次送进 1 条 ${tokS(S.seq)} 个 token 的序列`:`每次送进 ${S.mb} 条序列，每条 ${tokS(S.seq)} 个 token`}${S.acc>1?`，每次更新跑 ${S.acc} 趟`:''}${S.rc?'，每一层都重算':''}`);
+    `${c.m.name}，用${optName(S.opt)}，${S.mb===1?`每次送进 1 条 ${tokS(S.seq)} 个 token 的序列`:`每次送进 ${S.mb} 条序列，每条 ${tokS(S.seq)} 个 token`}${S.acc>1?`，每次更新跑 ${S.acc} 趟`:''}${S.rc?'，每一层都重算':''}`);
   const s=statusOf(); st.className='status '+s.cls; st.textContent=s.txt; st.dataset.tipx=s.tip;
 }
 const numOf=v=>{const m=String(v).replace(/,/g,'').match(/(\d+(?:\.\d+)?)/); return m?parseFloat(m[1]):NaN;};
@@ -914,7 +918,8 @@ function mathHTML(){
     `<p>${tx(`${t('N','N')} is the number of parameters. 2, 4 and 4 are the bytes of the BF16 weight, the FP32 gradient and the FP32 copy. ${X('b_m')} and ${X('b_v')} are the bytes of the optimizer’s m and v: ${b[3]} and ${b[4]} for ${optName(S.opt)}.`,
             `${t('N','N')} 是参数量。2、4、4 是 BF16 权重、FP32 梯度和 FP32 权重副本的字节数。${X('b_m')} 和 ${X('b_v')} 是优化器的 m 和 v 的字节数，${optName(S.opt)} 是 ${b[3]} 和 ${b[4]}。`)}</p>`+
     MC(`= ${fint(m.P)} \\times (2 + 4 + 4 + ${b[3]} + ${b[4]}) \\ ${Xt(tx('bytes','字节'))} = ${Xt(GB(c.states))}`));
-  rows.push(`<p><b>${tx('Activations per token per layer','每个 token 每层的激活')}</b>${tx(': the tensors one token leaves in one layer, 2 bytes per value (BF16).','：一个 token 在一层里留下的张量，每个值 2 字节（BF16）。')}</p>`+
+  /* C2 (the first-time reader, 2026-10-15): the gate/up example moved here from part 3's card, so the card leads with its point */
+  rows.push(`<p><b>${tx('Activations per token per layer','每个 token 每层的激活')}</b>${tx(': the tensors one token leaves in one layer, 2 bytes per value (BF16).','：一个 token 在一层里留下的张量，每个值 2 字节（BF16）。')}${tx(` For example, the ${DEF('MLP block',A.terms&&A.terms.mlp?A.terms.mlp():'')} widens every token’s vector with two matrices, gate and up, and both results are kept.`,`比如 ${DEF('MLP 块',A.terms&&A.terms.mlp?A.terms.mlp():'')}用 gate 和 up 两个矩阵把每个 token 的向量变宽，这两个结果都要留着。`)}</p>`+
     MW('a','2 \\times (2d + 2 n_q d_h + 2 n_{kv} d_h) + 2 \\times (2d + 4f)')+
     `<ul class="tmem-tlist"><li>${tx(`attention block: RMSNorm input and output (${X('d')} each), q and the attention output (${X('n_q d_h')} each), k and v (${X('n_{kv} d_h')} each)`,`attention 块：RMSNorm 的输入和输出（各 ${X('d')}），q 和注意力输出（各 ${X('n_q d_h')}），k 和 v（各 ${X('n_{kv} d_h')}）`)}</li><li>${tx(`MLP block: RMSNorm input and output (${X('d')} each), gate, ${X('\\text{SiLU}(\\text{gate})')}, up, and ${X('\\text{SiLU}(\\text{gate}) \\cdot \\text{up}')} (${X('f')} each)`,`MLP 块：RMSNorm 的输入和输出（各 ${X('d')}），gate、${X('\\text{SiLU}(\\text{gate})')}、up 和 ${X('\\text{SiLU}(\\text{gate}) \\cdot \\text{up}')}（各 ${X('f')}）`)}</li></ul>`+
     `<p>${tx(`${t('d','d')} is the hidden size, ${t('f','f')} the MLP block’s intermediate size, ${X('n_q d_h')} the length of all query heads together and ${X('n_{kv} d_h')} that of all KV heads. For ${m.name}:`,
@@ -943,13 +948,15 @@ function render(){
   drawMetrics();
   const mb=$('#tmem-mathbody',app), mh=mathHTML(); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}
   syncControls(); updateRail();
-  A.hash.write(token()); A.dock.refresh(); announce();
+  A.hash.write(token()); dockK=''; A.dock.refresh(); announce();
 }
 /* during a replay only the moving parts are redrawn */
 function frame(){
   if(!app) return; const {c,tl}=ensureTL();
   drawColumn(c,tl,playT); drawCurve(c,tl,playT); drawPlayer(c,tl); drawMetrics();
   const st=$('#tmem-status',app), s=statusOf(); st.className='status '+s.cls; st.textContent=s.txt; st.dataset.tipx=s.tip;
+  /* B2 (one clock): the phone's mini result bar reads the same high-water mark as the cards, so it moves with them while it plays */
+  const hw=hidden0()?null:hwX(tl,c,playT), k=[s.short,hw?GB(c.states+hw.acts+hw.lg):'',playT>=1].join('|'); if(k!==dockK){dockK=k; A.dock.render();}
 }
 function lockNote(){
   if(mode==='challenge') return tx(`In the challenge you change only the optimizer, recomputation and the sequences at once, in the task card. Everything else is fixed: ${MOD['1b'].name}, one RTX 4090 with 24 GB, 2,048-token sequences, 32 sequences per update.`,`挑战中只能在任务卡里改优化器、重算和每次送几条。其余设置固定：${MOD['1b'].name}，一张 24 GB 的 RTX 4090，每条序列 2,048 个 token，每次更新 32 条。`);

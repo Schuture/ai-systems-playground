@@ -260,11 +260,18 @@ def run_guided(b, w, h, lang):
     st = state(pg)
     check(f'{tag} part 2: the step plays on entering, at Medium (R3.9)', st['step'] == 1 and st['playing'] and st['spd'] == 'mid' and st['playT'] < 0.5, st)
     check(f'{tag} part 2: Next waits for the end', all(nexts(pg)) and any(Z(lang, 'finish playing', '播完') in x for x in why(pg)), why(pg))
+    dur = pg.evaluate("()=>window.__tmem.consts.DUR")
+    check(f'{tag} part 2: Medium plays in 8 s, Fast in 4 s, Slow in 16 s (B6: within a few seconds)', dur == {'slow': 16000, 'mid': 8000, 'fast': 4000}, dur)
+    if phone:
+        # B2 (one clock): while it plays, the mini result bar shows the same high-water mark as the card, not the start value
+        pg.evaluate("()=>{const t=document.getElementById('tmem-vis'); window.scrollTo(0, t.getBoundingClientRect().bottom+scrollY+80)}"); pg.wait_for_timeout(700)
+        lv = pg.evaluate("()=>({playing:window.__tmem.state().playing, shown:!document.getElementById('dock').hidden, read:(document.getElementById('dkRead')||{}).textContent||'', pk:document.querySelector('#tmem-metrics [data-k=\"pk\"] .v').textContent})")
+        check(f'{tag} part 2: while it plays, the mini result bar shows the card’s value (B2)', lv['shown'] and lv['playing'] and lv['pk'] in lv['read'] and lv['pk'] != '144.5 GB', lv)
     click(pg, '#tmem-player .seg-ctl[data-key="spd"] button[data-v="fast"]')
     if phone:
         click(pg, '#tmem-rail [data-nav="showme"]', 400)
     else:
-        check(f'{tag} part 2: Fast ends within about 10 s', wait_end(pg, 13000), state(pg))
+        check(f'{tag} part 2: Fast ends within about 4 s', wait_end(pg, 5200), state(pg))
     pg.wait_for_timeout(300)
     st = state(pg)
     o = obs(pg)
@@ -285,6 +292,7 @@ def run_guided(b, w, h, lang):
     st = state(pg)
     check(f'{tag} R3.20: the optimizer lever updates in place, no replay', st['opt'] == 'adam8' and not st['playing'] and st['playT'] >= 1, st)
     check(f'{tag} part 2: 8-bit AdamW 120.5 GB, still does not fit', '120.5 GB' in obs(pg) and '96.4 GB' in obs(pg), obs(pg)[:300])
+    check(f'{tag} part 2: with 8-bit AdamW the verdict says part 1 asked about AdamW, at 168.7 GB (A8)', Z(lang, 'Part 1 asked about AdamW, which peaks at 168.7 GB', '第 1 部分问的是 AdamW，它的峰值是 168.7 GB') in obs(pg), obs(pg)[:400])
     pressed = pg.evaluate("()=>[...document.querySelectorAll('#tmem-rail [data-lever]')].map(b=>b.getAttribute('aria-pressed'))")
     check(f'{tag} part 2: the optimizer is single choice', pressed == ['false', 'true', 'false'], pressed)
     # the replay control works

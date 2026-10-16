@@ -3,7 +3,9 @@
    - compute: C = 6·N·D; a step does k·N FLOPs per token (k = 6, or 8 with full recomputation) at an assumed 50% of the H100's
      989.5 TFLOP/s while the GPU computes; the micro-batch is one 4,096-token sequence unless Settings say otherwise;
    - memory per GPU: 18 bytes per parameter ÷ (t·p), the ZeRO stage over the d data-parallel copies (ZeRO-1 6 + 12/d, ZeRO-2 2 + 16/d,
-     ZeRO-3 18/d), activations s·b·h·(18 + 4·I/h) ÷ t per layer and micro-batch (Megatron-LM), min(m, p) micro-batches in flight (1F1B);
+     ZeRO-3 18/d); ZeRO-3 also holds the BF16 weights of two gathered layers, the one being computed and the next one gathered ahead
+     (2 × 2N/(L·t), as in the parallelism lab), kept apart from the model states; activations s·b·h·(18 + 4·I/h) ÷ t per layer and
+     micro-batch (Megatron-LM), min(m, p) micro-batches in flight (1F1B);
      with recomputation each layer keeps its input (2·s·b·h ÷ t) and one layer is rebuilt in full; GB = 10⁹ bytes, 80 GB per H100;
    - step: (m + p − 1) × (compute + tensor-parallel all-reduces) + the data-parallel transfer that no compute covers;
      tensor parallel: 4 all-reduces per layer and micro-batch (6 with recomputation), 2(t − 1)/t × bytes ÷ 450 GB/s (NVLink);
@@ -42,6 +44,8 @@ function plan(c){
   const tp=c.t*c.p; if(c.G%tp) return null; const d=c.G/tp;
   if(c.B%(d*c.b)) return null; const m=c.B/(d*c.b);
   const pg=N/tp;
+  /* zx: ZeRO-3 holds the BF16 weights of two layers (2 bytes × N/L ÷ t each), the one being computed and the next one gathered ahead;
+     they are not model states, so states below leaves them out (the metric card, the memory column and Show the math list them apart) */
   const w=2*pg*(c.z===3?1/d:1), g=4*pg*(c.z>=2?1/d:1), o=12*pg*(c.z>=1?1/d:1), zx=c.z===3?4*N/(Lr*c.t):0;
   const tok=c.b*SEQ, full=tok*h*(18+4*I/h)/c.t, keep=2*tok*h/c.t, Ls=Lr/c.p, inf=Math.min(m,c.p);
   const act=c.rc?inf*Ls*keep+full:inf*Ls*full;
@@ -63,7 +67,7 @@ function plan(c){
   const machines=c.G/GPU.perNode, M=c.node*24/machines;
   const wSave=dH/c.ivl, wRedo=(c.ivl/2)/M, wRestart=CK.restartH/M, waste=wSave+wRedo+wRestart;
   const valid=waste<0.5, good=1-waste, wall=valid?train/good:NaN;
-  return {md,N,d,m,pg,w,g,o,zx,states:w+g+o+zx,act,full,keep,Ls,inf,mem,fits:mem<=GPU.mem,k,cmb,arB,ar,nar,tpmb,per,bk,cross,Bx,bw,one,np,win,tdp,dpx,step,seg,
+  return {md,N,d,m,pg,w,g,o,zx,states:w+g+o,act,full,keep,Ls,inf,mem,fits:mem<=GPU.mem,k,cmb,arB,ar,nar,tpmb,per,bk,cross,Bx,bw,one,np,win,tdp,dpx,step,seg,
     logits:SEQ*c.b*VOCAB*4/c.t,
     Btok,mfu,steps,train,ckB,dSync,dS,machines,M,wSave,wRedo,wRestart,waste,valid,good,wall,days:wall/86400,gpuh:c.G*wall/3600,
     C:6*N*c.D,eff:mfu*good,gpus:c.G};
@@ -93,6 +97,7 @@ const fixd=(v,d)=>v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFract
 const pct=x=>(x<0.1&&x>0?fixd(x*100,1):fixd(x*100,x<0.2?1:1))+'%';
 const pct0=x=>fixd(x*100,0)+'%';
 const fGB=b=>{const g=b/1e9; return (g>=1000?fint(Math.round(g)):fixd(g,1))+' GB';};
+const gb2=b=>{const g=b/1e9; return (g>=1000?fint(Math.round(g)):fixd(g,2))+' GB';};   /* for a sum the reader can check: 1.24 + 3.53 + 85.90 = 90.67 */
 const fTB=b=>fixd(b/1e12,2)+' TB';
 const fS=s=>(s>=100?fixd(s,0):(s>=10?fixd(s,1):fixd(s,2)))+' s';
 const fDays=x=>!isFinite(x)?'—':(x>=100?fint(Math.round(x)):fixd(x,1));
@@ -242,63 +247,61 @@ const STEPS=[
  {id:'memory',title:{en:'Fit first: split 1.27 TB',zh:'先放得下：把 1.27 TB 切开'},expect:()=>tried3.has('tp8z3')||tried3.has('tp8pp8z1'),showMe:()=>setLv3('tp8pp8z1'),label:{en:'Result',zh:'结果'},
   lead:()=>tx('1.27 TB of model states, 80 GB per GPU: which cut fits?','模型状态 1.27 TB，一张卡 80 GB：怎么切才放得下？'),
   enter:()=>{if(!done('memory')){lv3='none'; tried3=new Set(['none']);} return {...MISSION,...lvOf(LV3,lv3).s};},
-  body:()=>tx(`<p>Training keeps 18 bytes for every parameter, together called the ${DEF('model states',TIP.states())}; the lab ${labLink('training-memory')} takes them apart one by one. For a 70B model they add up to 1.27 TB. Each GPU also keeps the ${DEF('activations',TIP.act())} of the work it does.</p><p>There are three ways to cut, and they stack:</p><ul class="tcap-ul">`+
-    `<li><b>Tensor parallelism</b> splits every layer’s matrices into t pieces on t GPUs of one machine. After each attention block and each MLP block, the t GPUs run an ${DEF('all-reduce',TIP.allreduce())} to add up their partial results (${labLink('model-parallel')}).</li>`+
-    `<li><b>Pipeline parallelism</b> puts the 80 layers into p stages on different GPUs. A step is cut into many ${DEF('micro-batches',TIP.mb())} that flow through one after another. At the start and the end some GPUs wait: that is the ${DEF('bubble',TIP.bubble())}.</li>`+
-    `<li><b>Data parallelism</b>: the GPUs left over form several copies, and each copy trains on different data. ZeRO splits the model states among these copies: ZeRO-1 the optimizer state, ZeRO-2 the gradients too, ZeRO-3 the weights too, gathering each layer just before it is used. PyTorch’s FSDP is ZeRO-3 (${labLink('parallelism')}). ZeRO-1 moves as much data as no ZeRO; ZeRO-2 and ZeRO-3 move more, as part 4 shows.</li></ul>`+
+  body:()=>tx(`<p>An H100 has only 80 GB of memory, but a 70B model’s ${DEF('model states',TIP.states())} alone take 1.27 TB, 18 bytes per parameter (${labLink('training-memory')}), and each GPU also keeps the ${DEF('activations',TIP.act())} it computes. So the model must be cut up and spread over many GPUs.</p><p>There are three ways to cut, and they stack:</p><ul class="tcap-ul">`+
+    `<li><b>Tensor parallelism</b> splits every layer’s matrices into t pieces on t GPUs of one machine, which add up their results with an ${DEF('all-reduce',TIP.allreduce())} (${labLink('model-parallel')}).</li>`+
+    `<li><b>Pipeline parallelism</b> puts the 80 layers into p stages on different GPUs; a step’s ${DEF('micro-batches',TIP.mb())} flow through in turn, and GPUs at both ends wait: the ${DEF('bubble',TIP.bubble())}.</li>`+
+    `<li><b>Data parallelism</b>: every t × p GPUs together compute one whole model, so the 1,024 GPUs form several copies, and each copy trains on its own part of the step’s 1,024 sequences. ZeRO splits the model states among the copies: ZeRO-1 the optimizer state, ZeRO-2 the gradients too, ZeRO-3 the weights too, gathering each layer’s weights just before computing it. PyTorch’s FSDP is ZeRO-3 (${labLink('parallelism')}).</li></ul>`+
     `<p>Pick a layout and see how much memory each GPU needs.</p>`+levers('tcap-ic-lv3',tx('How to split, pick one','怎么切，选一种'),lv3,LV3,tried3,lv3Res),
-    `<p>训练时，每个参数要存 18 字节的东西，合起来叫${DEF('模型状态',TIP.states())}，${LQ('training-memory')}里一项一项讲过。70B 模型的模型状态一共 1.27 TB。每张卡还要存它算的那部分${DEF('激活',TIP.act())}。</p><p>有三种切法，可以叠起来用：</p><ul class="tcap-ul">`+
-    `<li><b>张量并行</b>：把每一层的矩阵切成 t 份，放在同一台机器的 t 张卡上。每算完一个 attention 块或 MLP 块，这 t 张卡都要做一次 ${DEF('all-reduce',TIP.allreduce())}，把各自的部分结果加起来（见${LQ('model-parallel')}）。</li>`+
-    `<li><b>流水线并行</b>：把 80 层分成 p 段，放在不同的卡上。一步的数据切成很多个 ${DEF('micro-batch',TIP.mb())}，一个接一个流过去。开头和结尾总有卡在空等，这叫 ${DEF('bubble',TIP.bubble())}。</li>`+
-    `<li><b>数据并行</b>：剩下的卡分成几份，每份算不同的数据。ZeRO 把模型状态分到这几份上存：ZeRO-1 只分优化器状态，ZeRO-2 再分梯度，ZeRO-3 连权重也分，算到哪一层才临时把那一层收集齐。PyTorch 的 FSDP 就是 ZeRO-3 的做法（见${LQ('parallelism')}）。ZeRO-1 要传的数据和不分时一样多，ZeRO-2 和 ZeRO-3 传得更多，第 4 部分再看。</li></ul>`+
+    `<p>一张 H100 只有 80 GB 显存，可 70B 模型光${DEF('模型状态',TIP.states())}就有 1.27 TB（每个参数 18 字节，见${LQ('training-memory')}），这还没算${DEF('激活',TIP.act())}。所以要把模型切开，分到很多张卡上。</p><p>有三种切法，可以叠起来用：</p><ul class="tcap-ul">`+
+    `<li><b>张量并行</b>：把每一层的矩阵切成 t 份，放在同一台机器的 t 张卡上，靠 ${DEF('all-reduce',TIP.allreduce())} 把结果加起来（见${LQ('model-parallel')}）。</li>`+
+    `<li><b>流水线并行</b>：把 80 层分成 p 段，放在不同的卡上，一步的数据切成很多个 ${DEF('micro-batch',TIP.mb())} 依次流过，两头有卡空等，这叫 ${DEF('bubble',TIP.bubble())}。</li>`+
+    `<li><b>数据并行</b>：每 t × p 张卡合起来算一份完整的模型，1,024 张卡就分成好几份，各算每步 1,024 条序列里的不同几条。ZeRO 再把模型状态分到这几份上：ZeRO-1 分优化器状态，ZeRO-2 再分梯度，ZeRO-3 连权重也分，算到哪一层，就先把那一层的权重收集齐。PyTorch 的 FSDP 就是 ZeRO-3（见${LQ('parallelism')}）。</li></ul>`+
     `<p>选一种切法，看看每张卡要放多少显存。</p>`+levers('tcap-ic-lv3',tx('How to split, pick one','怎么切，选一种'),lv3,LV3,tried3,lv3Res)),
   obs:()=>obs3()},
  {id:'time',title:{en:'Where the time goes',zh:'时间花在哪'},expect:()=>tried4.size>=3,showMe:()=>setLv4('tp8z3'),label:{en:'Result',zh:'结果'},
   lead:()=>tx('In one step, how much of each GPU’s time is real computing?','一步里，每张卡有多少时间在真正地算？'),
   enter:()=>{if(!done('time')){lv4='start'; tried4=new Set(['start']);} return {...MISSION,...lvOf(LV4,lv4).s};},
-  body:()=>tx(`<p>Once it fits, look at speed. The bar in the chart shows one GPU’s time in one training step. Besides computing, the GPU waits for three things:</p><ul class="tcap-ul">`+
-    `<li><b>The bubble</b> at the two ends of the pipeline.</li>`+
+  body:()=>tx(`<p>Once it fits, look at speed. The bar in the chart is one GPU’s time in one step: besides computing, it waits for three things.</p><ul class="tcap-ul">`+
     `<li><b>Tensor-parallel all-reduces</b>: 2 in the forward and 2 in the backward of every layer, over the machine’s ${DEF('NVLink',TIP.nvlink())}.</li>`+
-    `<li><b>Data-parallel syncing</b>. With ZeRO-1 the gradients of all micro-batches are summed first, so the sync can only overlap the last micro-batch’s backward pass. ZeRO-3 gathers the weights again for every micro-batch, so it moves far more data.</li></ul>`+
-    `<p>Even while computing, the GPUs do not reach the peak. A plain BF16 matrix multiply reaches about 80% of it (ml-engineering’s measurement); attention, normalization and smaller kernels reach less. This lab assumes the GPUs run at 50% of the peak while computing. Counting the waits too, this is the MFU of one step:</p>`+M_('\\text{MFU} = \\frac{6 \\times N \\times \\text{tokens per step}}{G \\times \\text{peak} \\times \\text{step time}}')+
-    `<p>One more option saves memory: ${DEF('recomputation',TIP.recompute())}. The forward pass keeps only each layer’s input, and the backward pass recomputes the rest; it costs 8N operations per token instead of 6N. Pick a layout and see the MFU of one step.</p>`+levers('tcap-ic-lv4',tx('Layout, pick one','切法，选一种'),lv4,LV4,tried4,lv4Res),
-    `<p>放得下以后，再看快不快。图里的横条画的是一张卡在一步训练里的时间。这张卡除了在算，还要等三样东西：</p><ul class="tcap-ul">`+
-    `<li><b>bubble</b>：流水线两头的空等。</li>`+
+    `<li><b>The bubble</b> at the two ends of the pipeline.</li>`+
+    `<li><b>Data-parallel syncing</b>. ZeRO-1 syncs once a step, alongside only the last micro-batch’s backward pass; the part that this computing hides costs no extra time. ZeRO-3 gathers the weights again for every micro-batch.</li></ul>`+
+    `<p>Even while computing, the GPUs do not reach the peak (a plain BF16 matrix multiply reaches about 80%); this lab assumes 50% of the peak while computing. Counting the waits too, the MFU of one step, training N parameters on G GPUs, is:</p>`+M_('\\text{MFU} = \\frac{6 \\times N \\times \\text{tokens per step}}{G \\times \\text{peak} \\times \\text{step time}}')+
+    `<p>One more option saves memory: ${DEF('recomputation',TIP.recompute())}, which keeps fewer activations and recomputes them in the backward pass; it costs 8N operations per token instead of 6N. Pick a layout and see the MFU of one step.</p>`+levers('tcap-ic-lv4',tx('Layout, pick one','切法，选一种'),lv4,LV4,tried4,lv4Res),
+    `<p>放得下以后，再看快不快。图里的横条是一张卡一步的时间，除了在算，它还要等三样东西：</p><ul class="tcap-ul">`+
     `<li><b>张量并行的 all-reduce</b>：每一层前向 2 次、反向 2 次，走机器里的 ${DEF('NVLink',TIP.nvlink())}。</li>`+
-    `<li><b>数据并行的同步</b>：用 ZeRO-1 时，所有 micro-batch 的梯度要先加在一起，所以同步只能和最后一个 micro-batch 的反向重叠。ZeRO-3 每个 micro-batch 都要重新收集权重，要传的数据多得多。</li></ul>`+
-    `<p>就算在算，GPU 也到不了峰值。单纯的 BF16 矩阵乘法约能到峰值的 80%（ml-engineering 实测），attention、归一化和较小的 kernel 达不到。这个 Lab 假设 GPU 算的时候能跑到峰值的 50%。把等待的时间也算进去，一步的 MFU 是：</p>`+M_('\\text{MFU} = \\frac{6 \\times N \\times \\text{每步的 token 数}}{G \\times \\text{峰值} \\times \\text{每步耗时}}')+
-    `<p>还有一种省显存的办法，叫${DEF('重算',TIP.recompute())}：前向时每层只存输入，反向时把这一层的前向再算一遍。代价是每个 token 要做 8N 次运算，而不是 6N。选一种切法，看看一步的 MFU 是多少。</p>`+levers('tcap-ic-lv4',tx('Layout, pick one','切法，选一种'),lv4,LV4,tried4,lv4Res)),
+    `<li><b>bubble</b>：流水线两头的空等。</li>`+
+    `<li><b>数据并行的同步</b>：ZeRO-1 每步同步一次，只能和最后一个 micro-batch 的反向同时进行，能藏进这段计算里的部分就不另占时间；ZeRO-3 每个 micro-batch 都要重新收集权重。</li></ul>`+
+    `<p>就算在算，GPU 也到不了峰值（单纯的 BF16 矩阵乘法约到 80%），这个 Lab 假设跑到峰值的 50%。把等待也算进去，N 个参数的模型在 G 张卡上训练，一步的 MFU 是：</p>`+M_('\\text{MFU} = \\frac{6 \\times N \\times \\text{每步的 token 数}}{G \\times \\text{峰值} \\times \\text{每步耗时}}')+
+    `<p>还有一种省显存的办法，叫${DEF('重算',TIP.recompute())}：前向少存激活，反向时再把前向算一遍。代价是每个 token 要做 8N 次运算，而不是 6N。选一种切法，看看一步的 MFU 是多少。</p>`+levers('tcap-ic-lv4',tx('Layout, pick one','切法，选一种'),lv4,LV4,tried4,lv4Res)),
   obs:()=>obs4()},
  {id:'failures',title:{en:'Failures: more GPUs, more often',zh:'算上故障：卡越多，越常出事'},expect:()=>tried5.has('15a'),showMe:()=>setLv5('15a'),label:{en:'Result',zh:'结果'},
   lead:()=>tx('128 machines, one fails every 12 hours: how often should you save?','128 台机器，平均 12 小时坏一台：多久存一次档？'),
   enter:()=>{if(!done('failures')){lv5='3s'; tried5=new Set(['3s']);} return {...MISSION,...lvOf(LV5,lv5).s};},
   body:()=>{const r=plan(MISSION), wTip=tx('This lab assumes the whole job writes its checkpoint to the shared file system at 10 GB/s. BLOOM-176B wrote its 2.3 TB checkpoint from 384 GPUs in about 40 s, about 57 GB/s, but shared file systems differ a lot, so this lab takes a slower 10 GB/s.','这个 Lab 假设整个任务每秒往共享文件系统写 10 GB。BLOOM-176B 用 384 张卡约 40 秒写完 2.3 TB 的存档，每秒约 57 GB。可各家的共享文件系统差别很大，这里取慢一些的每秒 10 GB。');
-   return tx(`<p>A run this long will lose machines. OPT-175B trained on 1,024 A100s, and its logbook says about 2 machines went down every day. This lab uses that rate: each machine fails once every 64 days on average. The more machines, the more often the job fails. Call the job’s mean time between failures M:</p>`+M_('M = \\frac{64\\ \\text{days}}{128\\ \\text{machines}} = 12\\ \\text{hours}')+
-    `<p>When a machine fails, the whole job resumes from the latest ${DEF('checkpoint',TIP.ckpt())} (${labLink('checkpointing')}). Swapping the machine and loading the checkpoint take 10 minutes here. The steps since the last save are lost too, half an interval on average.</p>`+
-    `<p>Saving costs time too. With <b>synchronous saving</b>, training stops until the checkpoint of about 1 TB is written. At ${DEF('10 GB/s',wTip)} that takes about ${fixd(r.dSync,0)} s. With <b>asynchronous saving</b>, training stops only while the checkpoint is copied to CPU memory, and the writing goes on in the background. This lab assumes that stop takes ${fixd(CK.asyncS,0)} s.</p>`+M_('\\text{wasted} \\approx \\frac{δ}{τ} + \\frac{τ/2 + R}{M}')+
+   return tx(`<p>A run this long will lose machines, and each failure wastes time. This part keeps the initial layout (MFU ${pct(r.mfu)}); what you choose is how often and how to save. In OPT-175B’s run about 2 of 128 machines went down every day, so this lab takes one failure every 64 days per machine. The more machines, the more often the job fails; it fails once every M on average:</p>`+M_('M = \\frac{64\\ \\text{days}}{128\\ \\text{machines}} = 12\\ \\text{hours}')+
+    `<p>When a machine fails, the whole job resumes from the latest ${DEF('checkpoint',TIP.ckpt())} (${labLink('checkpointing')}): swapping the machine and loading the checkpoint take an assumed 10 minutes, and the steps since the last save are lost, half an interval on average.</p>`+
+    `<p>Saving costs time too. <b>Synchronous saving</b> stops training until the checkpoint of about 1 TB is written, about ${fixd(r.dSync,0)} s at ${DEF('10 GB/s',wTip)}; <b>asynchronous saving</b> stops it only for the copy to CPU memory, an assumed ${fixd(CK.asyncS,0)} s, and writes in the background.</p>`+M_('\\text{wasted} \\approx \\frac{δ}{τ} + \\frac{τ/2 + R}{M}')+
     `<p>δ is the time one save stops training, τ the interval between saves, R the restart time. Pick a way to save and see how much of the time is wasted.</p>`+levers('tcap-ic-lv5',tx('Saving, pick one','怎么存档，选一种'),lv5,LV5,tried5,lv5Res),
-    `<p>训练这么久，一定会坏机器。OPT-175B 用 1,024 张 A100 训练，日志里写着每天约坏 2 台机器。这个 Lab 就按这个速度算：每台机器平均 64 天坏一次。机器越多，整个任务越常出事。整个任务平均多久出一次故障，记作 M：</p>`+M_('M = \\frac{64\\ \\text{天}}{128\\ \\text{台}} = 12\\ \\text{小时}')+
-    `<p>机器坏了，整个任务从最近一次${DEF('存档',TIP.ckpt())}接着训（存档也叫检查点，见${LQ('checkpointing')}）。换机器、读回存档，这里假设要 10 分钟。上次存档以后算的那些步也白算了，平均是半个存档间隔。</p>`+
-    `<p>存档本身也花时间。<b>同步存档</b>时，训练要停下来，等约 1 TB 的存档写完。按${DEF('每秒写 10 GB',wTip)} 算，要停约 ${fixd(r.dSync,0)} 秒。<b>异步存档</b>时，训练只在把存档拷到 CPU 内存时停一下，写盘交给后台。这个 Lab 假设每次停 ${fixd(CK.asyncS,0)} 秒。</p>`+M_('\\text{白费的比例} \\approx \\frac{δ}{τ} + \\frac{τ/2 + R}{M}')+
+    `<p>训练这么久，一定会坏机器，每坏一次都要白费时间。这一部分沿用初始的切法（MFU ${pct(r.mfu)}），要选的是多久存一次档、怎么存。OPT-175B 训练时，128 台机器每天约坏 2 台，这里就按每台 64 天坏一次算。机器越多，整个任务越常出事，平均每隔 M 出一次：</p>`+M_('M = \\frac{64\\ \\text{天}}{128\\ \\text{台}} = 12\\ \\text{小时}')+
+    `<p>机器坏了，整个任务从最近一次${DEF('存档',TIP.ckpt())}接着训（存档也叫检查点，见${LQ('checkpointing')}）：换机器、读回存档假设要 10 分钟，上次存档以后算的步也白算了，平均是半个存档间隔。</p>`+
+    `<p>存档本身也花时间。<b>同步存档</b>要停下训练，等约 1 TB 的存档写完，按${DEF('每秒写 10 GB',wTip)} 算约 ${fixd(r.dSync,0)} 秒；<b>异步存档</b>只在拷到 CPU 内存时停一下，这里假设 ${fixd(CK.asyncS,0)} 秒，写盘交给后台。</p>`+M_('\\text{白费的比例} \\approx \\frac{δ}{τ} + \\frac{τ/2 + R}{M}')+
     `<p>δ 是每次存档让训练停多久，τ 是存档间隔，R 是重启要多久。选一种存档方式，看看白费了多少时间。</p>`+levers('tcap-ic-lv5',tx('Saving, pick one','怎么存档，选一种'),lv5,LV5,tried5,lv5Res));},
   obs:()=>obs5()},
  {id:'real',title:{en:'Against real runs',zh:'对照真实的训练'},label:{en:'Observed',zh:'观察到'},
   lead:()=>tx('Meta’s published GPU hours: what share of the peak did they really get?','Meta 公布的 GPU 小时，说明真实训练做到了峰值的几成？'),
   enter:()=>({...MISSION,ivl:0.25,asy:1}),
-  body:()=>tx(`<p>The Llama 3.1 model card lists the GPU hours each model took: 7.0M for 70B. Take the work 6ND and divide it by what those GPU hours could do at the H100’s peak. That gives the share of the peak the real run used on average:</p>`+M_('\\text{share} = \\frac{6 \\times N \\times D}{\\text{GPU hours} \\times 3600 \\times \\text{peak}}')+
-    `<p>The chart compares the three models with this lab’s plan for 70B. The card calls its figure “the total GPU time required for training each model” and gives about 15T tokens, so the share is only a check of the order of size. It is not an MFU.</p>`+
-    `<p>Published layouts look like this lab’s:</p><ul class="tcap-al">`+
+  body:()=>tx(`<p>The Llama 3.1 model card lists the GPU hours each model took, 7.0M for 70B, which gives a check on this plan: the work 6ND, divided by what those GPU hours could do at the H100’s peak, is the share of the peak the real run used on average.</p>`+
+    `<p>Some published layouts:</p><ul class="tcap-al">`+
     `<li><b>Llama 3 405B</b><span>16,384 H100s: TP 8 × PP 16 × ZeRO-1 DP 128 (quoted by the scaling book)</span></li>`+
     `<li><b>Llama 3.1 70B</b><span>256 H100s: TP 8 × FSDP 32 (torchtitan’s benchmark)</span></li>`+
     `<li><b>Llama 3 70B</b><span>64 H100s: TP 4 × PP 8 × DP 2 (NVIDIA’s Megatron-Bridge recipe)</span></li></ul>`+
-    `<p>Megatron-LM reports 41% to 47% MFU on H100s, with communication overlapped. This lab assumes the GPUs run at 50% of the peak while computing, so even with no waiting at all its MFU tops out at 50%. It also keeps every tensor-parallel all-reduce on the critical path, not overlapped with computing.</p>`,
-    `<p>Llama 3.1 的模型卡公布了每个模型训练用的 GPU 小时，70B 是 7.0M。用 6ND 算出运算量，除以这些 GPU 小时按峰值能做的运算，就知道真实训练平均用上了峰值的几成：</p>`+M_('\\text{比例} = \\frac{6 \\times N \\times D}{\\text{GPU 小时} \\times 3600 \\times \\text{峰值}}')+
-    `<p>图里把三个模型和这个 Lab 的 70B 计划放在一起比。模型卡说它的数字是“训练每个模型所需的全部 GPU 时间”，token 数也只写了约 15T，所以算出来的比例只能对照量级，它不是 MFU。</p>`+
-    `<p>公开的切法也和这个 Lab 的很像：</p><ul class="tcap-al">`+
+    `<p>Megatron-LM reports 41% to 47% MFU on H100s, above this plan’s ${pct(plan(MISSION).mfu)}, partly because it overlaps the tensor-parallel all-reduces with computing, while this lab counts them all as waiting.</p>`,
+    `<p>Llama 3.1 的模型卡公布了每个模型用的 GPU 小时，70B 是 7.0M，可以拿来检验这个计划：运算量 6ND 除以这些 GPU 小时按峰值能做的运算，就是真实训练平均用上了峰值的几成。</p>`+
+    `<p>几种公开的切法：</p><ul class="tcap-al">`+
     `<li><b>Llama 3 405B</b><span>16,384 张 H100：张量并行 8 × 流水线 16 段 × ZeRO-1 数据并行 128 份（scaling book 引用）</span></li>`+
     `<li><b>Llama 3.1 70B</b><span>256 张 H100：张量并行 8 × FSDP 32 份（torchtitan 的测试）</span></li>`+
     `<li><b>Llama 3 70B</b><span>64 张 H100：张量并行 4 × 流水线 8 段 × 数据并行 2 份（NVIDIA 的 Megatron-Bridge 配方）</span></li></ul>`+
-    `<p>Megatron-LM 报告它在 H100 上的 MFU 是 41% 到 47%，那时通信和计算是重叠的。这个 Lab 假设 GPU 算的时候能跑到峰值的 50%，所以就算完全不等，MFU 最高也只有 50%。它还假设张量并行的 all-reduce 不和计算重叠，每次都要等它做完。</p>`),
+    `<p>Megatron-LM 报告它在 H100 上的 MFU 是 41% 到 47%，比这个计划的 ${pct(plan(MISSION).mfu)} 高，一个原因是它让张量并行的 all-reduce 和计算重叠，这个 Lab 把它们全算成等待。</p>`),
   obs:()=>obs6()},
  {id:'remember',title:{en:'What to remember',zh:'要记住的'},
   lead:()=>tx('Total work first, then fit the model in memory, then the waits, then failures.','先算总账，再把模型放进显存，再看等待，最后把故障算进来。'),
@@ -323,21 +326,21 @@ function obs2(){
 }
 function obs3(){
   const r=p3r(lv3);
-  if(lv3==='none') return tx(`<p><b>No split: each GPU would need ${fGB(r.mem)}, ${fixd(r.mem/GPU.mem,0)} times its 80 GB.</b></p><p>Every GPU keeps all 1.27 TB of model states. Try a split.</p>`,`<p><b>不切时，每张卡要存 ${fGB(r.mem)}，是 80 GB 的 ${fixd(r.mem/GPU.mem,0)} 倍。</b></p><p>每张卡都存着全部 1.27 TB 的模型状态。试一种切法。</p>`);
-  if(lv3==='z3') return tx(`<p><b>Still too big: ${fGB(r.mem)} per GPU.</b></p><p>ZeRO-3 leaves each GPU only about ${fGB(r.states)} of model states, but the activations are ${fGB(r.act)}. One micro-batch going through all 80 layers leaves them on the GPU, and ZeRO cannot split them. Tensor or pipeline parallelism gives each GPU fewer layers or smaller matrices, and the activations shrink with them.</p>`,
-                                `<p><b>还是放不下：每张卡 ${fGB(r.mem)}。</b></p><p>ZeRO-3 让每张卡的模型状态只剩约 ${fGB(r.states)}，可激活有 ${fGB(r.act)}。一个 micro-batch 走过全部 80 层，激活都留在这张卡上，ZeRO 一点也分不掉。张量并行或流水线并行让每张卡负责的矩阵更小、层更少，激活才跟着变少。</p>`);
+  if(lv3==='none') return tx(`<p><b>No split: each GPU would need ${fGB(r.mem)}, ${fixd(r.mem/GPU.mem,0)} times its 80 GB.</b></p>`,`<p><b>不切时，每张卡要存 ${fGB(r.mem)}，是 80 GB 的 ${fixd(r.mem/GPU.mem,0)} 倍。</b></p>`);
+  if(lv3==='z3') return tx(`<p><b>Still too big: ${fGB(r.mem)} per GPU.</b></p><p>ZeRO-3 leaves each GPU only about ${fGB(r.states)} of model states, plus about ${fGB(r.zx)} for the BF16 weights of the two layers it gathers (the one being computed and the next, gathered ahead), but the activations are ${fGB(r.act)}. One micro-batch going through all 80 layers leaves them on the GPU, and ZeRO cannot split them. Tensor parallelism, which cuts every layer into pieces, is what shrinks the activations.</p>`,
+                                `<p><b>还是放不下：每张卡 ${fGB(r.mem)}。</b></p><p>ZeRO-3 让每张卡的模型状态只剩约 ${fGB(r.states)}，再加上临时收集齐的两层 BF16 权重（正在算的这一层和提前收集的下一层），约 ${fGB(r.zx)}，可激活有 ${fGB(r.act)}。一个 micro-batch 走过全部 80 层，激活都留在这张卡上，ZeRO 一点也分不掉。张量并行把每一层切成几份，激活才跟着变少。</p>`);
   const other=lv3==='tp8z3'?'tp8pp8z1':'tp8z3', ro=p3r(other), both=tried3.has(other);
   if(lv3==='tp8z3') return tx(`<p><b>It fits: ${fGB(r.mem)} per GPU.</b></p><p>Tensor parallelism cuts every layer’s activations into 8, and ZeRO-3 spreads the model states over all 1,024 GPUs.</p>`,`<p><b>放得下：每张卡 ${fGB(r.mem)}。</b></p><p>张量并行把每一层的激活切成 8 份，ZeRO-3 把模型状态分到全部 1,024 张卡上。</p>`)+
     (both?tx(`<p>Both ways fit. Which one is faster is part 4.</p>`,`<p>两种都放得下。哪种更快，第 4 部分再看。</p>`):'');
-  return tx(`<p><b>It fits: ${fGB(r.mem)} per GPU.</b></p><p>The pipeline gives each GPU 10 of the 80 layers, and tensor parallelism cuts them into 8. ZeRO-1 splits only the optimizer states, so each GPU needs more memory than with TP 8 + ZeRO-3 (${fGB(ro.mem)}).</p>`,`<p><b>放得下：每张卡 ${fGB(r.mem)}。</b></p><p>流水线让每张卡只负责 80 层里的 10 层，张量并行再把它们切成 8 份。ZeRO-1 只分优化器状态，所以每张卡要的显存比“张量并行 8 份 + ZeRO-3”（${fGB(ro.mem)}）多一些。</p>`)+
+  return tx(`<p><b>It fits: ${fGB(r.mem)} per GPU.</b></p><p>The pipeline gives each GPU 10 of the 80 layers, and tensor parallelism cuts them into 8, so each GPU keeps only 1/64 of the weights and gradients. But ZeRO-1 splits only the optimizer states, so each GPU still keeps ${fGB(r.states)} of model states, far more than the ${fGB(ro.states)} with TP 8 + ZeRO-3. The activations are as large as with that layout, ${fGB(r.act)}: ${r.inf} micro-batches are in the pipeline at once, and the marked GPU, in the first stage, keeps the activations of every one of them on its 10 layers, as much as one micro-batch through all 80 layers. So each GPU needs more memory than that layout’s ${fGB(ro.mem)}.</p>`,`<p><b>放得下：每张卡 ${fGB(r.mem)}。</b></p><p>流水线让每张卡只负责 80 层里的 10 层，张量并行再把它们切成 8 份，每张卡只存 1/64 的权重和梯度。可 ZeRO-1 只分优化器状态，每张卡的模型状态还有 ${fGB(r.states)}，比“张量并行 8 份 + ZeRO-3”的 ${fGB(ro.states)} 多得多。激活倒和那种切法一样多，${fGB(r.act)}：流水线上同时有 ${r.inf} 个 micro-batch，标出的那张卡在第一段，要给每个都存这 10 层的激活，加起来和一个 micro-batch 走完 80 层一样多。所以每张卡要的显存比那种切法的 ${fGB(ro.mem)} 多。</p>`)+
     (both?tx(`<p>Both ways fit. Which one is faster is part 4.</p>`,`<p>两种都放得下。哪种更快，第 4 部分再看。</p>`):'');
 }
 function obs4(){
   const r=p4r(lv4), s=p4r('start');
-  if(lv4==='start') return tx(`<p><b>The initial setup reaches an MFU of ${pct(r.mfu)}.</b></p><p>Each GPU computes for ${pct0(r.seg.useful/r.step)} of the step, at 50% of the peak while computing. Most of the rest goes to the tensor-parallel all-reduces and the bubble (the bar in the chart).</p>`,
-                                 `<p><b>初始设置的 MFU 是 ${pct(r.mfu)}。</b></p><p>一步里，每张卡有 ${pct0(r.seg.useful/r.step)} 的时间在算，算的时候能跑到峰值的 50%。其余的时间大多花在张量并行的 all-reduce 和 bubble 上（图里的横条）。</p>`);
+  if(lv4==='start') return tx(`<p><b>The initial setup reaches an MFU of ${pct(r.mfu)}.</b></p><p>Each GPU computes for ${pct0(r.seg.useful/r.step)} of the step, at 50% of the peak while computing; the MFU is the two multiplied. Over 60% of the peak goes unused, lost in these two places.</p>`,
+                                 `<p><b>初始设置的 MFU 是 ${pct(r.mfu)}。</b></p><p>一步里，每张卡有 ${pct0(r.seg.useful/r.step)} 的时间在算，算的时候跑到峰值的 50%，两者相乘就是 MFU。峰值没用上的那六成多，就丢在这两处。</p>`);
   const base=tx(`<p><b>MFU ${pct(s.mfu)} → ${pct(r.mfu)}.</b></p>`,`<p><b>MFU 从 ${pct(s.mfu)} 变成 ${pct(r.mfu)}。</b></p>`);
-  if(lv4==='rc') return base+tx(`<p>Every token now does one more forward pass, 8N operations instead of 6N, but MFU counts only 6N. The memory it saves is of no use here, because the layout already fits.</p>`,`<p>每个 token 多算了一遍前向，运算量从 6N 变成 8N，可 MFU 只数 6N。它省下的显存这里用不上，因为这种切法本来就放得下。</p>`);
+  if(lv4==='rc') return base+tx(`<p>Every token now does one more forward pass, 8N operations instead of 6N, but MFU counts only 6N. The extra forward pass does its tensor-parallel all-reduces too, so the all-reduces grow by half. The memory it saves is of no use here, because the layout already fits.</p>`,`<p>每个 token 多算了一遍前向，运算量从 6N 变成 8N，可 MFU 只数 6N。多算的这遍前向也要做张量并行的 all-reduce，all-reduce 就多了一半。它省下的显存这里用不上，因为这种切法本来就放得下。</p>`);
   if(lv4==='tp4pp16') return base+tx(`<p>Almost no change. Tensor parallelism goes from 8 ways to 4, so the all-reduces take less of the step. The pipeline goes from 8 stages to 16, so the bubble grows to ${pct(r.seg.bubble/r.step)} of the step. What one side saves, the other spends.</p>`,`<p>几乎没变。张量并行从 8 份减到 4 份，all-reduce 占的时间变少了。流水线从 8 段加到 16 段，bubble 涨到一步的 ${pct(r.seg.bubble/r.step)}。一头省下的，另一头又花掉了。</p>`);
   if(lv4==='tp8z3') return base+tx(`<p>No pipeline means no bubble, but ZeRO-3 gathers every layer’s weights again for each micro-batch and sends the gradients back. A machine’s 8 GPUs share 400 GB/s of network, and with every layer cut into 8 a micro-batch is computed too quickly to hide that much traffic. For ${pct0(r.seg.dp/r.step)} of a step, this GPU waits for the network.</p>`,`<p>不分段就没有 bubble，可 ZeRO-3 每个 micro-batch 都要重新收集各层的权重，再把梯度发回去。一台机器的 8 张卡共用 400 GB/s 的网络，而每层切成 8 份以后，一个 micro-batch 很快就算完了，藏不住这么多通信。一步里有 ${pct0(r.seg.dp/r.step)} 的时间，这张卡在等网络。</p>`);
   return base+tx(`<p>Higher than the initial setup: no pipeline, so no bubble, and ZeRO-1 syncs once per step. The price is memory: ${fGB(r.mem)} per GPU, against ${fGB(s.mem)} with the pipeline.</p>`,`<p>比初始设置还高：不分段就没有 bubble，ZeRO-1 每步只同步一次。代价是显存：每张卡 ${fGB(r.mem)}，有流水线时只要 ${fGB(s.mem)}。</p>`);
@@ -347,19 +350,19 @@ function obs5(){
   if(lv5==='3s') return tx(`<p><b>Saving every 3 hours wastes ${pct(r.waste)} of the time.</b></p><p>Each failure loses 1.5 hours of work on average, and a failure comes every 12 hours.</p>`,`<p><b>每 3 小时存一次，白费 ${pct(r.waste)} 的时间。</b></p><p>每次故障平均白算 1.5 小时，而 12 小时就出一次事。</p>`);
   const base=tx(`<p><b>Wasted: ${pct(s.waste)} → ${pct(r.waste)}.</b></p>`,`<p><b>白费的比例从 ${pct(s.waste)} 降到 ${pct(r.waste)}。</b></p>`);
   if(lv5==='1s') return base+tx(`<p>A shorter interval loses less work in each failure. Saving three times as often, the saves still take only ${pct(r.wSave)} of the time.</p>`,`<p>间隔短了，每次故障白算的少了。存档次数变成 3 倍，存档本身也只占 ${pct(r.wSave)} 的时间。</p>`);
-  if(lv5==='15s') return base+tx(`<p>Saving this often backfires: the saves themselves take ${pct(r.wSave)} of the time, so more is wasted than when saving every hour.</p>`,`<p>存得太勤反而亏了：存档本身就占了 ${pct(r.wSave)} 的时间，所以比每小时存一次白费得还多。</p>`);
+  if(lv5==='15s') return base+tx(`<p>Saving this often backfires: the saves themselves take ${pct(r.wSave)} of the time, so more is wasted than when saving every hour (${pct(p5r('1s').waste)}).</p>`,`<p>存得太勤反而亏了：存档本身就占了 ${pct(r.wSave)} 的时间，所以比每小时存一次（白费 ${pct(p5r('1s').waste)}）还多。</p>`);
   return base+tx(`<p>An asynchronous save stops training for only ${fixd(r.dS,0)} s, so saving this often is cheap. What is left are three small parts of about the same size: saving, work redone and restarts. Each restart costs 10 minutes, and only faster recovery shrinks that.</p>`,`<p>异步存档每次只停 ${fixd(r.dS,0)} 秒，所以存得这么勤也不贵。剩下的三项差不多大：存档、故障后重算和重启。重启每次要 10 分钟，这一项只能靠更快地换机器来省。</p>`);
 }
 function obs6(){
   const r=plan(S), r70=REAL[1];
-  return tx(`<p><b>Llama 3.1 70B’s GPU hours imply that the real run used ${pct(r70.u)} of the peak on average. This lab’s plan reaches ${pct(r.eff)}: MFU ${pct(r.mfu)} times ${pct(r.good)} of the time training.</b></p><p>For 70B the real run used more GPU hours than this plan. One possible reason is that the model card counts all the time the GPUs were held for this model. The order of size agrees: on average, the real 70B and 405B runs used a quarter to a third of the peak.</p>`,
-            `<p><b>Llama 3.1 70B 的 GPU 小时倒推出来，真实训练平均用上了峰值的 ${pct(r70.u)}。这个 Lab 的计划是 ${pct(r.eff)}，也就是 MFU ${pct(r.mfu)} 乘以往前训练的时间占比 ${pct(r.good)}。</b></p><p>70B 的真实训练用的 GPU 小时比这个计划多。一个可能的原因是，模型卡把为这个模型占着卡的时间都算了进去。量级对得上：70B 和 405B 的真实训练，平均只用上了峰值的四分之一到三分之一。</p>`);
+  return tx(`<p><b>The real 70B run used ${pct(r70.u)} of the peak on average; this lab’s plan reaches ${pct(r.eff)} (MFU ${pct(r.mfu)} × ${pct(r.good)} of the time spent training).</b></p><p>The card calls its figure “the total GPU time required for training each model”, so the share is not an MFU, only a check of the order of size. And the order of size agrees: on average, the real 70B and 405B runs used a quarter to a third of the peak.</p>`,
+            `<p><b>真实的 70B 训练平均用上了峰值的 ${pct(r70.u)}，这个 Lab 的计划是 ${pct(r.eff)}（MFU ${pct(r.mfu)} × 往前训练的时间占比 ${pct(r.good)}）。</b></p><p>模型卡的数字是“训练每个模型所需的全部 GPU 时间”，所以这个比例不是 MFU，只能对照量级。量级对得上：真实的 70B 和 405B 训练，平均只用上了峰值的四分之一到三分之一。</p>`);
 }
 function remember(){
   const s4=p4r('start'), z3=p3r('z3'), w3=p5r('3s'), w15=p5r('15a'), lo=Math.min(...LV4.map(o=>p4r(o.v).mfu)), hi=Math.max(...LV4.map(o=>p4r(o.v).mfu));
   return tx(`<ul class="tcap-ul">`+
     `<li><b>First the total.</b> The total work divided by what the GPUs really do per second gives the training time:${M_('\\text{training time} = \\frac{6ND}{G \\times \\text{peak} \\times \\text{MFU}}')}The training time is inversely proportional to the MFU: if the MFU drops from 40% to 30%, the run takes a third longer.</li>`+
-    `<li><b>Fit first, then compare speed.</b> ZeRO splits only the model states, not the activations: those need tensor parallelism, a pipeline or recomputation. Usually several layouts fit, and their speeds can differ a lot.</li>`+
+    `<li><b>Fit first, then compare speed.</b> ZeRO splits only the model states, not the activations: those need tensor parallelism or recomputation. Usually several layouts fit, and their speeds can differ a lot.</li>`+
     `<li><b>More machines, more failures.</b> The job’s time between failures is one machine’s divided by the number of machines. So the more machines, the more often to save, and asynchronously, so that the saves do not hold up training.</li></ul>`+
     `<div class="obs"><div class="eyebrow">Common misconceptions</div>`+
     `<p>✗ “Twice the GPUs, half the time.” With the same tokens per step, each pipeline gets fewer micro-batches, so the bubble grows. With more machines, failures come more often too.</p>`+
@@ -367,7 +370,7 @@ function remember(){
     `<p>✗ “If it fits in memory, the layout is fine.” Several layouts can all fit while the best reaches about ${fixd(hi/lo,1)} times the MFU of the worst: waiting for transfers and idling in the pipeline pull the MFU down.</p></div>`+A.shell.toScenarios(),
    `<ul class="tcap-ul">`+
     `<li><b>先算总账。</b>总运算量除以每秒真正做到的运算，就是要训的时间：${M_('\\text{训练时间} = \\frac{6ND}{G \\times \\text{峰值} \\times \\text{MFU}}')}训练时间和 MFU 成反比。MFU 从四成降到三成，天数就多三分之一。</li>`+
-    `<li><b>先放得下，再比快慢。</b>ZeRO 只分模型状态，分不了激活。激活要靠张量并行、流水线或重算来压。放得下的切法常常不止一种，它们的快慢可以差很多。</li>`+
+    `<li><b>先放得下，再比快慢。</b>ZeRO 只分模型状态，分不了激活。激活要靠张量并行或重算来压。放得下的切法常常不止一种，它们的快慢可以差很多。</li>`+
     `<li><b>机器越多，故障越勤。</b>整个任务多久出一次故障，等于一台机器的故障间隔除以机器数。所以机器越多，越要勤存档，而且要用异步存档，存档才不拖慢训练。</li></ul>`+
     `<div class="obs"><div class="eyebrow">常见误解</div>`+
     `<p>✗ “卡数翻倍，时间减半。”每步的 token 数不变，卡多了，每条流水线分到的 micro-batch 就少了，bubble 变大。机器多了，故障也更勤。</p>`+
@@ -465,7 +468,7 @@ function gapHint(me){
     return ({o:tx(`The largest part is the optimizer state, ${v} per GPU. From ZeRO-1 on, it is split over the data-parallel copies.`,`最大的一块是优化器状态，每张卡 ${v}。从 ZeRO-1 起，它会分到各份数据并行上。`),
       g:tx(`The largest part is the FP32 gradients, ${v} per GPU. From ZeRO-2 on, they are split over the data-parallel copies.`,`最大的一块是 FP32 梯度，每张卡 ${v}。从 ZeRO-2 起，它会分到各份数据并行上。`),
       w:tx(`The largest part is the BF16 weights, ${v} per GPU. Tensor parallelism and pipeline stages cut them; of the ZeRO stages only ZeRO-3 splits them.`,`最大的一块是 BF16 权重，每张卡 ${v}。张量并行和流水线能把它切小，ZeRO 里只有 ZeRO-3 会分它。`),
-      zx:tx(`The largest part is the layer ZeRO-3 gathers, ${v} per GPU. More tensor parallelism makes that layer smaller.`,`最大的一块是 ZeRO-3 临时收集的那一层，每张卡 ${v}。张量并行切得越细，这一层越小。`),
+      zx:tx(`The largest part is the BF16 weights of the two layers ZeRO-3 gathers (the one being computed and the next), ${v} per GPU. More tensor parallelism makes them smaller.`,`最大的一块是 ZeRO-3 临时收集的两层 BF16 权重（正在算的这一层和提前收集的下一层），每张卡 ${v}。张量并行切得越细，这两层越小。`),
       act:tx(`The largest part is the activations, ${v} per GPU. ZeRO does not touch them. Tensor parallelism cuts them; recompute only if nothing else fits.`,`最大的一块是激活，每张卡 ${v}。ZeRO 管不到激活，张量并行能把它切小。别的办法都放不下时，才用重算。`)})[k];}
   if(!r.valid) return tx('Save more often, and asynchronously.','存档要更勤，而且用异步。');
   const P=dayParts(r), k=Object.keys(GAPN).reduce((a,b)=>P[b]>P[a]?b:a);
@@ -588,7 +591,7 @@ const FIDPOP=()=>{const lg=plan(MISSION).logits;
  return tx(
  `<p><b>Formula:</b> every number comes from the formulas of the training labs combined; ${J('math','“Show the math”')} works them out.</p><div class="pop-grid"><div><div class="eyebrow">Modeled</div><ul>`+
  `<li>Work: 6 FLOPs per parameter per token, 8 with full recomputation (one more forward pass); MFU counts 6. Peak: H100 SXM dense BF16, 989.5 TFLOP/s.</li>`+
- `<li>Memory: 18 bytes per parameter of model states (BF16 weights 2, FP32 gradients 4, optimizer state 12), split by tensor × pipeline parallelism and by the ZeRO stage. 1F1B keeps ${A.ui.math('\\min(m, p)')} micro-batches on the first stage. GB = 10⁹ bytes; 80 GB per GPU.</li>`+
+ `<li>Memory: 18 bytes per parameter of model states (BF16 weights 2, FP32 gradients 4, optimizer state 12), split by tensor × pipeline parallelism and by the ZeRO stage. ZeRO-3 also holds the BF16 weights of the two layers it gathers, the one being computed and the next. 1F1B keeps ${A.ui.math('\\min(m, p)')} micro-batches on the first stage. GB = 10⁹ bytes; 80 GB per GPU.</li>`+
  `<li>Activations: Megatron-LM’s per-layer formula with sequence parallelism. It already assumes attention’s scores are recomputed in the backward pass (selective recomputation); “every layer” under Recomputation is full recomputation.</li>`+
  `<li>Time: the pipeline’s m + p − 1 slots; 4 tensor-parallel all-reduces per layer and micro-batch (6 with recomputation) over NVLink; the data-parallel traffic that no compute covers.</li>`+
  `<li>Data-parallel traffic between machines: a machine’s 8 GPUs share 400 GB/s of network. An all-gather or reduce-scatter across machines takes about ${A.ui.math('\\frac{\\text{the whole array}}{400\\ \\text{GB/s}}')}, where the whole array is the stage’s BF16 weights or gradients. An all-reduce takes twice that. Inside one machine each GPU moves ${A.ui.math('\\frac{d - 1}{d}')} of its slice over NVLink.</li>`+
@@ -609,7 +612,7 @@ const FIDPOP=()=>{const lg=plan(MISSION).logits;
  `<p class="mono small muted" style="margin-top:8px">Last verified 2026-10-04. Prototype, not yet expert-reviewed.</p></div></div>`,
  `<p><b>公式计算：</b>所有数字都由几个训练 Lab 的公式组合算出，${J('math','“展开公式”')}里有算式。</p><div class="pop-grid"><div><div class="eyebrow">建模了什么</div><ul>`+
  `<li>运算量：每个 token、每个参数 6 次。整层重算时多算一遍前向，是 8 次，MFU 仍只数 6 次。峰值按 H100 SXM 稠密 BF16 的 989.5 TFLOP/s 算。</li>`+
- `<li>显存：模型状态每个参数 18 字节，其中 BF16 权重 2 字节，FP32 梯度 4 字节，优化器状态 12 字节。模型状态按“张量并行 × 流水线段数”和 ZeRO 阶段分开存。1F1B 让第 1 段同时存 ${A.ui.math('\\min(m, p)')} 个 micro-batch。GB 是 10⁹ 字节，每张卡 80 GB。</li>`+
+ `<li>显存：模型状态每个参数 18 字节，其中 BF16 权重 2 字节，FP32 梯度 4 字节，优化器状态 12 字节。模型状态按“张量并行 × 流水线段数”和 ZeRO 阶段分开存。ZeRO-3 还要放临时收集的两层 BF16 权重，正在算的这一层和提前收集的下一层。1F1B 让第 1 段同时存 ${A.ui.math('\\min(m, p)')} 个 micro-batch。GB 是 10⁹ 字节，每张卡 80 GB。</li>`+
  `<li>激活：用 Megatron-LM 带序列并行的每层公式。这个公式已经假设 attention 的分数在反向时重算（部分重算）。设置里的“每层都重算”是整层重算。</li>`+
  `<li>时间：流水线一步有 m + p − 1 格。每层每个 micro-batch 要做 4 次张量并行的 all-reduce（重算时 6 次），走 NVLink。数据并行要传的数据，算的时候藏不住的部分就是等待。</li>`+
  `<li>机器之间的数据并行：一台机器的 8 张卡共用 400 GB/s 的网络带宽。跨机器做一次 all-gather 或 reduce-scatter，大约要 ${A.ui.math('\\frac{\\text{整份数据}}{400\\ \\text{GB/s}}')}。整份数据是这一段流水线的全部 BF16 权重或梯度。all-reduce 要做两遍。同一台机器里走 NVLink，每张卡传自己那份的 ${A.ui.math('\\frac{d - 1}{d}')}。</li>`+
@@ -886,7 +889,8 @@ function drawLayout(r){
   $('#tcap-cl-note',app).textContent=tx(`Columns are pipeline stages and rows are data-parallel copies${d>rowsN?', the first 4 drawn':''}. Each outlined group is one tensor-parallel group inside one machine. The marked GPU’s memory is ${below?'below':'on the right'}.`,
     `每一列是流水线的一段，每一行是一份数据并行${d>rowsN?'，只画出前 4 份':''}。每个框是同一台机器里的一组张量并行。标出的那张卡，显存画在${below?'下面':'右边'}。`);
 }
-const MEMB=[{k:'w',cls:'w',en:'BF16 weights',zh:'BF16 权重'},{k:'g',cls:'g',en:'FP32 gradients',zh:'FP32 梯度'},{k:'o',cls:'o',en:'Optimizer state',zh:'优化器状态'},{k:'zx',cls:'zx',en:'Gathered layers (ZeRO-3)',zh:'临时收集的层（ZeRO-3）'},{k:'act',cls:'a',en:'Activations',zh:'激活'}];
+const MEMB=[{k:'w',cls:'w',en:'BF16 weights',zh:'BF16 权重'},{k:'g',cls:'g',en:'FP32 gradients',zh:'FP32 梯度'},{k:'o',cls:'o',en:'Optimizer state',zh:'优化器状态'},{k:'zx',cls:'zx',en:'Two gathered layers (ZeRO-3)',zh:'临时收集的两层（ZeRO-3）',
+  tip:{en:'Before computing a layer, ZeRO-3 gathers its BF16 weights from the other data-parallel copies. To hide that transfer behind the compute, it gathers the next layer’s while computing this one, so each GPU holds two layers at once and frees each when it is done.',zh:'ZeRO-3 算一层之前，要先从别的几份数据并行那里收集齐这一层的 BF16 权重。为了让通信藏在计算后面，算这一层时已经在收集下一层，所以每张卡同时放着两层，每层算完就释放。'}},{k:'act',cls:'a',en:'Activations',zh:'激活'}];
 function drawMem(r){
   const top=Math.max(GPU.mem,r.mem), H=150, sc=v=>v/top*H, over=r.mem>GPU.mem;
   let y=H, s='';
@@ -894,7 +898,7 @@ function drawMem(r){
   const ly=H-sc(GPU.mem);
   if(over) s+=`<rect class="tcap-mb over" x="0" y="0" width="30" height="${ly.toFixed(2)}"/>`;
   s+=`<line class="tcap-cap80" x1="-4" x2="34" y1="${ly.toFixed(2)}" y2="${ly.toFixed(2)}"/>`;
-  const list=MEMB.filter(b=>r[b.k]>0).reverse().map(b=>`<li><i class="tcap-sw ${b.cls}"></i><span>${esc(L(b))}</span><b class="mono">${fGB(r[b.k])}</b></li>`).join('')+
+  const list=MEMB.filter(b=>r[b.k]>0).reverse().map(b=>`<li${b.tip?` tabindex="0" data-tipx="${esc(L(b.tip))}"`:''}><i class="tcap-sw ${b.cls}"></i><span>${esc(L(b))}</span><b class="mono">${fGB(r[b.k])}</b></li>`).join('')+
     `<li class="tcap-tot"><i class="tcap-sw line"></i><span>${over?tx('Total','合计'):tx('Total, under the 80 GB line','合计，在 80 GB 的线以下')}</span><b class="mono">${fGB(r.mem)}</b></li>`+
     (over?`<li class="tcap-ml-over"><i class="tcap-sw over"></i><span>${tx('Over 80 GB by','比 80 GB 多出')}</span><b class="mono">${fGB(r.mem-GPU.mem)}</b></li>`:'');
   $('#tcap-mem',app).innerHTML=`<svg viewBox="-6 -2 44 ${H+4}" class="tcap-col" aria-hidden="true">${s}</svg><ul class="tcap-ml">${list}</ul>`;
@@ -961,15 +965,15 @@ function metricsDef(){
       {k:'gpuh',label:tx('GPU hours','GPU 小时'),v:hid?'—':fGpuh(d*24*S.G),sub:hid?tx('shown in part 2','第 2 部分揭晓'):tx(`${fint(S.G)} GPUs`,`${fint(S.G)} 张卡`),tip:hid?tx('Hidden until you answer the question.','作答之前先隐藏。'):tx(`${fint(S.G)} GPUs × ${fDays(d)} days × 24 hours.`,`${fint(S.G)} 张卡 × ${fDays(d)} 天 × 24 小时。`)},
       {k:'work',label:tx('Total work','总运算量'),v:sci(6*MD[S.model].N*S.D),sub:'FLOP',tip:tx('6 × parameters × tokens.','6 × 参数量 × token 数。')}];}
   const r=plan(S);
-  const mem={k:'mem',label:tx('Memory per GPU','每张卡的显存'),v:fGB(r.mem),sub:r.fits?tx('fits in 80 GB','放得下 80 GB'):tx('over 80 GB','超过 80 GB'),tip:tx(`${fGB(r.states)} of model states + ${fGB(r.act)} of activations = ${fGB(r.mem)}.`,`模型状态 ${fGB(r.states)} + 激活 ${fGB(r.act)} = ${fGB(r.mem)}。`)};
+  const mem={k:'mem',label:tx('Memory per GPU','每张卡的显存'),v:fGB(r.mem),sub:r.fits?tx('fits in 80 GB','放得下 80 GB'):tx('over 80 GB','超过 80 GB'),tip:tx(`${gb2(r.states)} of model states + ${r.zx?`${gb2(r.zx)} for the two layers ZeRO-3 gathers + `:''}${gb2(r.act)} of activations = ${gb2(r.mem)}.`,`模型状态 ${gb2(r.states)} + ${r.zx?`ZeRO-3 临时收集的两层 ${gb2(r.zx)} + `:''}激活 ${gb2(r.act)} = ${gb2(r.mem)}。`)};
   const mfu={k:'mfu',label:'MFU',v:pct(r.mfu),sub:tx('share of the peak, averaged over a step','一步里平均用上的峰值比例'),tip:tx(`The model’s own work in a step, against what the GPUs could do at peak in that time: 6 × ${big(MD[S.model].N)} parameters × ${fint(r.Btok)} tokens ÷ (${fint(S.G)} GPUs × 989.5 TFLOP/s × ${fS(r.step)}) = ${pct(r.mfu)}.`,`一步里模型本身的运算量，和这段时间里所有卡按峰值能做的运算比：6 × ${big(MD[S.model].N)} 个参数 × ${fint(r.Btok)} 个 token ÷（${fint(S.G)} 张卡 × 989.5 TFLOP/s × ${fS(r.step)}）= ${pct(r.mfu)}。`)};
   const days={k:'days',label:tx('Days to train','要训的天数'),v:r.valid?fDays(r.days):'—',sub:r.valid?tx('failures included','算上故障'):tx('too many failures','故障太多'),tip:tx(`${fint(Math.round(r.steps))} steps × ${fS(r.step)} ÷ ${pct(r.good)} of the time training.`,`${fint(Math.round(r.steps))} 步 × ${fS(r.step)} ÷ 往前训练的时间占比 ${pct(r.good)}。`)};
   const gpuh={k:'gpuh',label:tx('GPU hours','GPU 小时'),v:r.valid?fGpuh(r.gpuh):'—',sub:tx(`${fint(S.G)} GPUs`,`${fint(S.G)} 张卡`),tip:TIP.gpuh()};
   const good={k:'good',label:tx('Share of time training','往前训练的时间占比'),v:pct(r.good),sub:tx(`a failure every ${fH(r.M)}`,`平均每 ${fH(r.M)}一次故障`),tip:TIP.goodput()};
   if(v.real) return [days,gpuh,mfu,good];
   if(!v.step) return [mem,
-    {k:'states',label:tx('Model states per GPU','每张卡的模型状态'),v:fGB(r.states),sub:tx(`of ${fTB(18*r.N)} in all`,`总共 ${fTB(18*r.N)}`),tip:tx('The BF16 weights, FP32 gradients and optimizer state this GPU keeps, after tensor, pipeline and ZeRO splitting.','这张卡在张量并行、流水线和 ZeRO 切开以后，存的 BF16 权重、FP32 梯度和优化器状态。')},
-    {k:'act',label:tx('Activations per GPU','每张卡的激活'),v:fGB(r.act),sub:tx(`${r.inf} ${r.inf===1?'micro-batch':'micro-batches'} at once`,`同时存 ${r.inf} 个 micro-batch`),tip:tx(`The marked GPU keeps the activations of ${r.inf} micro-batches on its ${fixd(r.Ls,r.Ls%1?3:0)} layers.`,`标出的那张卡要存 ${r.inf} 个 micro-batch 在它那 ${fixd(r.Ls,r.Ls%1?3:0)} 层上的激活。`)}];
+    {k:'states',label:tx('Model states per GPU','每张卡的模型状态'),v:fGB(r.states),sub:tx(`of ${fTB(18*r.N)} in all`,`总共 ${fTB(18*r.N)}`),tip:tx('The BF16 weights, FP32 gradients and optimizer state this GPU keeps, after tensor, pipeline and ZeRO splitting.','这张卡在张量并行、流水线和 ZeRO 切开以后，存的 BF16 权重、FP32 梯度和优化器状态。')+(r.zx?tx(` The BF16 weights of the two layers ZeRO-3 gathers are not counted here but listed on their own (${fGB(r.zx)}).`,`ZeRO-3 临时收集的两层 BF16 权重不算在这里，另列一项（${fGB(r.zx)}）。`):'')},
+    {k:'act',label:tx('Activations per GPU','每张卡的激活'),v:fGB(r.act),sub:tx(`${r.inf} ${r.inf===1?'micro-batch':'micro-batches'} at once`,`同时存 ${r.inf} 个 micro-batch`),tip:tx(`The marked GPU keeps the activations of ${r.inf} ${r.inf===1?'micro-batch':'micro-batches'} on its ${fixd(r.Ls,r.Ls%1?3:0)} layers.`,`标出的那张卡要存 ${r.inf} 个 micro-batch 在它那 ${fixd(r.Ls,r.Ls%1?3:0)} 层上的激活。`)}];
   if(!v.run) return [mem,mfu,{k:'step',label:tx('Time per step','每步耗时'),v:fS(r.step),sub:tx(`${fint(S.B)} sequences of 4,096 tokens`,`每步 ${fint(S.B)} 条序列，每条 4,096 个 token`),tip:tx('The pipeline’s m + p − 1 slots, plus the data-parallel sync that no compute covers.','流水线的 m + p − 1 格，加上计算藏不住的数据并行同步。')}];
   return [days,gpuh,mfu,mem,good];
 }
@@ -998,17 +1002,18 @@ function mathHTML(){
   /* memory: bytes per parameter by ZeRO stage over d copies, and the activations of min(m, p) micro-batches (S9) */
   const bppS=S.z===0?'18':(S.z===1?`6 + \\frac{12}{${fint(r.d)}}`:(S.z===2?`2 + \\frac{16}{${fint(r.d)}}`:`\\frac{18}{${fint(r.d)}}`)), bpp=(r.w+r.g+r.o)/r.pg;
   const sym=(k,en,zh)=>`<li>${A.ui.math(k)}${tx(` ${en}`,`：${zh}`)}</li>`;
-  rows.push(LEAD(tx('Memory per GPU','每张卡的显存'),tx(': the GPU’s share of the model states, plus the activations it keeps.','：这张卡分到的模型状态，加上它留着的激活。'))+
-    MW(tx('\\text{memory}','\\text{显存}'),[tx('\\frac{N}{t \\times p} \\times \\text{bytes per parameter}','\\frac{N}{t \\times p} \\times \\text{每个参数的字节数}')].concat(S.rc
+  rows.push(LEAD(tx('Memory per GPU','每张卡的显存'),r.zx?tx(': the GPU’s share of the model states, plus the two layers ZeRO-3 gathers and the activations it keeps.','：这张卡分到的模型状态，加上 ZeRO-3 临时收集的两层和它留着的激活。')
+    :tx(': the GPU’s share of the model states, plus the activations it keeps.','：这张卡分到的模型状态，加上它留着的激活。'))+
+    MW(tx('\\text{memory}','\\text{显存}'),[tx('\\frac{N}{t \\times p} \\times \\text{bytes per parameter}','\\frac{N}{t \\times p} \\times \\text{每个参数的字节数}')].concat(r.zx?['+ 2 \\times \\frac{2 \\times N}{L \\times t}']:[],S.rc
       ?[['+ \\min(m, p) \\times \\frac{L}{p}','\\times \\frac{2 \\times s \\times b \\times h}{t}'],tx('+ \\text{one full layer}','+ \\text{一整层}')]
       :[['+ \\min(m, p) \\times \\frac{L}{p}','\\times \\frac{s \\times b \\times h \\times (18 + 4I/h)}{t}']]))+
     `<ul class="tcap-syms small">`+sym(`N = ${big(md.N)}`,'parameters','参数量')+sym(`t = ${S.t}`,'tensor-parallel GPUs per layer','张量并行的份数')+sym(`p = ${S.p}`,'pipeline stages','流水线段数')+sym(`d = ${fint(r.d)}`,'data-parallel copies','数据并行的份数')+
       sym(`m = ${r.m}`,'micro-batches per pipeline in a step','每条流水线每步的 micro-batch 数')+sym(`L = ${md.L}`,'layers','层数')+sym('s = 4,096','tokens per sequence','每条序列的 token 数')+sym(`b = ${S.b}`,S.b===1?'sequence per micro-batch':'sequences per micro-batch','每个 micro-batch 的序列数')+
       sym(`h = ${fint(md.h)}`,'hidden size','隐藏维度')+sym(`I = ${fint(md.I)}`,'the MLP’s intermediate size','MLP 的中间维度')+`</ul>`+
     `<p>${tx('Bytes per parameter with ','每个参数的字节数，')}${zName(S.z)}${tx(':','：')}</p>`+MV(`${bppS} = ${sig(bpp,3)}`)+
-    `<p>${tx('Model states:','模型状态：')}</p>`+MV(`${big(r.pg)} \\times ${sig(bpp,3)}\\ \\text{${tx('bytes','字节')}} = \\text{${fGB(r.w+r.g+r.o)}}`)+(r.zx?`<p>${tx(`plus the gathered layer, ${fGB(r.zx)}.`,`再加临时收集的一层 ${fGB(r.zx)}。`)}</p>`:'')+
-    `<p>${tx('Activations:','激活：')}</p>`+MV(`${r.inf} \\times ${Ls} \\times ${S.rc?`\\text{${sig(r.keep/1e9,3)} GB} + \\text{${sig(r.full/1e9,3)} GB}`:`\\text{${sig(r.full/1e9,3)} GB}`} = \\text{${fGB(r.act)}}`)+
-    `<p>${tx('In all: ','合计：')}${fGB(r.states)} + ${fGB(r.act)} = <b>${fGB(r.mem)}</b></p>`);
+    `<p>${tx('Model states:','模型状态：')}</p>`+MV(`${big(r.pg)} \\times ${sig(bpp,3)}\\ \\text{${tx('bytes','字节')}} = \\text{${fGB(r.w+r.g+r.o)}}`)+(r.zx?`<p>${tx('Plus the BF16 weights of the two layers ZeRO-3 gathers, the one being computed and the next (2 bytes per parameter):','再加 ZeRO-3 临时收集的两层 BF16 权重，正在算的这一层和提前收集的下一层（每个参数 2 字节）：')}</p>`+MV(`2 \\times \\frac{2 \\times ${big(md.N)}}{${md.L} \\times ${S.t}}\\ \\text{${tx('bytes','字节')}} = \\text{${fGB(r.zx)}}`):'')+
+    `<p>${tx('Activations:','激活：')}</p>`+MV(`${r.inf} \\times ${Ls} \\times ${S.rc?`\\text{${sig(r.keep/1e9,4)} GB} + \\text{${sig(r.full/1e9,4)} GB}`:`\\text{${sig(r.full/1e9,4)} GB}`} = \\text{${fGB(r.act)}}`)+
+    `<p>${tx('In all: ','合计：')}${gb2(r.states)} + ${r.zx?`${gb2(r.zx)} + `:''}${gb2(r.act)} = <b>${gb2(r.mem)}</b></p>`);
   if(v.step){
     rows.push(LEAD(tx('One micro-batch','一个 micro-batch'),tx(': each stage computes it, then waits for the tensor-parallel all-reduces.','：每段流水线先算它，再等张量并行的 all-reduce。'))+MW(tx('\\text{micro-batch time}','\\text{一个 micro-batch 的时间}'),['\\frac{k \\times N/p \\times s \\times b}{t \\times 989.5\\ \\text{TFLOP/s} \\times 50\\%}',tx('+ n \\times \\frac{L}{p} \\times \\text{all-reduce time}','+ n \\times \\frac{L}{p} \\times \\text{一次 all-reduce 的时间}')])+
       `<p class="small">${tx(`k = ${r.k} operations per parameter per token (8 with recomputation). n = ${r.nar} all-reduces per layer (6 with recomputation).`,`k = ${r.k} 是每个 token、每个参数的运算次数（重算时 8），n = ${r.nar} 是每层的 all-reduce 次数（重算时 6）。`)}</p>`+(S.t>1?MW(tx('\\text{all-reduce time}','\\text{一次 all-reduce 的时间}'),['\\frac{2(t - 1)}{t}',tx('\\times \\frac{2 \\times s \\times b \\times h\\ \\text{bytes}}{450\\ \\text{GB/s}}','\\times \\frac{2 \\times s \\times b \\times h\\ \\text{字节}}{450\\ \\text{GB/s}}')])+`<p>= ${sig(r.ar*1e3,3)} ${tx('ms (over NVLink)','毫秒（走 NVLink）')}</p>`:'')+

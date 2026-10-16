@@ -42,7 +42,7 @@
 /* ---------- the MinHash curve; the legend sits beside it ---------- */
 .dl-crow{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
 .dl-curve svg{display:block;width:100%;height:auto;overflow:visible}
-.dl-leg-side{margin:0}
+.dl-leg-side{margin:8px 0 0}   /* the legend follows the caption and plot (.dl-cmain), 8 px below the plot as before */
 .dl-leg-side>span{align-items:flex-start}
 .dl-leg-side .sw{margin-top:3px}
 .dl-legn{color:var(--ink-3)}
@@ -209,6 +209,43 @@ span.dl-fx{display:block}
   .dl-xg{gap:1px;padding:1px}
   .dl-xbox .dl-xc{min-width:20px;font-size:11px;padding:2px 0}
 }
+
+/* ---------- part 4 on a wide stage (polish round 2, 2026-10-15): at 1440 × 900 the example filled the stage and the curve sat
+   300 px down inside it, so the card's “a dot under the curve counts as a duplicate” pointed at nothing in view (R7.12). Here the
+   three pages run across the top; under them the signatures (left) and the curve (right) sit side by side, each with its own
+   caption, and the curve's legend runs under both. Same pieces, same order, same animation; the curve is drawn shorter (--dl-ph,
+   read by drawCurve). Phones (≤ 760 px) and narrower stages keep the stacked layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  .dl-graph[data-v="dedup"]{grid-template-columns:min-content minmax(0,1fr);gap:8px 16px;padding-top:8px;padding-bottom:8px}
+  /* the example spans both columns and lends its rows to its pieces: the caption and the pages full width, the signatures and
+     their legend in the left column. The example's line (R7.13) now closes the left column: under the legend, out to the line
+     that runs down beside the curve */
+  .dl-graph[data-v="dedup"]>.dl-xbox{grid-column:1/-1;grid-row:1/5;grid-template-columns:subgrid;grid-template-rows:subgrid;gap:8px 16px;padding-bottom:0;border-bottom:0}
+  .dl-graph[data-v="dedup"]>.dl-xbox>.dl-cap{grid-column:1/-1;grid-row:1}
+  .dl-graph[data-v="dedup"]>.dl-xbox>.dl-xpgs{grid-column:1/-1;grid-row:2}
+  .dl-graph[data-v="dedup"]>.dl-xbox>.dl-xsig{grid-column:1;grid-row:3;align-self:start}
+  .dl-graph[data-v="dedup"]>.dl-xbox>.dl-leg{grid-column:1;grid-row:4;align-self:stretch;margin:0 -16px 0 0;padding:0 16px 6px 0;border-bottom:1px solid var(--line-2)}
+  /* the curve's box takes rows 3 to 5 across both columns: its caption and plot in the right column beside the signatures (a line
+     between the two), its legend in row 5 under both. Its own box lies over the signatures, so it lets the pointer through to them */
+  .dl-graph[data-v="dedup"]>.dl-cbox{grid-column:1/-1;grid-row:3/6;display:grid;grid-template-columns:subgrid;grid-template-rows:subgrid;gap:8px 16px;pointer-events:none}
+  .dl-graph[data-v="dedup"]>.dl-cbox>*{pointer-events:auto}
+  .dl-graph[data-v="dedup"]>.dl-cbox>.dl-cmain{grid-column:2;grid-row:1/3;align-self:stretch;border-left:1px solid var(--line-2);padding-left:15px}
+  .dl-graph[data-v="dedup"]>.dl-cbox>.dl-leg{grid-column:1/-1;grid-row:3;margin-top:0}
+  .dl-graph[data-v="dedup"] #dl-curve{--dl-ph:104}
+  /* in English the signatures' legend takes four lines, so the left column is taller and the curve can be too, at no cost */
+  html[lang="en"] .dl-graph[data-v="dedup"] #dl-curve{--dl-ph:122}
+  /* and a little tighter, so the stage keeps 30 px to spare at 1440 × 900 in Chinese and fits in English: the pages' inner spacing,
+     the signature rows (the groups' padding as on a narrow stage), the legends' line gaps. The words' line height stays (a shaded run
+     must not cover the line above it) */
+  .dl-graph[data-v="dedup"] .dl-xpg{gap:3px;padding-top:7px;padding-bottom:7px}
+  .dl-graph[data-v="dedup"] .dl-xv{margin-top:0}
+  .dl-graph[data-v="dedup"] .dl-xsh{line-height:1.3}
+  .dl-graph[data-v="dedup"] .dl-xsig{gap:4px}
+  .dl-graph[data-v="dedup"] .dl-xgrid{row-gap:2px}
+  .dl-graph[data-v="dedup"] .dl-xg{padding:1px}
+  .dl-graph[data-v="dedup"] .dl-xax .dl-xg{padding-block:0}
+  .dl-graph[data-v="dedup"] .dl-leg{row-gap:2px}
+}}
 
 /* ---------- the challenge's result after Submit (owner's review b8, R1; as in train-capstone): the verdict, then your setting next to
    the cheapest one (shared settings written once, the differing ones as chips), the one change that helps most, and the settings

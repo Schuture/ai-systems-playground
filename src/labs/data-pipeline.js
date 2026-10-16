@@ -236,7 +236,7 @@ const TIP={
  shingle:()=>tx('A 5-gram is a run of 5 words in a row. A page of 300 words has about 300 of them, one starting at each word. FineWeb cuts pages into 5-grams before comparing them.','5-gram 是连在一起的 5 个词。一篇 300 个词的网页大约有 300 个，从每个词开始各取一个。FineWeb 先把网页切成 5-gram 再比较。'),
  jac:()=>tx('Jaccard similarity of two pages: the 5-grams they share, divided by all the different 5-grams the two have together. 1 means the same text, and a repost with a new title and one added line is still above 0.8. At 0.5 two pages of the same length still share about two thirds of their 5-grams; two articles written separately share almost none.','两篇网页的 Jaccard 相似度，是两篇共有的 5-gram 数，除以两篇加起来一共有多少种不同的 5-gram。1 表示文字完全一样。转载时只改了标题、加了一行，相似度仍在 0.8 以上。相似度是 0.5 时，两篇仍有大约三分之二的 5-gram 相同。两篇各自写的文章，几乎没有相同的 5-gram。'),
  sig:()=>tx('A MinHash signature is a row of numbers per page. For each of many hash functions, it keeps the smallest hash among the page’s 5-grams. For two pages, the numbers in the same position agree with a chance equal to their Jaccard similarity.','MinHash 签名是每篇网页的一排数。对很多个哈希函数中的每一个，它记下这篇网页所有 5-gram 里最小的那个哈希值。两篇网页的签名在同一个位置上相等的机会，正好等于它们的 Jaccard 相似度。'),
- band:()=>tx('Groups: the signature is cut into b groups of r numbers. Two pages become candidate duplicates when all r numbers of at least one group agree. In LSH the groups are usually called bands, and the numbers in a group rows.','分组：把签名切成 b 组，每组 r 个值。两篇网页只要至少有一组的 r 个值全部相同，就被当成重复。在 LSH 里，组通常叫 band，组里的每个值叫 row。'),
+ band:()=>tx('Groups: the signature is cut into b groups of r hash values. Two pages become candidate duplicates when all r values of at least one group agree. Grouping saves comparing every pair of pages: the r values of a group form one key, pages go into buckets by key, and only pages that share a bucket are candidates. In LSH the groups are usually called bands, and the values in a group rows.','分组：把签名切成 b 组，每组 r 个哈希值。两篇网页只要至少有一组的 r 个哈希值全部相同，就被当成重复。分组是为了不用把网页两两比较：一组的 r 个哈希值拼成一个键，按键分桶，落进同一个桶的网页才是重复。在 LSH 里，组通常叫 band，组里的每个值叫 row。'),
  epoch:()=>tx('One epoch is one pass over a domain’s data. Taking more tokens of a domain than you have means repeating the same text: 2.5 epochs means each text is seen two or three times.','1 遍（epoch）是把一类数据完整用一遍。某类数据要用的 token 比手里的多，就只能重复用同一批文字：2.5 遍就是每篇文字被看到两三次。')
 };
 
@@ -271,14 +271,14 @@ const STEPS=[
   lead:()=>tx('1,000 crawled pages go through four stages. How many are left?','抓来的 1,000 个网页走过四个环节，还剩多少？'),
   enter:()=>cloneS(BASE),
   body:()=>{const ch=`<div class="choices" role="group" aria-label="${esc(tx('Your prediction','你的预测'))}">${PRED.map(o=>`<button type="button" class="choice" data-pred="${o.v}" aria-pressed="${pred===o.v}">${esc(L(o.t))}</button>`).join('')}</div>`;
-   return tx(`<p>You are preparing data to pretrain an English model, and the data comes from crawling the web. Most crawled pages cannot go into training as they are. Some hold only menus and ads. Some are in other languages, some are lists of keywords, and the same article is often reposted many times.</p><p>A data pipeline filters in stages. It first extracts the main text, then identifies the language, then drops low-quality pages by rules, and finally removes duplicates. Every stage throws some pages away.</p><p>The chart shows 1,000 crawled pages, one small square each. Take a gut guess: after all four stages, about how many are left?</p>${ch}${pred?`<p class="muted small dl-saved"${PL.watched.has(F0().sig)?' hidden':''}>Saved. You can still change it until the run ends.</p>`:''}`,
-             `<p>你们要预训练一个英文模型，数据从网上抓。抓来的网页大多不能直接拿来训练：有的只有菜单和广告，有的是别的语言，有的只是一串关键词，同一篇文章还常常被转载很多次。</p><p>数据管线一个环节一个环节地筛：先抽出正文，再认语言，再按规则去掉质量差的，最后去重。每个环节都会扔掉一部分网页。</p><p>图里是抓来的 1,000 个网页，每个小方块是一个。凭直觉猜一下：走完这四个环节，大约还剩多少个？</p>${ch}${pred?`<p class="muted small dl-saved"${PL.watched.has(F0().sig)?' hidden':''}>已记下。动画播完之前，还可以改。</p>`:''}`);},
+   return tx(`<p>You are preparing data to pretrain a mainly English model, and the data comes from crawling the web. Most crawled pages cannot go into training as they are. Some hold only menus and ads. Some are in other languages, some are lists of keywords, and the same article is often reposted many times.</p><p>A data pipeline filters in stages. It first extracts the main text, then identifies the language, then drops low-quality pages by rules, and finally removes duplicates. Every stage throws some pages away.</p><p>The chart shows 1,000 crawled pages, one small square each. Take a gut guess: after all four stages, about how many are left?</p>${ch}${pred?`<p class="muted small dl-saved"${PL.watched.has(F0().sig)?' hidden':''}>Saved. You can still change it until the run ends.</p>`:''}`,
+             `<p>你们要预训练一个以英文为主的模型，数据从网上抓。抓来的网页大多不能直接拿来训练：有的只有菜单和广告，有的是别的语言，有的只是一串关键词，同一篇文章还常常被转载很多次。</p><p>数据管线一个环节一个环节地筛：先抽出正文，再认语言，再按规则去掉质量差的，最后去重。每个环节都会扔掉一部分网页。</p><p>图里是抓来的 1,000 个网页，每个小方块是一个。凭直觉猜一下：走完这四个环节，大约还剩多少个？</p>${ch}${pred?`<p class="muted small dl-saved"${PL.watched.has(F0().sig)?' hidden':''}>已记下。动画播完之前，还可以改。</p>`:''}`);},
   obs:()=>obsMission()},
  {id:'lang',title:{en:'Main text and language',zh:'抽正文，认语言'},view:'funnel',expect:()=>thrTried,showMe:{thr:0.9},label:{en:'Result',zh:'结果'},hi:[1,2],
   lead:()=>tx('A page without main text is dropped; so is one whose English score is under the threshold.','抽不出正文的扔掉，英文得分低于门槛的也扔掉。'),
   enter:()=>cloneS(BASE),
-  body:()=>tx(`<p>Only a small part of a page’s HTML is the main text. ${DEF('Extraction',TIP.extract())} keeps that part. A login page or a photo gallery has none, so the whole page is dropped.</p><p>Next, a language-ID model reads the text and gives an ${DEF('English score',TIP.score())} between 0 and 1: how sure it is that the text is English. A page under the threshold is dropped; FineWeb’s threshold is 0.65.</p><p>Move the threshold up or down.</p>`,
-              `<p>网页的 HTML 里，正文只占一小部分。${DEF('抽正文',TIP.extract())}就是只留下这部分。登录页、图片页抽不出正文，整个网页就扔掉。</p><p>接着，语言识别模型读一遍正文，给出一个 0 到 1 之间的${DEF('英文得分',TIP.score())}，表示它有多确定这是英文。得分低于门槛的网页就扔掉，FineWeb 的门槛是 0.65。</p><p>把门槛调高或调低试试。</p>`)+thrCtl('dl-ic-thr',true),
+  body:()=>tx(`<p>Only a small part of a page’s HTML is the main text. ${DEF('Extraction',TIP.extract())} keeps that part. A login page or a photo gallery has none, so the whole page is dropped.</p><p>Next, a language-ID model reads the text and gives an ${DEF('English score',TIP.score())} between 0 and 1: how sure it is that the text is English. A page under the threshold is dropped; FineWeb’s threshold is 0.65. Pages in other languages go through pipelines of their own, one per language, and come back when the mix is set.</p><p>Move the threshold up or down.</p>`,
+              `<p>网页的 HTML 里，正文只占一小部分。${DEF('抽正文',TIP.extract())}就是只留下这部分。登录页、图片页抽不出正文，整个网页就扔掉。</p><p>接着，语言识别模型读一遍正文，给出一个 0 到 1 之间的${DEF('英文得分',TIP.score())}，表示它有多确定这是英文。得分低于门槛的网页就扔掉，FineWeb 的门槛是 0.65。别的语言的网页另走按语言分开的管线，定配比时再放进来。</p><p>把门槛调高或调低试试。</p>`)+thrCtl('dl-ic-thr',true),
   obs:()=>obsLang()},
  {id:'rules',title:{en:'Quality rules',zh:'质量规则'},view:'funnel',expect:()=>ruleTried,showMe:()=>setRule('stop',0),label:{en:'Result',zh:'结果'},hi:[3],
   lead:()=>tx('Each rule looks at one number and catches one kind of junk.','每条规则只看一个数值，专抓一种垃圾。'),
@@ -289,16 +289,16 @@ const STEPS=[
  {id:'dedup',title:{en:'Duplicates, exact and near',zh:'去重：不只是完全一样的'},view:'dedup',expect:()=>triedDup.has('exact'),showMe:()=>setLvDup('exact'),label:{en:'Result',zh:'结果'},hi:[4],
   lead:()=>tx('A repost with only a new title has a different hash. MinHash still finds it.','只改了标题的转载，哈希就完全变了。MinHash 还能找出它。'),
   enter:()=>{lvDup='both'; triedDup=new Set(['both']); brTried=false; return cloneS(BASE);},
-  body:()=>tx(`<p>The same article is often reposted many times, often with only a new title. The chart shows three example pages: A is an original, B is a repost of A with only the title changed, and C is another page about bread.</p><p>Exact copies are easy to find: compute a ${DEF('hash',TIP.hash())} of the whole text, and the same hash means the same page. B changed only its title, yet its hash is completely different, so comparing hashes keeps B.</p><p>MinHash compares pages another way. It cuts each page into ${DEF('5-grams',TIP.shingle())}. Most of B’s 5-grams are also in A, and none of C’s are. The shaded words in the chart are the part shared with A. MinHash then gives each page a ${DEF('signature',TIP.sig())}, and the more 5-grams two pages share, the more values of their signatures agree. The signature is ${DEF('cut into groups',TIP.band())}, and two pages count as duplicates when all the values of any one group agree.</p>`,
-              `<p>同一篇文章常被转载很多次，转载时常常只改个标题。图里有三个示例网页：A 是原文，B 是只改了标题的转载，C 是另一篇讲面包的文章。</p><p>完全一样的副本好找。给全文算一个${DEF('哈希',TIP.hash())}，哈希相同就是同一篇。B 只改了标题，哈希就完全不同了，所以只比哈希会把 B 留下。</p><p>MinHash 换了一种比法。它先把网页切成 ${DEF('5-gram',TIP.shingle())}。B 的 5-gram 大部分和 A 相同，C 的 5-gram 没有一个和 A 相同。图里灰底的词，就是和 A 相同的部分。MinHash 再给每篇网页算一个${DEF('签名',TIP.sig())}，两篇共同的 5-gram 越多，签名里相同的值就越多。签名${DEF('分成几组',TIP.band())}，只要有一组的值全部相同，两篇就算重复。</p>`)+
+  body:()=>tx(`<p>The same article is often reposted, often with only a new title. These near copies must go too: a model trained on many copies of a text tends to repeat it word for word, and the copies waste training steps.</p><p>Exact copies are easy to find: the same ${DEF('hash',TIP.hash())} of the whole text means the same page. But B in the chart changed only its title, and its hash is completely different.</p><p>MinHash cuts each page into ${DEF('5-grams',TIP.shingle())} and gives it a ${DEF('signature',TIP.sig())}: each hash value of two pages’ signatures agrees with a chance equal to their ${DEF('similarity',TIP.jac())} s. The signature is ${DEF('cut into b groups of r hash values',TIP.band())}, and two pages count as duplicates when any one group agrees in full.</p><p>Each dot in the chart is a pair of pages, and a dot under the curve counts as a duplicate. At similarity 0.8 or more the second page is a copy and should go; at 0.6 or less it is a heavily edited version and should stay; in between, either is fine. b and r trade copies missed against pages wrongly dropped.</p><p>First pick “Only exact copies” and see what happens to B and to the dots.</p>`,
+              `<p>同一篇文章常被转载，还常常只改个标题。这些几乎一样的副本也要去掉：副本多了，模型容易一字不差地背出原文，训练步数也白花。</p><p>完全一样的副本好找：全文的${DEF('哈希',TIP.hash())}相同，就是同一篇。可图里的 B 只改了标题，哈希就完全不同了。</p><p>MinHash 把网页切成 ${DEF('5-gram',TIP.shingle())}，再给每篇算一个${DEF('签名',TIP.sig())}：两篇签名里每个哈希值相同的机会，正好是两篇的${DEF('相似度',TIP.jac())} s。签名${DEF('分成 b 组、每组 r 个哈希值',TIP.band())}，只要有一组全部相同，两篇就算重复。</p><p>图里每个点是一对网页，落在曲线下面就算重复。相似度 0.8 以上的是副本，该删；不超过 0.6 的是改动很大的另一个版本，该留；中间的删不删都行。b 和 r 就在漏删和误删之间取舍。</p><p>先选“只去完全一样的”，看看 B 和图里的点会怎样。</p>`)+
     `<div class="dl-lv" id="dl-ic-dup">`+A.ui.levers({aria:tx('How to remove duplicates, pick one','怎么去重，选一种'),value:lvDup,options:LVD.map(o=>({v:o.v,title:L(o.t),desc:L(o.d),result:esc(triedDup.has(o.v)?lvdRes(o.v):'')}))})+`</div>`+
-    `<div class="dl-br" id="dl-ic-br"${lvDup==='both'?'':' hidden'}><p class="small">${tx('The example’s signature has only 3 groups of 4 values. FineWeb uses 14 groups of 8. Drag these two settings and watch the curve of all 1,000 pages, under the example:','示例的签名只有 3 组、每组 4 个值，FineWeb 用的是 14 组、每组 8 个。示例下面是 1,000 个网页的曲线，拖动这两个设置，看它怎么变：')}</p>${bCtl('dl-ic-b',true)}${rCtl('dl-ic-r',true)}</div>`,
+    `<div class="dl-br" id="dl-ic-br"${lvDup==='both'?'':' hidden'}><p class="small">${tx('These two settings change only the curve of the 1,000 pages: more hashes per group move it right, so MinHash is stricter; more groups move it left.','这两个设置只改 1,000 个网页的曲线：每组的哈希越多，它越往右，判得越严；组越多，越往左。')}</p>${bCtl('dl-ic-b',true)}${rCtl('dl-ic-r',true)}</div>`,
   obs:()=>obsDedup()},
  {id:'mix',title:{en:'The mix',zh:'配比'},view:'mix',expect:()=>triedMix.size>1,showMe:()=>setMix('math15'),label:{en:'Result',zh:'结果'},
   lead:()=>tx('A small domain given a big share is repeated many times.','数据少的一类占的比例大，就要重复很多遍。'),
   enter:()=>{triedMix=new Set(['prop']); return cloneS(BASE);},
-  body:()=>tx(`<p>After filtering and dedup, you still choose how much of each kind of data goes into training. The target here is 15T tokens, about what Llama 3.1 was trained on. The tokens on hand are this lab’s assumption: English web 12T, web in other languages 4T, code 1.5T, math 0.3T.</p><p>When a domain’s share asks for more tokens than you have, the same text is used again: its ${DEF('epochs',TIP.epoch())} go above 1. Pick a mix and see how many epochs each kind of data needs.</p>`,
-              `<p>筛完、去完重，还要决定每类数据各占多少。这里的目标是训练 15T 个 token，和 Llama 3.1 差不多。手里每类有多少是这个 Lab 的假设：英文网页 12T，其他语言的网页 4T，代码 1.5T，数学 0.3T。</p><p>某一类要用的 token 比手里的多，就只能把同一批文字再用一次，它的${DEF('遍数',TIP.epoch())}就超过 1。选一种配比，看看每类数据要用几遍。</p>`)+mixLv(),
+  body:()=>tx(`<p>After dedup comes the mix: what share of the training tokens each kind of data gets. Give a small domain a big share and it is repeated many times.</p><p>The target is 15T tokens, about what Llama 3.1 was trained on; how much each kind has on hand is written on its row in the chart. When a domain’s share asks for more tokens than you have, the same text is used again: its ${DEF('epochs',TIP.epoch())} go above 1. Pick a mix and see how many epochs each kind of data needs.</p>`,
+              `<p>去完重，还要定配比：训练用的 token 里，每类数据各占多少。数据少的一类占的比例大，就要重复很多遍。</p><p>目标是训练 15T 个 token，和 Llama 3.1 差不多；每类数据手里有多少，写在图里它那一行。某一类要用的 token 比手里的多，就只能把同一批文字再用一次，它的${DEF('遍数',TIP.epoch())}就超过 1。选一种配比，看看每类数据要用几遍。</p>`)+mixLv(),
   obs:()=>obsMix()},
  {id:'remember',title:{en:'What to remember',zh:'要记住的'},view:()=>remView==='mix'?'mix':(remView==='dup'?'dedup':'funnel'),
   lead:()=>tx('Every stage drops a lot; find near copies, not just exact ones; repeat a small domain only a few times.','每个环节都扔掉一大块；去重要找几乎一样的；小的数据别重复太多遍。'),
@@ -363,7 +363,7 @@ function obsDedup(){
   const f=fatesOf(S), fe=fatesOf({...S,mh:0}), fb=fatesOf({...cloneS(BASE)});
   let s;
   const X=xOf(A.lang());
-  if(!S.mh) s=tx(`<p><b>Comparing whole-text hashes keeps B, the repost. Among the 1,000 pages, ${fe.dupLeft} near copies stay in the data the same way, red in the chart.</b> Each one differs from its original by a title or a line, so its hash is different.</p>`,`<p><b>只比全文哈希时，转载 B 留了下来。1,000 个网页里，也有 ${fe.dupLeft} 篇几乎一样的副本这样留在了数据里，图里是红色。</b>它们和原文只差一个标题或一行字，哈希就不一样了。</p>`);
+  if(!S.mh) s=tx(`<p><b>Comparing whole-text hashes keeps B, the repost. Among the 1,000 pages, ${fe.dupLeft} near copies stay in the data the same way, red in the chart.</b></p>`,`<p><b>只比全文哈希时，转载 B 留了下来。1,000 个网页里，也有 ${fe.dupLeft} 篇几乎一样的副本这样留在了数据里，图里是红色。</b></p>`);
   else {const bad=wrongDrop(S,f), left=f.dupLeft, set=tx(`With MinHash at ${S.b} groups of ${S.r} hashes`,`MinHash 用 ${S.b} 组、每组 ${S.r} 个哈希时`);
     const ex=X.B.caught&&!X.C.caught?tx(`<p><b>In the example, MinHash finds B: group ${X.B.hit+1} agrees in full. C stays.</b></p>`,`<p><b>示例里，MinHash 找出了 B，因为第 ${X.B.hit+1} 组全部相同。C 留了下来。</b></p>`):'';
     const kept0=tx('no near copy stays','几乎一样的副本一篇也没留下'), keptN=tx(`${left} near ${left>1?'copies stay':'copy stays'}`,`留下了 ${left} 篇几乎一样的副本`);
@@ -372,11 +372,9 @@ function obsDedup(){
      :!left?tx(`<p><b>${set}, ${kept0}, ${bad<=2?'and only':'but'} ${lost(bad)}.</b></p>`,`<p><b>${set}，${kept0}，${bad<=2?'只':'可也'}${lost(bad)}。</b></p>`)
      :!bad?tx(`<p><b>${set}, no page that should stay is thrown away, but ${keptN}.</b></p>`,`<p><b>${set}，没有误删本该留下的网页，可${keptN}。</b></p>`)
      :tx(`<p><b>${set}, ${keptN}, and ${lost(bad)}.</b></p>`,`<p><b>${set}，${keptN}，还${lost(bad)}。</b></p>`));}
-  s+=tx(`<p>Dedup matters for two reasons. First, a model trained on many copies of a text tends to repeat it word for word (Lee et al., “Deduplicating Training Data Makes Language Models Better”). Second, deduplicated data reaches the same quality in fewer training steps (${cite(SRC.dedup,'Hugging Face’s dedup post')}).</p>`,
-        `<p>去重很要紧，原因有两个。第一，同一段文字的副本多了，模型容易把它一字不差地背出来（Lee 等，“Deduplicating Training Data Makes Language Models Better”）。第二，去完重的数据，用更少的训练步数就能达到同样的效果（${cite(SRC.dedup,'Hugging Face 的去重博客')}）。</p>`);
-  s+=tx('<p>The chance that two pages of similarity s count as duplicates is:</p>','<p>相似度为 s 的两篇网页被当成重复的机会是：</p>')+M('P(s) = 1 - (1 - s^r)^b')+
-    tx(`<p>All r numbers of one group agree with chance ${A.ui.math('s^r')}. With b groups there are b chances, and one group in full is enough. The curve in the chart is P(s). More hashes per group make a whole group harder to match, so the curve moves right and MinHash is stricter. More groups give more chances, so the curve moves left.</p>`,
-       `<p>一组的 r 个值全部相同，机会是 ${A.ui.math('s^r')}。有 b 组，就有 b 次机会，只要有一组全部相同就算重复。图里的曲线就是 P(s)。每组的哈希越多，整组相同就越难，曲线往右移，判得越严。组越多，机会越多，曲线往左移。</p>`)+
+  /* polish round 2 (2026-10-15): the formula P(s) and where it comes from are in Show the math; what b and r do to the curve is the
+     sliders' lead-in in the card */
+  s+=
     (S.b===14&&S.r===8&&S.mh?'':(fb.dupLeft?tx(`<p class="small">FineWeb’s setting (14 groups of 8 hashes) leaves ${fb.dupLeft} near copies.</p>`,`<p class="small">FineWeb 的设置（14 组、每组 8 个哈希）留下 ${fb.dupLeft} 篇几乎一样的副本。</p>`)
       :tx('<p class="small">FineWeb’s setting (14 groups of 8 hashes) leaves no near copy.</p>','<p class="small">FineWeb 的设置（14 组、每组 8 个哈希）一篇几乎一样的副本也没留下。</p>')));
   return s;
@@ -390,8 +388,8 @@ function obsMix(){
         :q<3?tx(`, more than twice The Pile’s most repeated set (${PILE_EP} times)`,`，比 The Pile 重复最多的 ${PILE_EP} 遍还多一倍多`)
         :tx(`, more than ${Math.floor(q)} times The Pile’s most repeated set (${PILE_EP} times)`,`，是 The Pile 重复最多的 ${PILE_EP} 遍的 ${Math.floor(q)} 倍多`);
       return tx(`<p><b>Math is ${small?'only ':''}${pct(m.share)} of the run, but there is little math data on hand, so the same math text is used ${fEp(m.ep)} times${vs}.</b></p>`,`<p><b>数学${small?'只':''}占 ${pct(m.share)}，可手里的数学数据太少，同一批数学文字要用 ${fEp(m.ep)} 遍${vs}。</b></p>`);})();
-  s+=tx(`<p>Teams do raise small high-quality domains on purpose. SmolLM3 trained in three stages and raised code from 12% in the first to 24% in the last, and math from 3% to 13% (${cite(SRC.smol3,'Hugging Face, SmolLM3')}). The Pile repeated its smaller sets up to 3 times, Wikipedia the most (${cite(SRC.pile,'the-pile README')}). Repeating a few times costs little; repeating many times buys little for the compute it takes (Muennighoff et al., “Scaling Data-Constrained Language Models”, arXiv 2305.16264).</p>`,
-        `<p>把数据少、质量高的类别调高，是常见的做法。SmolLM3 分三个阶段训练，代码从第一阶段的 12% 一路提到最后阶段的 24%，数学从 3% 提到 13%（${cite(SRC.smol3,'Hugging Face 的 SmolLM3 博客')}）。The Pile 把较小的数据集最多重复了 3 遍，重复最多的是 Wikipedia（${cite(SRC.pile,'the-pile 的 README')}）。重复几遍代价不大；重复很多遍，花的算力就换不来多少提升（Muennighoff 等，“Scaling Data-Constrained Language Models”，arXiv 2305.16264）。</p>`);
+  s+=tx(`<p>Teams do raise small high-quality domains on purpose: SmolLM3 raised math from 3% of its first training stage to 13% of its last (${cite(SRC.smol3,'Hugging Face, SmolLM3')}). The Pile, a public pretraining dataset, repeated its smaller sets up to 3 times (${cite(SRC.pile,'the-pile README')}). Repeating a few times costs little; repeating many times buys little for the compute it takes (Muennighoff et al., 2023).</p>`,
+        `<p>把数据少、质量高的类别调高，是常见的做法：SmolLM3 分阶段训练，数学从第一阶段的 3% 提到最后阶段的 13%（${cite(SRC.smol3,'Hugging Face 的 SmolLM3 博客')}）。公开的预训练数据集 The Pile，把里面较小的几个子集最多重复了 3 遍（${cite(SRC.pile,'the-pile 的 README')}）。重复几遍代价不大；重复很多遍，花的算力就换不来多少提升（Muennighoff 等，2023）。</p>`);
   return s;
 }
 const REMS={run:{s:{}},dup:{s:{mh:0}},mix:{s:{mix:'math40'}}};
@@ -525,6 +523,7 @@ const FIDPOP=()=>tx(
  `<div><div class="eyebrow">Sources</div><ul>`+
  `<li>Order of the stages, MinHash on 5-grams with 14 groups of 8 hashes, the PII step: ${cite(SRC.fineweb,'datatrove <code>examples/fineweb.py</code>')} and ${cite(SRC.minhash,'<code>dedup/minhash.py</code>')}, pinned to release 0.10.1.</li>`+
  `<li>Thresholds: ${cite(SRC.lang,'<code>language_filter.py</code>')} (0.65), ${cite(SRC.gopherr,'<code>gopher_repetition_filter.py</code>')} (30% repeated lines), ${cite(SRC.gopherq,'<code>gopher_quality_filter.py</code>')} (50 words; at most 0.1 “#” per word and, separately, 0.1 “…” per word; 2 of 8 stop words), ${cite(SRC.fwq,'<code>fineweb_quality_filter.py</code>')} (12% lines ending in punctuation).</li>`+
+ `<li>Why near copies go too: a model repeats text it has seen many copies of (${cite(SRC.plee,'Lee et al., 2021')}), and copies waste training steps (${cite(SRC.dedup,'Hugging Face’s dedup post')}).</li>`+
  `<li>RedPajama‑V2’s counts and MinHash settings: ${cite(SRC.rp,'RedPajama-Data README')}. The Pile’s epochs: ${cite(SRC.pile,'the-pile README')}. SmolLM3’s mix: ${cite(SRC.smol3,'Hugging Face blog')}. Llama 3.1’s ~15T tokens: ${cite(SRC.l31,'its model card')}.</li></ul>`+
  `<p class="mono small muted" style="margin-top:8px">Last verified 2026-10-04. Prototype, not yet expert-reviewed.</p></div></div>`,
  `<p><b>玩具实跑：</b>网页是编出来的，每个网页只带规则要读的那几个数值；规则和门槛用的是 FineWeb 的。</p><div class="pop-grid"><div><div class="eyebrow">建模了什么</div><ul>`+
@@ -541,6 +540,7 @@ const FIDPOP=()=>tx(
  `<div><div class="eyebrow">来源</div><ul>`+
  `<li>环节的顺序、在 5-gram 上用 MinHash（14 组、每组 8 个哈希）、PII 处理：${cite(SRC.fineweb,'datatrove 的 <code>examples/fineweb.py</code>')} 和 ${cite(SRC.minhash,'<code>dedup/minhash.py</code>')}，固定在 0.10.1 版。</li>`+
  `<li>门槛：${cite(SRC.lang,'<code>language_filter.py</code>')}（0.65），${cite(SRC.gopherr,'<code>gopher_repetition_filter.py</code>')}（重复的行 30%），${cite(SRC.gopherq,'<code>gopher_quality_filter.py</code>')}（50 个词，“#”和“…”每个词各不超过 0.1 个，8 个停用词里至少 2 个），${cite(SRC.fwq,'<code>fineweb_quality_filter.py</code>')}（以标点结尾的行 12%）。</li>`+
+ `<li>几乎一样的副本为什么也要去：副本多了，模型会背出原文（${cite(SRC.plee,'Lee 等，2021')}），训练步数也白花（${cite(SRC.dedup,'Hugging Face 的去重博客')}）。</li>`+
  `<li>RedPajama‑V2 的数量和 MinHash 设置：${cite(SRC.rp,'RedPajama-Data 的 README')}。The Pile 的遍数：${cite(SRC.pile,'the-pile 的 README')}。SmolLM3 的配比：${cite(SRC.smol3,'Hugging Face 博客')}。Llama 3.1 约 15T 个 token：${cite(SRC.l31,'它的 model card')}。</li></ul>`+
  `<p class="mono small muted" style="margin-top:8px">最近核验 2026-10-04。原型，尚未经专家审阅。</p></div></div>`);
 const OUTCOME=()=>tx('say what each stage of a pretraining data pipeline throws away and why, choose MinHash settings for near-duplicate removal, and tell when a data mix repeats a domain too often.','说出预训练数据管线每个环节扔掉什么、为什么扔，为去重选好 MinHash 的设置，并判断一种配比会不会把某类数据重复太多遍。');
@@ -599,7 +599,9 @@ function stageHTML(){
     `<div class="dl-phone" id="dl-phone"></div>`+
     `<div class="dl-fbox" id="dl-fbox"><div class="dl-cap" id="dl-f-cap"></div><div class="dl-cvwrap" id="dl-cvwrap"><canvas id="dl-cv" role="img"></canvas></div><div class="dl-leg" id="dl-f-leg"></div><div class="dl-player" id="dl-player"></div></div>`+
     `<div class="dl-xbox" id="dl-xbox" hidden></div>`+
-    `<div class="dl-cbox" id="dl-cbox" hidden><div class="dl-cap" id="dl-c-cap"></div><div class="dl-crow"><div class="dl-cplot"><div class="dl-axy" id="dl-c-yt"></div><div class="dl-curve" id="dl-curve"></div><div class="dl-axx" id="dl-c-xt"></div></div><div class="dl-leg dl-leg-side" id="dl-c-leg"></div></div></div>`+
+    /* the caption and the plot in one box (.dl-cmain), the legend after it: on a wide stage part 4 puts the plot beside the
+       signatures and runs the legend under both (data-pipeline.css); stacked, it reads as before */
+    `<div class="dl-cbox" id="dl-cbox" hidden><div class="dl-cmain"><div class="dl-cap" id="dl-c-cap"></div><div class="dl-crow"><div class="dl-cplot"><div class="dl-axy" id="dl-c-yt"></div><div class="dl-curve" id="dl-curve"></div><div class="dl-axx" id="dl-c-xt"></div></div></div></div><div class="dl-leg dl-leg-side" id="dl-c-leg"></div></div>`+
     `<div class="dl-mbox" id="dl-mbox" hidden><div class="dl-cap" id="dl-m-cap"></div><div class="dl-mix" id="dl-mix"></div></div>`+
    `</div>`+
    `<div class="metrics dl-metrics" id="dl-metrics"></div>`+
@@ -884,8 +886,10 @@ function finishRun(){stopAnim(); PL.g=4; if(PL.sig) PL.watched.add(PL.sig); want
 function curveSVG(o){
   /* laid out for the width it is drawn at (review codex-b9v3, 应修 4): the viewBox is the box's own width, so 11 px text stays 11 px
      on a 390 px phone; a narrow chart gets fewer ticks, and the axis titles are HTML outside the SVG (#dl-c-yt, #dl-c-xt).
-     In the challenge (o.goals) a strip under the plot zooms into 0–10%, where the goal at 0.5 (at most 2%) can be seen (R5.10) */
-  const zoom=!!o.goals, W=Math.max(260,Math.round(o.w||560)), nar=W<440, ZG=14, ZH=nar?56:64, ZM=0.1, PH=nar?170:210;
+     In the challenge (o.goals) a strip under the plot zooms into 0–10%, where the goal at 0.5 (at most 2%) can be seen (R5.10).
+     o.ph, when given, is the plot's height: part 4 on a wide stage draws it shorter, beside the signatures (drawCurve), and keeps
+     every tick and grid line of the full-width chart (there is room for them; only a phone's chart is narrow) */
+  const zoom=!!o.goals, W=Math.max(260,Math.round(o.w||560)), nar=W<440&&!o.ph, ZG=14, ZH=nar?56:64, ZM=0.1, PH=o.ph||(nar?170:210);
   const L0=nar?36:44,R0=nar?12:16,T0=10,B0=22,H=T0+PH+(zoom?ZG+ZH:0)+B0,x0=0.4,x1=1.0, X=s=>L0+(s-x0)/(x1-x0)*(W-L0-R0), Y=p=>T0+(1-p)*PH, f2=v=>v.toFixed(1);
   const Z0=T0+PH+ZG, Yz=p=>Z0+(1-p/ZM)*ZH;
   let g='';
@@ -930,7 +934,9 @@ function drawCurve(){
   else {const pairs=pairsOf(S), f=fates(S);
     cap.textContent=S.mh?tx(`All 1,000 pages: every pair that reaches dedup, and MinHash with ${S.b} groups of ${S.r}`,`1,000 个网页里，进到去重环节的每一对，和 MinHash（${S.b} 组，每组 ${S.r} 个）`):tx('All 1,000 pages: every pair that reaches dedup, with only exact copies removed','1,000 个网页里，进到去重环节的每一对，只去完全一样的副本');
     aria=tx(`${pairs.length} pairs as dots; ${f.dupLeft} near copies stay.`,`${pairs.length} 对网页，每对一个点；留下 ${f.dupLeft} 篇几乎一样的副本。`);
-    h=curveSVG({w,b:S.b,r:S.r,mh:S.mh,exact:S.exact,ref:S.mh&&!(S.b===14&&S.r===8),pairs,aria});
+    /* the plot's height from the stylesheet (--dl-ph): set only where the curve sits beside the signatures; otherwise the default */
+    const ph=parseFloat(getComputedStyle(host).getPropertyValue('--dl-ph'))||0;
+    h=curveSVG({w,ph,b:S.b,r:S.r,mh:S.mh,exact:S.exact,ref:S.mh&&!(S.b===14&&S.r===8),pairs,aria});
     lg=`<span><i class="sw dl-sw-d1"></i>${esc(tx('caught: under the curve, one page of the pair is thrown away','被抓住：在曲线下面，扔掉其中一篇'))}</span><span><i class="sw dl-sw-d0"></i>${esc(tx('not caught: above the curve, both stay','没被抓住：在曲线上面，两篇都留下'))}</span><span><i class="sw dl-sw-dr"></i>${esc(tx('red: a wrong call, a near copy (0.8 or more) that stays, or a heavily edited version (0.6 or less) thrown away','红色：判错了，相似度 0.8 以上的副本留了下来，或者改动很大、本该留下的版本（相似度不超过 0.6）被扔掉'))}</span><span class="dl-legn">${esc(tx('A dot’s height is a random number drawn once per pair; the curve’s height is the chance to be caught.','点的高度是给每对网页抽的一个随机数；曲线的高度是被抓住的机会。'))}</span>`;}
   if(host._h!==h){host.innerHTML=h; host._h=h;}
   if(leg._h!==lg){leg.innerHTML=lg; leg._h=lg;}
@@ -1071,7 +1077,7 @@ function mathHTML(){
   if(v==='dedup'||v==='ch'){const b=S.b, r=S.r;
     if(v==='dedup'&&!S.mh) return `<p>${tx('Only exact copies are removed: a copy is caught only when its hash equals its original’s, that is when s = 1.','只去完全一样的副本：副本的哈希和原文相同才会被抓住，也就是 s = 1 时。')}</p>`;
     const row=s=>{const a=Math.pow(s,r), p=PofS(s,b,r); return `<p>${tx(`A pair at s = ${fixd(s,1)}: one group agrees with chance ${fixd(s,1)} to the power ${r}, and at least one of the ${b} groups agrees with`,`相似度 s = ${fixd(s,1)} 的一对：一组全部相同的机会是 ${fixd(s,1)} 的 ${r} 次方，${b} 组里至少有一组全部相同的机会是`)}</p>`+M(`P(${fixd(s,1)}) = 1 - (1 - ${fixd(s,1)}^{${r}})^{${b}}`)+M(`= 1 - (1 - ${f4(a)})^{${b}} = ${f3(p)}`);};
-    return `<p>${tx('A pair of similarity s is caught with chance','相似度为 s 的一对网页被抓住的机会是')}</p>`+M('P(s) = 1 - (1 - s^r)^b')+`<p>${t('b','b')} = ${b}${tx(', ','，')}${t('r','r')} = ${r}</p>`+row(0.8)+row(0.5)+
+    return `<p>${tx(`All r hash values of a group agree with chance ${A.ui.math('s^r')}, so a pair of similarity s is caught with chance`,`一组 r 个哈希值全部相同的机会是 ${A.ui.math('s^r')}，所以相似度为 s 的一对网页被抓住的机会是`)}</p>`+M('P(s) = 1 - (1 - s^r)^b')+`<p>${t('b','b')} = ${b}${tx(', ','，')}${t('r','r')} = ${r}</p>`+row(0.8)+row(0.5)+
       `<p>${tx('The curve rises steepest near this similarity:','曲线在这个相似度附近升得最陡：')}</p>`+M('t \\approx (1/b)^{1/r}')+M(`= (1/${b})^{1/${r}} = ${f3(thrOf(b,r))}`);}
   const f=fates(S), hide=runHidden()||!PL.watched.has(f.sig);
   if(hide) return `<p>${tx('The counts appear once the run has ended.','动画播完后，这里给出各环节的数。')}</p>`;
@@ -1084,6 +1090,7 @@ function render(){
   if(mode==='challenge'){if(!CH.Bs.includes(S.b)) S.b=CH.start.b; if(!CH.Rs.includes(S.r)) S.r=CH.start.r; S.mh=1;}
   if(mode==='guided'){const s=STEPS[step]; if(s&&s.expect&&s.expect()) observed[step]=true;}
   const v=viewNow();
+  $('#dl-graph',app).dataset.v=v;   // before drawing: part 4's wide layout (data-pipeline.css) sets the width and height the curve is drawn at
   if(funnelView(v)) showRun(); else stopAnim();   // first, so the status, cards and math below know whether this picture has been watched (R3.8)
   drawHead();
   $('#dl-fbox',app).hidden=!funnelView(v);
@@ -1094,7 +1101,6 @@ function render(){
   if(funnelView(v)){$('#dl-f-cap',app).textContent=runHidden()?tx('Pick a guess in the card; the run starts then.','先在卡片里选一个答案，动画就开始。'):tx('Each square is one page. Point at one to see what it really is and why it went where it went.','每个小方块是一个网页。鼠标移到方块上，能看到它到底是什么、为什么去了那里。'); drawFunnel(); drawFLeg();}
   if(v==='dedup'||v==='ch') drawCurve();
   if(v==='mix') drawMix();
-  $('#dl-graph',app).dataset.v=v;
   drawMetrics();
   const mb=$('#dl-mathbody',app), mh=mathHTML(); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}
   syncControls(); updateRail();
@@ -1185,7 +1191,8 @@ function keepStage(){stageStop();
     let dy=r.top-want; if(dy>=-2||c.bottom<want) return;
     dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
   stageT=setTimeout(tk,A.reduceMotion()?30:150);}
-/* part 4 stacks the example over the curve; moving b or r scrolls the sticky stage (not the page) to the curve they change */
+/* where part 4 stacks the example over the curve (a stage narrower than the side-by-side layout), moving b or r scrolls the sticky
+   stage (not the page) to the curve they change; beside the signatures the curve is already in view, and nothing moves */
 function revealCurve(){if(!app||!isP('dedup')) return; const st=$('#dl-stage',app), cv=$('#dl-curve',app); if(!st||!cv||innerWidth<=760||getComputedStyle(st).overflowY!=='auto') return;
   const sr=st.getBoundingClientRect(), cr=cv.getBoundingClientRect(); if(cr.top>=sr.top&&cr.bottom<=sr.bottom) return; st.scrollTop+=cr.top-sr.top-40;}
 function revealObs(){if(!app) return; if(mode==='guided') revealBox($('#dl-rail [data-obs]',app)); else if(mode==='sandbox') revealBox($('#dl-insight',app)); else revealBox($('#dl-ch-res',app));}

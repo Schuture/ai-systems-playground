@@ -171,7 +171,7 @@ const bCtl=(id,inline)=>A.ui.range({id,key:'lc',label:tx('Compute budget','算�
 const nCtl=(id,inline)=>A.ui.range({id,key:'ln',label:tx('Model size (parameters)','模型大小（参数量）'),min:0,max:(LN_MAX-LN_MIN)/LN_STEP,value:snap(Math.log10(S.N),LN_MIN,LN_STEP),out:fP(S.N),inline});
 const dCtl=(id,inline)=>A.ui.range({id,key:'ld',label:tx('Training tokens','训练 token 数'),min:0,max:(LD_MAX-LD_MIN)/LD_STEP,value:snap(Math.log10(S.C/(6*S.N)),LD_MIN,LD_STEP),out:fTok(S.C/(6*S.N)),inline});
 const budSeg=(id,inline)=>A.ui.seg({id,key:'bud',label:tx('Compute budget','算力预算'),options:BUD.map(c=>[String(Math.round(Math.log10(c))),fF(c)]),value:String(Math.round(Math.log10(S.C)*100)/100),inline});
-const tSeg=(id,inline)=>A.ui.seg({id,key:'T',label:tx('Tokens it will serve','它要服务的 token 数'),options:TS.map(t=>[String(TS.indexOf(t)),t===0?tx('0 (training only)','0（只算训练）'):fTokS(t)]),value:String(TS.indexOf(S.T)),inline});
+const tSeg=(id,inline)=>A.ui.seg({id,key:'T',label:tx('Tokens it will serve (assumed)','它要服务的 token 数（假设值）'),options:TS.map(t=>[String(TS.indexOf(t)),t===0?tx('0 (training only)','0（只算训练）'):fTokS(t)]),value:String(TS.indexOf(S.T)),inline});
 const lv3Res=v=>{const r=PLANS[v]; return `loss ${fL(lossOf(r.N,r.D))}`;};
 const lv3Now=()=>PLANK.find(k=>near(S,PLANS[k]))||null;
 function near(s,r){return Math.abs(s.N/r.N-1)<1e-6&&Math.abs(s.C/(6*r.N*r.D)-1)<1e-6;}
@@ -195,18 +195,16 @@ const STEPS=[
   lead:()=>tx('Loss = what no model removes + the cost of a small model + the cost of little data.','loss = 谁也去不掉的部分 + 模型小的代价 + 数据少的代价。'),
   enter:()=>{lv3=null; lv3Tried=new Set(); return {...BASE,...planState('big')};},
   body:()=>{const g=10**(-FIT.al), d=10**(-FIT.be);
-   return tx(`<p>The Chinchilla authors trained many models, of different sizes and on different numbers of tokens, and ${DEF('fitted',TIP.fit())} their final losses with one formula. This lab’s constants come from Epoch AI’s refit of the same data (see the notes at the end of the page).</p>`+M(LFX)+`<p>The loss is the sum of three terms.</p>`+
+   return tx(`<p>In the Chinchilla paper, DeepMind trained many models, of different sizes and on different numbers of tokens, and ${DEF('fitted',TIP.fit())} their final losses with one formula. The formula adds up three terms:</p>`+M(LFX)+
                `<ul class="sl-terml"><li><b>What no model removes</b> is the first term, E. Language itself is uncertain: however big the model and however much the data, the loss stays above E.</li>`+
                `<li><b>The cost of a small model</b> is the second term, ${A.ui.math('\\frac{A}{N^{\\alpha}}')}. N, the number of parameters, is in its denominator, so the more parameters, the smaller this term.</li>`+
                `<li><b>The cost of little data</b> is the third term, ${A.ui.math('\\frac{B}{D^{\\beta}}')}. D, the number of training tokens, is in its denominator, so the more tokens, the smaller this term.</li></ul>`+
-               `<p>E, A, B, α and β are all fitted constants. The exponents α and β set how fast the two costs fall: the larger the exponent, the faster its term falls as the parameters or the tokens grow. In this fit α is about ${fixd(FIT.al,2)} and β about ${fixd(FIT.be,2)}, so the two fall about as fast.</p>`+
-               `<p>Both fall ever more slowly. Ten times the parameters leave about ${Math.round(g*100)}% of the second term. Ten times the tokens leave about ${Math.round(d*100)}% of the third.</p><p>The three plans below use the same compute. Pick one, put it into the formula and see its loss.</p>`,
-             `<p>Chinchilla 的作者训了很多个模型，大小和 token 数各不相同，再用一个公式${DEF('拟合',TIP.fit())}它们最后的 loss。这个 Lab 的常数来自 Epoch AI 对同一批数据的重新拟合（见页末的“简化、假设和来源”）。</p>`+M(LFX)+`<p>loss 由三项相加。</p>`+
-               `<ul class="sl-terml"><li><b>谁也去不掉的部分</b>是第一项 E。语言本身就有不确定性，模型再大、数据再多，loss 也低不过 E。</li>`+
+               `<p>E, A, B, α and β are all fitted constants. The exponents α and β set how fast the two costs fall: the larger the exponent, the faster its term falls as the parameters or the tokens grow. In the fit this Lab uses (see the end of the page), α is about ${fixd(FIT.al,2)} and β about ${fixd(FIT.be,2)}, and both terms fall ever more slowly: every tenfold in parameters leaves about ${Math.round(g*100)}% of the second term, every tenfold in tokens about ${Math.round(d*100)}% of the third, so each drop is smaller than the one before.</p><p>The three plans below use the same compute. Pick one, put it into the formula and see its loss. The sliders in the chart move too, but the result covers only these three plans.</p>`,
+             `<p>DeepMind 在 Chinchilla 论文里训了很多大小、token 数各不相同的模型，再用一个公式${DEF('拟合',TIP.fit())}它们最后的 loss。这个公式是三项相加：</p>`+M(LFX)+
+               `<ul class="sl-terml"><li><b>谁也去不掉的部分</b>是第一项 E。语言本身有不确定性，模型再大、数据再多，loss 也低不过 E。</li>`+
                `<li><b>模型小的代价</b>是第二项 ${A.ui.math('\\frac{A}{N^{\\alpha}}')}。N 是参数量，在分母上，所以参数越多，这一项越小。</li>`+
                `<li><b>数据少的代价</b>是第三项 ${A.ui.math('\\frac{B}{D^{\\beta}}')}。D 是训练用的 token 数，也在分母上，所以 token 越多，这一项越小。</li></ul>`+
-               `<p>E、A、B、α、β 都是拟合出来的常数。α 和 β 是两个指数，管这两项降得多快。指数越大，参数或 token 变多时，对应的那一项降得越快。这个拟合里 α 约是 ${fixd(FIT.al,2)}，β 约是 ${fixd(FIT.be,2)}，两项降得差不多快。</p>`+
-               `<p>两项都越降越慢。参数量变成 10 倍，第二项只剩原来的约 ${Math.round(g*100)}%。token 数变成 10 倍，第三项只剩约 ${Math.round(d*100)}%。</p><p>下面三种方案用的算力一样多。选一种代进公式，看看它的 loss 是多少。</p>`)+lv3Ctl();},
+               `<p>E、A、B、α、β 都是拟合出来的常数。α 和 β 是两个指数，管这两项降得多快：指数越大，参数或 token 变多时，对应的那一项降得越快。这个 Lab 用的拟合里（见页末），α 约是 ${fixd(FIT.al,2)}，β 约是 ${fixd(FIT.be,2)}，两项都越降越慢：参数量每变成 10 倍，第二项都只剩约 ${Math.round(g*100)}%；token 数每变成 10 倍，第三项都只剩约 ${Math.round(d*100)}%，所以每次降下来的量越来越少。</p><p>下面三种方案用的算力一样多。选一种代进公式，看看它的 loss 是多少。图里的滑块也能拖，但结果只算这三种方案。</p>`)+lv3Ctl();},
   obs:()=>obsTerms()},
  {id:'iso',title:{en:'Fix the budget, move along the curve',zh:'固定预算，沿着曲线走'},view:'iso',expect:()=>atOpt(),showMe:()=>setN(optOf(S.C).N),label:{en:'Result',zh:'结果'},
   lead:()=>tx('Too big a model gets too little data. Too small a model gains little from the extra tokens.','模型太大，分到的数据太少。模型太小，多读的数据也帮不上多少。'),
@@ -217,8 +215,8 @@ const STEPS=[
  {id:'serve',title:{en:'Past the optimum, on purpose',zh:'故意训过头'},view:'tot',expect:()=>tSeen.has(1e14),showMe:()=>setT(1e14),label:{en:'Result',zh:'结果'},
   lead:()=>tx('A model is trained once and used many times: a smaller one is cheaper every time.','模型训一次、用很多次：小模型每次推理都更便宜。'),
   enter:()=>{tSeen=new Set([0]); return {...BASE,C:6*LLAMA8*TOK15,N:LLAMA8,T:0};},
-  body:()=>tx(`<p>Meta trained Llama 3’s 8B model on over 15T tokens, close to 1,900 per parameter, far past 20. Why train it so long? Below, the serving compute is counted too.</p><p>A trained model then serves users. Each token it generates takes one multiply-add per parameter, about 2N FLOPs, so a smaller model is cheaper every time it runs. Training plus serving takes:</p>`+M(TOTX())+`<p>Every point in the chart reaches the same loss as Llama 3 8B: ${fL(L5)} in this lab’s formula. Llama 3 8B is far outside the runs the fit was made from, so this loss is only a yardstick for comparing choices. The dashed curve counts training only; the solid one adds serving. Pick how many tokens the model will serve and see where the lowest point of the solid curve moves.</p>`,
-              `<p>Meta 用超过 15T 个 token 训练了 Llama 3 的 8B 模型，每个参数将近 1,900 个，远远超过 20。为什么要训这么久？下面把服务的算力也算进来。</p><p>模型训完还要服务用户。每生成一个 token，每个参数要做一次乘加，约 2N 个 FLOP。所以模型越小，每次推理越便宜。训练加服务，一共要花的算力是：</p>`+M(TOTX())+`<p>图里每一点都做到同一个 loss，和 Llama 3 8B 一样，按这个 Lab 的公式是 ${fL(L5)}。Llama 3 8B 远远超出了拟合用到的数据，所以这个 loss 只能当一把尺子，用来比较不同的选择。虚线只算训练，实线再加上服务。选一个服务量，看看实线的最低点往哪边移。</p>`)+tSeg('sl-ic-T',true),
+  body:()=>tx(`<p>Meta trained Llama 3’s 8B model on over 15T tokens, close to 1,900 per parameter, far past the roughly 20 per parameter that is cheapest when only training counts. The reason is that a trained model then serves users: each token it generates takes about 2N FLOPs (one multiply-add per parameter), so a smaller model is cheaper every time it runs.</p><p>Training plus serving takes:</p>`+M(TOTX())+`<p>Every point on a curve is one model size, trained on just enough tokens to reach Llama 3 8B’s loss (in this lab’s formula, only for comparing); up is the compute it takes. The dashed curve counts training only. Pick how many tokens the model will serve: a solid curve that adds serving appears; see where its lowest point moves.</p>`,
+              `<p>Meta 用超过 15T 个 token 训练了 Llama 3 的 8B 模型，每个参数将近 1,900 个，远远超过只算训练时最省的约 20 个。原因是模型训完还要服务用户：每生成一个 token 约要 2N 个 FLOP（每个参数一次乘加），模型越小，每次推理越便宜。</p><p>训练加服务，一共要花的算力是：</p>`+M(TOTX())+`<p>曲线上每一点是一个模型大小，token 数取到刚好做到 Llama 3 8B 的 loss（按这个 Lab 的公式算，只用来比较）；纵轴是要花的算力。虚线只算训练。选一个服务量，图里会多出一条加上服务的实线，看看它的最低点往哪边移。</p>`)+tSeg('sl-ic-T',true),
   obs:()=>obsServe()},
  {id:'remember',title:{en:'What to remember',zh:'要记住的'},view:()=>({nd:'nd',iso:'iso',tot:'tot'}[remView]||'nd'),
   lead:()=>tx('Training costs about 6ND. As the budget grows, grow parameters and tokens together. For heavy use, train smaller and longer.','训练算力约是 6ND。预算变大，参数和 token 一起长。要大量服务的模型，训得小一点、久一点。'),
@@ -269,11 +267,11 @@ function obsIso(){
 }
 function obsServe(){
   const b=totBest(L5,S.T), b0=totBest(L5,0);
-  if(S.T===0) return tx(`<p><b>Counting training only, the cheapest way to reach this loss is a ${fP(b0.N)} model trained on ${fTok(b0.D)} tokens, close to 20 tokens per parameter. Llama 3 8B’s training takes about ${fixd(6*LLAMA8*TOK15/b0.train,1)} times the compute of that model.</b> Now pick how many tokens the model will serve, to count serving too.</p>`,
-                         `<p><b>只算训练时，做到这个 loss 最省的是一个 ${fP(b0.N)} 的模型，训 ${fTok(b0.D)} 个 token，接近每个参数 20 个 token。Llama 3 8B 的训练算力是这个模型的约 ${fixd(6*LLAMA8*TOK15/b0.train,1)} 倍。</b>再选一个服务量，把服务的算力也算进来。</p>`);
+  if(S.T===0) return tx(`<p><b>Counting training only, the cheapest way to reach this loss is a ${fP(b0.N)} model trained on ${fTok(b0.D)} tokens, close to 20 tokens per parameter. Llama 3 8B’s training takes about ${fixd(6*LLAMA8*TOK15/b0.train,1)} times the compute of that model.</b></p>`,
+                         `<p><b>只算训练时，做到这个 loss 最省的是一个 ${fP(b0.N)} 的模型，训 ${fTok(b0.D)} 个 token，接近每个参数 20 个 token。Llama 3 8B 的训练算力是这个模型的约 ${fixd(6*LLAMA8*TOK15/b0.train,1)} 倍。</b></p>`);
   const head=tx(`<p><b>Serving ${fTokS(S.T)} tokens, the cheapest model for this loss has about ${fP(b.N)} parameters, trained on ${fTok(b.D)} tokens (${fR(b.r)} per parameter).</b></p>`,`<p><b>要服务 ${fTokS(S.T)} 个 token 时，做到这个 loss 最省的模型约 ${fP(b.N)} 个参数，训 ${fTok(b.D)} 个 token（每个参数 ${fR(b.r)} 个）。</b></p>`);
-  const why=tx(`<p>The more tokens it serves, the bigger the share of serving in the total, and the further the cheapest size moves left: a smaller model trained longer. ${S.T===1e14?'At 100T tokens the cheapest size is already close to Llama 3 8B itself.':''}</p><p>Small open models do the same. Hugging Face trained SmolLM 135M on 600B tokens, over 4,000 per parameter. Its blog says small models dramatically reduce inference costs, and that performance kept improving with longer training, even past the Chinchilla optimal point.</p><p class="small muted">The served tokens are this lab’s assumption: Meta has not published how many tokens Llama 3 serves.</p>`,
-               `<p>要服务的 token 越多，服务花的算力占得越重，最省的模型就越往左移，也就是模型更小、训得更久。${S.T===1e14?'服务 100T 个 token 时，最省的大小已经很接近 Llama 3 8B 本身。':''}</p><p>小的开源模型也这样做。Hugging Face 的 SmolLM 135M 训了 600B 个 token，每个参数超过 4,000 个。他们的博客说，小模型能大幅降低推理成本。他们还发现，训过 Chinchilla 的最优点以后，效果还在变好。</p><p class="small muted">服务量是这个 Lab 的假设：Meta 没有公布 Llama 3 实际服务了多少 token。</p>`);
+  const why=tx(`<p>The more tokens it serves, the bigger serving’s share of the total, and the further the cheapest size moves left: a smaller model trained longer. ${S.T===1e14?'At 100T the cheapest size is already close to Llama 3 8B itself.':''}</p><p>Small open models do the same: Hugging Face trained SmolLM 135M on 600B tokens, over 4,000 per parameter.</p>`,
+               `<p>要服务的 token 越多，服务花的算力占得越重，最省的模型就越往左移：模型更小、训得更久。${S.T===1e14?'到 100T 时，最省的模型已经很接近 Llama 3 8B 本身。':''}</p><p>小的开源模型也这样做：Hugging Face 的 SmolLM 135M 训了 600B 个 token，每个参数超过 4,000 个。</p>`);
   return head+why;
 }
 function remBtn(k){const on=remView===k;
@@ -516,7 +514,7 @@ function controlsHTML(){
    `<p class="ctl-lock" id="sl-lock" hidden></p>`+
    `<div class="lockable" id="sl-ctl-lc-wrap">${bCtl('sl-ctl-lc',false)}</div>`+
    `<div class="lockable" id="sl-ctl-ln-wrap">${nCtl('sl-ctl-ln',false)}</div>`+
-   `<div class="lockable" id="sl-ctl-T-wrap">${A.ui.seg({id:'sl-ctl-T',key:'T',label:tx('Tokens it will serve','它要服务的 token 数'),options:TS.map(t=>[String(TS.indexOf(t)),t===0?'0':fTokS(t)]),value:String(TS.indexOf(S.T)),note:NOTE.T()})}</div>`+
+   `<div class="lockable" id="sl-ctl-T-wrap">${A.ui.seg({id:'sl-ctl-T',key:'T',label:tx('Tokens it will serve (assumed)','它要服务的 token 数（假设值）'),options:TS.map(t=>[String(TS.indexOf(t)),t===0?'0':fTokS(t)]),value:String(TS.indexOf(S.T)),note:NOTE.T()})}</div>`+
    `<div class="lockable" id="sl-ctl-cap-wrap">${A.ui.seg({id:'sl-ctl-cap',key:'cap',label:tx('Usable training data','可用的训练数据'),options:CAPS.map((c,i)=>[String(i),c===0?tx('unlimited','不限'):fTokS(c)]),value:String(CAPS.indexOf(S.cap)),note:NOTE.cap()})}</div>`+
    `<div class="sl-grp lockable" id="sl-ctl-as"><div class="sl-gh">${tx('Assumed value','假设值')}</div>`+
     A.ui.range({id:'sl-ctl-u',key:'u',label:'MFU',min:20,max:60,step:5,value:Math.round(S.u*100),out:fPct(S.u),note:NOTE.u()})+`</div>`+
