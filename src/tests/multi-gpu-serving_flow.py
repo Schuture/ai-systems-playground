@@ -125,9 +125,13 @@ def guided(b, w, h, lang):
     # part 2: a new picture plays at medium speed; pause, resume, speed; Back and Next replay nothing; Replay
     nav(pg, 'next'); s = state(pg)
     check(f'{tag} part 2: entering plays one layer at medium speed (R3.9)', s['step'] == 1 and s['playing'] and s['plays'] == 1 and speed(pg) == 'med', (s, speed(pg)))
-    check(f'{tag} part 2: the observation waits for the layer to play', not pg.evaluate("()=>{const o=document.querySelector('#mgs-rail [data-obs]'); return !!o&&!o.hidden}"))
+    # reader 2026-10-16: the observation no longer waits for the layer to finish, as in parts 3, 5, 6 and 7; its numbers are on the metric cards from the start
+    o2 = pg.evaluate("()=>{const o=document.querySelector('#mgs-rail [data-obs]'); return o&&!o.hidden?o.innerText:''}")
+    check(f'{tag} part 2: the observation shows at once, while the layer plays', s['playing'] and Z(lang, 'A token takes 14.5 ms here', '这里每个 token 要 14.5 毫秒') in o2, o2[:200])
     click(pg, '#mgs-play', 200); s1 = state(pg); pg.wait_for_timeout(300); s2 = state(pg)
     check(f'{tag} part 2: Play pauses the layer where it is', not s1['playing'] and s1['ph'] == s2['ph'] and s1['ph'] > 0, (s1['ph'], s2['ph']))
+    tip = pg.evaluate("()=>document.querySelector('#mgs-play').dataset.tipx||''")
+    check(f'{tag} part 2: at the default speed one layer plays in about 8 s, under ten (owner B6)', Z(lang, 'about 8 s.', '约 8 秒。') in tip, tip)
     click(pg, '#mgs-play', 300); s3 = state(pg)
     check(f'{tag} part 2: Play resumes from there', s3['playing'] and s3['ph'] >= s1['ph'] and s3['plays'] == 2, s3)
     click(pg, '#mgs-run .seg-ctl[data-key="spd"] button[data-v="slow"]', 150)

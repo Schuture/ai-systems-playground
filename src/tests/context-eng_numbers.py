@@ -384,8 +384,11 @@ with sync_playwright() as pw:
     go(4); lever('sub')
     check('page part 5: 114,927, 88%, the sub-agent lowers part 4’s cost a little, no exact value', all(x in obs() for x in ('114,927', '88%', 'also lowers the cost a little')) and '428,783' not in obs() and not re.search(r'\d\.\d\dM', obs()), obs())
     go(5); end(); prod = H("()=>document.querySelector('#cte-rail .step.current').innerText")
-    links = H("()=>[...document.querySelectorAll('#cte-rail .step.current .cte-srcs a')].map(a=>a.href)")
-    check('page part 6 (owner point 4): Codex and Claude Code, five points, each with its sources', all(x in prod for x in ('Claude Code', 'Codex', '90% of the window', 'handoff summary', 'The Σ call')) and len(links) >= 9 and all(('code.claude.com/docs' in u) or ('github.com/openai/codex' in u) or ('openai.com/index' in u) for u in links), (prod[:400], links))
+    # polish round 3 (2026-10-16): the per-claim source links moved from the card to the page-end sources; every one must be there
+    links = H("()=>[...document.querySelectorAll('[data-endnotes] a')].map(a=>a.href)")
+    need = ['https://code.claude.com/docs/en/' + p for p in ('prompt-caching', 'how-claude-code-works', 'context-window', 'sub-agents')] + ['https://openai.com/index/unrolling-the-codex-agent-loop/'] + \
+        ['https://github.com/openai/codex/blob/c2f7fe89d87ce853900d0b5cb1f5dc4863e44d73/codex-rs/' + p for p in ('core/src/compact.rs', 'protocol/src/openai_models.rs', 'core/src/client.rs')]
+    check('page part 6 (owner point 4): Codex and Claude Code, five points; every source of the five points is in the page-end sources', all(x in prod for x in ('Claude Code', 'Codex', '90% of the window', 'handoff summary', 'misses the cache and costs more, not less', 'The Σ in the chart marks such a call', 'sources at the end of the page')) and all(u in links for u in need), (prod[:400], [u for u in need if u not in links]))
     go(6); end(); rem = H("()=>document.querySelector('#cte-rail .step.current').innerText")
     # the owner, 2026-10-08 (G2): the three points state the pattern, not the numbers of parts 2 to 4 (63%, less than half, about 2.5
     # times, 33%, barely moved); the misconceptions keep their computed numbers

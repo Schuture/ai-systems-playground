@@ -8,8 +8,9 @@ Every mode and every guided part at 1440×900 and 390×844, in EN and ZH:
   pick; then the replay auto-plays (R3.9) with pause, one step, to the end, three speeds (fast really is fast) and a scrubber; the stage
   keeps its height while it plays (R7.9); at the end the result, the verdict with the right answer, and why (R3.10);
 - parts 2 to 4: Next waits for the part's action; the result names the change; Settings shows only the part's own controls (R4.2);
-  ▲▼ badges only after the learner's own change (R6.6); part 2 links agent-anatomy and context-eng; part 5: five practices and
-  CaMeL; part 6: three points, three misconceptions, “See the scenarios”, the next-lab footer;
+  ▲▼ badges only after the learner's own change (R6.6); part 2 links agent-anatomy and context-eng; part 5: five practices, the
+  inbox assistant introduced with its replayed task, CaMeL in the papers list; a new replay (a part, ▶ Replay) shows only the events
+  played so far from the first frame (round 3); part 6: three points, three misconceptions, “See the scenarios”, the next-lab footer;
 - Scenarios: four, single choice, the pressed state follows the settings (R1.8); the URL carries the setup and a fresh page restores
   it; a change under Settings does not move the page (R3.2);
 - the challenge: only the four choices, Settings locked; live progress; the three feedback tiers (R4.4), tier 2 saying in its first
@@ -96,6 +97,10 @@ def click(pg, sel, wait=200, settle_=True):
 
 
 def go_part(pg, i): click(pg, f'#pin-rail [data-go="{i}"]', 250)
+# polish round 3, the first-time reader (2026-10-16): entering a part with a new replay showed the whole new task for one event, then
+# shrank it and replayed. Clicks here and reads the replay in the same task as the click, before any frame can redraw it.
+def click_now(pg, sel): return pg.evaluate("""s=>{document.querySelector(s).click(); const st=window.__pin.state();
+  return {pos:st.pos, len:st.len, playing:st.playing, blk:document.querySelectorAll('#pin-ctx .pin-blk').length, li:document.querySelectorAll('#pin-log .pin-li:not(.none)').length};}""", sel)
 def mode(pg, m): click(pg, f'#pin-app .modes button[data-mode="{m}"]', 350)
 
 
@@ -344,17 +349,22 @@ def run(b, w, h, lang):
     settle(pg)
     rules(pg, f'{tag} part 4', lang); ov('part 4'); shot(pg, f'{tag}-06-p4', full=(w > 700))
     # ---- part 5 ----
-    go_part(pg, 4)
-    cur = text(pg, '#pin-rail .step.current')
-    check(f'{tag} part 5: five practices and CaMeL, Next enabled', pg.evaluate("()=>document.querySelectorAll('#pin-rail .pin-teams li').length") == 5 and 'CaMeL' in cur and not any(nexts(pg)), cur[:200])
+    r5 = click_now(pg, '#pin-rail [data-go="4"]'); pg.wait_for_timeout(250); settle(pg)
+    check(f'{tag} part 5: the inbox replay starts over and its box holds only the events played so far (no end shown first)', r5['playing'] and r5['pos'] < r5['len'] and r5['blk'] == r5['pos'] and r5['li'] == 0, r5)
+    cur = text(pg, '#pin-rail .step.current'); cap = text(pg, '#pin-rp-cap')
+    papers = pg.evaluate("()=>[...document.querySelectorAll('ul.refs li')].map(l=>l.textContent).join(' | ')")
+    # round 3: the card introduces the inbox assistant and names the replayed task as its caption does; CaMeL moved to the papers list
+    task = Z(lang, 'Reply to a colleague', '回复同事')
+    check(f'{tag} part 5: five practices; the card introduces the inbox assistant and its replayed task; CaMeL is in the papers list; Next enabled', pg.evaluate("()=>document.querySelectorAll('#pin-rail .pin-teams li').length") == 5 and Z(lang, 'The chart now shows an inbox assistant', '图里换成了邮件助手') in cur and task in cur and task in cap and 'read_files' in cur and 'CaMeL' in papers and not any(nexts(pg)), (cur[:300], cap, papers[-300:]))
     rules(pg, f'{tag} part 5', lang); ov('part 5'); shot(pg, f'{tag}-07-p5', full=(w > 700))
     # ---- part 6 ----
     go_part(pg, 5)
     st = state(pg)
     check(f'{tag} R3.20: part 6 brings back the page agent’s run already watched: no replay, its end at once', st['wl'] == 'page' and not st['playing'] and st['pos'] == st['len'], st)
-    pg.evaluate("()=>document.querySelector('#pin-play').click()"); pg.wait_for_timeout(120)
+    r6 = click_now(pg, '#pin-play'); pg.wait_for_timeout(120)
     st = state(pg)
     check(f'{tag} R3.20: ▶ Replay still plays a run already seen, from the request', st['playing'] and st['from'] == 2, st)
+    check(f'{tag} ▶ Replay: the box goes back to the events played so far at once (round 3)', r6['playing'] and r6['pos'] < r6['len'] and r6['blk'] == r6['pos'], r6)
     click(pg, '#pin-player [data-act="end"]', 120)
     cur = text(pg, '#pin-rail .step.current')
     check(f'{tag} part 6: three points, three misconceptions, See the scenarios', cur.count('✗') == 3 and pg.evaluate("()=>document.querySelectorAll('#pin-rail .pin-remlist li').length") == 3 and pg.evaluate("()=>!!document.querySelector('#pin-rail [data-mode-go=\"sandbox\"]')"), cur[:200])
@@ -536,6 +546,44 @@ check('H5 src: the stage hairline rule is in the lab’s CSS', 'H5 (the owner, 2
 for _x in _H1_SRC_NEW:
     check(f'H1/H2 src: present: {_x[:70]}', _x in _h1src)
 # end H1 H2
+# polish round 3 (2026-10-16, B4 / R7.12, the owner: "the panel was pushed down, I did not see there was more below"): at 1440 × 900,
+# entering each listed guided part the way a reader does (Next), the stage needs no scrolling inside itself and nothing in it
+# scrolls either; in Chinese it could still grow by 30 px (its max-height minus the height its content and borders need), in
+# English it does not scroll; its main picture lies inside it and on the screen. The real layout: window.__aspPrimer, as the probe.
+_FIT_PARTS = [1, 2, 3, 4, 5, 6]
+_FIT_V = "(()=>{const v=document.querySelector('#view-dyn:not([hidden])')||document.querySelector('#view-lab:not([hidden])'); return [...v.querySelectorAll('.bench')].find(x=>x.offsetParent)||v;})()"
+_FIT_M = ("(()=>{const b=" + _FIT_V + ", s=b.querySelector(':scope>.stage'), cur=b.querySelector('.steps>.step.current'), r=s.getBoundingClientRect(), tb=(document.querySelector('.topbar')||{offsetHeight:0}).offsetHeight; let inner=0;"
+          "s.querySelectorAll('*').forEach(e=>{const c=getComputedStyle(e); if(/(auto|scroll)/.test(c.overflowY)&&e.getClientRects().length) inner=Math.max(inner,e.scrollHeight-e.clientHeight);});"
+          "const f=[...s.querySelectorAll('svg,canvas')].filter(e=>e.getClientRects().length&&!e.closest('button,.btn')).map(e=>e.getBoundingClientRect()).sort((x,y)=>y.width*y.height-x.width*x.height)[0];"
+          "return {part:cur?[...cur.parentNode.children].indexOf(cur)+1:0, spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, inner,"
+          "fig:!f||(f.top>=r.top-1&&f.bottom<=r.bottom+1&&f.top>=tb-2&&f.bottom<=innerHeight+2)};})()")
+if '1440' in str(SIZES):
+    with sync_playwright() as _fp:
+        _fb = _fp.chromium.launch()
+        for _lang in LANGS:
+            _pg = _fb.new_page(viewport={'width': 1440, 'height': 900}); _pg.add_init_script('window.__aspPrimer=true')
+            _pg.on('pageerror', lambda e, _l=_lang: errs.append(f'fit 1440 {_l}: {e}'))
+            _pg.goto(URL); _pg.wait_for_timeout(300); _pg.click(f'.langsw button[data-lang="{_lang}"]'); _pg.wait_for_timeout(80)
+            _pg.evaluate("()=>{location.hash='prompt-injection'}"); _pg.wait_for_timeout(500)
+            _g = _pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+            if _g.count(): _g.first.click(); _pg.wait_for_timeout(700)
+            for _i in range(1, max(_FIT_PARTS) + 1):
+                if _i > 1:
+                    _nb = _pg.locator('.pbar [data-nav=next]:visible:not([disabled])')
+                    if _nb.count(): _nb.first.click()
+                    else: _pg.evaluate(f"{_FIT_V}.querySelector('.steps>.step:nth-child({_i}) .step-h').click()")
+                    _pg.wait_for_timeout(900)
+                if _i not in _FIT_PARTS: continue
+                _f = _pg.evaluate(_FIT_M)
+                if _lang == 'zh':
+                    check(f'B4 1440 zh part {_i}: the stage fits without scrolling inside, nothing in it scrolls, 30 px to spare, its picture inside it and on screen (R7.12)',
+                          _f['part'] == _i and _f['scroll'] <= 0 and _f['inner'] <= 4 and _f['spare'] >= 30 and _f['fig'], _f)
+                else:
+                    check(f'B4 1440 en part {_i}: the stage fits without scrolling inside, its picture inside it and on screen (R7.12)',
+                          _f['part'] == _i and _f['scroll'] <= 0 and _f['spare'] >= 0 and _f['fig'], _f)
+            _pg.close()
+        _fb.close()
+# end B4
 check('no page errors', not errs, errs[:5])
 # the owner, 2026-10-08 (G1, G2) src: every option group leads in with what to pick and what to watch (G1); no sentence leans on an earlier part's detail (G2)
 _src = (P / 'labs' / 'prompt-injection.js').read_text() + (P / 'teasers' / 'prompt-injection.js').read_text()

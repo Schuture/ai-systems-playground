@@ -306,11 +306,11 @@ const STEPS=[
              `<p><b>${p5p} 张卡做 prefill 时，prompt 不用久等：${fP(r.m.all.ok_frac)} 的请求达标。</b></p><p>${p5p===3?`聊天的最长间隔也只有 ${g}。这里 1 张 decode 的卡就够，因为这些回答 decode 起来不费力：每一步只读一遍权重，就给它手上的每个请求各出一个 token。`:`聊天的最长间隔也只有 ${g}，两组卡的数量都够用了。`}</p>`);}},
  {id:'kv',title:{en:'What moves: the KV cache',zh:'传过去的是 KV cache'},lead:{en:'Same node or across nodes?',zh:'同一台机器，还是跨机器？'},expect:()=>!!tried.ib,
   body:()=>{const doc=32768;
-   return tx(`<p>What crosses from the prefill GPU to the decode GPU is the prompt’s KV cache. Every decode step reads the KV cache of all the request’s earlier tokens; without it, the decode GPU would have to redo the prefill, so the KV cache is sent over.</p><p>For ${M8B} the KV cache is 128 KiB per token (${labLink('kv-cache')}).</p><p>A 32,768-token document’s KV cache is ${GIB(XB(doc))} (${GB(XB(doc))}).</p><ul class="pdd-links"><li>${DEF(tx('Same node, NVLink','同一台机器，NVLink'),TIP.nvl())}: 450 GB/s in one direction, ${fT(XT(doc,'nvl'))} for that document.</li><li>${DEF(tx('Across nodes, InfiniBand','跨机器，InfiniBand'),TIP.ib())}: 50 GB/s, ${fT(XT(doc,'ib'))}.</li></ul><p class="small">Here each prefill GPU sends one KV cache at a time. The first token is computed by the prefill GPU and goes straight to the user; only after the KV cache reaches the decode GPU can the second token be written. So the transfer time lands between the 1st and 2nd tokens, the first gap of each answer. Pick a link and watch that gap.</p>`+linkSeg('pdd-ic-link',p6l),
-             `<p>从 prefill 的卡传到 decode 的卡的，是 prompt 的 KV cache。decode 每出一个 token，都要读这个请求前面所有 token 的 KV cache；decode 的卡上没有它，就得把 prefill 重算一遍，所以要把它传过去。</p><p>${M8B} 每个 token 的 KV cache 是 128 KiB（见 ${labLink('kv-cache')}）。</p><p>一篇 32,768 个 token 的文档，KV cache 就是 ${GIB(XB(doc))}（${GB(XB(doc))}）。</p><ul class="pdd-links"><li>${DEF('同一台机器，NVLink',TIP.nvl())}：单向 450 GB/s，这篇文档要 ${fT(XT(doc,'nvl'))}。</li><li>${DEF('跨机器，InfiniBand',TIP.ib())}：50 GB/s，要 ${fT(XT(doc,'ib'))}。</li></ul><p class="small">这里每张 prefill 的卡一次只传一份 KV cache。第一个 token 由 prefill 的卡算出来，直接给用户；KV cache 传到 decode 的卡以后，才能写第二个 token。所以传输的时间加在第 1 个和第 2 个 token 之间，也就是每个回答的第一个间隔上。选一种连接，看看这个间隔怎么变。</p>`+linkSeg('pdd-ic-link',p6l));},
+   return tx(`<p>The prefill GPU must send the prompt’s KV cache to the decode GPU: every decode step reads the KV cache of all the earlier tokens, and without it the decode GPU would have to redo the prefill. The prefill GPU computes the first token and sends it to the user; the second waits for the KV cache, so the transfer lands on each answer’s first gap.</p><p>For ${M8B} the KV cache is 128 KiB per token (${labLink('kv-cache')}), so a 32,768-token document’s is ${GIB(XB(doc))} (${GB(XB(doc))}):</p><ul class="pdd-links"><li>${DEF(tx('Same node, NVLink','同一台机器，NVLink'),TIP.nvl())}: 450 GB/s in one direction, ${fT(XT(doc,'nvl'))}.</li><li>${DEF(tx('Across nodes, InfiniBand','跨机器，InfiniBand'),TIP.ib())}: 50 GB/s in one direction, ${fT(XT(doc,'ib'))}.</li></ul><p class="small">Pick a link and watch the chats’ longest gap.</p>`+linkSeg('pdd-ic-link',p6l),
+             `<p>prefill 的卡要把 prompt 的 KV cache 传给 decode 的卡：decode 每出一个 token 都要读前面所有 token 的 KV cache，不传就得把 prefill 重算一遍。第一个 token 由 prefill 的卡算出、直接给用户，第二个要等传完才能写，所以传输时间加在每个回答的第一个间隔上。</p><p>${M8B} 每个 token 的 KV cache 是 128 KiB（见 ${labLink('kv-cache')}），一篇 32,768 个 token 的文档就是 ${GIB(XB(doc))}（${GB(XB(doc))}）：</p><ul class="pdd-links"><li>${DEF('同一台机器，NVLink',TIP.nvl())}：单向 450 GB/s，要 ${fT(XT(doc,'nvl'))}。</li><li>${DEF('跨机器，InfiniBand',TIP.ib())}：单向 50 GB/s，要 ${fT(XT(doc,'ib'))}。</li></ul><p class="small">选一种连接，看聊天的最长间隔怎么变。</p>`+linkSeg('pdd-ic-link',p6l));},
   obs:()=>{const a=R6('nvl'), b=R6('ib');
-   return tx(`<p><b>Across nodes, the chats’ longest gap grows from ${fT(a.m.chat.gap_max)} to ${fT(b.m.chat.gap_max)}, still within the goal.</b></p><p>With either link, ${fP(b.m.all.ok_frac)} of requests meet their goals.</p><p>A document’s KV cache takes ${fT(XT(32768,'ib'))} to cross, and a chat whose prefill finishes right behind it waits for that transfer too. Each request moves its KV cache once, so the link lengthens the first gap of each answer, not every gap.</p>`,
-              `<p><b>跨机器时，聊天的最长间隔从 ${fT(a.m.chat.gap_max)}涨到 ${fT(b.m.chat.gap_max)}，仍在目标之内。</b></p><p>两种连接下，都是 ${fP(b.m.all.ok_frac)} 的请求达标。</p><p>一篇文档的 KV cache 跨机器要 ${fT(XT(32768,'ib'))}，紧跟在它后面算完 prefill 的聊天也得等它传完。每个请求只传一次 KV cache，所以连接只拉长每个回答的第一个间隔，不是每个间隔。</p>`);}},
+   return tx(`<p><b>Across nodes, the chats’ longest gap grows from ${fT(a.m.chat.gap_max)} to ${fT(b.m.chat.gap_max)}, still within the goal.</b></p><p>With either link, ${fP(b.m.all.ok_frac)} of requests meet their goals.</p><p>A document’s KV cache takes ${fT(XT(32768,'ib'))} to cross, and each prefill GPU sends one at a time, so a chat whose prefill finishes right behind it waits for that transfer too.</p>`,
+              `<p><b>跨机器时，聊天的最长间隔从 ${fT(a.m.chat.gap_max)}涨到 ${fT(b.m.chat.gap_max)}，仍在目标之内。</b></p><p>两种连接下，都是 ${fP(b.m.all.ok_frac)} 的请求达标。</p><p>一篇文档的 KV cache 跨机器要 ${fT(XT(32768,'ib'))}；每张 prefill 的卡一次只传一份，紧跟在它后面算完 prefill 的聊天也得等它传完。</p>`);}},
  {id:'ratio',title:{en:'How many GPUs for each pool?',zh:'两组卡各配几张？'},lead:{en:'8 GPUs: goodput per GPU.',zh:'8 张卡：每张卡的达标吞吐。'},expect:()=>!!tried.r,
   // short (owner review 2026-10-14), and the two winners named by what they win: the best split, and colocated with chunks beating every split
   body:()=>tx(`<p>8 H100s; nine requests in ten are chats, one in ten a long document. Setups are compared by ${DEF('goodput per GPU',TIP.goodput())}: the most requests per second each GPU can take while at least 90% of requests still meet their goals. The bar chart under the timeline shows it for every setup.</p><p class="small">n:m means n GPUs prefill and m decode; “colocated (budget 512)” means no groups: every GPU does both, with chunked prefill of at most 512 tokens per step. Pick one to watch it serve 24 requests per second (3 per GPU).</p>`+p7Seg(),
@@ -551,9 +551,20 @@ function laneAt(w,t){
   return {lane:w.dg};}
 function gapAt(r){let gi=1, g=0; for(let i=1;i<r.toks.length;i++) if(r.toks[i]-r.toks[i-1]>g){g=r.toks[i]-r.toks[i-1]; gi=i;} return {gi,g};}
 const px=x=>x.toFixed(1);   // an SVG coordinate
+/* polish round 3 (2026-10-16, R7.12): on a wide stage more than four lanes are drawn shorter so part 7 fits a 1440 × 900 screen: the
+   lane's height and the gap between lanes are CSS variables on the timeline's box (--pdd-rh, --pdd-gap, set in pd-disagg.css), read
+   when it is drawn. Four lanes or fewer, and narrower stages (no variables), keep the heights they had. */
+function laneH(host,n){const cs=getComputedStyle(host), rh=parseFloat(cs.getPropertyValue('--pdd-rh')), g=parseFloat(cs.getPropertyValue('--pdd-gap'));
+  return n>4&&rh>0?[rh,g>=0?g:4]:[n<=1?30:n<=4?28:18,n<=4?6:4];}
+/* the timeline is drawn for its box's width (and the lane heights above): the stage widens without a window resize when the page puts
+   the step list beside it or leaves the primer, so it is drawn again when the stage's width changes */
+let stRO=null, stW=0;
+function watchStage(){if(stRO){stRO.disconnect(); stRO=null;} const st=app&&$('#pdd-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w; const run=curRun(); drawTimeline(run); drawWatch(run);}));
+  stRO.observe(st,{box:'border-box'});}
 function drawTimeline(run){
-  const host=$('#pdd-tl',app); if(!host) return; const W=Math.max(260,Math.round(host.clientWidth||600)), n=run.G.length;
-  const LW=W<520?50:84, RH=n<=1?30:n<=4?28:18, GAP=n<=4?6:4, T=Math.max(run.end,0.5), X=t=>LW+(W-LW-8)*t/T, rowY=i=>i*(RH+GAP)+2;
+  const host=$('#pdd-tl',app); if(!host) return; const W=Math.max(260,Math.round(host.clientWidth||600)), n=run.G.length, lh=laneH(host,n);
+  const LW=W<520?50:84, RH=lh[0], GAP=lh[1], T=Math.max(run.end,0.5), X=t=>LW+(W-LW-8)*t/T, rowY=i=>i*(RH+GAP)+2;
   const r=watchOf(run), w=r?pathOf(run,r):null, WY=n*(RH+GAP)+6, AY=WY+(r?46:0), H=AY+24;   // lanes, the chat's row, the axis
   const segs=segsOf(run), parts=[], body=[], lab=[];
   // the legend names only the marks this figure has (a first-time reader, 2026-10-14: no red block or KV line in part 1, so no key for them)
@@ -624,7 +635,7 @@ function drawWatch(run){
   if(lw) lw.dataset.tipx=tx(`Where request ${id} is. Blue outline: it is in that GPU’s batch (prefill, then decode). Blue line: its KV cache moving to the decode GPU. Dashed: it waits. While the run plays, the blue dot is where it is now. Its own row at the bottom: each tick is one of its tokens, the box its longest gap.`,`请求 ${id} 在哪：蓝框是它在那张卡的批里（先 prefill，再 decode），蓝线是它的 KV cache 传到 decode 的卡，虚线是它在等。播放时，蓝点是它此刻的位置。最下面一行是它自己：每条竖线是它的一个 token，框出的是最长的那次间隔。`);}
 function gpChartHTML(){
   const show=(mode==='guided'&&isP('ratio'))||mode==='sandbox'; if(!show) return '';
-  if(mode==='guided'){const cf=P7CFG(), ready=cf.every(x=>needGp('A',x.c)); if(!ready) return `<p class="small muted">${tx(`Computing goodput per GPU (${cf.filter(x=>PDD.goodputReady('A',x.c)).length} of ${cf.length})…`,`正在计算每张卡的达标吞吐（${cf.filter(x=>PDD.goodputReady('A',x.c)).length} / ${cf.length}）……`)}</p>`;
+  if(mode==='guided'){const cf=P7CFG(), ready=cf.every(x=>needGp('A',x.c)); if(!ready) return `<p class="small muted pdd-gp-wait">${tx(`Computing goodput per GPU (${cf.filter(x=>PDD.goodputReady('A',x.c)).length} of ${cf.length})…`,`正在计算每张卡的达标吞吐（${cf.filter(x=>PDD.goodputReady('A',x.c)).length} / ${cf.length}）……`)}</p>`;
     const vals=cf.map(x=>gpA(x.c)), best=Math.max(...vals);
     return A.ui.cmpChart({title:tx('How many requests per second can each of 8 H100s take with at least 90% meeting their goals?','8 张 H100，至少 90% 达标时，每张卡每秒能接多少个请求？'),aria:tx('Goodput per GPU for each setup','每种方案每张卡的达标吞吐'),
       rows:cf.map((x,i)=>({label:x.k==='co0'||x.k==='co512'?setupName(x.c):tx(`${x.c.p} prefill + ${8-x.c.p} decode`,`${x.c.p} 张 prefill、${8-x.c.p} 张 decode`),value:vals[i],text:tx(`${fR(vals[i])}/s`,`每秒 ${fR(vals[i])} 个`),best:vals[i]===best,me:(x.k==='co512'&&p7p===0)||(x.c.p===p7p&&x.c.mode==='split')})),max:8,legend:false});}
@@ -905,10 +916,10 @@ A.registerLab({
     A.shell.bindHeader(app,{id:ID,onMode:m=>{setMode(m); A.ui.reveal($('#pdd-rail',app)); keepStage();},token});
     bind(app); renderDrill();
     const rail=$('#pdd-rail',app); rail.innerHTML=railFull();
-    phNow=Infinity; render();
+    phNow=Infinity; render(); watchStage();
     if(mode==='guided'&&STEPS[step].id!=='mission') showRun();
     setTimeout(()=>{if(app) P7CFG().forEach(x=>needGp('A',x.c));},400);},
-  leave(){stopPlay(); clearTimeout(annT); stageStop(); root=null; app=null;},
+  leave(){stopPlay(); clearTimeout(annT); stageStop(); if(stRO){stRO.disconnect(); stRO=null;} root=null; app=null;},
   onLang(){if(root){const d=$('#pdd-math',app), open=d&&d.open, wasPlaying=PLAY.on; stopPlay(); this.mount(root,null); if(open) $('#pdd-math',app).open=true; if(wasPlaying) showRun();}},
   onResize(){if(app) render();},
   termTip(){return '';},

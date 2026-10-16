@@ -43,6 +43,23 @@ def check(name, ok, info=''):
 Z = lambda lang, en, zh: zh if lang == 'zh' else en
 
 
+# polish round 3 (2026-10-16, R7.12, the owner's B4; as tests/data-pipeline_flow.py part 4): on entering a listed part at 1440 × 900 the
+# stage needs no scrolling inside itself and could still grow by 30 px in Chinese (its max-height minus the height its content and borders
+# need; in English it only needs no scrolling), and the part's figures lie inside it and on the screen (below the top bar and the mini
+# result bar, above the window's bottom)
+FIT = """([st,sels])=>{const s=document.querySelector(st), r=s.getBoundingClientRect(), tb=document.querySelector('.topbar'), dk=document.querySelector('.dock');
+ const top=Math.max(tb?tb.getBoundingClientRect().bottom:0, dk&&getComputedStyle(dk).display!=='none'?dk.getBoundingClientRect().bottom:0);
+ const figs=sels.map(x=>{const e=document.querySelector(x); if(!e||!e.getClientRects().length) return null; const q=e.getBoundingClientRect(); return [Math.round(q.top),Math.round(q.bottom)];});
+ return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top), figs,
+   inside:figs.every(q=>q&&q[0]>=r.top-1&&q[1]<=r.bottom+1), shown:figs.every(q=>q&&q[0]>=top-1&&q[1]<=innerHeight+1)};}"""
+
+
+def fits(pg, tag, part, lang, sels):
+    f = pg.evaluate(FIT, ['#adm-stage', sels])
+    check(f'{tag} part {part}: the stage fits without scrolling inside' + (', 30 px to spare' if lang == 'zh' else '') + ', its figures inside it and on the screen (R7.12, B4)',
+          f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['inside'] and f['shown'], f)
+
+
 def page(b, w, h, lang, hash_='admission'):
     pg = b.new_page(viewport={'width': w, 'height': h})
     open_drawers(pg)
@@ -133,9 +150,11 @@ def guided(b, w, h, lang):
     check(f'{tag} part 1: the day chart has 24 hours, the capacity line', day == 24 and pg.query_selector('#adm-day .adm-cap') is not None, day)
     t1 = cur(pg); st1 = text(pg, '#adm-st-title')
     check(f'{tag} part 1: the targets are in the text and the stage title names no rule yet', Z(lang, 'at least 90% of paid requests', '付费请求至少 90% 要达标') in t1 and Z(lang, 'at least 80% of free ones', '免费请求至少 80%') in t1 and Z(lang, 'no rules at all', '没有任何规则') in st1 and Z(lang, 'threshold', '门槛') not in st1, (t1[:300], st1))
+    if w == 1440: fits(pg, tag, 1, lang, ['#adm-day svg', '#adm-q svg'])
     rules(pg, f'{tag} part 1')
     # part 2
     nav(pg, 'next'); s = state(pg)
+    if w == 1440: fits(pg, tag, 2, lang, ['#adm-day svg', '#adm-q svg'])
     check(f'{tag} part 2: Next waits for a fleet, with the why line', next_dis(pg) and set(why(pg)) == {Z(lang, 'Pick a fleet to continue.', '选一种卡数才能继续。')}, why(pg))
     t2c = cur(pg)
     check(f'{tag} part 2: quantization and speculative decoding raise the goodput per GPU; the P/D lab uses it to compare setups', Z(lang, 'the P/D disaggregation lab uses it to compare setups', 'P/D 分离 Lab 也用它比较方案') in t2c
@@ -178,6 +197,7 @@ def guided(b, w, h, lang):
     rules(pg, f'{tag} part 4')
     # part 5
     nav(pg, 'next'); finish(pg)
+    if w == 1440: fits(pg, tag, 5, lang, ['#adm-day svg', '#adm-q svg'])
     t5 = cur(pg)
     check(f'{tag} part 5: Next waits for paid first; admission control is named', next_dis(pg) and set(why(pg)) == {Z(lang, 'Try paid first to continue.', '试一下付费优先才能继续。')} and Z(lang, 'admission control', '准入控制') in t5, why(pg))
     lever(pg, 'none'); finish(pg); lever(pg, 'q'); finish(pg); lever(pg, 'rl'); finish(pg); t5 = cur(pg)
@@ -193,6 +213,7 @@ def guided(b, w, h, lang):
     rules(pg, f'{tag} part 6')
     # part 7
     nav(pg, 'next'); finish(pg)
+    if w == 1440: fits(pg, tag, 7, lang, ['#adm-day svg', '#adm-q svg'])
     check(f'{tag} part 7: Next waits for θ = 100%', next_dis(pg) and set(why(pg)) == {Z(lang, 'Try θ = 100% to continue.', '试一下 θ = 100% 才能继续。')}, why(pg))
     lever(pg, '60'); finish(pg); t7a = cur(pg); lever(pg, '100'); finish(pg); t7 = cur(pg)
     check(f'{tag} part 7: θ = 60% falls short, θ = 100% has more capacity than jobs: all are done, the rest is spare (R14), and it preempts at night', Z(lang, 'less than half of those handed in, so the rest are left undone', '不到交上来的一半，剩下的做不完') in t7a and Z(lang, 'that is the day’s batch capacity. It is more than the jobs handed in, so every job is done, and the capacity left over is spare', '这是全天批处理容量。它比交上来的任务多，所以任务全部做完，多出来的容量是余量') in t7 and Z(lang, 'preemptions in these two minutes', '这两分钟里就抢占了') in t7 and next_dis(pg) is False, (t7a[-200:], t7[-400:]))
@@ -200,6 +221,7 @@ def guided(b, w, h, lang):
     rules(pg, f'{tag} part 7')
     # part 8
     nav(pg, 'next'); finish(pg); t8 = pg.evaluate("()=>document.querySelector('#adm-rail .step.current').textContent")
+    if w == 1440: fits(pg, tag, 8, lang, ['#adm-day svg', '#adm-q svg'])
     check(f'{tag} part 8: what to remember (the extra peak traffic falls on free users as 429), misconceptions, real systems', all(x in t8 for x in (Z(lang, 'Size the fleet for the peak', '按高峰配卡'), Z(lang, 'The free users absorb the extra', '多出来的这部分由免费请求承担'), Z(lang, 'Common misconceptions', '常见误解'), Z(lang, 'What real systems do', '真实系统怎么做'), 'vLLM', 'SGLang', 'llm-d')), t8[:200])
     rules(pg, f'{tag} part 8')
     pg.screenshot(path=str(SH / f'flow-{tag}-p8.png'))

@@ -37,6 +37,12 @@ SIZES = [s for s in [(1440, 900), (390, 844)] if str(s[0]) in ARGS] or [(1440, 9
 errs, fails, n = [], [], 0
 
 
+# polish round 3 (2026-10-16): part 6's per-claim source links moved from the card to the page-end sources (“Sources” / “来源”);
+# every one of them must be there: the four Claude Code docs pages, OpenAI's Codex post, and the three Codex files at the pinned commit
+PART6_SOURCES = ['https://code.claude.com/docs/en/' + p for p in ('prompt-caching', 'how-claude-code-works', 'context-window', 'sub-agents')] + \
+    ['https://openai.com/index/unrolling-the-codex-agent-loop/'] + \
+    ['https://github.com/openai/codex/blob/c2f7fe89d87ce853900d0b5cb1f5dc4863e44d73/codex-rs/' + p for p in ('core/src/compact.rs', 'protocol/src/openai_models.rs', 'core/src/client.rs')]
+
 def check(name, ok, info=''):
     global n
     n += 1
@@ -318,8 +324,12 @@ def run(b, w, h, lang):
     st = state(pg)
     check(f'{tag} R3.20: part 6 shows the run part 4 already played to the end, so it shows its end at once', not st['playing'] and st['pv'] == len(b2['calls']), (st['pv'], st['playing']))
     cur = text(pg, '#cte-rail .step.current')
-    links = pg.evaluate("()=>[...document.querySelectorAll('#cte-rail .step.current .cte-srcs a')].map(a=>a.href)")
-    check(f'{tag} part 6: Codex and Claude Code, five points, each with sources, Next open', all(x in cur for x in ('Codex', 'Claude Code', Z(lang, '90% of the window', '窗口的 90%'), 'Σ')) and cur.count(Z(lang, 'Show in the chart', '在图里看')) == 4 and len(links) >= 9 and not any(nexts(pg)), (cur[:300], links))
+    links = pg.evaluate("()=>[...document.querySelectorAll('[data-endnotes] a')].map(a=>a.href)")
+    check(f'{tag} part 6: Codex and Claude Code, five points, Next open; the card points to the page-end sources, which hold every source of the five points', all(x in cur for x in ('Codex', 'Claude Code', Z(lang, '90% of the window', '窗口的 90%'), 'Σ', Z(lang, 'sources at the end of the page', '出处在页末'))) and cur.count(Z(lang, 'Show in the chart', '在图里看')) == 4 and all(u in links for u in PART6_SOURCES) and not any(nexts(pg)), (cur[:300], [u for u in PART6_SOURCES if u not in links]))
+    # polish round 3, the first-time reader (2026-10-16): the first point's button showed trimming alone, which costs more than the run
+    # on entry, the opposite of the point; it now shows the sliding window the point names, the run whose cost rises
+    click(pg, '#cte-rail [data-rem="slide"]'); st = state(pg)
+    check(f'{tag} part 6: the first point’s “Show in the chart” shows the sliding window it names (trim, the last 10 steps); part 3 already played it, so its end shows at once', st['hist'] == 'last' and st['N'] == 10 and st['trim'] == 1 and st['notes'] == 0 and st['remView'] == 'slide' and not st['playing'] and st['pv'] == ns, st)
     to_end(pg); click(pg, '#cte-rail [data-rem="comp"]'); st = state(pg)
     check(f'{tag} part 6: “Show in the chart” for compaction sets trim + a summary every 20 steps; part 4 already played it, so its end shows at once', st['hist'] == 'sum' and st['trim'] == 1 and st['notes'] == 0 and not st['playing'] and st['pv'] == nc, st)
     click(pg, '#cte-rail [data-rem="comp"]'); st = state(pg)
@@ -511,12 +521,51 @@ check('H5 src: the stage hairline rule is in the lab’s CSS', 'H5 (the owner, 2
 for _x in _H1_SRC_NEW:
     check(f'H1/H2 src: present: {_x[:70]}', _x in _h1src)
 # end H1 H2
+# polish round 3 (2026-10-16, B4 / R7.12, the owner: "the panel was pushed down, I did not see there was more below"): at 1440 × 900,
+# entering each listed guided part the way a reader does (Next), the stage needs no scrolling inside itself and nothing in it
+# scrolls either; in Chinese it could still grow by 30 px (its max-height minus the height its content and borders need), in
+# English it does not scroll; its main picture lies inside it and on the screen. The real layout: window.__aspPrimer, as the probe.
+_FIT_PARTS = [1, 2, 3, 4, 5, 6, 7]
+_FIT_V = "(()=>{const v=document.querySelector('#view-dyn:not([hidden])')||document.querySelector('#view-lab:not([hidden])'); return [...v.querySelectorAll('.bench')].find(x=>x.offsetParent)||v;})()"
+_FIT_M = ("(()=>{const b=" + _FIT_V + ", s=b.querySelector(':scope>.stage'), cur=b.querySelector('.steps>.step.current'), r=s.getBoundingClientRect(), tb=(document.querySelector('.topbar')||{offsetHeight:0}).offsetHeight; let inner=0;"
+          "s.querySelectorAll('*').forEach(e=>{const c=getComputedStyle(e); if(/(auto|scroll)/.test(c.overflowY)&&e.getClientRects().length) inner=Math.max(inner,e.scrollHeight-e.clientHeight);});"
+          "const f=[...s.querySelectorAll('svg,canvas')].filter(e=>e.getClientRects().length&&!e.closest('button,.btn')).map(e=>e.getBoundingClientRect()).sort((x,y)=>y.width*y.height-x.width*x.height)[0];"
+          "return {part:cur?[...cur.parentNode.children].indexOf(cur)+1:0, spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, inner,"
+          "fig:!f||(f.top>=r.top-1&&f.bottom<=r.bottom+1&&f.top>=tb-2&&f.bottom<=innerHeight+2)};})()")
+if '1440' in str(SIZES):
+    with sync_playwright() as _fp:
+        _fb = _fp.chromium.launch()
+        for _lang in LANGS:
+            _pg = _fb.new_page(viewport={'width': 1440, 'height': 900}); _pg.add_init_script('window.__aspPrimer=true')
+            _pg.on('pageerror', lambda e, _l=_lang: errs.append(f'fit 1440 {_l}: {e}'))
+            _pg.goto(URL); _pg.wait_for_timeout(300); _pg.click(f'.langsw button[data-lang="{_lang}"]'); _pg.wait_for_timeout(80)
+            _pg.evaluate("()=>{location.hash='context-eng'}"); _pg.wait_for_timeout(500)
+            _g = _pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+            if _g.count(): _g.first.click(); _pg.wait_for_timeout(700)
+            for _i in range(1, max(_FIT_PARTS) + 1):
+                if _i > 1:
+                    _nb = _pg.locator('.pbar [data-nav=next]:visible:not([disabled])')
+                    if _nb.count(): _nb.first.click()
+                    else: _pg.evaluate(f"{_FIT_V}.querySelector('.steps>.step:nth-child({_i}) .step-h').click()")
+                    _pg.wait_for_timeout(900)
+                if _i not in _FIT_PARTS: continue
+                _f = _pg.evaluate(_FIT_M)
+                if _lang == 'zh':
+                    check(f'B4 1440 zh part {_i}: the stage fits without scrolling inside, nothing in it scrolls, 30 px to spare, its picture inside it and on screen (R7.12)',
+                          _f['part'] == _i and _f['scroll'] <= 0 and _f['inner'] <= 4 and _f['spare'] >= 30 and _f['fig'], _f)
+                else:
+                    check(f'B4 1440 en part {_i}: the stage fits without scrolling inside, its picture inside it and on screen (R7.12)',
+                          _f['part'] == _i and _f['scroll'] <= 0 and _f['spare'] >= 0 and _f['fig'], _f)
+            _pg.close()
+        _fb.close()
+# end B4
 check('no page errors', not errs, errs[:5])
 # the owner, 2026-10-08 (G1, G2) src: every option group leads in with what to pick and what to watch (G1); no sentence leans on an earlier part's detail (G2)
+# polish round 3 (2026-10-16): part 6's three G2 sentences were shortened; the list below holds their new wording (still no part numbers)
 _src = (P / 'labs' / 'context-eng.js').read_text() + (P / 'teasers' / 'context-eng.js').read_text()
 for _x in ('一次只能选', '不会叠加', '一次选一个', 'do not stack', 'one at a time', 'One at a time'):
     check(f'G1: no “{_x}” left in the lab or its tile', _x not in _src)
-for _x in ['<p>选一类内容，看看它占了上下文的多少。图里会把它标出来。比例按第 ${lastFit().step} 步算，这是最后一次还放得下的调用。</p>', '<p>这个任务里有三个事实，要隔很久才用到。图下面的三行显示它们在哪里。</p><p>选一种删法，看看三个事实还剩几个。</p>', '为了好比较，这里固定每 20 步压缩一次。</p><p>选一种办法，看看三个事实能不能都留住。</p>', '去做。选一种做法，看看上下文最多占窗口的多少。</p>', '工具的输出原样留着，上下文一步比一步长。', '早先的步骤被删掉，三个事实也跟着没了。', 'agent 自己读文档，网页都留在它的上下文里。', '用的正是这个 Lab 讲的办法。', '滑动窗口每一步都改开头，正好相反。', '这和记笔记是同一个思路，把要紧的东西放在压缩删不掉的地方。', 'agent 的上下文里，大头是工具的输出。修剪它们最省事，常常单靠这一招，长任务就放得下了。', '每一步都改开头的删法（比如滑动窗口）用不上缓存。所以它读的 token 少了，花的钱反而可能更多。', '每压缩一次，都可能丢掉一个事实，所以只靠摘要，事实越往后越不保险。写进笔记就一定留得住，花的钱也只多一点。', '每 20 步压缩一次时，第 3 步用户提的要求只有 64% 的把握还在。为什么？', '这个 60 步的 coding agent 一共读进去', '如果 agent 同时修剪、每 20 步压缩、再记笔记，再加上子 agent', '每一步都改开头的删法（比如滑动窗口）会让缓存失效。']:
+for _x in ['<p>选一类内容，看看它占了上下文的多少。图里会把它标出来。比例按第 ${lastFit().step} 步算，这是最后一次还放得下的调用。</p>', '<p>这个任务里有三个事实，要隔很久才用到。图下面的三行显示它们在哪里。</p><p>选一种删法，看看三个事实还剩几个。</p>', '为了好比较，这里固定每 20 步压缩一次。</p><p>选一种办法，看看三个事实能不能都留住。</p>', '去做。选一种做法，看看上下文最多占窗口的多少。</p>', '工具的输出原样留着，上下文一步比一步长。', '早先的步骤被删掉，三个事实也跟着没了。', 'agent 自己读文档，网页都留在它的上下文里。', '用的正是这个 Lab 的办法。', '滑动窗口每一步都改开头，用不上缓存，反而更贵。', '这和记笔记是同一个思路。', 'agent 的上下文里，大头是工具的输出。修剪它们最省事，常常单靠这一招，长任务就放得下了。', '每一步都改开头的删法（比如滑动窗口）用不上缓存。所以它读的 token 少了，花的钱反而可能更多。', '每压缩一次，都可能丢掉一个事实，所以只靠摘要，事实越往后越不保险。写进笔记就一定留得住，花的钱也只多一点。', '每 20 步压缩一次时，第 3 步用户提的要求只有 64% 的把握还在。为什么？', '这个 60 步的 coding agent 一共读进去', '如果 agent 同时修剪、每 20 步压缩、再记笔记，再加上子 agent', '每一步都改开头的删法（比如滑动窗口）会让缓存失效。']:
     check(f'G1/G2: the new sentence is there: {_x[:60]}', _x in _src)
 for _x in ['第 1 部分的 agent', '第 3 部分丢了事实', '前面几部分的办法', '第 3 部分的滑动窗口', '第 4 部分的笔记', '这就是第 5 部分的做法', '第 2 部分里，工具的输出', '第 3 部分修剪之后', '第 4 部分里，只靠摘要', '第 4 部分每 20 步压缩一次', 'Part 1’s agent', 'Part 3’s agent', 'the parts before', 'Part 3’s sliding window', 'part 4’s notes', 'part 5’s sub-agent', 'In part 2, tool outputs', 'In part 3, the sliding window', 'In part 4, with summaries', 'In part 4, a summary', 'part 1’s agent reads', '第 4 部分最后的做法', '第 3 部分的滑动窗口就是这样', 'Part 4’s last setup', 'as part 3 showed']:
     check(f'G2: the old sentence is gone: {_x[:60]}', _x not in _src)

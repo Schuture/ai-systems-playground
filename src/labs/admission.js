@@ -217,8 +217,8 @@ const setupName=(s,lvl='full')=>{const p=[tx(`${s.n} GPUs`,`${s.n} 张卡`)], j=
 const TIP={
  ttft:()=>tx('Time to first token (TTFT): from the moment a request arrives to its first answer token. It includes the time it waits in a queue.','首 token 延迟（TTFT）：从请求到达，到它的第一个回答 token。包含排队的时间。'),
  gap:()=>tx('Gap: once the answer has started, how long the user waits for the next token. A request meets its goal only if its longest gap is short enough.','间隔：回答开始以后，用户等下一个 token 等了多久。达标看最长的那次。'),
- goals:()=>tx('Goal: what one request must get, such as how soon its first token comes and how long the longest gap between two tokens may be. Paid and free chats have different goals, listed in part 1; the paid ones are the serving capstone’s. A free request turned away for a full queue counts as missed; one stopped by its key’s rate limit is left out.',
-   '目标：一个请求要做到什么，比如多快拿到首 token、两个 token 之间最多等多久。付费聊天和免费聊天的目标不一样，列在第 1 部分；付费的和推理服务综合挑战一样。因为排队满了被拒绝的免费请求算没达标；被它的 key 的限流挡下的，不算在内。'),
+ goals:brief=>tx('Goal: what one request must get, such as how soon its first token comes and how long the longest gap between two tokens may be. Paid and free chats have different goals'+(brief?'.':', listed in part 1. A free request turned away for a full queue counts as missed; one stopped by its key’s rate limit is left out.'),
+   '目标：一个请求要做到什么，比如多快拿到首 token、两个 token 之间最多等多久。付费聊天和免费聊天的目标不一样'+(brief?'。':'，列在第 1 部分。因为排队满了被拒绝的免费请求算没达标；被它的 key 的限流挡下的，不算在内。')),
  slo:()=>tx('Service target (SLO): the share of requests that must meet their goals. In this lab it is 90% for paid chats and 80% for free chats.','服务目标（SLO）：要有多少比例的请求达标。这个 Lab 里付费聊天是 90%，免费聊天是 80%。'),
  batch:()=>tx('Batch job: work nobody watches live, such as summarising a long document. Its prompt is much longer than a chat’s. The jobs are handed in together at midnight and only need to be done within a day.','批处理任务：没人在线等着看的活，比如给一篇长文档写摘要。它的 prompt 比聊天长得多。这些任务半夜一起交上来，一天之内做完就行。'),
  gateway:()=>tx('Gateway: every request reaches it first. It hands the request to a GPU that has room (fewer than 1,024 requests running and room for its KV cache); when every GPU is full, the request waits in the gateway’s queue. Whichever GPU frees room first takes the next request.','网关：请求先到这里。它把请求交给有空位的卡（同时跑的请求不到 1,024 个，KV cache 也放得下）；卡都满了，请求就在网关排队。哪张卡先空出位置，就交给哪张卡。'),
@@ -235,7 +235,7 @@ const TIP={
  th:()=>tx('Batch threshold θ: each hour, the gateway compares how busy the chats keep the fleet (the hour’s chat rate ÷ capacity) with θ. Below θ, it lets batch jobs in until the fleet is θ busy; at or above θ, no batch job starts that hour.','批处理门槛 θ：每个小时，网关看聊天让卡忙到几成（这一小时的聊天速率 ÷ 容量），和 θ 比。低于 θ，就放批处理任务进来，直到卡忙到 θ；达到 θ，这一小时不开始新的批处理任务。'),
  script:()=>tx('The script: one free API key used by a program that sends 25 requests per second around the clock (this lab’s assumption). Its requests count as free requests.','脚本：一个免费 API key 被一段程序拿去用，全天每秒发 25 个请求（这个 Lab 的假设）。它的请求按免费请求算。')
 };
-const dGoals=t=>DEF(t,TIP.goals()), dTTFT=t=>DEF(t,TIP.ttft()), dGap=t=>DEF(t,TIP.gap());
+const dGoals=t=>DEF(t,TIP.goals(true)), dTTFT=t=>DEF(t,TIP.ttft()), dGap=t=>DEF(t,TIP.gap());
 const SRC={
  sched:'https://github.com/vllm-project/vllm/blob/03a7d3776fc2f520a70c8d2da1724eab6df6d0e1/vllm/config/scheduler.py',
  args:'https://github.com/vllm-project/vllm/blob/03a7d3776fc2f520a70c8d2da1724eab6df6d0e1/vllm/engine/arg_utils.py',
@@ -302,8 +302,8 @@ const lever=(v,title,desc)=>({v,title,desc,result:''});
 const lk=(id,t)=>live(id)?labLink(id,t):esc(t);
 const STEPS=[
  {id:'mission',title:{en:'A day of traffic, three kinds of users',zh:'一天的流量，三种用户'},lead:{en:'Paid chats, free chats and batch jobs share one fleet.',zh:'付费聊天、免费聊天和批处理任务共用一组卡。'},
-  body:()=>tx(`<p>You run a chat service. Every H100 holds one copy of ${M8B} in BF16. Three kinds of requests come in, each with its own ${dGoals('goal')}:</p><ul class="adm-ul"><li><b>Paid chats</b>: the ${dTTFT('first token')} within 1 s, and never more than 150 ms between two tokens (the longest ${dGap('gap')}).</li><li><b>Free chats</b>: the first token within 5 s, and the same 150 ms between tokens.</li><li><b>${DEF('Batch jobs',TIP.batch())}</b>, such as a summary for each of many long documents: nobody waits for them live. They are handed in at midnight and only need to be done within 24 hours.</li></ul><p>Not every chat can make it, so each kind also has a ${DEF('service target',TIP.slo())}: at least 90% of paid requests must meet their goal, and at least 80% of free ones.</p><p>Every request first reaches a ${DEF('gateway',TIP.gateway())}. It hands the request to a GPU with room; when all GPUs are full, the request waits in the gateway’s queue.</p><p>The top chart is this lab’s day of chat traffic: high in the day, low at night, busiest in mid-afternoon. The dashed line is what the GPUs can take together, their ${DEF('capacity',TIP.cap())}. The hatched blocks are batch jobs: they are let in at night, when the GPUs are idle, and part 7 explains how. The band marked “script” is one free API key that a program uses to send requests all day; they count as free requests. Red marks the traffic above capacity.</p><p>The bottom chart zooms into the busiest minute of the afternoon. Here ${BASE.n} GPUs serve the traffic with no rules at all.</p><p>How many GPUs does the traffic need? And when there is too much, who should wait?</p>`,
-     `<p>你负责一个聊天服务：每张 H100 放一份 ${M8B}（BF16）。请求有三种，各有各的${dGoals('目标')}：</p><ul class="adm-ul"><li><b>付费聊天</b>：1 秒内拿到${dTTFT('首 token')}，两个 token 之间最多等 150 毫秒（最长的${dGap('间隔')}）。</li><li><b>免费聊天</b>：5 秒内拿到首 token，两个 token 之间同样最多等 150 毫秒。</li><li><b>${DEF('批处理任务',TIP.batch())}</b>：没人在线等，比如给一大批长文档各写一段摘要。半夜交上来，24 小时内做完就行。</li></ul><p>聊天请求不可能个个都做到，所以每种还有一个${DEF('服务目标',TIP.slo())}：付费请求至少 90% 要达标，免费请求至少 80%。</p><p>每个请求先到${DEF('网关',TIP.gateway())}。网关把它交给有空位的卡；卡都满了，请求就在网关排队。</p><p>上面的图是这个 Lab 设定的一天的聊天流量：白天高、夜里低，下午最忙。虚线是这些卡加起来能接住的速率，叫${DEF('容量',TIP.cap())}。图里的斜线是批处理任务：夜里卡闲的时候才放它们进来，第 7 部分细讲。标着“脚本”的那一层，是一个免费 API key 被一段程序拿去全天不停地发请求，这些请求按免费请求算。红色是超过容量、卡接不住的那部分流量。</p><p>下面的图放大看下午最忙的那一分钟。现在是 ${BASE.n} 张卡，没有任何规则。</p><p>这些流量要几张卡？接不住的时候，让谁等？</p>`)},
+  body:()=>tx(`<p>You run a chat service; every H100 holds one copy of ${M8B}. Three kinds of requests each have their own ${dGoals('goal')}:</p><ul class="adm-ul"><li><b>Paid chats</b>: the ${dTTFT('first token')} within 1 s, and at most 150 ms between two tokens (the ${dGap('gap')}).</li><li><b>Free chats</b>: the first token within 5 s, and the same 150 ms gap.</li><li><b>${DEF('Batch jobs',TIP.batch())}</b>: nobody waits for them live; they are handed in at midnight and only need to be done within 24 hours.</li></ul><p>Chats also have a ${DEF('service target',TIP.slo())}: at least 90% of paid requests must meet their goal, and at least 80% of free ones.</p><p>Every request first reaches a ${DEF('gateway',TIP.gateway())}, which hands it to a GPU with room; when all GPUs are full, the request waits in the gateway’s queue.</p><p>The top chart is a day of chat traffic; the dashed line is how many requests per second ${BASE.n} GPUs can take together, their ${DEF('capacity',TIP.cap())}, and “script” is one free API key that a program uses to send requests all day. The bottom chart is the busiest minute, at 2 pm, with no rules at all.</p><p>How many GPUs does the traffic need? And when there is too much, who should wait?</p>`,
+     `<p>你负责一个聊天服务，每张 H100 放一份 ${M8B}。三种请求各有${dGoals('目标')}：</p><ul class="adm-ul"><li><b>付费聊天</b>：1 秒内拿到${dTTFT('首 token')}，两个 token 的${dGap('间隔')}最多 150 毫秒。</li><li><b>免费聊天</b>：5 秒内拿到首 token，间隔也最多 150 毫秒。</li><li><b>${DEF('批处理任务',TIP.batch())}</b>：没人在线等，半夜交上来，24 小时内做完就行。</li></ul><p>${DEF('服务目标',TIP.slo())}是付费请求至少 90% 要达标，免费请求至少 80%。</p><p>请求先到${DEF('网关',TIP.gateway())}，由网关交给有空位的卡；卡都满了就在网关排队。</p><p>上图是一天的聊天流量，虚线是 ${BASE.n} 张卡每秒能接住的请求数，叫${DEF('容量',TIP.cap())}；“脚本”是一个免费 API key 全天不停发的请求。下图是下午 2 点最忙的一分钟，没有任何规则。</p><p>这些流量要几张卡？接不住的时候，让谁等？</p>`)},
  {id:'capacity',title:{en:'Size the fleet for the peak',zh:'按高峰配卡'},lead:{en:'GPUs = peak rate ÷ goodput per GPU.',zh:'卡数 = 高峰速率 ÷ 每张卡的达标吞吐。'},
   body:()=>{const g=G(), pr=peakRate(BASE_T,0), av=avgRate(BASE_T,0);
    return tx(`<p>One GPU can take only so many requests per second; beyond that, requests queue. So first measure one GPU: send it chats faster and faster, and find the highest rate at which 90% still meet the paid goals. That is the ${DEF('goodput per GPU',TIP.goodput())}, ${g} requests per second in this lab.</p><p>Labs such as ${lk('quantization','quantization')} and ${lk('spec-decoding','speculative decoding')} all raise this number; the ${lk('pd-disagg','P/D disaggregation')} lab uses it to compare setups. The higher the goodput per GPU, the fewer GPUs the peak needs.</p><p>With it, the number of GPUs follows. The peak rate is the traffic at 14:00, the busiest hour: ${fRate(pr)} chat requests a second, 40 paid, 85 free and the script’s 25.</p>${EQ([['\\text{GPUs}','\\frac{\\text{peak rate}}{\\text{goodput per GPU}}'],['',`\\frac{${fRate(pr)}}{${g}} \\approx ${f1(pr/g)}`]])}<p>Pick a fleet and watch the busiest minute at 14:00.</p>`,
@@ -625,9 +625,19 @@ const niceStep=T=>{for(const s of [5,10,15,20,30,60,120,180,300]) if(T/s<=6) ret
 const niceMax=x=>{if(x<=1) return 1; const p=Math.pow(10,Math.floor(Math.log10(x))); for(const k of [1,1.5,2,2.5,3,4,5,6,8,10]) if(k*p>=x) return k*p; return 10*p;};
 const clsIn=run=>({paid:run.R.some(r=>r.cls==='paid'),free:run.R.some(r=>r.cls==='free'),batch:run.R.some(r=>r.cls==='batch')});
 const scriptOf=(T,rl)=>rl?Math.min(T.script,rl/60):T.script;
+/* polish round 3 (2026-10-16, R7.12): on a wide stage the two charts are drawn shorter so the stage fits a 1440 × 900 screen; the height
+   is a CSS variable on the chart's box (--adm-ch, set in admission.css), read when the chart is drawn. Without it (phones, narrower
+   stages) the height is as before. */
+const chartH=(host,h)=>{const v=parseFloat(getComputedStyle(host).getPropertyValue('--adm-ch')); return v>0?v:h;};
+/* the charts are drawn for the stage's width (and, on a wide stage, --adm-ch): the stage widens without a window resize when the page
+   puts the step list beside it or leaves the primer, so they are drawn again when its width changes */
+let stRO=null, stW=0;
+function watchStage(){if(stRO){stRO.disconnect(); stRO=null;} const st=app&&$('#adm-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w; const v=curView(); drawDay(v); drawQueue(v.run(),v);}));
+  stRO.observe(st,{box:'border-box'});}
 function drawDay(v){
   const blk=$('#adm-dayb',app), host=$('#adm-day',app); if(!blk) return; blk.hidden=!v.day; if(!v.day){host.innerHTML=''; return;}
-  const {T,s}=v.day, d=ADM.day(T,cfgOf(s)), W=Math.max(260,Math.round(host.clientWidth||600)), H=W<520?132:150, LW=W<520?30:40, top=14, bot=22, pw=W-LW-6, ph=H-top-bot, bw=pw/24;
+  const {T,s}=v.day, d=ADM.day(T,cfgOf(s)), W=Math.max(260,Math.round(host.clientWidth||600)), H=chartH(host,W<520?132:150), LW=W<520?30:40, top=14, bot=22, pw=W-LW-6, ph=H-top-bot, bw=pw/24;
   const ymax=niceMax(Math.max(d.cap*1.08,...d.hours.map(x=>x.c),...d.hours.map(x=>x.c+x.sh*d.cap))), Y=y=>top+ph*(1-y/ymax), X=h=>LW+h*bw;
   const hl=v.kind==='night'?ADM.quietH():ADM.PEAK_H, out=[];
   out.push(`<defs><pattern id="adm-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><rect width="5" height="5" class="adm-hbg"/><line x1="0" y1="0" x2="0" y2="5" class="adm-hln"/></pattern></defs>`);
@@ -649,7 +659,7 @@ function missBins(run,T,nb){const a=new Array(nb).fill(0), b=new Array(nb).fill(
   for(const r of run.R){if(r.cls!=='paid'||r.arr>T) continue; const i=Math.min(nb-1,Math.floor(r.arr/T*nb)); a[i]++; if(r.first==null||r.first-r.arr>g.ttft+1e-9||ADM.gapOf(r)>g.gap+1e-9) b[i]++;}
   return a.map((x,i)=>x&&b[i]/x>0.1);}
 function drawQueue(run,v){
-  const host=$('#adm-q',app); if(!host) return; const W=Math.max(260,Math.round(host.clientWidth||600)), H=W<520?132:148, LW=W<520?36:46, top=8, bot=34, T=runT(run), X=t=>LW+(W-LW-8)*Math.min(t,T)/T;
+  const host=$('#adm-q',app); if(!host) return; const W=Math.max(260,Math.round(host.clientWidth||600)), H=chartH(host,W<520?132:148), LW=W<520?36:46, top=8, bot=34, T=runT(run), X=t=>LW+(W-LW-8)*Math.min(t,T)/T;
   const has=clsIn(run), S_=run.samples, ser=[['paid',1,'adm-lp'],['free',2,'adm-lf'],['batch',3,'adm-lb']].filter(x=>has[x[0]]);
   const ymax=niceMax(Math.max(5,...S_.map(x=>Math.max(...ser.map(s=>x[s[1]]))))), ph=H-top-bot, Y=y=>top+ph*(1-y/ymax);
   const body=[];
@@ -975,10 +985,10 @@ A.registerLab({
     A.shell.bindHeader(app,{id:ID,onMode:m=>{setMode(m); A.ui.reveal($('#adm-rail',app)); keepStage();},token});
     bind(app); renderDrill();
     const rail=$('#adm-rail',app); rail.innerHTML=railFull();
-    phNow=Infinity; render();
+    phNow=Infinity; render(); watchStage();
     if(mode==='guided'&&STEPS[step].id!=='mission') showRun();
     if(mode==='challenge') chStartBg(); else setTimeout(()=>{if(app) chStartBg();},1500);},
-  leave(){stopPlay(); clearTimeout(annT); stageStop(); clearTimeout(chT); chT=0; root=null; app=null;},
+  leave(){stopPlay(); clearTimeout(annT); stageStop(); clearTimeout(chT); chT=0; if(stRO){stRO.disconnect(); stRO=null;} root=null; app=null;},
   onLang(){if(root){const d=$('#adm-math',app), open=d&&d.open, wasPlaying=PLAY.on; stopPlay(); this.mount(root,null); if(open){$('#adm-math',app).open=true; render();} if(wasPlaying) showRun();}},
   onResize(){if(app) render();},
   termTip(){return '';},

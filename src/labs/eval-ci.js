@@ -167,8 +167,8 @@ const STEPS=[
  {id:'pile',title:{en:'Where the swing comes from',zh:'分数为什么会摆动'},view:'axis',expect:()=>pileDone,showMe:()=>finishPile(),label:{en:'Result',zh:'结果'},
   lead:()=>tx('Each problem is right or wrong; the score is the average of 164 ones and zeros.','每道题只有对和错，分数就是 164 个 0 和 1 的平均。'),
   enter:()=>({...BASE}),
-  body:()=>tx(`<p>Each problem is either right or wrong, so A’s score is the average of 164 ones and zeros. Take another batch of problems, and the average changes.</p><p>In the chart, the app draws 164 new problems from the same kind again and again, and A takes each batch. Here A’s true level is assumed to be exactly 80%. Each small dot is the score of one ${DEF('re-run',TIP.pool())}.</p>`,
-              `<p>每道题只有对、错两种结果，所以 A 的分数就是这 164 个 0 和 1 的平均。换一批题，平均值就会变。</p><p>图里，程序一次又一次从同类题目里重新抽出 164 道题，让 A 再考一遍。这里假设 A 真实的水平正好是 80%。每个小点是一次${DEF('重考',TIP.pool())}的分数。</p>`),
+  body:()=>tx(`<p>Each problem is either right or wrong, so A’s score is the average of 164 ones and zeros, and another batch of problems gives another average.</p><p>In the chart, the app keeps drawing 164 new problems of the same kind and has A take each batch; each small dot is the score of one ${DEF('re-run',TIP.pool())}. Here A’s true level is assumed to be exactly 80%.</p>`,
+              `<p>每道题只有对、错两种结果，所以 A 的分数是 164 个 0 和 1 的平均，换一批题就会变。</p><p>图里，程序反复从同类题目里重新抽 164 道题让 A 再考，每个小点是一次${DEF('重考',TIP.pool())}的分数；这里假设 A 真实的水平正好是 80%。</p>`),
   obs:()=>obsPile()},
  {id:'size',title:{en:'More questions, less swing',zh:'题多一点，摆动小一点'},view:'axis',expect:()=>cmp(S).hA<=0.01+1e-9,showMe:{n:6200},label:{en:'Result',zh:'结果'},
   lead:()=>tx('Four times the questions only halve the error bar.','题目多 4 倍，误差线才短一半。'),
@@ -207,11 +207,11 @@ function obsPile(){
   if(!pileDone) return '';
   const m=inside(RD.K), lo=fPct(RD.p-RD_H), hi=fPct(RD.p+RD_H), h=fPt(RD_H);
   return tx(`<p><b>${m} of the ${RD.K} re-runs land between ${lo} and ${hi}: 80.0% give or take ${h} points.</b></p>`,`<p><b>${RD.K} 次重考里，有 ${m} 次落在 ${lo} 到 ${hi} 之间，也就是 80.0% 上下 ${h} 分。</b></p>`)+verdict()+
-    tx(`<p>B’s 82.0% is inside that range, so 164 problems cannot tell A and B apart. Drawn on the axis, the range is A’s ${DEF('error bar',TIP.bar())}.</p><p>No re-runs are needed to find it; a formula gives it from the score p and the number of questions n:</p>`,
-       `<p>B 的 82.0% 就在这个范围里，所以只凭 164 道题，分不出 A 和 B 谁更好。这个范围画在分数轴上，就是 A 的${DEF('误差线',TIP.bar())}。</p><p>不用真的重考，用分数 p 和题数 n 就能算出它：</p>`)+
+    tx(`<p>B’s 82.0% is inside that range, so 164 problems cannot tell A and B apart. This range is A’s ${DEF('error bar',TIP.bar())} on the axis; B’s works the same way.</p><p>No re-runs are needed to find it; a formula gives it from the score p and the number of questions n:</p>`,
+       `<p>B 的 82.0% 就在这个范围里，所以只凭 164 道题分不出 A 和 B 谁更好。这个范围就是分数轴上 A 的${DEF('误差线',TIP.bar())}，B 的同理。</p><p>不用真的重考，用分数 p 和题数 n 就能算出它：</p>`)+
     MN('standard error','标准误差','\\text{SE} = \\sqrt{\\frac{p(1-p)}{n}}')+M(tx('\\text{error bar} = p ± 1.96 \\times \\text{SE}','\\text{误差线} = p ± 1.96 \\times \\text{SE}'))+
-    tx(`<p>SE is the ${DEF('standard error',TIP.se())}: how much the score typically moves from one batch of questions to the next. The error bar reaches 1.96 SEs either side of the score. If the score equals the true level (here assumed to be 80%), the bar covers 95% of the re-run scores.</p><p>With p = 0.8 and n = 164, SE is about ${fPt(RD_H/Z)} points and the error bar is ±${h} points, the same range the re-runs showed.</p>`,
-       `<p>SE 是${DEF('标准误差',TIP.se())}，表示换一批题时，分数通常会摆动多少。从分数往两边各伸出 1.96 个 SE，就是误差线。如果分数正好等于真实水平（这里假设是 80%），这条线能盖住 95% 的重考分数。</p><p>代入 p = 0.8、n = 164，SE 约是 ${fPt(RD_H/Z)} 分，误差线是 ±${h} 分，和上面数出来的范围一样。</p>`);
+    tx(`<p>SE is the ${DEF('standard error',TIP.se())}: how much the score typically moves from one batch of questions to the next. Centered on the true level, 1.96 SEs either side cover 95% of the re-run scores.</p><p>With p = 0.8 and n = 164, SE is about ${fPt(RD_H/Z)} points and the error bar is ±${h} points, as the re-runs showed.</p>`,
+       `<p>SE 是${DEF('标准误差',TIP.se())}，表示换一批题时分数通常摆动多少。以真实水平为中心，往两边各伸出 1.96 个 SE，能盖住 95% 的重考分数。</p><p>代入 p = 0.8、n = 164，SE 约是 ${fPt(RD_H/Z)} 分，误差线是 ±${h} 分，和数出来的一样。</p>`);
 }
 function obsSize(){
   const r=cmp(S), h=fPt(r.hA), h0=fPt(cmp(BASE).hA), need=nFor(0.8,0.01);

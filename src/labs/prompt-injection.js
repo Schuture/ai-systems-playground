@@ -296,18 +296,16 @@ function obsBound(){
 }
 function teams(){
   const m=runAll({...BASE,wl:'mail',scope:1});
-  return tx(`<ul class="pin-teams"><li><b>Least privilege per task.</b> Give each task only the tools and data it needs. The inbox assistant in the chart is set up this way and still has ${m.harm} harmful actions. They all come from tasks that send a file: those tasks must read files and send them out.</li>`+
-    `<li><b>A person approves risky actions.</b> Sending email, paying, deleting: before such an action runs, show the user what it does (the recipient, the attachment, the amount) and wait for a yes.</li>`+
+  return tx(`<p>Five practices are common. The first three are design and bound the worst case; the fourth only makes the model obey less often; the fifth measures what is left before release.</p><ul class="pin-teams"><li><b>Least privilege per task.</b> The chart now shows an inbox assistant: some of its tasks must read files and send them out. It is set up this way, so the replayed “${L(KINDW[m.sample.kind])}” gets no read_files and the hidden line fails. Yet it still has ${m.harm} harmful actions, all from the tasks that send a file; the next two practices must stop them.</li>`+
+    `<li><b>A person approves risky actions.</b> Before sending email, paying or deleting, show the user the recipient, the attachment or the amount, and wait for a yes.</li>`+
     `<li><b>Allowlists.</b> Let sends and web requests go only to addresses listed in advance; block everything else.</li>`+
-    `<li><b>Tool output is data.</b> Say so in the system prompt, and mark where tool output begins and ends. This lowers how often the model obeys; it does not stop it.</li>`+
-    `<li><b>Red-team before release.</b> Run the agent on tasks with planted instructions, with a benchmark such as AgentDojo, and count the harmful actions and the tasks still done.</li></ul>`+
-    `<p class="small">There is also a research direction: decide the actions from the user’s request alone. Untrusted content read later can only fill in data in that plan; it cannot change which actions run. See CaMeL, “Defeating Prompt Injections by Design” (arXiv 2503.18813).</p>`,
-    `<ul class="pin-teams"><li><b>每个任务只给最小的权限。</b>只给它需要的工具和数据。图里的邮件助手也是这样配的，有害操作却还有 ${m.harm} 次。它们都出在发文件的任务上：这些任务本来就要读文件，再发出去。</li>`+
-    `<li><b>危险的操作要人点头。</b>发邮件、付款、删除这类操作，执行前先给用户看清楚要做什么（收件人、附件、金额），等用户说可以。</li>`+
+    `<li><b>Tool output is data.</b> Say so in the system prompt, and mark where tool output begins and ends.</li>`+
+    `<li><b>Red-team before release.</b> Run the agent on tasks with planted instructions, with a benchmark such as AgentDojo, and count the harmful actions and the tasks still done.</li></ul>`,
+    `<p>常见的做法有五条：前三条靠设计框住最坏的情况，第四条只能让模型少照做，第五条在上线前量出还剩多少风险。</p><ul class="pin-teams"><li><b>每个任务只给最小的权限。</b>图里换成了邮件助手，它有的任务本来就要读文件、再发出去。它就是这样配的，演示的“${L(KINDW[m.sample.kind])}”拿不到 read_files，藏着的话没得逞；有害操作却还有 ${m.harm} 次，都出在发文件的任务上，要靠下面两条挡。</li>`+
+    `<li><b>危险的操作要人点头。</b>发邮件、付款、删除之前，先给用户看清收件人、附件或金额，等用户说可以。</li>`+
     `<li><b>白名单。</b>邮件和网络请求只能发往事先列好的地址，其余一律挡下。</li>`+
-    `<li><b>工具的输出只当资料。</b>系统提示里写明这一点，并标出工具输出从哪里开始、到哪里结束。这能让模型少照做，但挡不住全部。</li>`+
-    `<li><b>上线前做红队测试。</b>用 AgentDojo 这类基准，拿藏了指令的任务去测 agent，数一数有害操作有几次、正常任务还能做成几个。</li></ul>`+
-    `<p class="small">研究上还有一个方向：先只看用户的请求，把要做的操作定下来。之后读到的不可信内容，只能当数据填进这份计划，改不了要做哪些事。见 CaMeL（“Defeating Prompt Injections by Design”，arXiv 2503.18813）。</p>`);
+    `<li><b>工具的输出只当资料。</b>在系统提示里写明这一点，并标出工具输出从哪里开始、到哪里结束。</li>`+
+    `<li><b>上线前做红队测试。</b>用 AgentDojo 这类基准，拿藏了指令的任务去测 agent，数有害操作有几次、正常任务还能做成几个。</li></ul>`);
 }
 function remember(){
   const b=runAll({...BASE}), d=runAll({...BASE,det:1}), p=runAll({...BASE,prm:1}), s=runAll({...BASE,scope:1});
@@ -674,7 +672,7 @@ const MSYM={ok:'✓',harm:'✗',yes:'✓',no:'⊘',blk:'⊘'};
    reaches each; ordinary steps stay grey. The newest red mark flashes once while the replay moves (not under reduced motion). */
 const HID_TAG=()=>tx('⚠ injected instruction','⚠ 注入的指令'), HARM_TAG=()=>tx('✗ harmful action','✗ 有害操作');
 const hidHTML=h=>`<mark class="pin-hid"><b class="pin-tag">${esc(HID_TAG())}</b> ${esc(h)}</mark>`;
-let flashNow=false;
+let flashNow=false, ro=null;
 function ctxBlocks(o,n){
   const wl=S.wl, out=[];
   o.ev.slice(0,n).forEach(ev=>{
@@ -720,7 +718,7 @@ function follow(box,n){if(box._n!==n){box._n=n; box.scrollTop=box.scrollHeight;}
 function drawReplay(){
   const ctx=$('#pin-ctx',app), log=$('#pin-log',app), cap=$('#pin-rp-cap',app); if(!ctx) return;
   const o=R_().sample, n=Math.min(PL.pos,o.ev.length), pre=isP('mission')&&!pred;
-  const fk=[key(S),view,A.lang(),Math.round(ctx.getBoundingClientRect().width)].join('/');
+  const fk=[key(S),view,A.lang(),Math.round(ctx.getBoundingClientRect().width),getComputedStyle(ctx).maxHeight,getComputedStyle(log).maxHeight].join('/');   // the boxes' caps follow the screen's height on a desktop
   fitBox(ctx,ctxHTML(o,o.ev.length,false),fk); fitBox(log,logHTML(o,o.ev.length),fk);
   cap.textContent=tx(`One task replayed: “${L(KINDW[o.kind])}”, task ${o.j+1} of 100, ${o.poi?'its content hides a line':'clean'}`,`演示一个任务：“${L(KINDW[o.kind])}”，100 个里的第 ${o.j+1} 个，${o.poi?'内容里藏着一句话':'内容是干净的'}`);
   ctx.classList.toggle('pin-one',view==='text');
@@ -910,7 +908,10 @@ function frame(ts){
 /* the end of a replay; in part 1 it opens the gate, also when the replay was not needed again because nothing changed (R3.20) */
 function finished(){markSeen(); if(isP('mission')&&pred&&!runsSeen){runsSeen=true; wantObs=true; renderRail(); revealSoon(); wantObs=false;}}
 const startPos=()=>isP('mission')?Math.min(SETUP,replayLen()):Math.min(2,replayLen());   // elsewhere a new setup starts at the request, so the box is never empty
-function play(){if(isP('mission')&&!pred) return; markSeen(); if(PL.pos>=replayLen()) PL.pos=startPos(); PL.from=PL.pos; if(A.reduceMotion()){PL.pos=replayLen(); PL.on=false; finished(); tick(); return;} PL.on=true; PL.last=0; PL.acc=0; stopLoop(); PL.raf=requestAnimationFrame(frame); drawPlayer();}
+/* polish round 3, the first-time reader (2026-10-16): play() redraws the replay itself (tick), not only the player. A new part renders
+   the stage before update() moves the position back, so with drawPlayer() alone the context and the log kept the old position's end
+   (often the whole new task) until the first event played, then shrank and replayed. The same held for ▶ Replay. */
+function play(){if(isP('mission')&&!pred) return; markSeen(); if(PL.pos>=replayLen()) PL.pos=startPos(); PL.from=PL.pos; if(A.reduceMotion()){PL.pos=replayLen(); PL.on=false; finished(); tick(); return;} PL.on=true; PL.last=0; PL.acc=0; stopLoop(); PL.raf=requestAnimationFrame(frame); tick();}
 function pause(){PL.on=false; stopLoop(); drawPlayer();}
 /* R3.20: after a new part, a new mode, a choice, a scenario or a slider, the replay plays again only when the replayed task now goes
    differently, and only from the first event that differs. The system prompt only lists the tools; it is redrawn at once and does not
@@ -1151,12 +1152,15 @@ A.registerLab({
     bind(app); renderDrill();
     if(mode==='guided'&&!p&&step===0&&!pred){S={...BASE}; PL.pos=startPos();}
     fillRail(); render();
+    /* the stage changes width without a window resize (the guided flow narrows the bench): refit the replay's boxes to the new width */
+    if(ro) ro.disconnect(); ro=window.ResizeObserver?new ResizeObserver(()=>{if(!app) return; const c=$('#pin-ctx',app), w=c?Math.round(c.getBoundingClientRect().width):0; if(c&&w&&w!==c._rw){c._rw=w; drawReplay();}}):null;
+    if(ro) ro.observe($('#pin-rp',app));
     if(diffAt(PL.sig,sigOf())>=0) update();        // a first view, or a link to another setup: play what is new (R3.20)
     else if(PL.on){PL.last=0; stopLoop(); PL.raf=requestAnimationFrame(frame);}   // the language switch: a running replay goes on
   },
-  leave(){clearTimeout(annT); stageStop(); stopLoop(); root=null; app=null;},
+  leave(){clearTimeout(annT); stageStop(); stopLoop(); if(ro){ro.disconnect(); ro=null;} root=null; app=null;},
   onLang(){if(root){const d=$('#pin-math',app), open=d&&d.open; stopLoop(); this.mount(root,null); if(open) $('#pin-math',app).open=true;}},
-  onResize(){},
+  onResize(){if(app) drawReplay();},
   termTip(k){const f=TERM[k]; return f?`<div>${symHTML(esc(f()))}</div><div class="act">${esc(jumpAct(k))}</div>`:'';},
   jump, jumpAct,
   dock:{
