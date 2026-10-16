@@ -108,7 +108,12 @@
 @container (min-width:480px){.tls-stage .tls-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .tls-metrics .metric{position:relative;padding:6px 9px}
 .tls-metrics .metric .sub{font-size:11.5px}
-.tls-metrics .metric .d{position:absolute;top:6px;right:8px;min-height:0;height:auto;margin:0}
+/* the change line is in the card's flow as in other labs (kit polish r2, M1): set over the card's top right corner, it ran over the
+   name and the value whenever it was longer than the room beside the name (“▲ 2 times the last value”, 900 and 390 px, English).
+   Its row is 13 px and the value's line 1.25, so a card is 7.5 px taller than before, not 15: at 1440×900 the stage still needs no
+   scroll of its own in any scenario (N11; with 15 px it was 4 px too tall in English, scenario 4) */
+.tls-metrics .metric .v{line-height:1.25}
+.tls-metrics .metric .d{height:auto;min-height:13px;line-height:13px}
 @container (max-width:519px){.tls-ax{font-size:11px}}
 .tls-head{flex-wrap:nowrap}
 .tls-head .tls-st-title{flex:1 1 auto}
