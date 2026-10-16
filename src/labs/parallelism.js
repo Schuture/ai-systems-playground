@@ -186,7 +186,7 @@ let pT=0, playing=false, spd='mid', raf=0, lastT=0, curSig='';
 /* R3.20: a timeline the reader has already watched to the end (in any part, scenario, the challenge, or on a return) shows its end
    at once; only a new, different timeline plays, and ▶ Replay replays on demand */
 const watched=new Set();                 // timelines already played to the end (R3.20)
-const DUR={slow:24000,mid:12000,fast:5000};
+const DUR={slow:16000,mid:8000,fast:4000};   // B6: Medium within a few seconds (was 24 / 12 / 5 s)
 const shownPrev={};
 const P1={...BASE}, P2={...BASE,st:'dp'}, P3={...BASE,st:'z1'}, P4={...BASE,st:'z2'}, P5={...BASE,st:'z3',ov:0}, P6={...BASE,N:64,st:'z3',net:'one'};
 
@@ -274,8 +274,8 @@ const STEPS=[
  {id:'z3',title:{en:'ZeRO-3 (FSDP): split the weights too',zh:'ZeRO-3（FSDP）：权重也分开存'},expect:()=>lv5Tried.has('ov'),showMe:()=>setLv5('ov'),label:{en:'Result',zh:'结果'},
   lead:()=>tx('Down to 1/8, at the price of half again as much data to move.','省到 1/8，代价是多传一半的数据。'),
   enter:()=>{lv5='noov'; lv5Tried=new Set(['noov']); return {...P5};},
-  body:()=>tx(`<p>The 2 bytes of weights are still a full copy on every GPU. ZeRO-3 splits them as well. Before a layer computes, an all-gather collects its weights from all GPUs, and they are freed right after. The backward pass gathers them once more. PyTorch’s FSDP (Fully Sharded Data Parallel) does this by default (FULL_SHARD).</p><p>Every layer’s weights now travel twice, and the gradients once, both in BF16 at 2 bytes per value, so each GPU moves 1.5 times the data of plain data parallelism. While a layer’s weights are on their way, that layer cannot compute. When should a layer’s weights be fetched? Pick one and see how much of the time the GPU waits for data.</p>`,
-              `<p>剩下 2 字节的权重，每张卡还是一整份。ZeRO-3 把权重也分开存。一层要算之前，先用 all-gather 从所有卡取齐这一层的权重，算完马上释放。反向时，再取一次。PyTorch 的 FSDP（Fully Sharded Data Parallel，完全分片的数据并行）默认就这样做（FULL_SHARD）。</p><p>每层的权重要传两次，梯度传一次，都按 BF16 传，每个数值 2 字节，所以每张卡要传的数据是数据并行的 1.5 倍。权重还在路上时，这一层没法算。什么时候去取这一层的权重？选一种取法，看看 GPU 有多少时间在等数据。</p>`)+lv5Ctl(),
+  body:()=>tx(`<p>After ZeRO-2 each GPU still holds a full copy of the BF16 weights. ZeRO-3 splits them 8 ways too. Before a layer computes, an all-gather collects its weights from all GPUs; they are freed right after, and the backward pass gathers them again. PyTorch’s FSDP (Fully Sharded Data Parallel) does this by default.</p><p>The price is more traffic, all of it in BF16. Data parallelism’s all-reduce moves about two copies of the gradients; ZeRO-3 moves three (each layer’s weights twice, the gradients once), 1.5 times as much. A layer cannot compute while its weights are on their way. When should a layer’s weights be fetched? Pick one and see how much of the time the GPU waits for data.</p>`,
+              `<p>ZeRO-2 之后，每张卡还存着一整份 BF16 权重。ZeRO-3 把权重也分成 8 份：一层要算之前，先用 all-gather 从所有卡取齐这一层的权重，算完马上释放，反向时再取一次。PyTorch 的 FSDP（完全分片的数据并行）默认就这样做。</p><p>代价是多传数据，都按 BF16 传。数据并行的 all-reduce 相当于把梯度传两遍；ZeRO-3 每层的权重要取两遍，梯度再传一遍，一共三遍，是数据并行的 1.5 倍。权重还在路上时，这一层没法算。什么时候去取这一层的权重？选一种取法，看看 GPU 有多少时间在等数据。</p>`)+lv5Ctl(),
   obs:()=>obsZ3()},
  {id:'net',title:{en:'Across machines',zh:'跨机器'},expect:()=>lv6Tried.size>=2,showMe:()=>setLv6('net'),label:{en:'Result',zh:'结果'},
   lead:()=>tx('When each machine’s network is slow, ZeRO-3 across machines waits.','每台机器的网络慢时，ZeRO-3 跨机器要等数据。'),
@@ -327,13 +327,13 @@ function obsZ2(){
 }
 function obsZ3(){
   const e=evalC({...P5,ov:lv5==='ov'?1:0}), d=evalC(P2), n=evalC({...P5,ov:0});
-  const head=tx(`<p><b>ZeRO-3: ${fGB(e.me.total)} per GPU. Each GPU sends ${fGB(e.k.bytes)} per step, 1.5 times data parallel’s ${fGB(d.k.bytes)}.</b></p>`,`<p><b>ZeRO-3：每张卡 ${fGB(e.me.total)}。每张卡每步发出 ${fGB(e.k.bytes)}，是数据并行（${fGB(d.k.bytes)}）的 1.5 倍。</b></p>`);
-  if(lv5==='noov') return head+tx(`<p><b>Fetching when needed, this GPU spends ${fPctW(e.s.share)} of the step waiting for data</b>, the red parts of the timeline. Before every layer, forward and backward, it stops until that layer’s weights arrive. After each layer’s backward pass, it also waits for the gradients’ reduce-scatter to finish. Now try prefetching.</p>`,
-                                   `<p><b>用到才取时，这张卡有 ${fPctW(e.s.share)} 的时间在等数据</b>，就是时间线里红色的部分。前向和反向的每一层开始前，它都要停下来等这一层的权重。反向的每一层算完，还要等梯度的 reduce-scatter 传完。再试试预取。</p>`);
-  return head+tx(`<p><b>With ${DEF('prefetching',TIP.pre())}, the waiting drops from ${fPctW(n.s.share)} to ${fPctW(e.s.share)} of the step.</b> The extra half of the data travels while the GPU computes, so it costs almost no time. The price is a second layer’s weights in memory, about ${fGB(e.me.inf/2)}.</p>`,
-                 `<p><b>用了${DEF('预取',TIP.pre())}，等数据的时间从这一步的 ${fPctW(n.s.share)} 降到 ${fPctW(e.s.share)}。</b>多传的那一半数据，是在 GPU 计算的同时传的，所以几乎不花时间。代价是显存里要多放一层的权重，约 ${fGB(e.me.inf/2)}。</p>`)+
-    MN(MS(),'\\frac{18N}{d}')+tx('<p>All 18N of the model states, weights, gradients and optimizer state, are split over the d GPUs. Not in it: the activations, and the full weights of the layers in use.</p>',
-                                  '<p>权重、梯度和优化器状态一共 18N，全部分到 d 张卡上。不算在里面的有激活，还有正在用的那几层的完整权重。</p>');
+  const head=tx(`<p><b>ZeRO-3: only ${fGB(e.me.total)} per GPU, and each step moves 1.5 times the data of plain data parallelism.</b></p>`,`<p><b>ZeRO-3：每张卡只要 ${fGB(e.me.total)}，每步要传的数据是数据并行的 1.5 倍。</b></p>`);
+  if(lv5==='noov') return head+tx(`<p><b>Fetching when needed, this GPU spends ${fPctW(e.s.share)} of the step waiting for data</b>, the red parts of the timeline. Without prefetching, transfers and computation do not overlap, so the GPU stops for every transfer: before every layer for its weights, and after each layer’s backward pass for the gradients’ reduce-scatter. Now try prefetching.</p>`,
+                                   `<p><b>用到才取时，这张卡有 ${fPctW(e.s.share)} 的时间在等数据</b>，就是时间线里红色的部分。不预取时，传输和计算不重叠，每传一次，GPU 都要停下来等：每一层开始前等这一层的权重，反向的每一层算完，还要等梯度的 reduce-scatter 传完。再试试预取。</p>`);
+  return head+tx(`<p><b>With ${DEF('prefetching',TIP.pre())}, the waiting drops from ${fPctW(n.s.share)} to ${fPctW(e.s.share)} of the step:</b> the extra transfers hide behind the computation. The price is a second layer’s weights in memory, about ${fGB(e.me.inf/2)}.</p>`,
+                 `<p><b>用了${DEF('预取',TIP.pre())}，等数据的时间从这一步的 ${fPctW(n.s.share)} 降到 ${fPctW(e.s.share)}。</b>多传的数据藏在计算后面，几乎不花时间。代价是显存里要多放一层的权重，约 ${fGB(e.me.inf/2)}。</p>`)+
+    MN(MS(),'\\frac{18N}{d}')+tx('<p>18N bytes are the weights, gradients and optimizer state of N parameters, split over d GPUs. Not in it: the activations and the full weights of the layers in use.</p>',
+                                  '<p>18N 字节是 N 个参数的权重、梯度和优化器状态，全部分到 d 张卡上。不算在里面的有激活，还有正在用的那几层的完整权重。</p>');
 }
 function obsNet(){
   const e=evalC(lv6Cfg(lv6)), z=evalC(P6);

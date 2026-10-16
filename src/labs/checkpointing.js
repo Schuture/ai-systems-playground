@@ -247,8 +247,8 @@ const fixLever=()=>`<div class="ckp-lv">`+A.ui.levers({aria:tx('What to do after
   options:['latest','back','skip'].map(o=>({v:'fix:'+o,title:L(FIX[o].t),desc:L(FIX[o].d),result:esc(fixShown(o)?fixRes(o):'')}))})+`</div>`;
 const intCtl=(id,inline)=>A.ui.range({id,key:'T',label:tx('Save every','每隔多久存一次'),min:0,max:INTS.length-1,value:Math.max(0,INTS.indexOf(S.T)),out:minsT(S.T),inline});
 const modeCtl=(id,inline)=>A.ui.seg({id,key:'mode',label:tx('How to save','怎么存'),options:[['sync',tx('Synchronous','同步')],['async',tx('Asynchronous','异步')]],value:S.mode,inline});
-const MODEDEF=()=>tx(`<ul class="ckp-defs"><li><b>Synchronous save</b><span>Training stops until the whole checkpoint is written. This lab assumes the job ${DEF('writes 10 GB/s',TIP.wbw())}, so each save of the 70B’s ${TB(SIZE70)} stops training for about ${fixd(SIZE70/WINT.bw,0)} s.</span></li><li><b>Asynchronous save</b><span>Training stops only while the state is copied into CPU memory (this lab assumes ${WINT.dAsync} s); the write to disk runs in the background while training goes on.</span></li></ul>`,
-  `<ul class="ckp-defs"><li><b>同步存档</b><span>训练停下来，等存档全部写完再继续。这个 Lab 假设整个任务${DEF('每秒写 10 GB',TIP.wbw())}，70B 的一份存档 ${TB(SIZE70)}，每次要停约 ${fixd(SIZE70/WINT.bw,0)} 秒。</span></li><li><b>异步存档</b><span>训练只在把状态拷进 CPU 内存时停一下（这个 Lab 假设 ${WINT.dAsync} 秒），写盘在后台进行，训练照常往下走。</span></li></ul>`);
+const MODEDEF=()=>tx(`<ul class="ckp-defs"><li><b>Synchronous save</b><span>Training stops until the checkpoint is written; the job ${DEF('writes 10 GB/s',TIP.wbw())}, so each save stops it for about ${fixd(SIZE70/WINT.bw,0)} s.</span></li><li><b>Asynchronous save</b><span>Training stops only while the state is copied into CPU memory (${WINT.dAsync} s here); the write to disk runs in the background.</span></li></ul>`,
+  `<ul class="ckp-defs"><li><b>同步存档</b><span>训练停下来，等存档写完再继续，按${DEF('每秒写 10 GB',TIP.wbw())} 算，每次停约 ${fixd(SIZE70/WINT.bw,0)} 秒。</span></li><li><b>异步存档</b><span>训练只在把状态拷进 CPU 内存时停一下（这里假设 ${WINT.dAsync} 秒），写盘在后台进行。</span></li></ul>`);
 
 const STEPS=[
  {id:'mission',title:{en:'Your mission',zh:'你的任务'},gate:()=>!!pred,skip:true,
@@ -278,12 +278,10 @@ const STEPS=[
      `<p>这里的故障发生在第 500 步存档写到 60% 的时候。选一种存法，看看崩了以后要重算多少步。第二种存法靠的是“${DEF('改名是原子操作',TIP.rename())}”这一点。</p>`)+atomLever(),
   obs:()=>obsAtomic()},
  {id:'interval',title:{en:'How often to save',zh:'多久存一次'},expect:()=>tMoved&&asyncTried,showMe:()=>{asyncTried=true; tMoved=true; setState({mode:'async',T:nearInt(tOpt(dOf('c70','async'),CASES.c70.M)/60)});},label:{en:'Result',zh:'结果'},
-  lead:()=>tx('Too often, time goes to saving; too rarely, each failure repeats much work.','存得太勤，时间花在写盘上；存得太少，一次故障重算很多。'),
+  lead:()=>tx('Too often, training keeps stopping for saves; too rarely, each failure repeats much work.','存得太勤，训练老要停下来等存档；存得太少，一次故障重算很多。'),
   enter:()=>({...BASE,view:'waste',mode:'sync',T:180,cs:'c70'}),
-  body:()=>tx(`<p>Now a real-sized run: Llama${NB}3.1${NB}70B on 1,024 GPUs. Its checkpoint holds ${DEF('14 bytes per parameter',TIP.bpc())}, ${TB(SIZE70)} in all. Failures come about every ${DEF('12 hours',TIP.mtbf())}, and each ${DEF('restart',TIP.restart())} costs 10 minutes.</p>`+
-     `<p>Saving often costs the time training stands still for each save. Saving rarely costs the work redone after a failure: on average half an interval. A restart costs the same at any interval. The chart adds up saving, redone work and restarts for every interval.</p>`,
-     `<p>现在换成真实规模：1,024 张卡训练 Llama${NB}3.1${NB}70B。它的存档每个参数 ${DEF('14 字节',TIP.bpc())}，一份 ${TB(SIZE70)}。平均每 ${DEF('12 小时',TIP.mtbf())}出一次故障，每次${DEF('重启',TIP.restart())}要 10 分钟。</p>`+
-     `<p>存得勤，训练就要经常停下来等存档。存得少，一次故障平均要重算半个间隔的工作。重启要花的时间和间隔无关。图里把存档、重算和重启三样加起来，画出每种间隔浪费多少。</p>`)+MODEDEF()+intCtl('ckp-ic-T',true)+modeCtl('ckp-ic-mode',true),
+  body:()=>tx(`<p>Saving often stops training for every save; saving rarely means more work redone after each failure. The best interval lies in between.</p><p>Here it is found at real size: Llama${NB}3.1${NB}70B on 1,024 GPUs, a checkpoint of ${DEF('14 bytes per parameter',TIP.bpc())}, ${TB(SIZE70)} in all, a failure about every ${DEF('12 hours',TIP.mtbf())} (the time between failures, M), and 10 minutes for each ${DEF('restart',TIP.restart())} (R).</p>`,
+     `<p>存得勤，训练要常停下来等存档；存得少，一次故障要重算的工作就多。最省的间隔在两者之间。</p><p>这里按真实规模来找：1,024 张卡训练 Llama${NB}3.1${NB}70B，存档每个参数 ${DEF('14 字节',TIP.bpc())}，一份 ${TB(SIZE70)}；平均每 ${DEF('12 小时',TIP.mtbf())}出一次故障（故障间隔 M），每次${DEF('重启',TIP.restart())}要 10 分钟（重启时间 R）。</p>`)+MODEDEF()+tx('<p>Drag the interval to find the one that wastes least, then switch to asynchronous saving.</p>','<p>拖动间隔，找到浪费最少的那一档，再换成异步存档看看。</p>')+intCtl('ckp-ic-T',true)+modeCtl('ckp-ic-mode',true),
   obs:()=>obsInterval()},
  {id:'spike',title:{en:'Loss spikes: roll back and skip',zh:'loss 突刺：退回去，跳过坏数据'},expect:()=>fixTried.has('skip'),showMe:()=>setFix('skip'),label:{en:'Result',zh:'结果'},
   lead:()=>tx('Bad data, not a broken machine: keep older checkpoints to roll back to.','坏的是数据，不是机器：要留着更早的存档才能退回去。'),
@@ -371,10 +369,10 @@ function obsInterval(){
   /* when the chosen interval is already within 10% of the best one, say so instead of repeating the same interval and share */
   const atBest=Math.abs(S.T*60/to-1)<0.1;
   return tx(`<p><b>${S.mode==='sync'?'Synchronous':'Asynchronous'}, every ${minsT(S.T)}: ${pct(w.total)} of the run is wasted. ${atBest?'This is about the interval that wastes least.':`Saving about every ${mins(to)} wastes least, ${pct(wo.total)}.`}</b></p>`,
-            `<p><b>${S.mode==='sync'?'同步':'异步'}存档、每 ${minsT(S.T)}存一次时，整次训练有 ${pct(w.total)} 的时间白费。${atBest?'这差不多就是最省的间隔。':`大约每 ${mins(to)}存一次最省，白费 ${pct(wo.total)}。`}</b></p>`)+
+            `<p><b>${S.mode==='sync'?'同步':'异步'}存档、每 ${minsT(S.T)}存一次时，整次训练有 ${pct(w.total)} 的时间浪费掉了。${atBest?'这差不多就是最省的间隔。':`大约每 ${mins(to)}存一次最省，浪费 ${pct(wo.total)}。`}</b></p>`)+
     MX(WASTE_TEX())+termsTable(wasteNow())+
-    tx('<p>The longer the interval, the less saving (the first term) and the more redone work (the second). Restarts (the third) do not depend on the interval. The waste is least where the first two terms are equal, at the interval</p>',
-       '<p>间隔越长，存档（第一项）越少，重算（第二项）越多。重启（第三项）和间隔无关。前两项相等时浪费最少，这时的间隔是：</p>')+
+    tx('<p>The longer the interval, the less saving and the more redone work; restarts do not change. The waste is least where the first two terms are equal, at the interval</p>',
+       '<p>间隔越长，存档越少、重算越多，重启不变。前两项相等时浪费最少，这时的间隔是：</p>')+
     MX('T^{*} = \\sqrt{2 \\delta M}')+
     tx(`<p>Asynchronous saving cuts δ, so it pays to save more often: about every ${mins(S.mode==='sync'?to2:to)} instead of every ${mins(S.mode==='sync'?to:to2)}.</p>`,
        `<p>异步存档把 δ 压小了，所以值得存得更勤，大约每 ${mins(S.mode==='sync'?to2:to)}一次，而不是每 ${mins(S.mode==='sync'?to:to2)}一次。</p>`);

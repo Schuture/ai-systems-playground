@@ -269,6 +269,11 @@ def run_guided(b, w, h, lang, dark=False):
     click(pg, '#mp-ic-m button[data-v="32"]', 300)
     st = state(pg)
     check(f'{tag} part 2: a new picture (m 32) plays', st['m'] == 32 and st['playing'], st)
+    if phone:
+        # B2 (one clock): while it plays, the mini result bar shows the same idle share as the card, not 0% until the end
+        pg.evaluate("()=>{const t=document.getElementById('mp-graph'); window.scrollTo(0, t.getBoundingClientRect().bottom+scrollY+80)}"); pg.wait_for_timeout(600)
+        lv = pg.evaluate("()=>({playing:window.__mp.state().playing, shown:!document.getElementById('dock').hidden, st:document.getElementById('dkStatus').textContent, read:document.getElementById('dkRead').textContent, v:document.querySelector('#mp-metrics [data-k=\"idle\"] .v').textContent})")
+        check(f'{tag} part 2: while it plays, the mini result bar shows the card’s idle share (B2)', lv['shown'] and lv['playing'] and lv['v'] != '0%' and lv['v'] in lv['read'] and lv['v'] in lv['st'], lv)
     wait_done(pg)
     o = obs(pg)
     check(f'{tag} part 2: the result names 18% and 88% and the bubble formula', '18%' in o and '88%' in o and vis(pg, '#mp-rail [data-obs] .mp-fx'), o[:200])
@@ -290,6 +295,8 @@ def run_guided(b, w, h, lang, dark=False):
     click(pg, '#mp-ic-m button[data-v="1"]', 400)
     st = state(pg)
     check(f'{tag} part 2: a picture already watched does not replay (R3.20)', st['m'] == 1 and not st['playing'] and st['ph'] >= 1, st)
+    o = obs(pg)
+    check(f'{tag} part 2: back at m = 1 after trying more: the m = 1 result with the formula, “m = 1” not repeated', Z(lang, 'With one batch (m = 1)', '只送一批（m = 1）时') in o and Z(lang, 'with m = 1)', 'm = 1 时是') not in o and vis(pg, '#mp-rail [data-obs] .mp-fx'), o[:300])
     click(pg, '#mp-player [data-act="play"]', 200)
     check(f'{tag} part 2: the Replay control plays it again', state(pg)['playing'], state(pg))
     click(pg, '#mp-ic-m button[data-v="32"]', 300); fast(pg); wait_done(pg)
@@ -351,6 +358,12 @@ def run_guided(b, w, h, lang, dark=False):
     check(f'{tag} part 6: 37.2 GB, 2.3%, 16% on the cards', '37.2 GB' in mt and '2.3%' in mt and '16%' in mt and not any(nexts(pg)), mt)
     bl = pg.evaluate(BLOCKS)
     check(f'{tag} part 6: the 1F1B schedule as separate blocks, not one dark bar (owner b8 item 4)', bl['mix'] > 0 and bl['minGap'] >= 0.5 and bl['thick'] == 0 and all(r >= 8 for r in bl['rows']) and Z(lang, 'micro-batches', 'micro-batch') in bl['note'], bl)
+    gl = pg.evaluate("()=>[...document.querySelectorAll('#mp-gantt .mp-glab')].map(e=>e.textContent)")
+    cells = pg.evaluate("()=>[...document.querySelectorAll('#mp-cl .mp-cell')].slice(0,4).map(c=>c.querySelector('small .s').textContent)")
+    mnum = [int(m.group(1)) if m else None for m in (re.search(Z(lang, r'achine (\d+)', r'机器 (\d+)'), x) for x in gl)]
+    check(f'{tag} part 6: each pipeline row is a stage on a machine of 8 GPUs, numbered as the cells (A7)', len(gl) == 4 and mnum == [1, 3, 5, 7] and [str(x) for x in mnum] == cells
+          and not any(Z(lang, 'GPU ', '张卡') in x for x in gl) and Z(lang, '8 GPUs per stage', '每段 8 张卡') in text(pg, '#mp-g-cap') and Z(lang, 'one pipeline', '其中一条流水线') in text(pg, '#mp-g-cap'), (gl, cells, text(pg, '#mp-g-cap')))
+    check(f'{tag} part 6: the two links named on the cluster (B1)', Z(lang, 'NVLink, 450 GB/s', 'NVLink，每张卡每个方向 450 GB/s') in text(pg, '#mp-cl') and Z(lang, 'InfiniBand, 50 GB/s', 'InfiniBand，每张卡每个方向 50 GB/s') in text(pg, '#mp-cl'), text(pg, '#mp-cl')[-200:])
     check(f'{tag} part 6: context and expert parallelism named', Z(lang, 'context parallelism', '上下文并行') in text(pg, '#mp-rail').lower() and Z(lang, 'expert parallelism', '专家并行') in text(pg, '#mp-rail').lower())
     every(pg, f'{tag} part 6', lang, f'{tag}_p6')
     # ---- part 7: what to remember

@@ -115,8 +115,13 @@ FONTS = """()=>{const svg=document.querySelector('#dl-curve svg'); if(!svg||!svg
  svg.querySelectorAll('text').forEach(t=>{const m=t.getScreenCTM(); out.svg.push(+(parseFloat(getComputedStyle(t).fontSize)*Math.hypot(m.a,m.b)).toFixed(2)); const r=t.getBoundingClientRect(); if(r.left<R.left-2||r.right>R.right+2) out.out.push(t.textContent);});
  document.querySelectorAll('#dl-c-yt, #dl-c-xt, #dl-xbox .dl-xt, #dl-xbox .dl-xc, #dl-xbox .dl-xm, #dl-xbox .dl-xv').forEach(e=>{if(e.getClientRects().length) out.html.push(parseFloat(getComputedStyle(e).fontSize));});
  out.titlesInSvg=[...svg.querySelectorAll('text')].some(t=>/similarity of|chance to be|相似度|被抓住的机会/.test(t.textContent)); out.titles=[document.querySelector('#dl-c-yt').textContent,document.querySelector('#dl-c-xt').textContent]; return out;}"""
+# polish round 2 (2026-10-15): on a wide stage the signatures sit beside the curve (data-pipeline.css). “before the curve” is then: the
+# pages above the curve, the signatures and their legend left of it, that legend above the curve's legend; stacked, the whole example
+# above the curve's box, as before
 EXAMPLE = """()=>{const x=document.querySelector('#dl-xbox'), c=document.querySelector('#dl-cbox'); if(!x||x.hidden||!x.getClientRects().length) return null; const pg=[...x.querySelectorAll('.dl-xpg')];
- return {above:x.getBoundingClientRect().bottom<=c.getBoundingClientRect().top+1, n:pg.length, shB:pg[1].querySelectorAll('.dl-xw.on').length, wB:pg[1].querySelectorAll('.dl-xw').length, shC:pg[2].querySelectorAll('.dl-xw.on').length,
+ const R=e=>e.getBoundingClientRect(), P=R(x.querySelector('.dl-xpgs')), G=R(x.querySelector('.dl-xsig')), XL=R(x.querySelector(':scope>.dl-leg')), K=R(c.querySelector('.dl-cmain')), CL=R(c.querySelector(':scope>.dl-leg'));
+ const side=G.right<=K.left+1;
+ return {side, above:side?(P.bottom<=K.top+1&&P.bottom<=G.top+1&&G.bottom<=XL.top+1&&XL.right<=K.left+1&&XL.bottom<=CL.top+1):R(x).bottom<=R(c).top+1, n:pg.length, shB:pg[1].querySelectorAll('.dl-xw.on').length, wB:pg[1].querySelectorAll('.dl-xw').length, shC:pg[2].querySelectorAll('.dl-xw.on').length,
    hashes:pg.map(p=>p.querySelector('.dl-xhash').textContent), badB:pg[1].classList.contains('bad'), redB:!!pg[1].querySelector('.dl-xv.dl-xbad'), hit:[...x.querySelectorAll('.dl-xg.hit')].length,
    sameB:pg.length&&x.querySelectorAll('.dl-xrow:nth-child(2) .dl-xc.same').length, sameC:x.querySelectorAll('.dl-xrow:nth-child(3) .dl-xc.same').length,
    fits:[...x.querySelectorAll('.dl-xg,.dl-xpg')].every(e=>e.getBoundingClientRect().right<=x.getBoundingClientRect().right+0.5)}}"""
@@ -303,7 +308,7 @@ with sync_playwright() as p:
             check(f'{tag} part 4: Next waits for “Only exact copies”', pg.evaluate("()=>document.querySelector('#dl-rail [data-nav=\"next\"]').disabled"))
             # review codex-b9v3 应修 3: three example pages above the curve; B shares most 5-grams, C none; the hashes differ; MinHash boxes one group of B
             ex = pg.evaluate(EXAMPLE)
-            check(f'{tag} part 4: the example (A, B, C) comes before the curve; B mostly shaded, C not; three different hashes; one group of B boxed', bool(ex) and ex['above'] and ex['n'] == 3 and ex['shB'] >= 0.8 * ex['wB'] and ex['shC'] == 0
+            check(f'{tag} part 4: the example (A, B, C) comes before the curve (above it, or its signatures beside it on a wide stage); B mostly shaded, C not; three different hashes; one group of B boxed', bool(ex) and ex['above'] and (ex['side'] or w < 1000) and ex['n'] == 3 and ex['shB'] >= 0.8 * ex['wB'] and ex['shC'] == 0
                   and len(set(ex['hashes'])) == 3 and ex['hit'] == 1 and ex['sameB'] == 10 and ex['sameC'] == 0 and not ex['badB'] and ex['fits'], ex)
             # scroll first and let the page settle: a scroll hides the tooltip, so hovering while the page still scrolls shows nothing
             xj = pg.locator('#dl-xbox .t[data-ctl="xjB"]'); xj.scroll_into_view_if_needed(); pg.wait_for_timeout(250); xj.hover(); pg.wait_for_timeout(300)
@@ -313,6 +318,11 @@ with sync_playwright() as p:
             fz = pg.evaluate(FONTS)
             check(f'{tag} part 4: the chart’s text is at least 10.5 px on screen, inside the chart; axis titles in HTML; the example’s text at least 11 px (应修 4)', bool(fz) and min(fz['svg']) >= 10.5 and not fz['out'] and not fz['titlesInSvg'] and all(fz['titles']) and min(fz['html']) >= 11, fz)
             check(f'{tag} part 4: MinHash’s sliders shown with MinHash', pg.evaluate("()=>!document.querySelector('#dl-ic-br').hidden"))
+            # polish round 2 (2026-10-15, R7.12): at 1440 × 900 the stage needs no scrolling inside itself and could still grow by 30 px
+            # (its max-height minus the height its content and borders need), and the curve lies inside it
+            if w == 1440:
+                fit = pg.evaluate("()=>{const s=document.querySelector('#dl-stage'), c=document.querySelector('#dl-curve svg'), r=s.getBoundingClientRect(), q=c.getBoundingClientRect(); return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, inside:q.top>=r.top&&q.bottom<=r.bottom};}")
+                check(f'{tag} part 4: the stage fits without scrolling inside, 30 px to spare, the curve inside it (R7.12)', fit['scroll'] <= 0 and fit['spare'] >= (30 if lang == 'zh' else 0) and fit['inside'], fit)
             # owner's review b8 (part 4, page B): at 1440, 1280, 900, 720 and 390, every page's text inside its own box, nothing under a grey
             for ww in ((1440, 1280, 900, 720, 390) if w == 1440 else (w,)):
                 if ww != w: pg.set_viewport_size({'width': ww, 'height': h}); pg.wait_for_timeout(350)

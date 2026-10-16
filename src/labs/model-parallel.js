@@ -138,7 +138,7 @@ let S={...BASE}, mode='guided', step=0, pred=null, observed={}, root=null, app=n
 let lv3='gpipe', tried3=new Set(['gpipe']), lv5='in', tried5=new Set(['in']), mSeen=new Set([1]), tSeen=new Set([1]);
 let quiet=false;   // true while a scenario sets the state: no ▲▼ badges for it (R6.6)
 let saved=null, chSubmitted=false, chReveal=false, sbTouched=false, userAct=false, wantObs=false, annT=null, drillSeed=1, drillOpen=false;
-let ph=0, playing=false, spd='mid', raf=0, lastT=0, relang=false;
+let ph=0, playing=false, spd='mid', raf=0, lastT=0, relang=false, dockK='';
 const watched=new Set();                                // R3.20: pictures already played to the end
 const DUR={slow:20000,mid:8000,fast:4500};                 // owner b8 (1): the old Fast is the new Medium (default); Slow is the old Medium
 const shownPrev={};
@@ -180,8 +180,8 @@ const TIP={
            '机器之间的卡通过 InfiniBand 网络通信。在参考的 H100 集群里，一台机器的 8 张卡共用 400 GB/s 的网络带宽，每张卡有自己的一个 400 Gb/s 网口，每个方向 50 GB/s（scaling book 的 gpus.md）。'),
  dp:()=>tx('Data parallelism runs several copies of the same model (here, of the same pipeline), each on its own share of the step’s data; at the end of the step the copies average their gradients with an all-reduce.',
            '数据并行是同一个模型（这里是同一条流水线）跑好几份，每份算这一步里自己那一份数据；一步结束时，各份用 all-reduce 把梯度平均一次。'),
- zero1:()=>tx('ZeRO-1 (Megatron-LM’s distributed optimizer): the data-parallel copies split the optimizer state among themselves, the 12 bytes per parameter of the FP32 copy, m and v. So each keeps '+A.ui.math('6 + \\frac{12}{d}')+' bytes per parameter instead of 18.',
-              'ZeRO-1（Megatron-LM 的分布式优化器）让各份数据并行分开存优化器状态，也就是 FP32 权重副本、m 和 v 这 12 字节。所以每个参数只占 '+A.ui.math('6 + \\frac{12}{d}')+' 字节，而不是 18 字节。'),
+ zero1:()=>tx('ZeRO-1 (Megatron-LM’s distributed optimizer): the data-parallel copies split the optimizer state among themselves, the 12 bytes per parameter of the FP32 copy and Adam’s m and v. So each keeps '+A.ui.math('6 + \\frac{12}{d}')+' bytes per parameter instead of 18, with d the number of data-parallel copies (here d = '+S.d+').',
+              'ZeRO-1（Megatron-LM 的分布式优化器）让各份数据并行分开存优化器状态，也就是 FP32 权重副本和 Adam 的 m、v 这 12 字节。所以每个参数只占 '+A.ui.math('6 + \\frac{12}{d}')+' 字节，而不是 18 字节；d 是数据并行的份数，这里 d = '+S.d+'。'),
  /* integrator decision 2026-10-04: one name and one default for the assumption; MFU only as a result */
  share:()=>tx(`An assumed value: how much of the H100’s peak, 989.5 TFLOP/s, a GPU reaches while it is computing. Plain BF16 matrix multiplies reach about 80% (measured by ml-engineering); attention, normalization and smaller kernels do not, so this lab uses ${SH()}.`,
               `这是假设值：GPU 在算的时候，能跑到 H100 峰值 989.5 TFLOP/s 的多少。单纯的 BF16 矩阵乘法约能到 80%（ml-engineering 实测）；attention、归一化和较小的 kernel 达不到，这个 Lab 取 ${SH()}。`),
@@ -202,7 +202,7 @@ const bubbleEx=(p,m)=>tx(`p = ${p}, m = ${m}:`,`p = ${p}，m = ${m}：`)+`<div c
 const mCtl=(id,inline)=>MS2.reduce((h,m)=>h.replace(`data-v="${m}"`,`data-v="${m}" data-tipx="${esc(bubbleEx(8,m))}"`),A.ui.seg({id,key:'m',label:tx('Micro-batches per step, m','micro-batch 数 m（每步切成几份）'),options:MS2.map(m=>[String(m),String(m)]),value:String(S.m),inline}));
 const tCtl=(id,inline)=>A.ui.seg({id,key:'t',label:tx('GPUs one layer is split across, t','一层切到几张卡上（t）'),options:TS.map(t=>[String(t),String(t)]),value:String(S.t),inline});
 const LV3=[{v:'gpipe',t:{en:'GPipe (initial setup)',zh:'GPipe（初始设置）'},d:{en:'All m = 16 forwards first, then all 16 backwards',zh:'m = 16 个前向全部做完，再做 16 个反向'}},
-  {v:'1f1b',t:{en:'1F1B',zh:'1F1B'},d:{en:'Warm up with a few forwards, then one forward and one backward in turn',zh:'先做几个前向，然后一个前向、一个反向交替'}}];
+  {v:'1f1b',t:{en:'1F1B',zh:'1F1B'},d:{en:'GPU 1 first does p = 8 forwards, then one forward and one backward in turn',zh:'第 1 张卡先做 p = 8 个前向，然后一个前向、一个反向交替'}}];
 const LV5=[{v:'in',t:{en:'In one machine (initial setup)',zh:'在一台机器里（初始设置）'},d:{en:'The 8 GPUs exchange results over NVLink, 450 GB/s each way',zh:'8 张卡之间走 NVLink，每个方向 450 GB/s'}},
   {v:'out',t:{en:'One GPU in each of 8 machines',zh:'分在 8 台机器上，每台 1 张'},d:{en:'The 8 GPUs exchange results over InfiniBand, 50 GB/s each way',zh:'8 张卡之间走 InfiniBand，每个方向 50 GB/s'}}];
 const p3=v=>sim(8,16,v);
@@ -225,17 +225,17 @@ const STEPS=[
   lead:()=>tx('Cut the batch into m pieces: while one piece moves on, the next one follows.','把一批数据切成 m 份：前一份往下走，后一份马上跟上。'),
   enter:()=>({...BASE,m:1}),
   body:()=>tx(`<p>With the whole batch at once, GPU 1 finishes its forward and then can only wait for the other 7 GPUs and for the gradients to come back.</p>`+
-    `<p>The fix is to cut the batch into m pieces, each a ${DEF('micro-batch',TIP.mb())}, so m is the number of micro-batches. GPU 1 finishes the first piece, hands it to GPU 2, and starts the second at once, so the 8 GPUs work on different micro-batches at the same time, like stations on an assembly line. This order is called GPipe: every micro-batch first does its forward pass, then they all do their backward passes.</p><p>Raise the number of micro-batches m and watch the ${DEF('bubble',TIP.bubble())}:</p>`,
+    `<p>The fix is to cut the batch into m pieces, each a ${DEF('micro-batch',TIP.mb())}, so m is the number of micro-batches. GPU 1 hands the first piece to GPU 2 as soon as it is done and starts the second, so several GPUs work at the same time. This order is called GPipe: every micro-batch first does its forward pass, then the backward passes follow one after another.</p><p>Raise the number of micro-batches m and watch the ${DEF('bubble',TIP.bubble())}:</p>`,
     `<p>整批一次送进去时，第 1 张卡算完前向，就只能等后面 7 张卡算完、梯度传回来。</p>`+
-    `<p>办法是把这一批切成 m 份，每份叫一个 ${DEF('micro-batch',TIP.mb())}，m 就是 micro-batch 数。第 1 张卡算完第 1 份，交给第 2 张卡，马上接着算第 2 份。这样 8 张卡同时在处理不同的 micro-batch，就像流水线上的几个工位。这种排法叫 GPipe：所有 micro-batch 先做完前向，再一起做反向。</p><p>把 micro-batch 数 m 调大，看 ${DEF('bubble',TIP.bubble())} 怎么变：</p>`)+mCtl('mp-ic-m',true),
+    `<p>办法是把这一批切成 m 份，每份叫一个 ${DEF('micro-batch',TIP.mb())}，m 就是 micro-batch 数。第 1 张卡算完第 1 份就交给第 2 张卡，自己接着算第 2 份，几张卡就能同时干活。这种排法叫 GPipe：所有 micro-batch 先做完前向，再一份接一份做反向。</p><p>把 micro-batch 数 m 调大，看 ${DEF('bubble',TIP.bubble())} 怎么变：</p>`)+mCtl('mp-ic-m',true),
   obs:()=>obsGpipe()},
  {id:'1f1b',title:{en:'1F1B: the same bubble, far fewer activations kept',zh:'1F1B：bubble 一样，激活少存很多'},view:'gantt',expect:()=>tried3.has('1f1b'),showMe:()=>setLv3('1f1b'),label:{en:'Result',zh:'结果'},
   lead:()=>tx('A different order keeps the bubble but frees activations early.','换一种顺序：bubble 不变，激活提早释放。'),
   enter:()=>{lv3='gpipe'; tried3=new Set(['gpipe']); return {...BASE,m:16,sched:'gpipe'};},
-  body:()=>tx(`<p>GPipe has a cost. The backward pass needs the ${DEF('activations',TIP.act())} each layer computed in the forward pass, so after a forward they stay in memory until the backward has used them. GPU 1 ends up holding the activations of all m micro-batches.</p>`+
-    `<p>1F1B (one forward, one backward) orders the work differently: as soon as a micro-batch’s forward reaches the last GPU, its backward starts. GPU 1 first does p forwards to fill the p stages, and from then on it does one backward after every forward; each backward frees the activations of its own micro-batch. So GPU 1 never holds more than p micro-batches of activations, while GPipe holds all m.</p><p>With p = 8 stages and m = 16 micro-batches, pick a schedule and see how many micro-batches of activations GPU 1 holds at once.</p>`,
-    `<p>GPipe 有一个代价。反向要用到前向时每一层算出的${DEF('激活',TIP.act())}，所以前向做完以后，激活要一直留在显存里，等反向用完才能释放。第 1 张卡要存下全部 m 个 micro-batch 的激活。</p>`+
-    `<p>1F1B（one forward, one backward）换了一种排法，一个 micro-batch 的前向一走到最后一张卡，它的反向马上开始。第 1 张卡先做 p 个前向，把 p 段流水线填满，之后每做一个前向，就做一个反向。每做完一个反向，那个 micro-batch 的激活就释放了。所以第 1 张卡同时最多存 p 份激活，GPipe 却要存 m 份。</p><p>流水线段数 p = 8、micro-batch 数 m = 16 时，选一种排法，看看第 1 张卡最多要同时存几份激活。</p>`)+
+  body:()=>tx(`<p>1F1B (one forward, one backward) changes the order: GPU 1 first does p forwards to fill the p stages, then alternates one forward and one backward, and each backward frees the ${DEF('activations',TIP.act())} of its own micro-batch. GPipe starts the backward passes only after all m forwards, so GPU 1 holds the activations of all m micro-batches at once.</p>`+
+    `<p>Activations are what each layer computes in the forward pass; the backward pass needs them, so they stay in memory until it has used them.</p><p>With p = 8 stages and m = 16 micro-batches, pick a schedule and see how many micro-batches of activations GPU 1 holds at once.</p>`,
+    `<p>1F1B（one forward, one backward）换了顺序：第 1 张卡先做 p 个前向，把 p 段流水线填满，之后前向、反向轮流做，每做完一个反向，就释放那个 micro-batch 的${DEF('激活',TIP.act())}。GPipe 要等 m 个前向全做完才开始反向，所以第 1 张卡要同时存着全部 m 份激活。</p>`+
+    `<p>激活是前向时每一层算出的结果，反向要用，用完才能释放。</p><p>流水线段数 p = 8、micro-batch 数 m = 16 时，选一种排法，看看第 1 张卡最多要同时存几份激活。</p>`)+
     levers('mp-ic-lv3',tx('Pipeline schedule, pick one','流水线的排法，选一种'),lv3,LV3,tried3,lv3Res),
   obs:()=>obs1f1b()},
  {id:'tp',title:{en:'Tensor parallelism: cut inside a layer',zh:'张量并行：在层里面切'},view:'layer',expect:()=>tSeen.has(8),showMe:{t:8},label:{en:'Result',zh:'结果'},
@@ -258,18 +258,16 @@ const STEPS=[
     levers('mp-ic-lv5',tx('Where the 8 GPUs sit, pick one','8 张卡放在哪里，选一种'),lv5,LV5,tried5,lv5Res),
   obs:()=>obsLink()},
  {id:'3d',title:{en:'Stacking the three',zh:'三种切法叠起来'},view:'cluster',label:{en:'Result',zh:'结果'},
-  lead:()=>tx('Tensor parallel inside a machine, pipeline across machines, data parallel around both.','机器里张量并行，机器之间流水线并行，最外面数据并行。'),
+  lead:()=>tx('Tensor parallel inside a machine, pipeline across machines, data parallel between pipelines.','机器里张量并行，机器之间流水线并行，流水线之间数据并行。'),
   enter:()=>({model:'70b',t:8,p:4,d:2,m:128,b:1,seq:SEQ,place:'in',zero:1,sched:'1f1b'}),
-  body:()=>tx(`<p>Real large runs stack the cuts. The chart shows one layout of Llama‑3.1‑70B on 8 machines, 64 H100s:</p><ul class="mp-ul">`+
-    `<li>In each machine, the 8 GPUs do tensor parallelism, so every all-reduce goes over NVLink.</li>`+
-    `<li>4 machines form one pipeline: p = 4 stages of 20 layers each.</li>`+
-    `<li>There are 2 such pipelines, each with half of the data: this is ${DEF('data parallelism',TIP.dp())}. The two pipelines also split the optimizer state, half each (${DEF('ZeRO-1',TIP.zero1())}, see ${labLink('parallelism')}).</li></ul>`+
-    `<p>Each step trains on 256 sequences of 4,096 tokens, so each pipeline gets 128 and runs them as m = 128 micro-batches.</p>`,
-    `<p>真实的大模型训练把几种切法叠起来。图里是 Llama‑3.1‑70B 在 8 台机器、64 张 H100 上的一种排法：</p><ul class="mp-ul">`+
-    `<li>每台机器里的 8 张卡做张量并行，每次 all-reduce 都走 NVLink。</li>`+
-    `<li>4 台机器连成一条流水线，段数 p = 4，每段 20 层。</li>`+
-    `<li>这样的流水线有 2 条，各算一半数据，这叫${DEF('数据并行',TIP.dp())}。这两条流水线还把优化器状态分开存，各存一半（${DEF('ZeRO-1',TIP.zero1())}，见${labLinkZ('parallelism')}）。</li></ul>`+
-    `<p>每步训练 256 条序列，每条 4,096 个 token。每条流水线分到 128 条，切成 m = 128 个 micro-batch。</p>`),
+  body:()=>tx(`<p>Large runs stack the three cuts, giving the faster links to the cuts that talk more often. The chart shows one layout of Llama‑3.1‑70B on 8 machines, 64 H100s:</p><ul class="mp-ul">`+
+    `<li>Tensor parallelism all-reduces in every layer, so it stays among the 8 GPUs of one machine, on NVLink.</li>`+
+    `<li>The pipeline talks only at stage boundaries, so it can cross machines: 4 machines form one pipeline, p = 4 stages of 20 layers each.</li>`+
+    `<li>${DEF('Data parallelism',TIP.dp())} talks once per step, so it goes between two pipelines, over the network between machines: there are 2 such pipelines, each taking half of the step’s 256 sequences, one sequence per micro-batch. The two pipelines also split the optimizer state in two with ${DEF('ZeRO-1',TIP.zero1())} (see ${labLink('parallelism')}).</li></ul>`,
+    `<p>大模型训练把三种切法叠起来，通信越频繁的切法，放在越快的链路上。图里是 Llama‑3.1‑70B 在 8 台机器、64 张 H100 上的一种排法：</p><ul class="mp-ul">`+
+    `<li>张量并行每一层都要做 all-reduce，所以放在一台机器的 8 张卡之间，走 NVLink。</li>`+
+    `<li>流水线只在段的边界上通信，可以跨机器：4 台机器连成一条流水线，段数 p = 4，每段 20 层。</li>`+
+    `<li>${DEF('数据并行',TIP.dp())}一步才通信一次，所以放在两条流水线之间，走机器之间的网络：这样的流水线有 2 条，每步的 256 条序列各算一半，每个 micro-batch 一条序列。两条流水线还用 ${DEF('ZeRO-1',TIP.zero1())} 把优化器状态分成两半存（见${labLinkZ('parallelism')}）。</li></ul>`),
   obs:()=>obs3d()},
  {id:'remember',title:{en:'What to remember',zh:'要记住的'},view:'gantt',
   lead:()=>tx('Pipeline: mind the bubble. Tensor: mind the link. Stack them by speed of link.','流水线看 bubble，张量并行看链路，按链路快慢把它们叠起来。'),
@@ -288,16 +286,14 @@ function obsGpipe(){
   if(!runDone()) return '';
   const s=sim(8,S.m,'gpipe'), b=s.idle, b1=sim(8,1,'gpipe').idle;
   let h='';
-  if(S.m===1) h=tx(`<p><b>With one batch (m = 1), only one GPU works at any moment; each GPU waits ${pct(b)} of the step.</b></p>`,`<p><b>只送一批（m = 1）时，任何时刻只有 1 张卡在干活，每张卡有 ${pct(b)} 的时间在等。</b></p>`)+verdict()+
-    tx('<p>The forward pass moves down one GPU at a time, and the backward pass comes back the same way, so the other 7 GPUs are always waiting.</p>','<p>前向一张卡一张卡往下走，反向再一张卡一张卡传回来，所以另外 7 张卡总在等。</p>');
-  else h=tx(`<p><b>With p = 8 stages and m = ${S.m} micro-batches, each GPU waits ${pct(b)} of the step (${pct(b1)} with m = 1).</b></p>`,`<p><b>流水线段数 p = 8、micro-batch 数 m = ${S.m} 时，每张卡有 ${pct(b)} 的时间在等（m = 1 时是 ${pct(b1)}）。</b></p>`)+(S.m>=32?'':tx('<p>Raise it further.</p>','<p>再调大试试。</p>'));
+  if(S.m===1) h=tx(`<p><b>With one batch (m = 1), only one GPU works at any moment; each GPU waits ${pct(b)} of the step.</b></p>`,`<p><b>只送一批（m = 1）时，任何时刻只有 1 张卡在干活，每张卡有 ${pct(b)} 的时间在等。</b></p>`)+verdict();
+  if(S.m===1&&mSeen.size<2) return h+tx('<p>Now raise m.</p>','<p>再把 m 调大试试。</p>');   // the rule waits until a second m has been tried
+  if(S.m!==1) h=tx(`<p><b>With p = 8 stages and m = ${S.m} micro-batches, each GPU waits ${pct(b)} of the step (${pct(b1)} with m = 1).</b></p>`,`<p><b>流水线段数 p = 8、micro-batch 数 m = ${S.m} 时，每张卡有 ${pct(b)} 的时间在等（m = 1 时是 ${pct(b1)}）。</b></p>`)+(S.m>=32?'':tx('<p>Raise it further.</p>','<p>再调大试试。</p>'));
   /* B2: where each GPU idles (GPipe, forward 1, backward 2): GPU 1 only in the middle, GPU 8 at the start and the end; p − 1 slots each */
-  h+=tx('<p>Every GPU idles for a while, only at a different point of the step. At the start, the later GPUs wait for the first micro-batch to arrive. In the middle, the earlier GPUs have finished their forwards and wait for the gradients to come back. At the end, the later GPUs finish their backwards first and can only wait.</p>',
-        '<p>每张卡都要空等一段，只是等的位置不同。开头，后面的卡在等第一份数据传过来。中间，前面的卡做完了前向，在等梯度从后面传回来。结尾，后面的卡先做完反向，只能干等。</p>')+
-    tx('<p>Added up, each GPU idles p − 1 slots, whatever m is; one slot is one forward plus one backward. So the share of the step each GPU waits is:</p>','<p>加起来，每张卡空等的时间都是 p − 1 格，和 m 无关。一格是一次前向加一次反向。所以每张卡空等的时间占一步的比例是：</p>')+
+  h+=tx('<p>A step is m + p − 1 slots long (one slot is one forward plus one backward), and each GPU works in only m of them, so every GPU idles p − 1 slots, whatever m is. The share of the step it waits is:</p>','<p>一步一共 m + p − 1 格（一格是一次前向加一次反向），每张卡只有 m 格在干活，所以每张卡都空等 p − 1 格，和 m 无关。空等占一步的比例是：</p>')+
     M('\\text{bubble} = \\frac{p - 1}{m + p - 1}')+
-    tx(`<p>p is the number of stages and m the number of micro-batches. Here p = 8, so the top stays 7 while the bottom grows with m. The m you have tried:</p>`,`<p>p 是流水线段数，m 是 micro-batch 数。这一部分 p = 8，分子一直是 7，分母随 m 变大。你试过的几种 m：</p>`)+wxTable()+
-    tx(`<p>The more micro-batches, the longer each GPU is busy, so the smaller the idle share. It never reaches 0, because those p − 1 slots are always there.</p>`,`<p>micro-batch 越多，每张卡忙的时间越长，空等的占比就越小。但它永远到不了 0，因为那 p − 1 格总在那里。</p>`);
+    tx(`<p>p is the number of stages and m the number of micro-batches. Here p = 8, so the top stays 7 while the bottom grows with m. The m you have tried:</p>`,`<p>p 是流水线段数，m 是 micro-batch 数。这里 p = 8，分子一直是 7，分母随 m 变大。你试过的几种 m：</p>`)+wxTable()+
+    tx(`<p>So the larger m, the smaller the idle share, but it never reaches 0, because those p − 1 slots are always there.</p>`,`<p>所以 m 越大，空等的占比越小，但永远到不了 0，因为那 p − 1 格总在那里。</p>`);
   return h;
 }
 /* owner b8 (5): the formula with this part's numbers, one row per m the learner has tried (the current one in bold) */
@@ -311,11 +307,11 @@ function obs1f1b(){
   const g=p3('gpipe'), f=p3('1f1b'), mb=cost({...BASE,m:16,sched:'1f1b'}).actMb;
   if(lv3==='gpipe') return tx(`<p><b>GPipe: GPU 1 holds the activations of all m = ${g.peak} micro-batches at once, and each GPU waits ${pct(g.idle)} of the step.</b></p><p>Now pick 1F1B.</p>`,`<p><b>GPipe：第 1 张卡同时存着全部 m = ${g.peak} 个 micro-batch 的激活，每张卡有 ${pct(g.idle)} 的时间在等。</b></p><p>再选 1F1B 试试。</p>`);
   return tx(`<p><b>1F1B: GPU 1 holds at most p = ${f.peak} micro-batches of activations instead of m = ${g.peak}, and the bubble is still ${pct(f.idle)}.</b></p>`+
-    `<p>The bubble stays because each GPU still idles p − 1 slots in total; 1F1B only changes the order of the forwards and backwards. What it saves is memory: a micro-batch frees its activations as soon as its backward is done.</p>`+
-    `<p>In this lab each micro-batch’s activations on GPU 1’s 10 layers take about ${fGB(mb)}, so even ${f.peak} of them do not fit on one 80 GB card. Real runs usually recompute instead (activation checkpointing): each layer keeps only its input and runs its forward again in the backward pass, about a third more compute for far fewer activations (see ${labLink('training-memory')}). Part 6 adds tensor parallelism, which shrinks each one to an eighth.</p>`,
+    `<p>The bubble stays, because 1F1B only changes the order: each GPU still idles p − 1 slots in total.</p>`+
+    `<p>Still, these ${f.peak} micro-batches of activations take about ${fGB(f.peak*mb)}, more than an 80 GB card holds. Part 6 adds tensor parallelism, which shrinks each one to an eighth. These numbers already assume selective recomputation; recomputing every layer would keep even less (see ${labLink('training-memory')}).</p>`,
     `<p><b>1F1B：第 1 张卡最多只存 p = ${f.peak} 个 micro-batch 的激活，而不是 m = ${g.peak} 个。bubble 还是 ${pct(f.idle)}。</b></p>`+
-    `<p>bubble 没变，因为每张卡空等的时间加起来还是 p − 1 格。1F1B 只是换了前向和反向的顺序，省下的是显存：一个 micro-batch 的反向一做完，它的激活就释放了。</p>`+
-    `<p>在这个 Lab 里，第 1 张卡这 10 层上，每个 micro-batch 的激活约 ${fGB(mb)}，${f.peak} 份也放不进一张 80 GB 的卡。真实训练常用重算（activation checkpointing），每一层只留下输入，反向时再把这一层的前向算一遍，多花约三分之一的计算，激活就少得多（见${labLinkZ('training-memory')}）。第 6 部分加上张量并行以后，每份只剩八分之一。</p>`);
+    `<p>bubble 没变，因为 1F1B 只换了顺序，每张卡空等的加起来还是 p − 1 格。</p>`+
+    `<p>可是这 ${f.peak} 份激活约 ${fGB(f.peak*mb)}，还是放不进 80 GB 的卡。第 6 部分加上张量并行，每份只剩八分之一。这里已经按选择性重算来算，每一层都重算的话还能再少存（见${labLinkZ('training-memory')}）。</p>`);
 }
 function obsTp(){
   const r=layer(S.t,'in'), r1=layer(1,'in');
@@ -339,12 +335,10 @@ function obsLink(){
 function obs3d(){
   const r=cost(S);
   const wait=r.bubble+r.tpShare;                          // S9a: one number, the two kinds of waiting together (cards show each)
-  return tx(`<p><b>Each GPU uses only ${fGB(r.mem)}, so it fits. Waiting in the bubble and for tensor-parallel all-reduces together take about ${pct(wait)} of the step.</b></p>`+
-    `<p>The cuts are sorted by how often they talk.</p><ul class="mp-ul"><li>Tensor parallelism talks in every layer, so it gets the fastest link.</li><li>The pipeline talks once per stage boundary, so it can cross machines.</li><li>Data parallelism talks once per step, so it goes outermost.</li></ul>`+
-    `<p class="small mp-two">Two more cuts:</p><ul class="mp-ul small"><li>Context parallelism: when sequences get very long, one sequence is cut and spread over several GPUs.</li><li>Expert parallelism: an ${labLink('moe')} model puts different experts on different GPUs.</li></ul>`,
-    `<p><b>每张卡只用 ${fGB(r.mem)}，放得下。一步里，空等和等张量并行的通信加起来约占 ${pct(wait)} 的时间。</b></p>`+
-    `<p>几种切法是按“多久要通信一次”排的。</p><ul class="mp-ul"><li>张量并行每一层都要通信，所以给它最快的链路。</li><li>流水线只在段的边界上通信，可以跨机器。</li><li>数据并行一步才通信一次，所以放在最外面。</li></ul>`+
-    `<p class="small mp-two">还有两种切法：</p><ul class="mp-ul small"><li>上下文并行（context parallelism）：序列很长时，把一条序列切开，分到几张卡上。</li><li>专家并行（expert parallelism）：${labLink('moe')} 模型把不同的专家放到不同的卡上。</li></ul>`);
+  return tx(`<p><b>Each GPU uses only ${fGB(r.mem)}, so it fits. The bubble takes ${pct(r.bubble)} of the step and waiting for tensor-parallel all-reduces ${pct(r.tpShare)}, together about ${pct(wait)}.</b></p>`+
+    `<p class="small mp-two">Two more cuts:</p><ul class="mp-ul small"><li>Context parallelism: when sequences get very long, one sequence is spread over several GPUs.</li><li>Expert parallelism: an ${labLink('moe')} model puts different experts on different GPUs.</li></ul>`,
+    `<p><b>每张卡只用 ${fGB(r.mem)}，放得下。一步里，bubble 占 ${pct(r.bubble)}，等张量并行的通信占 ${pct(r.tpShare)}，加起来约 ${pct(wait)}。</b></p>`+
+    `<p class="small mp-two">还有两种切法：</p><ul class="mp-ul small"><li>上下文并行（context parallelism）：序列很长时，把一条序列切到几张卡上。</li><li>专家并行（expert parallelism）：${labLink('moe')} 模型把不同的专家放到不同的卡上。</li></ul>`);
 }
 function remember(){
   /* G2 (the owner, 2026-10-08): each point keeps its rule and says why it matters or what follows; no point leans on a number or a
@@ -776,10 +770,14 @@ const predHidden=()=>isP('mission');
 const redIdle=()=>mode==='guided'&&(isP('gpipe')||isP('1f1b'));
 const simNow=()=>sim(S.p,S.m,S.sched);
 const simKey=()=>`${S.sched}|${S.p}|${S.m}`;
+/* the machine that holds pipeline dp's stage pp (both from 0), numbered from 1 as under the cluster's cells */
+const machOf=(dp,pp)=>Math.floor(S.t*(dp+S.d*pp)/GPU.perNode)+1;
 function ganttCap(){
   if(predHidden()) return tx('8 GPUs, 10 layers each: one row per GPU, time runs to the right','8 张卡，各放 10 层：每行是一张卡，往右是时间');
   const s=simNow();
-  return tx(`One training step: p = ${S.p} stages, m = ${S.m} ${S.m===1?'micro-batch':'micro-batches'}, ${S.sched==='gpipe'?'GPipe':'1F1B'}`,`一步训练：流水线段数 p = ${S.p}，micro-batch 数 m = ${S.m}，${S.sched==='gpipe'?'GPipe':'1F1B'}`)+(mode==='guided'?'':tx(' (one pipeline)','（其中一条流水线）'));
+  const one=mode!=='guided'||S.d>1, per=S.t>1?tx(`${S.t} GPUs per stage`,`每段 ${S.t} 张卡`):'';
+  return tx(`One training step: p = ${S.p} stages, m = ${S.m} ${S.m===1?'micro-batch':'micro-batches'}, ${S.sched==='gpipe'?'GPipe':'1F1B'}`,`一步训练：流水线段数 p = ${S.p}，micro-batch 数 m = ${S.m}，${S.sched==='gpipe'?'GPipe':'1F1B'}`)+
+    (one||per?tx(` (${[one?'one pipeline':'',per].filter(Boolean).join('; ')})`,`（${[one?'其中一条流水线':'',per].filter(Boolean).join('；')}）`):'');
 }
 function legendHTML(g,mix){
   const one=g===1;
@@ -815,7 +813,7 @@ function blocksOf(ops,g,u){
 }
 const rangeOf=(c,k)=>{const js=c.filter(o=>o.k===k).map(o=>o.j+1); if(!js.length) return ''; const a=Math.min(...js), b=Math.max(...js); return a===b?String(a):`${a}–${b}`;};
 function blockTip(c,i){
-  const f=rangeOf(c,'F'), b=rangeOf(c,'B'), gpu=tx(`GPU ${i+1}: `,`第 ${i+1} 张卡：`);
+  const f=rangeOf(c,'F'), b=rangeOf(c,'B'), gpu=S.t>1?tx(`Stage ${i+1}: `,`第 ${i+1} 段：`):tx(`GPU ${i+1}: `,`第 ${i+1} 张卡：`);
   if(f&&b) return gpu+tx(`forwards of micro-batches ${f} and backwards of ${b}, in turn.`,`第 ${f} 个 micro-batch 的前向和第 ${b} 个的反向，轮流做。`);
   return gpu+(f?tx(`the forward passes of micro-batches ${f}.`,`第 ${f} 个 micro-batch 的前向。`):tx(`the backward passes of micro-batches ${b}.`,`第 ${b} 个 micro-batch 的反向。`));
 }
@@ -841,14 +839,21 @@ function drawGantt(){
   const s=predHidden()?null:simNow(), W=Math.max(1,host.clientWidth-96), u=s?W/s.T:1, g=s?groupOf(u,S.m):1;
   const mix=!!s&&g>1&&S.sched==='1f1b'&&s.ops.some(r=>blocksOf(r,g,u).some(c=>!c.every(o=>o.k===c[0].k)));
   const lh=predHidden()?'':legendHTML(g,mix); if(lg._h!==lh){lg.innerHTML=lh; lg._h=lh;}
-  const sig=[predHidden(),simKey(),redIdle(),A.lang(),host.clientWidth>0?Math.round(host.clientWidth/8):0].join('|');
+  const sig=[predHidden(),simKey(),S.t,S.d,redIdle(),A.lang(),host.clientWidth>0?Math.round(host.clientWidth/8):0].join('|');
   if(host._sig!==sig){host._sig=sig;
     const rows=[];
-    const lab=i=>{const a=Math.round(i*md.L/p)+1, b=Math.round((i+1)*md.L/p); return tx(`GPU ${i+1}`,`第 ${i+1} 张卡`)+(p<=8?`<small>${tx(`layers ${a}–${b}`,`第 ${a}–${b} 层`)}</small>`:'');};
+    /* one GPU per stage: "GPU 1"; with tensor parallelism a stage is t GPUs of one machine (A7): "Stage 1, machine 1" when it fits
+       the label column, else "Machine 1" (measured below); the caption says how many GPUs a stage has */
+    const lab=(i,long)=>{const a=Math.round(i*md.L/p)+1, b=Math.round((i+1)*md.L/p), ly=p<=8?`<small>${tx(`layers ${a}–${b}`,`第 ${a}–${b} 层`)}</small>`:'';
+      if(S.t===1) return tx(`GPU ${i+1}`,`第 ${i+1} 张卡`)+ly;
+      const mc=machOf(0,i); return `<span class="mp-gl1">${long?tx(`Stage ${i+1}, machine ${mc}`,`第 ${i+1} 段，机器 ${mc}`):tx(`Machine ${mc}`,`机器 ${mc}`)}</span>`+ly;};
     if(predHidden()){for(let i=0;i<p;i++) rows.push(`<div class="mp-grow"><span class="mp-glab">${lab(i)}</span><span class="mp-gtrk"></span></div>`);}
-    else for(let i=0;i<p;i++) rows.push(`<div class="mp-grow"><span class="mp-glab">${lab(i)}</span><span class="mp-gtrk">${rowHTML(s.ops[i],s.T,u,g,i,redIdle(),p>8)}</span></div>`);
+    else for(let i=0;i<p;i++) rows.push(`<div class="mp-grow"><span class="mp-glab">${lab(i,true)}</span><span class="mp-gtrk">${rowHTML(s.ops[i],s.T,u,g,i,redIdle(),p>8)}</span></div>`);
     host.innerHTML=`<div class="mp-grows${p>8?' dense':''}">${rows.join('')}<div class="mp-mask" id="mp-mask"></div><div class="mp-head" id="mp-head"></div></div>`;
-    host.dataset.tipx=predHidden()?tx('Each row is one GPU of the pipeline and the 10 layers it holds.','每一行是流水线上的一张卡，以及它放的 10 层。'):tx(`Each row is one GPU; time runs to the right. The whole step is m + p − 1 = ${S.m+S.p-1} forward-and-backward slots long, of which each GPU is busy in m = ${S.m}.`,`每一行是一张卡，往右是时间。整步一共 m + p − 1 = ${S.m+S.p-1} 格（每格一次前向加一次反向），每张卡只有 m = ${S.m} 格在干活。`);
+    /* the text's own width against the label's content box (an ellipsis would hide the machine) */
+    const tooLong=e=>{const w=e.clientWidth-(parseFloat(getComputedStyle(e).paddingRight)||0); return [...e.querySelectorAll('.mp-gl1,small')].some(x=>{const r=document.createRange(); r.selectNodeContents(x); return r.getBoundingClientRect().width>w+0.5;});};
+    if(S.t>1&&!predHidden()){const ls=[...host.querySelectorAll('.mp-glab')]; if(ls.some(tooLong)) ls.forEach((e,i)=>{e.innerHTML=lab(i,false);});}
+    host.dataset.tipx=predHidden()?tx('Each row is one GPU of the pipeline and the 10 layers it holds.','每一行是流水线上的一张卡，以及它放的 10 层。'):S.t>1?tx(`Each row is one stage of the pipeline: ${S.t} GPUs in one machine split its layers with tensor parallelism. Time runs to the right. The whole step is m + p − 1 = ${S.m+S.p-1} forward-and-backward slots long, of which each stage is busy in m = ${S.m}.`,`每一行是流水线的一段：一台机器里的 ${S.t} 张卡用张量并行分担这一段的层。往右是时间。整步一共 m + p − 1 = ${S.m+S.p-1} 格（每格一次前向加一次反向），每段只有 m = ${S.m} 格在干活。`):tx(`Each row is one GPU; time runs to the right. The whole step is m + p − 1 = ${S.m+S.p-1} forward-and-backward slots long, of which each GPU is busy in m = ${S.m}.`,`每一行是一张卡，往右是时间。整步一共 m + p − 1 = ${S.m+S.p-1} 格（每格一次前向加一次反向），每张卡只有 m = ${S.m} 格在干活。`);
     host.tabIndex=0; host.setAttribute('role','img'); host.setAttribute('aria-label',host.dataset.tipx);}
   drawHead();
   drawPlayer();
@@ -912,13 +917,15 @@ function drawLayer(){
 function drawCluster(){
   const r=cost(S), t=S.t, p=S.p, d=S.d, md=MD[S.model];
   const cap=tx(`${md.name} on ${fint(r.gpus)} H100s: ${p} ${p===1?'stage':'stages'} across, ${d} ${d===1?'pipeline':'pipelines'} down, ${t} ${t===1?'GPU':'GPUs'} per cell`,`${md.name}，${fint(r.gpus)} 张 H100：横向 ${p} 段，纵向 ${d} 条流水线，每格 ${t} 张卡`);
-  const rowsShown=Math.min(d,8), colsShown=Math.min(p,16), machine=(dp,pp)=>Math.floor(t*(dp+d*pp)/GPU.perNode)+1;
+  const rowsShown=Math.min(d,8), colsShown=Math.min(p,16), machine=machOf;
   let h=`<div class="mp-clg" style="--c:${colsShown}">`;
   for(let i=0;i<rowsShown;i++) for(let j=0;j<colsShown;j++){
     const m0=machine(i,j), tip=tx(`Pipeline ${i+1}, stage ${j+1} (layers ${Math.round(j*md.L/p)+1}–${Math.round((j+1)*md.L/p)}): ${t} ${t===1?'GPU':'GPUs'} in machine ${m0} split each of these layers${t>1?' with tensor parallelism':''}.`,`第 ${i+1} 条流水线的第 ${j+1} 段（第 ${Math.round(j*md.L/p)+1}–${Math.round((j+1)*md.L/p)} 层）：机器 ${m0} 里的 ${t} 张卡${t>1?'用张量并行':''}分担这几层。`);
     h+=`<span class="mp-cell" tabindex="0" data-tipx="${esc(tip)}"><span class="mp-gp" style="--t:${t}">${'<i></i>'.repeat(t)}</span>${rowsShown*colsShown<=32?`<small><span class="l">${tx('machine','机器')} ${m0}</span><span class="s">${m0}</span></small>`:''}</span>`;}
   h+=`</div>`;
   if(d>rowsShown) h+=`<p class="mp-more small muted">${tx(`… and ${d-rowsShown} more pipelines like these`,`……下面还有 ${d-rowsShown} 条同样的流水线`)}</p>`;
+  /* B1/B3: the two links the card's rule is about, named where the machines are drawn */
+  h+=`<p class="mp-more mp-links small muted">${tx(`Inside a machine: NVLink, ${GPU.nv/1e9} GB/s each way per GPU. Between machines: InfiniBand, ${GPU.ib/1e9} GB/s each way per GPU.`,`机器里：NVLink，每张卡每个方向 ${GPU.nv/1e9} GB/s。机器之间：InfiniBand，每张卡每个方向 ${GPU.ib/1e9} GB/s。`)}</p>`;
   const cl=$('#mp-cl',app); if(cl._h!==h){cl.innerHTML=h; cl._h=h;}
   /* R7.4, R7.8: “machine 3” under each cell when it fits; else only the number, which the caption then explains; else nothing (the
      cell's hover still names its machine). Measured on every draw, so a resize or a language switch picks the form again. */
@@ -927,9 +934,9 @@ function drawCluster(){
   const capEl=$('#mp-cl-cap',app), capTxt=cap+(g.classList.contains('short')?tx('; the number under a cell is its machine','，格子下的数字是机器编号'):''); if(capEl.textContent!==capTxt) capEl.textContent=capTxt;
   /* memory per GPU */
   const lim=GPU.mem, mx=Math.max(lim*1.25,r.mem), w=x=>(x/mx*100).toFixed(2), over=!r.fits;
-  const mh=`<div class="mp-mcap">${tx('Memory per GPU (GPU 1, the most loaded)','每张卡的显存（第 1 段的卡，最满的那张）')}</div><div class="mp-mbar${over?' over':''}">`+
+  const mh=`<div class="mp-mcap">${tx('Memory per GPU (a GPU of stage 1, the most loaded)','每张卡的显存（第 1 段的卡，最满的那张）')}</div><div class="mp-mbar${over?' over':''}">`+
     `<i class="mp-mw" style="width:${w(r.weights)}%" tabindex="0" data-tipx="${esc(tx(`BF16 weights: ${fGB(r.weights)}, 2 bytes for each of the ${big(r.pg)} parameters on this GPU.`,`BF16 权重：${fGB(r.weights)}，这张卡上 ${big(r.pg)} 个参数各 2 字节。`))}"></i>`+
-    `<i class="mp-mo" style="width:${w(r.states-r.weights)}%" tabindex="0" data-tipx="${esc(tx(`FP32 gradients and optimizer state: ${fGB(r.states-r.weights)}, ${fX(r.bpp-2)} bytes per parameter (the gradient 4, the FP32 copy, m and v 12${S.zero&&d>1?` split over ${d} data-parallel copies by ZeRO-1`:''}).`,`FP32 梯度和优化器状态：${fGB(r.states-r.weights)}，每个参数 ${fX(r.bpp-2)} 字节（梯度 4 字节，FP32 权重副本、m 和 v 共 12 字节${S.zero&&d>1?`，由 ZeRO-1 分到 ${d} 份数据并行上`:''}）。`))}"></i>`+
+    `<i class="mp-mo" style="width:${w(r.states-r.weights)}%" tabindex="0" data-tipx="${esc(tx(`FP32 gradients and optimizer state: ${fGB(r.states-r.weights)}, ${fX(r.bpp-2)} bytes per parameter (the gradient 4, the FP32 copy and Adam’s m and v 12${S.zero&&d>1?` split over ${d} data-parallel copies by ZeRO-1`:''}).`,`FP32 梯度和优化器状态：${fGB(r.states-r.weights)}，每个参数 ${fX(r.bpp-2)} 字节（梯度 4 字节，FP32 权重副本和 Adam 的 m、v 共 12 字节${S.zero&&d>1?`，由 ZeRO-1 分到 ${d} 份数据并行上`:''}）。`))}"></i>`+
     `<i class="mp-ma" style="width:${w(r.act)}%" tabindex="0" data-tipx="${esc(tx(`Activations: ${fGB(r.act)}, ${r.inflight} ${r.inflight===1?'micro-batch':'micro-batches'} in flight × ${fGB(r.actMb)} each.`,`激活：${fGB(r.act)}，同时存 ${r.inflight} 个 micro-batch，每个 ${fGB(r.actMb)}。`))}"></i>`+
     `<b class="mp-mlim" style="left:${w(lim)}%"><em>80 GB</em></b></div><div class="mp-mleg"><span><i class="sw mp-sw-w"></i>${esc(tx('BF16 weights','BF16 权重'))}</span><span><i class="sw mp-sw-o"></i>${esc(tx('FP32 gradients + optimizer state','FP32 梯度 + 优化器状态'))}</span><span><i class="sw mp-sw-a"></i>${esc(tx('activations','激活'))}</span><span class="mp-mtot${over?' bad':''}">${esc(tx(`${fGB(r.mem)} of 80 GB`,`${fGB(r.mem)} / 80 GB`))}</span></div>`;
   const me=$('#mp-mem',app); if(me._h!==mh){me.innerHTML=mh; me._h=mh;}
@@ -959,7 +966,7 @@ function metricsDef(){
     if(predHidden()) return [{k:'idle',label:tx('Idle share of the step','这一步空等的比例'),v:'—',sub:tx('shown in part 2','第 2 部分揭晓'),tip:tx('Hidden until you answer the question.','作答之前先隐藏。')},{k:'act',label:tx('Activations GPU 1 holds','第 1 张卡存的激活'),v:'—',sub:tx('micro-batches','个 micro-batch'),tip:tx('Hidden until you answer the question.','作答之前先隐藏。')}];
     const s=simNow(), done=ph>=1, at=simAt(s,ph*s.T), mb=cost(S).actMb, pk=done?s.peak:at.peak;
     return [{k:'idle',label:done?tx('Idle share of the step','这一步空等的比例'):tx('Idle so far','到现在空等的比例'),v:pct(done?s.idle:at.idle),sub:done?tx(`whole step, p = ${S.p} GPUs`,`整步，p = ${S.p} 张卡`):tx('live, as it plays','播放中实时计算'),tip:tx(`The share of GPU time spent idle${done?' over the whole step':' so far'}: ${pct(done?s.idle:at.idle)}.`,`${done?'整步':'到现在'}所有卡空等的时间占 ${pct(done?s.idle:at.idle)}。`)},
-      {k:'act',label:tx('Activations GPU 1 holds','第 1 张卡存的激活'),v:String(pk),sub:tx(`${pk===1?'micro-batch':'micro-batches'} at most, about ${fGB(pk*mb)}`,`个 micro-batch（最多），约 ${fGB(pk*mb)}`),tip:tx(`At most ${pk} micro-batches${done?'':' so far'} have their activations in GPU 1’s memory at once; each takes about ${fGB(mb)} on its ${MD[S.model].L/S.p} layers.`,`${done?'':'到现在，'}第 1 张卡最多同时存着 ${pk} 个 micro-batch 的激活；每个在它那 ${MD[S.model].L/S.p} 层上约占 ${fGB(mb)}。`)},
+      {k:'act',label:tx('Activations GPU 1 holds','第 1 张卡存的激活'),v:String(pk),sub:mode==='guided'&&STEPS[step].id==='gpipe'?tx(`${pk===1?'micro-batch':'micro-batches'} at most; part 3 explains`,`个 micro-batch（最多），第 3 部分讲`):tx(`${pk===1?'micro-batch':'micro-batches'} at most, about ${fGB(pk*mb)}`,`个 micro-batch（最多），约 ${fGB(pk*mb)}`),tip:tx(`At most ${pk} micro-batches${done?'':' so far'} have their activations in GPU 1’s memory at once; each takes about ${fGB(mb)} on its ${MD[S.model].L/S.p} layers.`,`${done?'':'到现在，'}第 1 张卡最多同时存着 ${pk} 个 micro-batch 的激活；每个在它那 ${MD[S.model].L/S.p} 层上约占 ${fGB(mb)}。`)},
       {k:'slot',label:tx('Step length, m + p − 1','这一步的长度 m + p − 1'),v:String(S.m+S.p-1),sub:tx('forward-and-backward slots','格（每格一次前向加一次反向）'),tip:tx(`m + p − 1 = ${S.m} + ${S.p} − 1 = ${S.m+S.p-1} slots; each GPU works in ${S.m} of them.`,`m + p − 1 = ${S.m} + ${S.p} − 1 = ${S.m+S.p-1} 格；每张卡只有 ${S.m} 格在干活。`)}];}
   if(v==='layer'){const r=layer(S.t,S.place);
     return [{k:'comp',label:tx('Compute per GPU','每张卡的计算'),v:fMs(r.comp),sub:tx('one layer, forward + backward','一层，前向加反向'),tip:tx(`6 × ${big(r.c.Pl)} parameters × 4,096 tokens ÷ ${S.t} GPUs ÷ (989.5 TFLOP/s × ${SH()}) = ${fMs(r.comp)}. ${SH()} is an assumption: while computing, a GPU reaches ${SH()} of the peak.`,`6 × ${big(r.c.Pl)} 个参数 × 4,096 个 token ÷ ${S.t} 张卡 ÷（989.5 TFLOP/s × ${SH()}）= ${fMs(r.comp)}。其中 ${SH()} 是假设值，GPU 算的时候能跑到峰值的 ${SH()}。`)},
@@ -1037,10 +1044,12 @@ function render(){
   drawMetrics();
   const mb=$('#mp-mathbody',app), mh=mathHTML(); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}
   syncControls(); updateRail();
-  A.hash.write(token()); A.dock.refresh(); announce();
+  A.hash.write(token()); dockK=''; A.dock.refresh(); announce();
 }
-/* only the playhead moved: the mask, the player, the live cards, the badge */
-function renderPlay(){if(!app) return; drawHead(); drawPlayer(); drawMetrics(); drawHeadline(); if(ph>=1){updateRail(); A.dock.refresh();}}
+/* only the playhead moved: the mask, the player, the live cards, the badge; B2 (one clock): the phone's mini result bar reads the
+   same idle share as the cards, so it moves with them while it plays instead of jumping at the end */
+function renderPlay(){if(!app) return; drawHead(); drawPlayer(); drawMetrics(); drawHeadline(); if(ph>=1){dockK=''; updateRail(); A.dock.refresh(); return;}
+  const k=[viewNow(),simKey(),statusOf().short].join('|'); if(k!==dockK){dockK=k; A.dock.render();}}
 function lockNote(){
   if(mode==='challenge') return tx('In the challenge you change only the pipeline stages, tensor parallelism and the micro-batches, in the task card. Everything else is fixed: Llama‑3.1‑70B, 32 H100s, 256 sequences of 4,096 tokens per step, ZeRO-1, 1F1B.','挑战中只能在任务卡里改流水线段数、张量并行和 micro-batch 数。其余设置固定：Llama‑3.1‑70B，32 张 H100，每步 256 条 4,096 个 token 的序列，ZeRO-1，1F1B。');
   if(mode!=='guided') return '';
@@ -1338,7 +1347,7 @@ A.registerLab({
       if(v==='layer'){const r=layer(S.t,S.place); vis.innerHTML=`<div class="mp-dk"><i style="width:${((1-r.share)*100).toFixed(1)}%"></i></div>`;
         read.innerHTML=esc(tx(`TP ${S.t}${S.t>1?(S.place==='out'?' across machines':' in one machine'):''}: all-reduces ${pct(r.share)} of a layer’s time`,`张量并行 ${S.t} 份${S.t>1?(S.place==='out'?'，跨机器':'，一台机器里'):''}：all-reduce 占一层时间的 ${pct(r.share)}`)); return;}
       const r=cost(S); vis.innerHTML=`<div class="mp-dk${r.fits?'':' bad'}"><i style="width:${Math.min(100,r.mem/GPU.mem*100).toFixed(1)}%"></i></div>`;
-      read.innerHTML=esc(tx(`${layoutName(S.t,S.p,S.d)}: ${fGB(r.mem)} per GPU, ${fS(r.step)} per step`,`${layoutName(S.t,S.p,S.d)}：每张卡 ${fGB(r.mem)}，每步 ${fS(r.step)}`));}
+      read.innerHTML=esc(tx(`${fGB(r.mem)} per GPU, ${fS(r.step)} per step`,`每张卡 ${fGB(r.mem)}，每步 ${fS(r.step).replace(/ s$/,' 秒')}`));}
   }
 });
 

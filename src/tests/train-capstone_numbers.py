@@ -3,7 +3,7 @@ lab's stated assumptions, then compared with the page's engine (window.__tcap) a
 
 Assumptions (the lab's Fidelity popover and specs/train-capstone.md):
 - work 6·N·D; a step does k·N FLOPs per token, k = 6 (8 with full recomputation), at 50% of 989.5 TFLOP/s while computing;
-- memory per GPU: 18 bytes per parameter ÷ (t·p), by ZeRO stage over d copies; ZeRO-3 also holds one gathered layer (4N/(L·t));
+- memory per GPU: 18 bytes per parameter ÷ (t·p), by ZeRO stage over d copies; ZeRO-3 also holds two gathered BF16 layers, the one being computed and the next one prefetched (4N/(L·t));
   activations s·b·h·(18 + 4I/h) ÷ t per layer (Megatron-LM, sequence parallel), min(m, p) micro-batches in flight (1F1B);
   recomputation keeps 2·s·b·h ÷ t per layer plus one full layer; GB = 10⁹ bytes; 80 GB;
 - step = (m + p − 1)·(compute + n·L/p all-reduces of s·b·h·2 bytes, ring 2(t − 1)/t over 450 GB/s) + exposed data-parallel time;
