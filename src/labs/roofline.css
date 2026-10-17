@@ -181,3 +181,23 @@
 .primer .pr-rfbox .rf-key{margin-top:6px}
 .primer .pr-rfbox .rf-key>span,.primer .pr-rfbox .rf-svg :is(.rf-axx,.rf-rg){cursor:default}
 .primer .rf-prfig :is(button,input,select,.ctl){display:none!important}
+
+/* ---------- polish round 5 (B4, 2026-10-17): the stage fits 1440 × 900 ----------
+   Part 5 (a decode step and a prefill: the roofline, two kernels' lanes, a two-line scope note, four metric cards) ran 33 px past the
+   stage's 814 px at 1440 × 900 in Chinese, 49 in English. On a desktop stage at least 736 px wide (1440 and 1280 px windows) the
+   roofline is drawn 260 px high instead of 300 (roofline.js reads --rf-ph when it draws; the same axes, ticks and labels), the metric
+   cards take the kit's tight line heights (CONTRACT §19; a card name stays 12 px) and a few gaps are tighter. Same blocks in the same
+   order, the same hairline over the lanes (R7.13), the same texts; phones (≤ 760 px) and narrower stages keep the layout above */
+@media (min-width:761px){@container (min-width:736px){
+  .rf-stage .rf-plot{--rf-ph:260}
+  .rf-graph{margin-top:10px;padding:8px 12px 10px;gap:8px}
+  .rf-time{gap:8px}
+  .rf-time:not(:empty){padding-top:8px}
+  .rf-key{margin-top:6px}
+  .rf-stage>.rf-scope{margin:8px 0 4px}
+  .rf-metrics{margin-top:8px}
+  .rf-metrics .metric .v{line-height:1.25}
+  .rf-metrics .metric .sub{line-height:1.25}
+  .rf-metrics .metric .d{min-height:13px;line-height:1.1}
+  .rf-stage>details.math{margin-top:8px;padding-top:8px}
+}}

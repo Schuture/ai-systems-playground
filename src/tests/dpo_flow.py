@@ -122,7 +122,12 @@ WIRE = r"""()=>{const w=document.getElementById('dpo-wire'); if(!w) return {show
  return {shown:!w.hidden&&w.getClientRects().length>0, label:((w.querySelector('.dpo-blk-h')||{}).textContent||''), lines:[...w.querySelectorAll('svg line')].map(l=>+l.getAttribute('stroke-width')),
    cells:[...w.querySelectorAll('.dpo-wd')].map(e=>e.textContent), cap:((w.querySelector('.dpo-wcap')||{}).textContent||''), svgText:w.querySelectorAll('svg text').length,
    inside:[...w.querySelectorAll('*')].every(e=>{const r=e.getBoundingClientRect(); return r.width===0||(r.left>=q.left-0.5&&r.right<=q.right+0.5);})};}"""
-BLOCKS_H5 = r"""()=>[...document.querySelectorAll('#dpo-stage .dpo-blk-h, #dpo-stage .dpo-curve-head')].filter(e=>e.getClientRects().length).map(e=>getComputedStyle(e).borderTopWidth+' '+getComputedStyle(e).borderTopStyle)"""
+# polish round 5: on a stage at least 736 px wide the curve sits beside the answers (dpo.css); its block is then set off by the rule
+# between the two columns (the chart's ::before) instead of a rule above it, so either is accepted (R7.13)
+BLOCKS_H5 = r"""()=>{const g=document.getElementById('dpo-graph'), bars=document.getElementById('dpo-bars');
+ return [...document.querySelectorAll('#dpo-stage .dpo-blk-h, #dpo-stage .dpo-curve-head')].filter(e=>e.getClientRects().length).map(e=>{
+  if(e.classList.contains('dpo-curve-head')&&e.getBoundingClientRect().left>=bars.getBoundingClientRect().right){const b=getComputedStyle(g,'::before'); return b.borderLeftWidth+' '+b.borderLeftStyle+' (between the columns)';}
+  return getComputedStyle(e).borderTopWidth+' '+getComputedStyle(e).borderTopStyle;});}"""
 h7_hits = []
 def h7(pg, where):
     for x in pg.evaluate(SVGTEXT): h7_hits.append(f'{where}: {x}')
@@ -691,6 +696,113 @@ with sync_playwright() as p:
         check('copy rules in every visited state (no “·” joins, no 起点 / starting point, no 控件 / Controls, no mini-bar, hover or page-updating sentences, no sentence with two colons)', not rule_hits, '; '.join(rule_hits[:6]))
     timing_checks(b)
     b.close()
+
+# polish round 5 (2026-10-17, R3.2, R9.7, R7.9, R7.12, the owner's B4; as tests/moe_flow.py and tests/grpo_flow.py): the reader's walk on
+# the whole site (built into out/ and wrapped with a doctype; the one-lab page lacks the “Read first” line, which moves every card 28 px),
+# in the lab's real layout (window.__aspPrimer, as tests/kit_flow.py), entering each part as the polish probe stage.py does: Next when it
+# is on, else the part's title. Before, at 1440 × 900 the stage scrolled inside itself at every part (40 px at parts 1–2, 53 at 3–6 and 8,
+# 182 at part 7), the curve started 722 px down under the answers, and entering part 7 (and 8) pushed the stage up to −213 px (−35 px; in
+# English part 6 to −271 and part 7 to −55). Now, at every part in both languages: the stage's top at its sticky line (70 px) or lower and
+# its head below the top bar; no scrolling inside, at least 30 px to spare in Chinese (none needed in English); the curve (the main figure)
+# beside the answers at the top of the chart and whole on the screen. Spare = the stage's max-height minus what its content and borders
+# need. Part 7 is the exception: the picture “Where the logits come from” keeps the room of its shared-weight form (R7.9, dpo.js
+# holdWire), so the stage scrolls inside a little (rule 7 of the round's brief): at most 50 px in Chinese and 70 in English, with the
+# whole chart (answers, picture, curve) in the stage's visible part and on the screen. R7.9: in parts 3 and 7, after training,
+# switching the curve's view and playing leave the stage's height alone; in part 6 so do Show me, another β and the curve's views with
+# the key naming the previous setting; in part 7 the shared weight on and off, step 0, playing and Show me; in Settings the logits
+# switched both ways and a run from step 0; every scenario card.
+if ONLY != 'timing':
+    subprocess.run([sys.executable, str(P / 'build.py'), 'out/site-dpo.html'], check=True, cwd=P, stdout=subprocess.DEVNULL)
+    (P / 'out' / 'wrapped-site-dpo.html').write_text('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>' + (P / 'out' / 'site-dpo.html').read_text() + '</body></html>')
+    SITE = 'file://' + str(P / 'out' / 'wrapped-site-dpo.html')
+    WALK = """()=>{const s=document.querySelector('#dpo-stage'), r=s.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
+      cur=document.querySelector('#dpo-rail .steps>.step.current'), h=s.querySelector('.stage-head').getBoundingClientRect(), f=document.getElementById('dpo-curve').getBoundingClientRect(),
+      bs=document.getElementById('dpo-bars').getBoundingClientRect(), ch=s.querySelector('.dpo-curve-head').getBoundingClientRect();
+      return {part:cur?[...cur.parentNode.children].indexOf(cur)+1:0, top:Math.round(r.top), head:Math.round(h.top), bar:Math.round(bar), scroll:s.scrollHeight-s.clientHeight,
+        spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), fig:[Math.round(f.top),Math.round(f.bottom)], vh:innerHeight,
+        beside:Math.abs(ch.top-bs.top)<=2&&ch.left>=bs.right, graph:(q=>[Math.round(q.top),Math.round(q.bottom)])(document.getElementById('dpo-graph').getBoundingClientRect()),
+        vis:[Math.round(r.top+s.clientTop),Math.round(r.top+s.clientTop+s.clientHeight)]};}"""
+    HT = "()=>{const s=document.getElementById('dpo-stage'); return s.scrollHeight+s.offsetHeight-s.clientHeight}"
+    with sync_playwright() as _p:
+        _b = _p.chromium.launch()
+        for _lang in ('en', 'zh'):
+            _pg = _b.new_page(viewport={'width': 1440, 'height': 900}, reduced_motion='reduce'); _pg.add_init_script('window.__aspPrimer=true')
+            _pg.on('pageerror', lambda e: errs.append(f'1440 walk: {e}'))
+            _pg.goto(SITE); _pg.wait_for_timeout(600); _pg.click(f'.langsw button[data-lang="{_lang}"]'); _pg.wait_for_timeout(80)
+            _pg.evaluate("()=>{location.hash='dpo'}"); _pg.wait_for_timeout(500)
+            _g = _pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+            if _g.count(): _g.first.click(); _pg.wait_for_timeout(700)
+            _n = _pg.evaluate("()=>document.querySelectorAll('#dpo-rail .steps>.step').length"); _rows = [_pg.evaluate(WALK)]; _held = {}; _held6, _keys6 = None, ''
+            for _i in range(1, _n):
+                _nb = _pg.locator('.pbar [data-nav=next]:visible:not([disabled])')
+                if _nb.count(): _nb.first.click()
+                else: _pg.evaluate(f"()=>document.querySelector('#dpo-rail .steps>.step:nth-child({_i + 1}) .step-h').click()")
+                _pg.wait_for_timeout(1500); _rows.append(_pg.evaluate(WALK))
+                if _i + 1 in (3, 7):
+                    # R7.9: after 10 training steps, each view of the curve and a few frames of playback leave the stage's height alone
+                    _pg.evaluate("()=>{const b=document.querySelector('#dpo-stage [data-act=step10]'); if(b) b.click();}"); _pg.wait_for_timeout(300)
+                    _hs = [_pg.evaluate(HT)]
+                    for _v in ('kl', 'loss', 'wt', 'prob'):
+                        _pg.evaluate(f"()=>{{const b=document.querySelector('#dpo-view button[data-v={_v}]'); if(b) b.click();}}"); _pg.wait_for_timeout(250); _hs.append(_pg.evaluate(HT))
+                    _pg.evaluate("()=>{const b=document.querySelector('#dpo-stage [data-act=play]'); if(b) b.click();}")
+                    for _k in range(4): _pg.wait_for_timeout(250); _hs.append(_pg.evaluate(HT))
+                    _pg.evaluate("()=>{const b=document.querySelector('#dpo-stage [data-act=play]'); if(b&&b.getAttribute('aria-pressed')==='true') b.click();}"); _pg.wait_for_timeout(200)
+                    _held[_i + 1] = _hs
+                    _pg.evaluate("()=>{const b=document.querySelector('#dpo-stage [data-act=reset0]'); if(b) b.click();}"); _pg.wait_for_timeout(200)
+                if _i + 1 == 6:
+                    # R7.9 where β changes: the key can also name the previous setting, four lines in English on the half-width column
+                    # (dpo.css keeps room for them in part 6): Show me, another β and each view of the curve leave the stage's height alone
+                    _hs = [_pg.evaluate(HT)]
+                    _pg.evaluate("()=>{const b=[...document.querySelectorAll('#dpo-rail .step.current [data-nav=showme]')].find(e=>e.getClientRects().length); if(b) b.click();}"); _pg.wait_for_timeout(1500); _hs.append(_pg.evaluate(HT))
+                    _pg.evaluate("()=>{const b=[...document.querySelectorAll('#dpo-ic-beta button')].filter(e=>e.getClientRects().length&&e.getAttribute('aria-pressed')!=='true').pop(); if(b) b.click();}"); _pg.wait_for_timeout(600); _hs.append(_pg.evaluate(HT))
+                    for _v in ('prob', 'kl', 'loss', 'wt', 'prob'):
+                        _pg.evaluate(f"()=>{{const b=document.querySelector('#dpo-view button[data-v={_v}]'); if(b) b.click();}}"); _pg.wait_for_timeout(250); _hs.append(_pg.evaluate(HT))
+                    _keys6 = _pg.evaluate("()=>document.getElementById('dpo-curve-key').textContent")
+                    _held6 = _hs
+            # R7.9 where the shared weight comes and goes (dpo.js holdWire): part 7 again (its title), Settings, then every scenario card
+            _clk = lambda sel, ms: (_pg.evaluate(f"()=>{{const b=[...document.querySelectorAll('{sel}')].find(e=>e.getClientRects().length); if(b) b.click();}}"), _pg.wait_for_timeout(ms))
+            _pg.evaluate("()=>document.querySelector('#dpo-rail .steps>.step:nth-child(7) .step-h').click()"); _pg.wait_for_timeout(1500)
+            _h7 = [_pg.evaluate(HT)]
+            for _sel, _ms in (('#dpo-ic-mode button[data-v=shared]', 900), ('#dpo-stage [data-act=reset0]', 600), ('#dpo-stage [data-act=play]', 300)):
+                _clk(_sel, _ms); _h7.append(_pg.evaluate(HT))
+            for _k in range(6): _pg.wait_for_timeout(200); _h7.append(_pg.evaluate(HT))
+            _pg.evaluate("()=>{const b=document.querySelector('#dpo-stage [data-act=play]'); if(b&&b.getAttribute('aria-pressed')==='true') b.click();}"); _pg.wait_for_timeout(200)
+            for _sel, _ms in (('#dpo-ic-mode button[data-v=sep]', 900), ('#dpo-rail .step.current [data-nav=showme]', 1500)):
+                _clk(_sel, _ms); _h7.append(_pg.evaluate(HT))
+            _pg.locator('[data-flow-nav] button[data-flow=free]:visible').first.click(); _pg.wait_for_timeout(1500)
+            _hset = [_pg.evaluate(HT)]
+            for _sel, _ms in (('#dpo-ctl-mode button[data-v=shared]', 900), ('#dpo-ctl-mode button[data-v=sep]', 900), ('#dpo-stage [data-act=reset0]', 600), ('#dpo-stage [data-act=play]', 300)):
+                _clk(_sel, _ms); _hset.append(_pg.evaluate(HT))
+            for _k in range(6): _pg.wait_for_timeout(200); _hset.append(_pg.evaluate(HT))
+            _pg.evaluate("()=>{const b=document.querySelector('#dpo-stage [data-act=play]'); if(b&&b.getAttribute('aria-pressed')==='true') b.click();}"); _pg.wait_for_timeout(200)
+            _pg.locator('[data-flow-nav] button[data-flow=scen]:visible').first.click(); _pg.wait_for_timeout(1500)
+            _hscen = []
+            for _k in range(_pg.evaluate("()=>document.querySelectorAll('#dpo-rail [data-preset]').length")):
+                _pg.evaluate(f"()=>document.querySelectorAll('#dpo-rail [data-preset]')[{_k}].click()"); _pg.wait_for_timeout(1200); _hscen.append(_pg.evaluate(HT))
+            check(f'1440 {_lang} part 7: the shared weight on, step 0, playing, the separate logits again and Show me leave the stage’s height alone (R7.9)', len(_h7) == 12 and max(_h7) - min(_h7) <= 1, _h7)
+            check(f'1440 {_lang} Settings: the logits switched to the shared weight and back, step 0 and playing leave the stage’s height alone (R7.9)', len(_hset) == 11 and max(_hset) - min(_hset) <= 1, _hset)
+            check(f'1440 {_lang} Scenarios: every card, the shared-weight one among them, leaves the stage’s height alone (R7.9)', len(_hscen) == 6 and max(_hscen) - min(_hscen) <= 1, _hscen)
+            check(f'1440 {_lang} part 6: Show me, another β and each view of the curve (the key naming the previous setting) leave the stage’s height alone (R7.9)',
+                  bool(_held6) and max(_held6) - min(_held6) <= 1 and ('previous' in _keys6 or '上一个' in _keys6), (_held6, _keys6))
+            check(f'1440 {_lang} walk: entering every part, the stage’s top at its sticky line (70 px) or lower and its head below the top bar (R3.2, R9.7, B4)',
+                  len(_rows) == _n == 8 and all(r['part'] == i + 1 and r['top'] >= max(68, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
+            for _r in _rows:
+                if _r['part'] == 7:   # the picture's room kept for its shared-weight form (R7.9): rule 7, a short scroll inside, the whole chart on show
+                    _cap = 50 if _lang == 'zh' else 70
+                    check(f'1440 {_lang} walk part 7: the stage scrolls inside at most {_cap} px (the room of the shared-weight picture is kept, R7.9), the whole chart (answers, picture, curve) in its visible part and on the screen, the curve beside the answers (rule 7, R7.12)',
+                          _r['scroll'] <= _cap and _r['beside'] and _r['graph'][0] >= max(_r['vis'][0], _r['bar']) - 1 and _r['graph'][1] <= min(_r['vis'][1], _r['vh']) + 1
+                          and _r['fig'][0] >= _r['bar'] - 1 and _r['fig'][1] <= _r['vh'] + 1, _r)
+                    continue
+                check(f'1440 {_lang} walk part {_r["part"]}: the stage needs no scrolling inside' + (', 30 px to spare' if _lang == 'zh' else '') + ', the curve beside the answers and whole on the screen (B4, R7.12)',
+                      _r['scroll'] <= 0 and _r['spare'] >= (30 if _lang == 'zh' else 0) and _r['beside'] and _r['fig'][0] >= _r['bar'] - 1 and _r['fig'][1] <= _r['vh'] + 1, _r)
+            for _k, _hs in _held.items():
+                check(f'1440 {_lang} part {_k}: switching the curve’s view and playing leave the stage’s height alone (R7.9)', max(_hs) - min(_hs) <= 1, _hs)
+            _was = {('zh', 7): '−213', ('zh', 8): '−35', ('en', 6): '−271', ('en', 7): '−55', ('en', 8): '70'}   # stage.py, before
+            for _k in {'zh': (7, 8), 'en': (6, 7, 8)}[_lang]:   # the parts whose stage the bench's end pushed up before (or that sit there): at 70 px
+                _r = _rows[_k - 1] if len(_rows) >= _k else {}
+                check(f'1440 {_lang} walk part {_k}: the stage’s top at its sticky line, 70 px (it was at {_was[(_lang, _k)]} px)', bool(_r) and abs(_r['top'] - 70) <= 2, _r)
+            _pg.close()
+        _b.close()
 
 check('no page errors', not errs, '; '.join(errs[:5]))
 # ---- G1/G2 (the owner's message of 2026-10-08): option lead-ins instead of “one at a time”, and no sentence that leans on a detail

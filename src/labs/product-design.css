@@ -148,3 +148,23 @@
 .pdz-app .seg-ctl[data-key="filt"] button[data-v="8"],.pdz-app .seg-ctl[data-key="filt"] button[data-v="4"]{border-bottom:0}
 @media (max-width:560px){.pdz-tab{font-size:12px}.pdz-tab th{white-space:normal;min-width:5.5em}.pdz-tab th,.pdz-tab td{padding:4px 4px}}
 .pdz-eq1{grid-template-columns:minmax(0,1fr);margin:.2em 0 .6em;font-size:.85em}
+
+/* ---------- a wide stage (polish round 5, 2026-10-17; the owner's B4: “动画播放面板被整体顶得靠下了”) ----------
+   Part 8 (the message and the GPUs, nothing else) ran 85 px past the stage's 814 px at 1440 × 900 (English 107 px): the message,
+   the metric cards and the GPUs stood one under the other, each across the whole stage. On a stage at least 736 px wide the
+   message keeps the whole width at the top; under it the cards, two by two, sit on the left and the GPUs on the right, read in
+   the same order as before (product-design.js marks part 8's layout with data-lay="tf"). The message's rows are drawn 21 px apart
+   instead of 23 (wfSVG reads --pdz-rh; the ResizeObserver on #pdz-main draws it again when the stage's width changes), the player
+   and the legend sit 4 and 2 px closer, and the cards take CONTRACT §19's compact line heights (value 1.25, change line 13 px), which
+   every part's cards share. Phones and narrower stages are unchanged. */
+@media (min-width:761px){@container (min-width:736px){
+  #pdz-wf{--pdz-rh:21}
+  .pdz-player{margin-top:6px}
+  .pdz-leg{margin-top:6px}
+  .pdz-main[data-lay="tf"]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:12px}
+  .pdz-main[data-lay="tf"]>#pdz-trace{grid-column:1/-1;grid-row:1}
+  .pdz-main[data-lay="tf"]>#pdz-metrics{grid-column:1;grid-row:2;grid-template-columns:repeat(2,minmax(0,1fr));align-self:start}
+  .pdz-main[data-lay="tf"]>#pdz-fleet{grid-column:2;grid-row:2;margin-top:4px}
+  .pdz-metrics .metric .v{line-height:1.25}
+  .pdz-metrics .metric .d{min-height:13px;line-height:13px}
+}}

@@ -222,3 +222,26 @@
 
 /* 知识梳理 (2026-10-12): a formula on its own line */
 .primer .ana-prfx{display:block;max-width:100%;overflow-x:auto;padding:.3em 0;margin:0 0 12px;font-size:1.05em}
+
+/* ---------- a wide stage (polish round 5, 2026-10-17; the owner's B4, R7.12): at 1440 × 900 the stage had to scroll inside itself by
+   68 px (parts 1, 3, 4) and 111 px (parts 2, 6; the replay's player above the conversation), and Scenarios and Settings by 277 px: the
+   conversation and the bars of tokens sent sat one under the other, each across the whole stage. On a stage at least 736 px wide (1440
+   and 1280 px windows among them) they sit side by side, the conversation on the left, read in the same order as before (the loop and
+   its caption, the player, the conversation, the bars, the time line under them in Settings); the hairline above them runs across
+   both, and a hairline divides them (R7.13). In the narrower column a row of the conversation keeps its label and its number whole:
+   the number's column is 44 px (as on a phone; the widest number, the long log's “40,000”, takes 41 px) and the gaps are tighter, so
+   the one-line preview, cut on purpose, keeps what is left. With 9 to 12 calls the bars' values (“11,342”, 38 px) come closer than
+   their width, so their letters are set a little closer there and do not touch. The metric cards' value and change lines are tighter
+   (CONTRACT §19). The time line (part 5) and the challenge's chart keep the whole width. Same pieces, same order, same replay; phones
+   (≤ 760 px) and narrower stages keep the layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  .ana-graph:not([data-v="time"]):not([data-v="ch"]){grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:0}
+  .ana-graph:not([data-v="time"]):not([data-v="ch"])>*{grid-column:1/-1}
+  .ana-graph:not([data-v="time"]):not([data-v="ch"])>.ana-convbox{grid-column:1;padding-right:10px}
+  .ana-graph:not([data-v="time"]):not([data-v="ch"])>.ana-barsbox{grid-column:2;border-left:1px solid var(--line);padding-left:10px}
+  .ana-graph:not([data-v="time"]):not([data-v="ch"]) .ana-row{gap:6px;padding:0 4px}
+  .ana-graph:not([data-v="time"]):not([data-v="ch"]) .ana-row:not(.ana-stoprow){grid-template-columns:12px minmax(96px,auto) minmax(0,1fr) 44px}
+  .ana-graph:not([data-v="time"]):not([data-v="ch"]) .ana-cols:is([style="--n:9"],[style="--n:10"],[style="--n:11"],[style="--n:12"]) .ana-cv{letter-spacing:-.6px}
+  .ana-metrics .metric .v{line-height:1.25}
+  .ana-metrics .metric .d{min-height:13px;line-height:13px}
+}}

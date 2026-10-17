@@ -150,3 +150,22 @@ html[lang^="zh"] .pa-host .meter-title{text-transform:none}
 .pa-mc{padding:1px 3px;white-space:normal;line-height:1.5;text-align:center}
 .pa-mc0{display:flex;align-items:center;justify-content:center;height:1.9em;white-space:nowrap}
 .pa-mtall .pa-mc0{height:3.1em}
+/* polish round 5 (2026-10-17, the owner's B4, R7.12): on a desktop the stage fits 1440 × 900 at every part without scrolling inside
+   (before: English 35–68 px over at parts 2–7, Chinese 18 px to spare at parts 4–7). The same blocks in the same order with the same
+   hairlines: the spacing between them tighter, the metric cards set with tighter line heights (§19 M1: sizes unchanged), and on a stage
+   wide enough for 48 cells of about 14 px the pool's cells drawn 0.8 as tall as they are wide (drawPool reads --pa-ch and watchStage
+   draws the pool again when the stage changes width). Phones (≤ 760 px) keep their layout */
+@media (min-width:761px){
+  .pa-host .pa-wl{line-height:1.4}
+  .pa-host .pa-legend{margin-top:8px;row-gap:4px}
+  .pa-host #pa-graph{margin-top:10px;padding-block:10px}
+  .pa-host .pa-timebox .pa-time{margin-top:8px}
+  .pa-host .pa-bars{margin-top:8px}
+  .pa-host .pa-mhead{margin-top:10px}
+  .pa-host .pa-whole{margin-top:10px}
+  .pa-host .pa-whole .metric{padding-block:7px}
+  .pa-host .pa-whole .metric .k,.pa-host .pa-whole .metric .sub{line-height:1.2}
+  .pa-host .pa-whole .metric .v{line-height:1.25}
+  .pa-host #pa-math{margin-top:10px}
+  @container (min-width:736px){.pa-host .pa-pool{--pa-ch:.8}}
+}

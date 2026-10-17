@@ -598,10 +598,14 @@ function dotsNow(){
 }
 const X0=-1, X1=4, Y0=-1, Y1=3.5;     // log10 of FLOP per byte moved from memory (0.1 … 10,000) and of TFLOP/s (0.1 … 3,162)
 let plotW=640, drawn={prev:false,ghost:false};
+/* the chart's height: 300 px, or the CSS variable --rf-ph that roofline.css sets on a wide desktop stage (polish round 5: 260, so the
+   stage fits 1440 × 900); a narrow chart (a phone) stays 250. Read when the chart is drawn; the primer draws into a detached box, so
+   its figure keeps 300 */
+const cssNum=(el,v,d)=>{const x=parseFloat(getComputedStyle(el).getPropertyValue(v)); return x>0?x:d;};
 /* every label keeps clear of the dots, the dashed rings, the ridge line and the labels placed before it (R7.8) */
 function drawPlot(){
   const host=$('#rf-plot',app); if(!host) return;
-  const cw=host.clientWidth||600, W=Math.max(300,Math.min(760,Math.round(cw))), narrow=W<480, H=narrow?250:300, ml=narrow?40:50, mr=narrow?10:16, mt=22, mb=40;
+  const cw=host.clientWidth||600, W=Math.max(300,Math.min(760,Math.round(cw))), narrow=W<480, H=narrow?250:cssNum(host,'--rf-ph',300), ml=narrow?40:50, mr=narrow?10:16, mt=22, mb=40;
   plotW=W;
   const X=I=>ml+(Math.log10(I)-X0)/(X1-X0)*(W-ml-mr), Y=tf=>H-mb-(Math.log10(tf)-Y0)/(Y1-Y0)*(H-mt-mb);
   const g=gpuNow(), pk=g.peak/1e12, bw=g.bw/1e12, rid=pk/bw, v=viewNow();
@@ -1062,6 +1066,12 @@ function holdPlace(el,f){
   finally{const dy=el.isConnected?el.getBoundingClientRect().top-y0:0; if(Math.abs(dy)>=0.5) window.scrollBy(0,dy); de.style.overflowAnchor=was;}
 }
 const bySettings=(el,f)=>el&&el.closest('#rf-controls')?holdPlace(el,()=>byLearner(f)):byLearner(f);
+/* the chart is drawn for the stage's width and, on a wide stage, the height in roofline.css: the stage changes width without a window
+   resize when the page puts the step list beside it or leaves the primer, so it is drawn again when it does (as labs/ppo.js) */
+let stRO=null, stW=0;
+function watchStage(){if(stRO){stRO.disconnect(); stRO=null;} const st=app&&$('#rf-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w; drawPlot();}));
+  stRO.observe(st);}
 function bind(el){
   el.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.key; if(!k) return; const v=+e.target.value;
     if(k==='B') bySettings(e.target,()=>setState({B:BST[v]}));
@@ -1197,10 +1207,10 @@ A.registerLab({
     if(mode==='guided'&&!p&&!fromSnap){const s=STEPS[step]; if(s.enter&&step===0) Object.assign(S,s.enter());}
     fromSnap=false;
     fillRail();
-    render();
+    render(); watchStage();
     requestAnimationFrame(()=>{if(app) drawPlot();});
   },
-  leave(){clearTimeout(annT); stageStop(); root=null; app=null;},
+  leave(){clearTimeout(annT); stageStop(); if(stRO){stRO.disconnect(); stRO=null;} root=null; app=null;},
   onLang(){if(root){const d=$('#rf-math',app), open=d&&d.open; this.mount(root,null); if(open) $('#rf-math',app).open=true;}},
   onResize(){if(app) drawPlot();},
   termTip(k,el){if(k==='dfx'){const f=el&&DFXT[el.getAttribute('data-term')]; return f?f():'';} return termTipHTML(k);},

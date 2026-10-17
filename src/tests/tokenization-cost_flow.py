@@ -457,8 +457,58 @@ def math_scroll(b, w, h, lang):
     pg.close()
 
 
+# polish r5 (B4, R7.12): entering the parts this round fitted, the way a reader does (Next, or the part's title while Next waits for an
+# answer), at 1440 x 900 the stage fits without scrolling inside, with 30 px to spare in Chinese. Sampled for 6.6 s after entering, so a
+# part that plays on entry (part 6 of prefix-caching sends its 8 requests in 5.3 s) fits all the way through; measured in standard mode (the page wrapped in a doctype, as it is published)
+FIT = """p=>{const s=document.getElementById(p+'-stage'), c=document.querySelector('#'+p+'-rail .steps>.step.current');
+  return {step:c?[...c.parentNode.children].indexOf(c)+1:0, spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)),
+          scroll:s.scrollHeight-s.clientHeight, top:Math.round(s.getBoundingClientRect().top)}}"""
+
+
+def fit_next(pg, k):
+    """into part k as a reader goes: Next when it is open, otherwise the part's title"""
+    nb = pg.locator('#tk-rail .step.current [data-nav="next"]:not([disabled])')
+    if nb.count(): nb.first.click()
+    else: pg.evaluate(f"()=>document.querySelector('#tk-rail .steps>.step:nth-child({k}) .step-h').click()")
+
+
+def fit_entry(b, lang, parts=(1, 3, 5, 6)):
+    pg = page(b, 1440, 900, lang)
+    for k in range(1, max(parts) + 1):
+        if k > 1: fit_next(pg, k)
+        if k not in parts:
+            pg.wait_for_timeout(900); continue
+        fs = []
+        for _ in range(44):
+            pg.wait_for_timeout(150); fs.append(pg.evaluate(FIT, 'tk'))
+        f = {'step': fs[-1]['step'], 'spare': min(x['spare'] for x in fs), 'scroll': max(x['scroll'] for x in fs), 'top': fs[-1]['top']}
+        check(f'{lang} 1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""} (B4, R7.12; polish r5)',
+              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0), f)
+        if k == 5: hold_picks(pg, lang, '#tk-rail .step.current [data-lever]', 'part 5: picking each training text')
+    # the Scenarios: each card keeps the stage's height
+    pg.evaluate("()=>{const b=[...document.querySelectorAll('[data-flow-nav] button[data-flow=scen]')].find(x=>x.offsetParent); if(b) b.click();}"); pg.wait_for_timeout(800)
+    pg.evaluate("()=>{const e=[...document.querySelectorAll('#tk-rail [data-preset]')].filter(e=>e.getClientRects().length)[0]; if(e) e.click();}"); pg.wait_for_timeout(700)
+    hold_picks(pg, lang, '#tk-rail [data-preset]', 'Scenarios: picking each card')
+    pg.close()
+
+
+# polish r5 (R7.9): the merges and the cost stand side by side on a wide stage, and the merges take more lines for some training texts;
+# where one control switches between a known set of settings they keep the room of the tallest, so a pick does not move the stage
+HOLD = """p=>{const s=document.getElementById(p+'-stage'); return s.scrollHeight+s.offsetHeight-s.clientHeight;}"""
+
+
+def hold_picks(pg, lang, sel, what):
+    n = pg.evaluate("s=>[...document.querySelectorAll(s)].filter(e=>e.getClientRects().length).length", sel)
+    hs = [pg.evaluate(HOLD, 'tk')]
+    for i in range(n):
+        pg.evaluate("([s,i])=>[...document.querySelectorAll(s)].filter(e=>e.getClientRects().length)[i].click()", [sel, i]); pg.wait_for_timeout(700)
+        hs.append(pg.evaluate(HOLD, 'tk'))
+    check(f'{lang} 1440 {what} keeps the stage at one height (R7.9; polish r5)', n >= 4 and max(hs) - min(hs) <= 1, hs)
+
 with sync_playwright() as p:
     b = p.chromium.launch()
+    if (1440, 900) in SIZES:
+        for lang in LANGS: fit_entry(b, lang)
     for w, h, lang in ((1440, 900, 'zh'), (900, 900, 'en'), (390, 844, 'zh'), (390, 844, 'en')):
         math_scroll(b, w, h, lang)
     for w, h in SIZES:

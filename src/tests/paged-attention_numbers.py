@@ -424,12 +424,16 @@ with sync_playwright() as pw:
     slot = st0['starts'][iR] + st0['size'][iR] // 2
     geo = pg.evaluate("()=>{const c=document.getElementById('pa-cv'); c.scrollIntoView({block:'center'}); const r=c.getBoundingClientRect(); return {x:r.left,y:r.top,w:c.clientWidth}}")
     pg.wait_for_timeout(250)
-    geo = pg.evaluate("()=>{const c=document.getElementById('pa-cv'), r=c.getBoundingClientRect(); return {x:r.left,y:r.top,w:c.clientWidth}}")
+    geo = pg.evaluate("()=>{const c=document.getElementById('pa-cv'), r=c.getBoundingClientRect(); return {x:r.left,y:r.top,w:c.clientWidth,h:c.clientHeight}}")
     cols = 48 if geo['w'] >= 440 else 32
     gap = 2 if geo['w'] >= 440 else 1
     cs = (geo['w'] - (cols - 1) * gap) / cols
+    # polish round 5: on a wide desktop stage a cell is drawn 0.8 as tall as it is wide (paged-attention.css --pa-ch), so the row pitch
+    # comes from the canvas's height: 768 cells in rows of `cols`
+    rows = 768 // cols
+    ch = (geo['h'] - (rows - 1) * gap) / rows
     k, j = slot // 16, slot % 16
-    pg.mouse.move(geo['x'] + (k % cols) * (cs + gap) + (j + 0.5) / 16 * cs, geo['y'] + (k // cols) * (cs + gap) + cs / 2)
+    pg.mouse.move(geo['x'] + (k % cols) * (cs + gap) + (j + 0.5) / 16 * cs, geo['y'] + (k // cols) * (ch + gap) + ch / 2)
     pg.wait_for_timeout(200)
     tv = pg.evaluate("()=>document.getElementById('tip').hidden?'':document.getElementById('tip').innerText").replace('\n', ' ')
     R_ = st0['size'][iR]
@@ -449,9 +453,9 @@ with sync_playwright() as pw:
     slot = st0['starts'][iI] + st0['size'][iI] - 1
     pg.evaluate("()=>document.getElementById('pa-cv').scrollIntoView({block:'center'})")
     pg.wait_for_timeout(250)
-    geo = pg.evaluate("()=>{const c=document.getElementById('pa-cv'), r=c.getBoundingClientRect(); return {x:r.left,y:r.top,w:c.clientWidth}}")
+    geo = pg.evaluate("()=>{const c=document.getElementById('pa-cv'), r=c.getBoundingClientRect(); return {x:r.left,y:r.top,w:c.clientWidth,h:c.clientHeight}}")
     k, j = slot // 16, slot % 16
-    pg.mouse.move(geo['x'] + (k % cols) * (cs + gap) + (j + 0.5) / 16 * cs, geo['y'] + (k // cols) * (cs + gap) + cs / 2)
+    pg.mouse.move(geo['x'] + (k % cols) * (cs + gap) + (j + 0.5) / 16 * cs, geo['y'] + (k // cols) * (ch + gap) + ch / 2)
     pg.wait_for_timeout(200)
     tv = pg.evaluate("()=>document.getElementById('tip').hidden?'':document.getElementById('tip').innerText").replace('\n', ' ')
     len_ = st0['lens'][iI]

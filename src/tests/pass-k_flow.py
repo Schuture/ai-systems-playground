@@ -410,8 +410,62 @@ def run(b, w, h, lang, dark=False):
     pg.close()
 
 
+# B4 (polish round 5, reviews/r5-fit-agents-eval.md): entering parts 2, 3, 4, 5 and 6 at 1440 × 900 the way the polish probe stage.py does
+# (Next when it is enabled, else the part's heading), the stage needs no scrolling inside: Chinese with at least 30 px to spare,
+# English with none (spare = the stage's max-height minus what its content and borders need). Its top is not under the top bar,
+# and the main picture (the stage's largest svg or canvas, if it has one) is whole on the screen.
+B4_FIT = """(id)=>{const s=document.getElementById(id), r=s.getBoundingClientRect(), tb=(document.querySelector('.topbar')||{offsetHeight:0}).offsetHeight;
+  const cur=document.querySelector('#'+id.replace(/-stage$/,'-rail')+' .steps>.step.current');
+  const f=[...s.querySelectorAll('svg,canvas')].filter(e=>e.getClientRects().length&&!e.closest('button,.btn')).map(e=>e.getBoundingClientRect()).sort((a,c)=>c.width*c.height-a.width*a.height)[0];
+  return {part:cur?[...cur.parentNode.children].indexOf(cur)+1:0, spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)),
+    scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top), bar:tb, fig:f?[Math.round(f.top),Math.round(f.bottom)]:null, figOn:!f||(f.top>=tb-2&&f.bottom<=innerHeight+2)};}"""
+
+
+def b4_fit(b, lang, parts=(2, 3, 4, 5, 6)):
+    pg = page(b, 1440, 900, lang)
+    for k in range(1, max(parts) + 1):
+        if k > 1:
+            nb = pg.locator('.pbar [data-nav="next"]:visible:not([disabled])')
+            if nb.count(): nb.first.click()
+            else: pg.evaluate(f"()=>document.querySelector('#pak-rail .steps>.step:nth-child({k}) .step-h').click()")
+            pg.wait_for_timeout(900)
+        if k not in parts: continue
+        y = None
+        for _ in range(20):   # the page's scroll has settled (the rail's reveal, then the lab's keepStage)
+            y2 = pg.evaluate('()=>scrollY')
+            if y2 == y: break
+            y = y2; pg.wait_for_timeout(150)
+        f = pg.evaluate(B4_FIT, 'pak-stage')
+        check(f'{lang}-1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""}; its top is below the top bar and its main picture whole on the screen (B4, R7.12)',
+              f['part'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['top'] >= f['bar'] - 1 and f['figOn'], f)
+    pg.close()
+
+
+# B4 at 1280 × 800 (polish round 5): part 5's card is short, and the end of the steps column had pushed the sticky stage's head above
+# the window (its top at -52 px); after Next the lab's keepStage puts it back under the top bar, at its sticky 70 px.
+def b4_top(b, lang='zh', part=5):
+    pg = page(b, 1280, 800, lang)
+    for k in range(2, part + 1):
+        nb = pg.locator('.pbar [data-nav="next"]:visible:not([disabled])')
+        if nb.count(): nb.first.click()
+        else: pg.evaluate(f"()=>document.querySelector('#pak-rail .steps>.step:nth-child({k}) .step-h').click()")
+        pg.wait_for_timeout(900)
+    y = None
+    for _ in range(30):
+        y2 = pg.evaluate('()=>scrollY')
+        if y2 == y: break
+        y = y2; pg.wait_for_timeout(200)
+    f = pg.evaluate(B4_FIT, 'pak-stage'); f['want'] = pg.evaluate("()=>parseFloat(getComputedStyle(document.getElementById('pak-stage')).top)")
+    check(f'{lang}-1280x800 part {part}: after Next the stage\'s top is back under the top bar, at its sticky place (B4, keepStage)',
+          f['part'] == part and abs(f['top'] - f['want']) <= 2, f)
+    pg.close()
+
+
 with sync_playwright() as p:
     b = p.chromium.launch()
+    if (1440, 900) in SIZES:
+        for lang in LANGS: b4_fit(b, lang)
+        b4_top(b)
     for lang in LANGS:
         for (w, h) in SIZES:
             run(b, w, h, lang)

@@ -181,3 +181,62 @@
 .primer .dpo-nw{white-space:nowrap}
 @media (max-width:760px){.primer .dpo-prfx{padding-left:.4em}.primer .dpo-prfx.dpo-prfx2{column-gap:1.6em}}
 @media (max-width:380px){.primer .dpo-prfx{font-size:1em}}
+
+/* ---------- a wide stage (polish round 5, 2026-10-17; the owner's B4, R7.12): at 1440 × 900 the stage scrolled inside itself at every
+   part (40 px at parts 1–2, 53 at 3–6 and 8, 182 at part 7, where “Where the logits come from” joins the answers), and the curve, the
+   stage's main figure, started 722 px down, under the answers. On a stage at least 736 px wide (windows from about 1200 px) the curve
+   sits beside the answers, at the top of the chart: the answers (and part 7's “Where the logits come from” under them) on the left, the
+   curve with its title, switch and key on the right, a line between them (R7.13). Each answer's header takes two lines there, as on a
+   narrow stage (its name, then its role and value), the curve's switch keeps its label on its row, and a few gaps and the metric cards'
+   line heights are tighter (CONTRACT §19). Same blocks in the same order (left column, then right), same texts and animation; dpo.js
+   draws the curve again when the stage changes width. The tighter gaps and metric lines apply on every desktop stage (a narrower one,
+   at 900 × 900, keeps the blocks stacked and still scrolls inside: see the review r5-fit-inference-a); phones (≤ 760 px) keep the layout
+   above. ---------- */
+@media (min-width:761px){
+  .dpo-transport{margin-top:8px}
+  .dpo-blk-h{margin-top:10px;padding-top:8px}
+  .dpo-app .dpo-stage>.legend-row{margin-top:8px}
+  .dpo-graph{margin-top:10px;padding:10px 14px 8px}
+  .dpo-bars{gap:6px}
+  .dpo-wire{margin-top:10px}
+  .dpo-wcells.dpo-wsep,.dpo-wcap{margin-top:6px}
+  .dpo-metrics{margin-top:10px}
+  .dpo-metrics .metric{padding-block:7px}
+  .dpo-metrics .metric .k,.dpo-metrics .metric .sub{line-height:1.2}
+  .dpo-metrics .metric .v{line-height:1.25}
+  .dpo-stage>details.math{margin-top:10px}
+}
+@media (min-width:761px){@container (min-width:736px){
+  .dpo-graph{display:flow-root;position:relative;--dpo-hold:1}
+  .dpo-graph::before{content:"";position:absolute;left:50%;top:10px;bottom:8px;border-left:1px solid var(--line-2);pointer-events:none}
+  .dpo-graph>.dpo-bars,.dpo-graph>.dpo-wire{float:left;clear:left;width:calc(50% - 12px)}
+  .dpo-graph>.dpo-curve-head,.dpo-graph>.dpo-curve-key{margin-left:calc(50% + 12px)}
+  .dpo-graph>.dpo-curve{margin-left:calc(50% + 12px);width:calc(50% - 12px)}
+  .dpo-rh{flex-wrap:wrap;row-gap:2px}
+  .dpo-lab{flex-basis:calc(100% - 30px)}
+  .dpo-role{margin-left:26px}
+  .dpo-val{margin-left:auto}
+  .dpo-curve-head{margin-top:0;padding-top:0;border-top:0;gap:6px 14px}
+  .dpo-curve-head .ctl{display:flex;align-items:center;gap:8px}
+  /* R7.9: the curve's column sets the chart's height, so switching the view does not move the stage: the title keeps two lines in English
+     (the KL view's title needs two there, the others one) and the key two lines (four answers and the current step need two; KL, the
+     loss and the push weight one; where β changes, more: below) */
+  .dpo-curve-title:lang(en){min-height:2.7em}
+  .dpo-curve-key{min-height:38px;align-content:flex-start}
+  /* part 6, Settings and the challenge (dpo.js sets .dpo-keyhold), where β changes: the probabilities view's key with the previous setting
+     (four answers, “A with the previous setting (β = 0.1)”, the current step) takes four lines in English, so they are kept from the start */
+  .dpo-keyhold .dpo-curve-key:lang(en){min-height:80px}
+  /* the picture “Where the logits come from” in the left column, a little tighter (it is 368 px wide here): the shared weight's box,
+     the lines under it (drawn to the svg's height) and the gaps; each logit keeps two lines (“logit +2.290” wraps at this width, and
+     before training the cells are empty), so playing from step 0 does not move the stage. In part 7, Scenarios and Settings dpo.js
+     keeps the room of the picture's shared-weight form (--dpo-hold above), unseen while the picture is off (R7.9) */
+  .dpo-graph>.dpo-wire{margin-top:8px}
+  .dpo-wire>.dpo-blk-h{padding-top:6px}
+  .dpo-wsrc{margin-top:4px}
+  .dpo-wsrc>span{padding-block:1px}
+  .dpo-wsvg{height:14px}
+  .dpo-wcells.dpo-wsep,.dpo-wcap{margin-top:4px}
+  .dpo-wd{line-height:1.3;min-height:2.6em}
+  .dpo-wcap{line-height:1.4}
+  .dpo-wire.dpo-held{visibility:hidden}
+}}

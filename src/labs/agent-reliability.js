@@ -576,6 +576,10 @@ function updateRail(){
    stage: the grid of tasks (canvas), the player, the curve, the cards
    ===================================================================== */
 const cssv=(el,v)=>getComputedStyle(el).getPropertyValue(v).trim();
+/* polish round 5 (2026-10-17, B4): on a wide stage the curve sits beside the player and is drawn shorter, so the stage fits a
+   1440 × 900 screen. Its height is a CSS variable on the curve (--arl-ch, set in agent-reliability.css), read when it is drawn;
+   without it (phones, narrower stages) it is 132 px, as before. */
+const cssNum=(el,v,d)=>{const x=parseFloat(getComputedStyle(el).getPropertyValue(v)); return x>0?x:d;};
 /* cells narrower than this (px) are drawn without the per-attempt segments (R5.10): 50 steps on a phone, and on a desktop */
 const TIGHT=12;
 const tightNow=()=>{const h=app&&$('#arl-grid',app), W=h?h.clientWidth:0; return W>0&&(W-20)/S.n<TIGHT;};
@@ -634,8 +638,8 @@ function drawPlayer(){
   tl.textContent=pre?'':(simple()?(t.n>=RUNS?tx(`All ${RUNS} tasks have a result: `,`${RUNS} 个任务都出了结果：`):tx(`${t.n} of the ${RUNS} tasks have a result: `,`${RUNS} 个任务里，已经有 ${t.n} 个出了结果：`))+res
     :tx(`Done: ${t.n} of ${RUNS} tasks. ✓ ${t.ok} right, ✗ ${t.wrong} wrong at the end, ✗ ${t.stop} stopped.`,`跑完 ${t.n} / ${RUNS} 个任务：✓ 做对 ${t.ok} 个，✗ 做完但错了 ${t.wrong} 个，✗ 中途停下 ${t.stop} 个。`));
 }
-function curveSVG(W){
-  const r=R_(), H=132, Lp=34, Rp=Math.min(118,Math.max(86,W*0.26)), T=10, B=20, pw=Math.max(60,W-Lp-Rp), ph=H-T-B, N=50;
+function curveSVG(W,H){
+  const r=R_(), Lp=34, Rp=Math.min(118,Math.max(86,W*0.26)), T=10, B=20, pw=Math.max(60,W-Lp-Rp), ph=H-T-B, N=50;
   const X=n=>Lp+(n-1)/(N-1)*pw, Y=v=>T+(1-v)*ph, f1=v=>v.toFixed(1);
   const mine=[], plain=[]; for(let n=1;n<=N;n++){mine.push(compute({...S,n}).succ); plain.push(Math.pow(S.p,n));}
   const same=mine.every((v,i)=>Math.abs(v-plain[i])<1e-9);
@@ -673,7 +677,7 @@ function drawCurve(){
   if(hideRes()){cap.textContent=tx(`Task success against the number of steps: shown when the ${RUNS} tasks are done.`,`任务成功率随步数的变化，等 ${RUNS} 个任务跑完后显示。`); w.innerHTML=''; w.removeAttribute('data-tipx'); w.classList.add('arl-wait'); return;}
   w.classList.remove('arl-wait');
   cap.textContent=tx(`How does task success fall as the steps go from 1 to 50? (step ${S.n} marked)`,`步数从 1 加到 50，任务成功率掉多快？（标出的是 ${S.n} 步）`);
-  const W=Math.max(240,w.clientWidth||300); w.innerHTML=curveSVG(W);
+  const W=Math.max(240,w.clientWidth||300); w.innerHTML=curveSVG(W,cssNum(w,'--arl-ch',132));
   const r=R_();
   w.dataset.tipx=tx(`The solid line is the task’s success with your settings, for every number of steps from 1 to 50; the dashed line is no retries, ${M('p^n')}: every step right on its first try. At ${stepsW(S.n)}: ${fP(r.succ)} with your settings, ${fP(r.plain)} with no retries.`,`实线是按你的设置、步数从 1 到 50 时任务的成功率。虚线是不重试时的 ${M('p^n')}，也就是每一步都要第一次就做对。${stepsW(S.n)}时：你的设置是 ${fP(r.succ)}，不重试是 ${fP(r.plain)}。`);
 }
@@ -887,6 +891,14 @@ function keepStage(){stageStop();
     let dy=r.top-want; if(dy>=-2||c.bottom<want) return;
     dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
   stageT=setTimeout(tk,A.reduceMotion()?30:150);}
+/* the grid and the curve are drawn for their boxes' widths, and on a wide stage the curve sits in a column of its own: the stage changes
+   width without a window resize when the page puts the step list beside it or leaves the primer, so they are drawn again when its
+   width changes (as labs/reward-model.js does) */
+let stRO=null, stW=0;
+function watchStage(){if(stRO){stRO.disconnect(); stRO=null;} const st=app&&$('#arl-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w;
+    drawGrid(); drawCurve(); drawLegend();}));
+  stRO.observe(st);}
 function revealObs(){if(!app) return; if(mode==='guided') revealBox($('#arl-rail [data-obs]',app)); else if(mode==='sandbox') revealBox($('#arl-insight',app)); else revealBox($('#arl-ch-res',app));}
 const revealSoon=()=>requestAnimationFrame(revealObs);
 function setMode(m){
@@ -1057,12 +1069,12 @@ A.registerLab({
     A.shell.bindHeader(app,{id:ID,onMode:m=>{setMode(m); A.ui.reveal($('#arl-rail',app)); keepStage();},token});
     bind(app); renderDrill();
     if(mode==='guided'&&!p&&step===0&&!pred){S={...BASE};}
-    fillRail(); render();
+    fillRail(); render(); watchStage();
     /* a first view plays the run; a language switch or a return to the lab shows the same picture as it was (R3.20) */
     stopLoop(); refresh();
     if(PL.on&&!PL.raf){PL.last=0; PL.raf=requestAnimationFrame(frame);}
   },
-  leave(){clearTimeout(annT); stageStop(); stopLoop(); root=null; app=null;},
+  leave(){clearTimeout(annT); stageStop(); stopLoop(); if(stRO){stRO.disconnect(); stRO=null;} root=null; app=null;},
   onLang(){if(root){const d=$('#arl-math',app), open=d&&d.open; stopLoop(); this.mount(root,null); if(open) $('#arl-math',app).open=true;}},
   onResize(){if(app){drawGrid(); drawCurve(); drawLegend();}},
   termTip(k){const f=TERM[k]; return f?`<div>${esc(f())}</div><div class="act">${esc(jumpAct(k))}</div>`:'';},

@@ -1076,9 +1076,9 @@ function onClick(e){
   if(seg&&d.v!=null&&seg.dataset.key in S){if(b.disabled) return; const k=seg.dataset.key; learnerSet({[k]:k==='pol'?d.v:+d.v}); return;}
   if(d.lever!=null){lvTried.add(d.lever); learnerSet({...DEF,pol:d.lever}); return;}
   if(d.pred){pred=d.pred; renderRail(); render(); const f=$(`#cb-rail [data-pred="${pred}"]`,root); if(f) f.focus(); return;}
-  if(d.go!=null){enterStep(+d.go); A.ui.reveal($('#cb-rail .step.current',root)); return;}
-  if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); A.ui.reveal($('#cb-rail .step.current',root)); return;}
-  if(d.nav==='back'){enterStep(step-1); A.ui.reveal($('#cb-rail .step.current',root)); return;}
+  if(d.go!=null){enterStep(+d.go); A.ui.reveal($('#cb-rail .step.current',root)); keepStage(); return;}
+  if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); A.ui.reveal($('#cb-rail .step.current',root)); keepStage(); return;}
+  if(d.nav==='back'){enterStep(step-1); A.ui.reveal($('#cb-rail .step.current',root)); keepStage(); return;}
   if(d.nav==='showme'){const s=STEPS[step]; if(s.showMe==='play'){if(play.playing) play.rate=SPEEDS.fast; else playFrom(b,SPEEDS.fast);} else if(s.showMe){if(s.levers) lvTried.add(s.showMe.pol); learnerSet(s.showMe);} return;}
   if(d.modeGo){setMode(d.modeGo); A.ui.reveal($('#cb-rail',root)); return;}
   if(d.preset!=null){learnerSet({...PRESETS[+d.preset].p}); const box=$('#cb-sb-res',root); if(box){const rc=box.getBoundingClientRect(); if(rc.top<60||rc.top>window.innerHeight-120) A.ui.reveal(box);} return;}
@@ -1096,6 +1096,23 @@ function onClick(e){
       sel=()=>{const rg=document.createRange(); rg.selectNodeContents(pre); const s=getSelection(); s.removeAllRanges(); s.addRange(rg); b.textContent=tx('Selected. Press Ctrl+C','已选中，按 Ctrl+C 复制'); setTimeout(()=>{b.textContent=A.t('copyCode');},1600);};
     try{if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(pre.textContent).then(done,sel); else sel();}catch(err){sel();}}
 }
+/* keepStage (CONTRACT §11, R3.2, R9.7; as labs/moe.js; polish round 5): after Next, Back or a part's title the kit's reveal scrolls
+   the new card's top up under the top bar; near the end of the bench that pushes the sticky stage up with it (part 6 entered from part 5
+   at 1440 × 900 in English: the stage's top at −285 px, the whole Gantt chart above the screen; part 7 in Chinese: 61 px). Once the page
+   stops scrolling this pulls the stage back under the top bar without pushing the card's top off the screen, and does nothing once the
+   reader has scrolled the card away */
+let stageT=0;
+function stageStop(){if(stageT){clearTimeout(stageT); stageT=0;}}
+function keepStage(){stageStop();
+  let lastY=null, waited=0;
+  const tick=()=>{stageT=0; if(!root) return;
+    if(scrollY!==lastY){if(waited>=1500) return; lastY=scrollY; waited+=120; stageT=setTimeout(tick,120); return;}
+    const st=$('#cb-stage',root); if(!st||innerWidth<=760||getComputedStyle(st).position!=='sticky') return;
+    const card=$('#cb-rail .step.current',root)||$('#cb-rail',root); if(!card) return;
+    const want=parseFloat(getComputedStyle(st).top)||70, r=st.getBoundingClientRect(), c=card.getBoundingClientRect();
+    let dy=r.top-want; if(dy>=-2||c.bottom<want) return;   // the card has left the screen: the reader scrolled on, so stay put
+    dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
+  stageT=setTimeout(tick,A.reduceMotion()?30:150);}
 // Play pressed inside a step card while the chart is scrolled away (narrow screens): bring the chart into view to watch it
 function playFrom(b,rate){const gr=$('#cb-graph',root);
   if(!play.playing&&b.closest('#cb-rail')&&gr){const rc=gr.getBoundingClientRect(); if(rc.top<60||rc.bottom>window.innerHeight) gr.scrollIntoView({block:'start',behavior:A.reduceMotion()?'auto':'smooth'});}
@@ -1192,7 +1209,7 @@ A.registerLab({
     if(!inited&&!p){inited=true; mode='guided'; enterStep(0); return;}
     inited=true; renderRail(); render(); if(mode==='guided') cue(STEPS[step].target);
   },
-  leave(){stopPlay(); clearTimeout(annT); root=null;},
+  leave(){stopPlay(); clearTimeout(annT); stageStop(); root=null;},
   onLang(){if(root){const t=play.t; stopPlay(); this.mount(root,null); play.t=t; drawPlayhead();}},
   onResize(){if(root){drawGantt(cur()); drawPlayhead();}},
   termTip(k){const t=TERM()[k]; return `<div>${esc(t?L(t):k)}</div><div class="act">${jumpAct(k)}</div>`;},

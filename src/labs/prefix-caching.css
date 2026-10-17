@@ -318,3 +318,48 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 .px-mc{padding:1px 3px;white-space:normal;line-height:1.5;text-align:center}
 .px-mc0{display:flex;align-items:center;justify-content:center;height:1.9em;white-space:nowrap}
 .px-mtall .px-mc0{height:3.1em}
+/* ---------- polish r5 (B4, R7.12): part 6 fits a 1440 × 900 screen. Its stage stacked the eight requests (318 px with their caption), the
+   block strip of the picked request (138 px), its time to first token (147 px), the scope line and five metric cards (112 px), so it
+   scrolled 166 px inside itself (English 192). On a stage at least 736 px wide, when the requests lead the chart (part 6, Scenarios with
+   more than two requests, the challenge), the strip and the timeline stand side by side under them, with a hairline between them (R7.13),
+   read left to right as they read top to bottom before; the requests' "Send them again" sits at the right of their note, so the caption
+   keeps its height while they play (R7.9); the rows, the metric cards (CONTRACT §19) and a few gaps are tighter. Same pieces in the same
+   order; the strip and the timeline are drawn for their column's width (the strip's caption names the blocks per cell it draws, 16 at
+   this width instead of 8) and again when the stage changes width (watchStage in prefix-caching.js); phones (≤ 760 px) and narrower
+   stages keep the layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  /* the status stays beside the title and a long subtitle wraps under it, instead of the status taking a line of its own (R7.9: part 4's
+     levers and the Scenarios change the subtitle) */
+  .px-stage>.stage-head{flex-wrap:nowrap}
+  .px-stage>.stage-head>div:first-child{flex:1 1 auto;min-width:0}
+  .px-stage>.stage-head>.stage-actions{flex:none}
+  .px-stage>.legend-row{margin-top:10px}
+  .px-graph{margin-top:10px;padding:10px 14px 12px;gap:12px}
+  .px-graph[data-lead="rows"]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 0}
+  .px-graph[data-lead="rows"]>.px-rowsbox{grid-column:1/-1}
+  .px-graph[data-lead="rows"]>.px-stripbox{padding-right:16px}
+  .px-graph[data-lead="rows"]>.px-tl{align-content:start;border-left:1px solid var(--line);padding-left:16px}
+  /* the "with the cache" label takes two lines in this narrower column for request 1 ("nothing cached yet"): its room is kept while the
+     requests arrive, so the stage keeps its height (R7.9) */
+  .px-graph[data-lead="rows"] .px-tlrow[data-k="w"] .px-tll{min-height:calc(2.7em + 2px);align-content:flex-end}
+  #px-rows-cap{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;align-items:end}
+  #px-rows-cap .px-rcap{grid-column:1}
+  #px-rows-cap .px-replay{grid-column:2;grid-row:2;margin-top:0;white-space:nowrap}
+  .px-rows{gap:2px}
+  /* while the requests of part 6 arrive and after each memory pick, the line under them changes between one line and two (the last
+     request's summary): two lines kept, so the stage keeps its height (R7.9) */
+  .px-rows-apps+.px-sum{min-height:2.9em}
+  .px-row{padding-top:1px;padding-bottom:1px}
+  .px-stage>.px-scope{margin:8px 0 4px}
+  .px-metrics{margin-top:8px}
+  .px-metrics .metric .v{line-height:1.25}
+  .px-metrics .metric .d{min-height:13px;line-height:1.1}
+  /* the cached-tokens card's line takes two lines in Chinese for a hit ("… 个 block，每个 16 个 token") and one for a miss: two kept (R7.9) */
+  html[lang^="zh"] .px-metrics .metric[data-k="hit"] .sub{min-height:2.7em}
+  /* parts 3 and 4: the line under the strip takes two lines when some computed blocks hold tokens cached after another prefix (part 4's
+     levers): two kept, with the parts' line under them (R7.9) */
+  .px-graph[data-focus="strip"] .px-strip-foot{min-height:calc(4.35em + 2px)}
+  /* Scenarios: in the strip's narrower column the parts' line takes two lines for the multi-turn chat: two kept (R7.9) */
+  #px-app:has(#px-rail [data-preset]) .px-graph[data-lead="rows"] .px-strip-foot .muted{min-height:2.9em}
+  .px-stage>details.math{margin-top:8px;padding-top:8px}
+}}

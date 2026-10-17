@@ -21,6 +21,7 @@ Every mode and every guided part at 1440×900 and 390×844, in EN and ZH:
   them; (3) the four metric cards sit in one row at 1440, 1280 and 900, in two rows of two at 720 and 390; (5) the header names the
   lab “ZeRO 与 FSDP”, ZeRO first; the owner's clarification of 23:37 UTC: no hover outside Show the math only gives a number's exact value
   (no “精确值是” / “Exactly”, no hover on the challenge result's numbers or on the kit's big numbers);
+- B4 (polish round 5): entering parts 5 and 6 at 1440 × 900, the stage needs no scrolling inside (Chinese with 30 px to spare);
 - the writing rules on every visible text node and tooltip, colours (blue = weights, red = does not fit / waiting).
 Screenshots: shots/parallelism/.
 Run: python3 tests/parallelism_flow.py [en|zh] [1440|390]  (filters for a partial run)"""
@@ -491,8 +492,43 @@ def run_modes(b, w, h, lang):
     pg.close()
 
 
+# B4 (polish round 5, reviews/r5-fit-roots.md): entering parts 5 and 6 at 1440 × 900 as the polish probe stage.py does (Next when it
+# is enabled, else the part's heading), the stage needs no scrolling inside: Chinese with at least 30 px to spare, English with none
+# (8 and 14 px in English before this round). Spare = the stage's max-height minus what its content and borders need.
+FIT_ENTRY = """()=>{const s=document.getElementById('zr-stage'), r=s.getBoundingClientRect(); return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top)}}"""
+
+
+def fit_page(b, lang):
+    """the page as the polish probe stage.py opens it: window.__aspPrimer set (without it, automation gets the older tests' compat layout,
+    whose step list also holds the settings panel), the guided parts picked in the step list, the real clock"""
+    pg = b.new_page(viewport={'width': 1440, 'height': 900}); pg.add_init_script('window.__aspPrimer=true')
+    pg.on('pageerror', lambda e: errs.append(f'fit 1440 {lang}: {e}'))
+    pg.goto(URL); pg.wait_for_timeout(300)
+    pg.click(f'.langsw button[data-lang="{lang}"]'); pg.wait_for_timeout(80)
+    pg.evaluate("()=>{location.hash='parallelism'}"); pg.wait_for_timeout(500)
+    g = pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+    if g.count(): g.first.click(); pg.wait_for_timeout(700)
+    return pg
+
+
+def fit_entry(b, lang, parts=(5, 6,)):
+    pg = fit_page(b, lang)
+    for k in range(2, max(parts) + 1):
+        nb = pg.locator('.pbar [data-nav="next"]:visible:not([disabled])')
+        if nb.count(): nb.first.click()
+        else: pg.evaluate(f"()=>document.querySelector('#zr-rail .steps>.step:nth-child({k}) .step-h').click()")
+        pg.wait_for_timeout(900); settle(pg)
+        if k not in parts: continue
+        f = pg.evaluate(FIT_ENTRY); f['step'] = state(pg)['step'] + 1
+        check(f'{lang}-1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""}, its top below the top bar (B4, R7.12)',
+              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['top'] >= 59, f)
+    pg.close()
+
+
 with sync_playwright() as p:
     b = p.chromium.launch()
+    if (1440, 900) in SIZES:
+        for lang in LANGS: fit_entry(b, lang)
     for (w, h) in SIZES:
         for lang in LANGS:
             run_guided(b, w, h, lang)

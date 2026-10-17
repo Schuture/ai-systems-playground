@@ -863,6 +863,22 @@ function enterStep(i){
   renderRail();
 }
 function revealStep(){A.ui.reveal($('#pak-rail .step.current',app)||$('#pak-rail',app));}
+/* keepStage (polish round 5, 2026-10-17; the owner's B4: “只有往上面划才能把顶上显示出来”), as labs/llm-judge.js: after Next, Back or a
+   part's heading, and after a change of mode, put the sticky stage back under the top bar once the page has stopped scrolling, unless
+   the reader has scrolled the current card off screen. Part 5's card is short: at 1280 × 800 the end of the steps column had pushed
+   the stage's head above the window. */
+let stageT=0;
+const stageStop=()=>{clearTimeout(stageT); stageT=0;};
+function keepStage(){stageStop();
+  let lastY=null, waited=0;
+  const tick=()=>{stageT=0; if(!app) return;
+    if(scrollY!==lastY){if(waited>=1500) return; lastY=scrollY; waited+=120; stageT=setTimeout(tick,120); return;}
+    const st=$('#pak-stage',app); if(!st||innerWidth<=760||getComputedStyle(st).position!=='sticky') return;
+    const card=$('#pak-rail .step.current',app)||$('#pak-rail .railcard',app)||$('#pak-rail',app);
+    const want=parseFloat(getComputedStyle(st).top)||70, r=st.getBoundingClientRect(), c=card.getBoundingClientRect();
+    let dy=r.top-want; if(dy>=-2||c.bottom<want) return;   // the card has left the screen: the reader scrolled on (keys, scrollbar, a link), so stay put
+    dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
+  stageT=setTimeout(tick,A.reduceMotion()?30:150);}
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
@@ -982,9 +998,9 @@ function bind(el){
   el.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.key; if(k&&e.target.closest('#pak-rail')){wantObs=true; revealSoon(); wantObs=false;}});
   el.addEventListener('click',e=>{
     const b=e.target.closest('button'); if(!b||!el.contains(b)) return; const d=b.dataset;
-    if(d.go!=null){enterStep(+d.go); revealStep(); return;}
-    if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); return;}
-    if(d.nav==='back'){enterStep(step-1); revealStep(); return;}
+    if(d.go!=null){enterStep(+d.go); revealStep(); keepStage(); return;}
+    if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); keepStage(); return;}
+    if(d.nav==='back'){enterStep(step-1); revealStep(); keepStage(); return;}
     if(d.nav==='showme'){const s=STEPS[step]; if(s.showMe){wantObs=true; byLearner(()=>s.showMe()); revealSoon(); wantObs=false;} return;}
     if(d.pred){pred=d.pred; renderRail(); const fb=$(`#pak-rail [data-pred="${pred}"]`,app); if(fb) fb.focus({preventScroll:true}); return;}
     if(d.rem){setRem(d.rem); return;}
@@ -999,9 +1015,10 @@ function bind(el){
       else if(k==='chK') byLearner(()=>{chK=+d.v; render();});
       return;}
     if(d.preset!=null){const p=PRESETS[+d.preset]; dropBadges(); byLearner(()=>setState({...BASE,...p.s})); requestAnimationFrame(()=>{if(app) revealBox($('#pak-insight',app));}); return;}
-    if(d.modeGo){setMode(d.modeGo); A.ui.reveal($('#pak-rail',app)); return;}
+    if(d.modeGo){setMode(d.modeGo); A.ui.reveal($('#pak-rail',app)); keepStage(); return;}
     if(d.act) act(d.act,b);
   });
+  ['wheel','touchmove'].forEach(k=>el.addEventListener(k,stageStop,{passive:true}));   // the reader scrolls: keepStage leaves the page alone
 }
 
 /* =====================================================================
@@ -1033,7 +1050,7 @@ A.registerLab({
     if(mode==='challenge'&&!saved) saved={...BASE};
     el.innerHTML=viewHTML(); app=$('#pak-app',el);
     A.ui.initRanges(app);
-    A.shell.bindHeader(app,{id:ID,onMode:m=>{setMode(m); A.ui.reveal($('#pak-rail',app));},token});
+    A.shell.bindHeader(app,{id:ID,onMode:m=>{setMode(m); A.ui.reveal($('#pak-rail',app)); keepStage();},token});
     bind(app);
     renderDrill();
     if(mode==='guided'&&!p&&step===0) S={...S,...STEPS[0].enter()};
@@ -1043,7 +1060,7 @@ A.registerLab({
     /* a language switch re-mounts: keep the playback where it was */
     if(tok==null&&(wasShown>0||wasPlaying)&&viewNow()==='grid'&&!A.reduceMotion()){shown=wasShown; stopPlay(); if(wasPlaying&&shown<S.n) startPlay(); render();}
   },
-  leave(){clearTimeout(annT); stopPlay(); lastGrid=''; root=null; app=null;},
+  leave(){clearTimeout(annT); stopPlay(); stageStop(); lastGrid=''; root=null; app=null;},
   onLang(){if(root){const d=$('#pak-math',app), open=d&&d.open; this.mount(root,null); if(open) $('#pak-math',app).open=true;}},
   onResize(){if(app){gridSVG(); chartSVG();}},
   termTip(k){return termTipHTML(k);},

@@ -721,6 +721,72 @@ with sync_playwright() as _p:
     _b.close()
 
 
+# polish round 5 (2026-10-17, R3.2, R9.7, R7.9, R7.12, the owner's B4; as tests/rlvr_flow.py does for parts that cannot fit): the stage is
+# taller than the window in every part on a desktop (the strip, the timeline and the KV pool, the table of the whole run and Show the
+# math need about 1,160 px at 1440 × 900, with the spacing tightened and the timeline drawn shorter; the stage has 814), so the block each
+# part's card talks about is whole on the screen when the part is entered (the timeline in parts 1–3, the KV pool in 4–5, the strip in 6,
+# the code panel in 7), and what is left below scrolls inside the stage, under a ceiling. Before, at 1440 × 900 the stage scrolled 598 px
+# inside in Chinese (536 at parts 4–6, 1,059 at part 7) and 622–684 px in English (1,145 at part 7), and the timeline's lower part was
+# below the window in parts 1–6. The ceilings are this standard-mode page's numbers plus about 20 px. The walk is on the whole site
+# (built into out/ and wrapped with a doctype; the one-lab page lacks the “Read first” line, which moves every card 28 px), in the lab's
+# real layout (window.__aspPrimer, as tests/kit_flow.py), entering each part as the polish probe stage.py does: Next when it is on, else
+# the part's title; Chinese with reduced motion, English with motion (its scrolls are smooth). The timeline's rows are 6 px for the 37
+# requests and 5 px for the 48 (8 and 6 before), drawn for the timeline's width; a phone keeps its rows.
+subprocess.run([sys.executable, str(P / 'build.py'), 'out/site-serving-capstone.html'], check=True, cwd=P, capture_output=True)
+(P / 'out' / 'wrapped-site-serving-capstone.html').write_text('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>'
+                                                          + (P / 'out' / 'site-serving-capstone.html').read_text() + '</body></html>')
+SITE = 'file://' + str(P / 'out' / 'wrapped-site-serving-capstone.html')
+FOCUS = {'mission': '#sc-tlw', 'predict': '#sc-tlw', 'budget': '#sc-tlw', 'cache': '#sc-mem', 'cbudget': '#sc-mem', 'cap': '#sc-strip', 'code': '#sc-wc', 'remember': None}
+CEIL = {'zh': [370, 370, 370, 350, 350, 350, 830, 370], 'en': [390, 390, 390, 370, 390, 370, 850, 390]}
+WALK5 = """q=>{const s=document.getElementById('sc-stage'), r=s.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
+  lo=Math.max(r.top+s.clientTop,bar), hi=Math.min(r.bottom-s.clientTop,innerHeight), h=s.querySelector('.stage-head').getBoundingClientRect(), R=e=>{const b=e.getBoundingClientRect(); return [Math.round(b.top),Math.round(b.bottom)]};
+  const st=window.__sc.state, f=q[st.partId], fe=f&&document.querySelector(f), cv=document.getElementById('sc-tl'), b0=window.__sc.rowBox(0);
+  return {part:st.part+1, id:st.partId, top:Math.round(r.top), head:Math.round(h.top), bar:Math.round(bar), lo:Math.round(lo), hi:Math.round(hi), scroll:s.scrollHeight-s.clientHeight,
+    focus:fe?R(fe):null, tl:R(cv), rh:b0?Math.round(b0.bottom-b0.top):null, drawn:Math.round(cv.width/Math.min(2,devicePixelRatio||1)), boxW:document.getElementById('sc-tlbox').clientWidth}}"""
+with sync_playwright() as _p:
+    _b = _p.chromium.launch()
+    for _lang, _rm in (('zh', 'reduce'), ('en', 'no-preference')):
+        _pg = _b.new_page(viewport={'width': 1440, 'height': 900}, reduced_motion=_rm); _pg.add_init_script('window.__aspPrimer=true')
+        _pg.on('pageerror', lambda e: errs.append(f'1440 walk: {e}'))
+        _pg.goto(SITE); _pg.wait_for_timeout(600); _pg.click(f'.langsw button[data-lang="{_lang}"]'); _pg.wait_for_timeout(80)
+        _pg.evaluate("()=>{location.hash='serving-capstone'}"); _pg.wait_for_timeout(500)
+        _g = _pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+        if _g.count(): _g.first.click(); _pg.wait_for_timeout(700)
+        _n = _pg.evaluate("()=>document.querySelectorAll('#sc-rail .steps>.step').length"); _rows = [_pg.evaluate(WALK5, FOCUS)]
+        if _rm != 'reduce':   # R7.9: playing the run leaves every block's height alone (the stage's content keeps its height)
+            _pg.evaluate("()=>{window.__H5=[]; const s=document.getElementById('sc-stage'), f=()=>{window.__H5.push(s.scrollHeight); if(window.__H5.length<240) requestAnimationFrame(f);}; document.querySelector('#sc-play [data-act=play]').click(); f();}")
+            _pg.wait_for_timeout(4500); _hs = _pg.evaluate("()=>window.__H5"); _pg.evaluate("()=>{const b=document.querySelector('#sc-play [data-act=play]'); if(window.__sc.state.playing) b.click();}")
+            check(f'1440 {_lang} part 1: playing the run leaves the stage’s content height alone (R7.9)', len(_hs) > 30 and max(_hs) - min(_hs) <= 1, (len(_hs), min(_hs or [0]), max(_hs or [0])))
+        for _i in range(1, _n):
+            _nb = _pg.locator('.pbar [data-nav=next]:visible:not([disabled])')
+            if _nb.count(): _nb.first.click()
+            else: _pg.evaluate(f"()=>document.querySelector('#sc-rail .steps>.step:nth-child({_i + 1}) .step-h').click()")
+            _pg.wait_for_timeout(1500 if _rm == 'reduce' else 2500); _rows.append(_pg.evaluate(WALK5, FOCUS))
+        check(f'1440 {_lang} walk: entering every part, the stage’s top at its sticky line (70 px) or lower and its head below the top bar (R3.2, R9.7, B4)',
+              len(_rows) == _n == 8 and all(r['part'] == i + 1 and r['top'] >= max(68, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
+        for _r in _rows:
+            _c = CEIL[_lang][_r['part'] - 1]
+            check(f'1440 {_lang} walk part {_r["part"]}: what the stage cannot hold scrolls inside it, at most {_c} px (B4; it was 536–1,145 px)', _r['scroll'] <= _c, _r)
+            if _r['focus']:
+                check(f'1440 {_lang} walk part {_r["part"]}: the block the card talks about ({FOCUS[_r["id"]]}) is whole on the screen when the part is entered (B4, R7.12)',
+                      _r['focus'][0] >= _r['lo'] - 1 and _r['focus'][1] <= _r['hi'] + 1, _r)
+            if _r['id'] != 'code':   # part 7: the code panel stands above the timeline (DOM order), the panel is the part's figure
+                check(f'1440 {_lang} walk part {_r["part"]}: the timeline (the main figure) is whole on the screen when the part is entered (B4, R7.12)',
+                      _r['tl'][0] >= _r['lo'] - 1 and _r['tl'][1] <= _r['hi'] + 1, _r)
+            check(f'1440 {_lang} walk part {_r["part"]}: the timeline is drawn for its width, its rows {6 if _r["part"] not in (4, 5, 6) else 5} px (37 or 48 requests)',
+                  _r['drawn'] == _r['boxW'] and _r['rh'] == (5 if _r['part'] in (4, 5, 6) else 6), _r)
+        _pg.close()
+    # a phone keeps its rows (the layout at 390 is unchanged): 4 px for the 37 requests
+    _pg = _b.new_page(viewport={'width': 390, 'height': 844}, reduced_motion='reduce'); _pg.add_init_script('window.__aspPrimer=true')
+    _pg.goto(SITE); _pg.wait_for_timeout(600); _pg.evaluate("()=>{location.hash='serving-capstone'}"); _pg.wait_for_timeout(600)
+    _g = _pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+    if _g.count(): _g.first.click(); _pg.wait_for_timeout(700)
+    _r = _pg.evaluate(WALK5, FOCUS)
+    check('390 part 1: a phone keeps its timeline rows (4 px for 37 requests)', _r['rh'] == 4 and _r['drawn'] == _r['boxW'], _r)
+    _pg.close()
+    _b.close()
+
+
 check('no page errors', not errs, errs[:5])
 print(f'{n} checks, {len(fails)} failed')
 sys.exit(1 if fails else 0)

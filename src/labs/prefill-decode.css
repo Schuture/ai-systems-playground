@@ -240,3 +240,20 @@ html[lang^="zh"] .pd-xzaxis{margin-left:78px}
 .pd-mtall .pd-mc0{height:3.1em}
 /* 知识梳理 (2026-10-12): a formula on its own line, as the architecture primer sets them */
 .primer .pd-prfx{display:block;max-width:100%;overflow-x:auto;padding:.3em 0;font-size:1.05em}
+/* ---------- polish r5 (B4, R7.12): part 6 fits a 1440 × 900 screen. Its stage stacked the three GPUs' timelines (275 px), the two
+   limits of each phase (221 px: prefill's box over the decode step's) and three metric cards, so it scrolled 49 px inside itself. On a
+   stage at least 736 px wide the two phases' boxes stand side by side, prefill on the left as it read first before, each box's name and
+   time on its first line and what the step computes on the second, so a longer time (“30.0 ms（原版 60.0 ms）”) never moves the
+   box's lines; when one box is hidden (the challenge shows only the decode step) the other keeps the whole width. The metric cards take
+   the tighter value and change lines of CONTRACT §19. Same boxes, same order and the same bars; phones (≤ 760 px) and narrower stages
+   keep the layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  .pd-lim:not(:has(>.pd-ph[hidden])){grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:10px}
+  .pd-lim:not(:has(>.pd-ph[hidden]))>.pd-cap{grid-column:1/-1}
+  .pd-lim:not(:has(>.pd-ph[hidden])) .pd-ph-h{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:1px}
+  .pd-lim:not(:has(>.pd-ph[hidden])) .pd-ph-h>b{grid-area:1/1}
+  .pd-lim:not(:has(>.pd-ph[hidden])) .pd-ph-t{grid-area:1/2}
+  .pd-lim:not(:has(>.pd-ph[hidden])) .pd-ph-d{grid-area:2/1/3/3}
+  .pd-metrics .metric .v{line-height:1.25}
+  .pd-metrics .metric .d{min-height:13px;line-height:1.1}
+}}

@@ -869,6 +869,13 @@ function revealBox(box){
   window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
 let stageT=0;
 const stageStop=()=>{clearTimeout(stageT); stageT=0;};
+/* the stage can change width while the window keeps its size (the steps list moves beside the page, the summary closes). The 300
+   verdicts are drawn for their box's width, so they are drawn again when the stage's width changes, as in ppo.js and reward-model.js
+   (polish round 5: part 1 had kept the 20-a-row block drawn before the stage took its width, 80 px taller) */
+let stRO=null, stW=0;
+function watchStage(){if(stRO){stRO.disconnect(); stRO=null;} const st=app&&$('#ljg-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w; drawWaffle();}));
+  stRO.observe(st);}
 /* after a click in the rail, keep the sticky stage's head below the top bar (R3.2) */
 function keepStage(){stageStop();
   let lastY=null, waited=0;
@@ -1035,9 +1042,9 @@ A.registerLab({
     bind(app);
     renderDrill();
     fillRail();
-    render();
+    render(); watchStage();
   },
-  leave(){clearTimeout(annT); stageStop(); root=null; app=null;},
+  leave(){clearTimeout(annT); stageStop(); if(stRO){stRO.disconnect(); stRO=null;} root=null; app=null;},
   onLang(){if(root){const d=$('#ljg-math',app), open=d&&d.open; this.mount(root,null); if(open) $('#ljg-math',app).open=true;}},
   onResize(){if(app){drawWaffle();}},
   termTip(k){return termTipHTML(k);},

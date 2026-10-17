@@ -1555,6 +1555,14 @@ function keepStage(){stageStop();
     let dy=r.top-want; if(dy>=-2||c.bottom<want) return;
     dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
   stageT=setTimeout(tick,A.reduceMotion()?30:150);}
+/* polish r5: the strip and the timeline are drawn for their width (blocks per cell, the labels pinned under the strip, the time axis); on a
+   wide stage part 6 puts them side by side (prefix-caching.css), and the stage changes width without a window resize when the page puts
+   the step list beside it or leaves the primer, so they are drawn again when it does (as watchStage in ppo.js) */
+let stRO=null, stW=0;
+function watchStage(){if(stRO){stRO.disconnect(); stRO=null;} const st=app&&$('#px-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w;
+    if(isOT()) drawPair(); else {drawStrip(); drawTL();}}));
+  stRO.observe(st);}
 function revealObs(){if(!app) return; if(mode==='guided') revealBox($('#px-rail [data-obs]',app)); else if(mode==='sandbox') revealBox($('#px-insight',app)); else revealBox($('#px-ch-res',app));}
 const revealSoon=()=>requestAnimationFrame(revealObs);
 function setMode(m){
@@ -1773,9 +1781,9 @@ A.registerLab({
     renderDrill();
     if(mode==='guided'&&!p&&step===0){const e=STEPS[0].enter(); S={...e.s}; sel=e.sel;}
     const rail=$('#px-rail',app); rail.innerHTML=railHTML()+(mode==='challenge'&&A.ui.exits?A.ui.exits(ID,EXITS()):'')+((mode!=='guided'||step===STEPS.length-1)&&A.shell.nextLab?A.shell.nextLab(ID):''); A.ui.initRanges(rail);
-    render();
+    render(); watchStage();
   },
-  leave(){clearTimeout(annT); stageStop(); swStop(); stopSeq(); root=null; app=null;},
+  leave(){clearTimeout(annT); stageStop(); swStop(); stopSeq(); if(stRO){stRO.disconnect(); stRO=null;} root=null; app=null;},
   onLang(){if(root){const d=$('#px-math',app), open=d&&d.open; this.mount(root,null); if(open) $('#px-math',app).open=true;}},
   onResize(){if(app){if(isOT()) drawPair(); else {drawStrip(); drawTL();}}},
   termTip(k){return termTipHTML(k);},

@@ -1576,10 +1576,13 @@ const PAT=new Map();
 function hatch(g,color){const key=color; if(PAT.has(key)) return PAT.get(key); const c=document.createElement('canvas'); c.width=c.height=6; const x=c.getContext('2d');
   x.strokeStyle=color; x.globalAlpha=0.75; x.lineWidth=1.2; x.beginPath(); x.moveTo(-1,7); x.lineTo(7,-1); x.stroke(); const p=g.createPattern(c,'repeat'); PAT.set(key,p); return p;}
 let tlGeo=null, focusRow=-1;
+/* the most height the timeline's rows may take on a desktop: --sc-tlh in serving-capstone.css (review r5, B4: 300 px before, and the stage
+   did not fit the window in any part) */
+const tlBudget=box=>{const v=parseFloat(getComputedStyle(box).getPropertyValue('--sc-tlh')); return v>=150&&v<=300?v:300;};
 function drawTL(){
   const o=cur(), cv=$('#sc-tl',app), box=$('#sc-tlbox',app); if(!cv||!box) return;
   const W=Math.max(200,box.clientWidth), n=o.R.length, phone=innerWidth<=760;
-  const rh=phone?Math.max(2,Math.min(5,Math.floor(156/n))):Math.max(4,Math.min(8,Math.floor(300/n))), dpr=Math.min(2,window.devicePixelRatio||1);
+  const rh=phone?Math.max(2,Math.min(5,Math.floor(156/n))):Math.max(4,Math.min(8,Math.floor(tlBudget(box)/n))), dpr=Math.min(2,window.devicePixelRatio||1);
   /* the document-prefill label, both halves (R5.8; review B4, N1): in the empty corner below the document's row and left of its arrival
      when it fits there (rows are in arrival order, so no row reaches that corner); otherwise in a band of its own above the rows, with a
      thin leader line down to the prefill, so it never covers the rows of the chats that keep answering. The band is kept whether or not
@@ -1927,7 +1930,7 @@ function setState(p,noPlay){
   if(keyOf(S.load,S)===k0){render(); return;}
   replayNew();}
 function enterStep(i,wasPl){
-  step=Math.max(0,Math.min(STEPS.length-1,i)); const s=STEPS[step], was=cur().key, pl=wasPl!=null?wasPl:play.playing;
+  step=Math.max(0,Math.min(STEPS.length-1,i)); const s=STEPS[step], was=cur().key, pl=wasPl!=null?wasPl:play.playing; focusWant={step,at:Date.now()};
   Object.assign(S,{...PART_CFG[s.id]}); if(s.id!=='cap') S.policy='continuous'; sel=null; relCache={k:'',v:new Set()};
   const st=$('#sc-stage',app); if(st) st.scrollTop=0;
   bump(); stopPlay();
@@ -2013,14 +2016,45 @@ function jump(k,src){
    ===================================================================== */
 let stageT=0;
 const stageStop=()=>{clearTimeout(stageT); stageT=0;};
-function keepStage(){stageStop(); let lastY=null, waited=0; const my=runTok;
+function keepStage(){stageStop(); let lastY=null, waited=0, pulled=false; const my=runTok;
   const tick=()=>{stageT=0; if(!app) return;
     if(scrollY!==lastY){if(waited>=1500) return; lastY=scrollY; waited+=120; stageT=setTimeout(tick,120); return;}
     const st=$('#sc-stage',app); if(!st||innerWidth<=760||getComputedStyle(st).position!=='sticky') return;
     const card=$('#sc-rail .step.current',app)||$('#sc-rail .railcard',app)||$('#sc-rail',app);
     const want=parseFloat(getComputedStyle(st).top)||70, r=st.getBoundingClientRect(), c=card.getBoundingClientRect();
-    let dy=r.top-want; if(dy>=-2||c.bottom<want) return; dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:RM()?'auto':'smooth'}); void my;};
+    if(c.bottom<want) return;   // the card has left the screen: the reader scrolled on (keys, scrollbar, a link), so stay put
+    if(!pulled){pulled=true; let dy=r.top-want; if(dy<-2){dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2){window.scrollBy({top:dy,behavior:RM()?'auto':'smooth'}); lastY=null; waited=0; stageT=setTimeout(tick,120); return;}}}
+    /* then, once the page is still, the block the part's card talks about (review r5) */
+    const f=focusWant; focusWant=null; if(f&&f.step===step&&Date.now()-f.at<4000&&mode==='guided') fitFocus(); void my;};
   stageT=setTimeout(tick,RM()?30:150);}
+/* review r5 (B4; the owner: "the playback panel was pushed down, at first I did not see there was more below"): the stage is taller than
+   the window in every part on a desktop, even with its spacing tightened and the timeline drawn shorter (the three views, the table of the
+   whole run and Show the math do not fit in 814 px). Entering a part brings the block its card talks about fully on screen: the timeline
+   (parts 1-3), the KV pool (4-5) or the strip (6); part 7's code panel has showCode. The page scrolls until the stage sticks, never past
+   the head of the part's card (as showCode), then the stage scrolls inside; the rest of the stage (the table, the math) stays below */
+let focusWant=null;
+function fitFocus(){const q={tl:'#sc-tlw',mem:'#sc-mem',strip:'#sc-strip'}[STEPS[step].focus], el=q&&$(q,app), st=$('#sc-stage',app);
+  if(!el||!st||innerWidth<=760||getComputedStyle(st).position!=='sticky') return;
+  const beh=RM()?'auto':'smooth', bar=document.querySelector('.topbar'), barB=bar?bar.getBoundingClientRect().bottom:58, card=$('#sc-rail .step.current',app);
+  const sr=st.getBoundingClientRect(), r=el.getBoundingClientRect(), stick=parseFloat(getComputedStyle(st).top)||70, bw=st.clientTop||0;
+  const hiAt=py=>Math.min(sr.bottom-py-bw,innerHeight)-8, loAt=py=>Math.max(sr.top-py+bw,barB)+6;   // room for the block's dashed outline
+  if(r.top>=loAt(0)&&r.bottom<=hiAt(0)) return;
+  /* all the way until the stage sticks, its whole box on screen: scrolling only as far as the block needed (85 px at part 4) left the stage's
+     foot below the window, and the cards after it then stayed where the kit's reveal leaves a card already on screen, so parts 7 and 8 were
+     entered with the stage at 117-126 px instead of its sticky line */
+  let py=0; if(r.bottom>hiAt(0)){py=Math.max(0,sr.top-stick); if(card) py=Math.max(0,Math.min(py,card.getBoundingClientRect().top-(barB+8)));}
+  let sy=r.bottom-py-hiAt(py); if(r.top-py-sy<loAt(py)) sy=r.top-py-loAt(py);   // a block taller than the room: its top
+  sy=Math.max(-st.scrollTop,Math.min(sy,st.scrollHeight-st.clientHeight-st.scrollTop));
+  if(py>2) window.scrollBy({top:py,behavior:beh});
+  if(Math.abs(sy)>2) st.scrollBy({top:sy,behavior:beh});}
+/* the timeline and the strip are drawn for the stage's width, and the stage changes width without a window resize (the page puts the step
+   list beside it, or leaves the primer), so they are drawn again when it does (as labs/ppo.js, review r5) */
+let stRO=null, stW=0;
+function watchStage(){unwatchStage(); const st=app&&$('#sc-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w;
+    const ax=$('#sc-axis',app); if(ax) ax._k=''; const g=$('#sc-gbar',app); if(g) g._h=''; frame();}));
+  stRO.observe(st);}
+function unwatchStage(){if(stRO){stRO.disconnect(); stRO=null;}}
 /* the trace card: beside the selected row's bar, on the side with more room, so it never covers the row it explains nor the steps the row
    waited for (they lie inside the bar's time range); at least 250 px wide, else under the timeline in the flow. Its height follows its
    text, never cut off (review r2, A1/N4). Brought into view once per selection */
@@ -2148,10 +2182,10 @@ A.registerLab({
     for(const k in RC){} bump(); stopPlay();
     const o=cur(); if(p){play.t=null; seen.add(o.key);} else if(play.t!=null&&!seen.has(o.key)&&play.t>0) play.t=Math.min(play.t,o.end);
     const rail=$('#sc-rail',app); rail.innerHTML=railFull(); A.ui.initRanges(rail);
-    render();
+    render(); watchStage();
     if(p&&!RM()){play.t=0; startPlay(true);}
   },
-  leave(){bump(); clearTimeout(annT); stageStop(); stopPlay(); root=null; app=null;},
+  leave(){bump(); clearTimeout(annT); stageStop(); unwatchStage(); stopPlay(); root=null; app=null;},
   onLang(){if(root){const d=$('#sc-math',app), open=d&&d.open, t=play.t, was=play.playing; bump(); stopPlay(); this.mount(root,null); play.t=t; if(open) $('#sc-math',app).open=true; render(); if(was) startPlay(false);}},
   onResize(){if(app){const ax=$('#sc-axis',app); if(ax) ax._k=''; const g=$('#sc-gbar',app); if(g) g._h=''; frame();}},
   termTip(k){return termTipHTML(k);},

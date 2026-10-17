@@ -871,6 +871,63 @@ with sync_playwright() as _p:
     _b.close()
 
 
+# polish round 5 (2026-10-17, R3.2, R9.7, R7.9, R7.12, the owner's B4; as tests/moe_flow.py and tests/grpo_flow.py): the reader's walk on
+# the whole site (built into out/ and wrapped with a doctype; the one-lab page lacks the “Read first” line, which moves every card 28 px),
+# in the lab's real layout (window.__aspPrimer, as tests/kit_flow.py), entering each part as the polish probe stage.py does: Next when it
+# is on, else the part's title. Before, at 1440 × 900 the stage scrolled inside in English at parts 2–7 (35, 35, 68, 68, 29, 29 px) and
+# had 18 px to spare in Chinese at parts 4–7; entering part 7 in Chinese pushed it up to −91 px. Now, at every part in both languages:
+# the stage's top at its sticky line (70 px) or lower, its head below the top bar, no scrolling inside, at least 30 px to spare in Chinese
+# (none needed in English), and the pool (the main figure) whole on the screen. Spare = the stage's max-height minus what its content
+# and borders need. Part 1: the pool is drawn for the stage's width as it is entered (it was drawn for a 554 px stage and stretched,
+# then grew 69 px at the first hover: R7.9), so hovering it leaves the stage's height alone; on this wide stage a cell is 0.8 as tall
+# as it is wide (paged-attention.css), square on a phone.
+subprocess.run([sys.executable, str(P / 'build.py'), 'out/site-paged-attention.html'], check=True, cwd=P, capture_output=True)
+(P / 'out' / 'wrapped-site-paged-attention.html').write_text('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>'
+                                                       + (P / 'out' / 'site-paged-attention.html').read_text() + '</body></html>')
+SITE = 'file://' + str(P / 'out' / 'wrapped-site-paged-attention.html')
+WALK = """()=>{const s=document.querySelector('#pa-stage'), r=s.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
+  cur=document.querySelector('#pa-rail .steps>.step.current'), h=s.querySelector('.stage-head').getBoundingClientRect(), f=document.getElementById('pa-cv').getBoundingClientRect();
+  return {part:cur?[...cur.parentNode.children].indexOf(cur)+1:0, top:Math.round(r.top), head:Math.round(h.top), bar:Math.round(bar), scroll:s.scrollHeight-s.clientHeight,
+    spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), fig:[Math.round(f.top),Math.round(f.bottom)], vh:innerHeight};}"""
+POOL = """()=>{const c=document.getElementById('pa-cv'), s=document.getElementById('pa-stage'); return {drawn:Math.round(c.width/(devicePixelRatio||1)), w:c.clientWidth, h:c.clientHeight, stage:s.offsetHeight}}"""
+with sync_playwright() as _p:
+    _b = _p.chromium.launch()
+    for _lang in ('en', 'zh'):
+        _pg = _b.new_page(viewport={'width': 1440, 'height': 900}, reduced_motion='reduce'); _pg.add_init_script('window.__aspPrimer=true')
+        _pg.on('pageerror', lambda e: errs.append(f'1440 walk: {e}'))
+        _pg.goto(SITE); _pg.wait_for_timeout(600); _pg.click(f'.langsw button[data-lang="{_lang}"]'); _pg.wait_for_timeout(80)
+        _pg.evaluate("()=>{location.hash='paged-attention'}"); _pg.wait_for_timeout(500)
+        _g = _pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+        if _g.count(): _g.first.click(); _pg.wait_for_timeout(700)
+        _n = _pg.evaluate("()=>document.querySelectorAll('#pa-rail .steps>.step').length"); _rows = [_pg.evaluate(WALK)]
+        _a = _pg.evaluate(POOL); _bx = _pg.query_selector('#pa-cv').bounding_box()
+        _pg.mouse.move(_bx['x'] + 30, _bx['y'] + 6); _pg.wait_for_timeout(250); _c = _pg.evaluate(POOL); _pg.mouse.move(2, 2); _pg.wait_for_timeout(200)
+        _cs = (_a['w'] - 47 * 2) / 48
+        check(f'1440 {_lang} part 1: the pool is drawn for the stage’s width, its cells 0.8 as tall as they are wide, and hovering it leaves the stage’s height alone (R7.9)',
+              _a['drawn'] == _a['w'] and abs(_a['h'] - (16 * 0.8 * _cs + 15 * 2)) <= 1 and _c['h'] == _a['h'] and _c['stage'] == _a['stage'], (_a, _c))
+        for _i in range(1, _n):
+            _nb = _pg.locator('.pbar [data-nav=next]:visible:not([disabled])')
+            if _nb.count(): _nb.first.click()
+            else: _pg.evaluate(f"()=>document.querySelector('#pa-rail .steps>.step:nth-child({_i + 1}) .step-h').click()")
+            _pg.wait_for_timeout(1500); _rows.append(_pg.evaluate(WALK))
+        check(f'1440 {_lang} walk: entering every part, the stage’s top at its sticky line (70 px) or lower and its head below the top bar (R3.2, R9.7, B4)',
+              len(_rows) == _n == 7 and all(r['part'] == i + 1 and r['top'] >= max(68, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
+        for _r in _rows:
+            check(f'1440 {_lang} walk part {_r["part"]}: the stage needs no scrolling inside' + (', 30 px to spare' if _lang == 'zh' else '') + ', the pool whole on the screen (B4, R7.12)',
+                  _r['scroll'] <= 0 and _r['spare'] >= (30 if _lang == 'zh' else 0) and _r['fig'][0] >= _r['bar'] - 1 and _r['fig'][1] <= _r['vh'] + 1, _r)
+        _r = _rows[6] if len(_rows) >= 7 else {}   # part 7, whose stage the bench's end pushed up before (−91 px in Chinese, 65 in English): at 70 px
+        check(f'1440 {_lang} walk part 7: the stage’s top at its sticky line, 70 px (it was at ' + ('−91' if _lang == 'zh' else '65') + ' px)', bool(_r) and abs(_r['top'] - 70) <= 2, _r)
+        _pg.close()
+    # a phone keeps square cells (the layout at 390 is unchanged)
+    _pg = _b.new_page(viewport={'width': 390, 'height': 844}, reduced_motion='reduce'); _pg.add_init_script('window.__aspPrimer=true')
+    _pg.goto(SITE); _pg.wait_for_timeout(600); _pg.evaluate("()=>{location.hash='paged-attention'}"); _pg.wait_for_timeout(600)
+    _g = _pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+    if _g.count(): _g.first.click(); _pg.wait_for_timeout(700)
+    _a = _pg.evaluate(POOL); _cs = (_a['w'] - 31) / 32
+    check('390 part 1: the pool keeps square cells on a phone', _a['drawn'] == _a['w'] and abs(_a['h'] - (24 * _cs + 23)) <= 1, _a)
+    _pg.close()
+    _b.close()
+
 for line in out:
     print(line)
 real_errs = [e for e in errs if 'ERR_TUNNEL' not in e]

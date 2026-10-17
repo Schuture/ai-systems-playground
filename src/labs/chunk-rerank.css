@@ -136,3 +136,41 @@ mark.ckr-m.bad{background:color-mix(in srgb,var(--c-oom) 22%,transparent)}
 /* phones: the line under a panel that leads back to the conclusion once a playback ends (R3.2; P35 of the polish review) */
 .ckr-back{display:block;margin:10px 0 0;font-weight:600;text-align:left}
 .ckr-back[hidden]{display:none}
+
+/* ---------- a wide stage (polish round 5, 2026-10-17; the owner's B4: “动画播放面板被整体顶得靠下了”) ----------
+   At 1440 × 900 the stage had to scroll inside itself on entering part 1 (31 px), part 4 (59 px; English 109 px) and part 6
+   (67 px; English 83 px). On a stage at least 736 px wide:
+   - “Speed” and “Progress” sit beside their controls, so the cut's player takes one line instead of two (parts 1, 2); the
+     percentage keeps the width of “100%”, so the slider does not move while the cut plays; the speed buttons now stand in Cut's
+     and Replay's row; their monospace text sat 1 px lower than the buttons' sans text (its box is 3 px taller), so it is raised
+     1.25 px (padding below it, the buttons keep their size) and the three keep one baseline;
+   - with one search on the stage (parts 1 and 6), a row's short preview of the chunk (or, for hybrid search, where the chunk came
+     from) follows the chunk's name on the row's line instead of taking a line of its own, and a “tie” mark follows its score; a
+     preview that does not fit moves under the name as before, and none is cut shorter than before;
+   - with three searches (part 4) the rows' lines are a little tighter, and the table of the 20 answers and the sentence about it
+     sit side by side, the table's lines 1.25 high instead of the page's 1.55;
+   - part 6's chart keeps its size and its legend stands in a column beside it, in the room that was empty;
+   - the panels sit 2 px closer and the metric cards take CONTRACT §19's compact line heights (value 1.25, change line 13 px).
+   Same pieces, same order, same hairlines; phones and narrower stages are unchanged. */
+@media (min-width:761px){@container (min-width:736px){
+  .ckr-pan{margin-top:6px;padding-top:6px}
+  .ckr-qrow{margin:6px 0 6px}
+  .ckr-transport{margin:2px 0 4px}
+  .ckr-transport #ckr-speed{grid-template-columns:auto auto;align-items:center;column-gap:8px}
+  .ckr-transport .seg-ctl button{padding-bottom:2.5px}
+  .ckr-transport #ckr-tr-p{grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:10px}
+  .ckr-transport #ckr-tr-p output{display:inline-block;min-width:4ch;text-align:right}
+  .ckr-cols[data-n="1"] .ckr-sn,.ckr-cols[data-n="1"] .ckr-src{display:inline-block;max-width:100%;margin-left:10px;vertical-align:bottom;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ckr-cols[data-n="1"] .ckr-tie{display:inline;margin-left:6px}
+  .ckr-cols[data-n="3"] .ckr-li{line-height:1.35;padding:3px 4px}
+  .ckr-leg{margin:2px 0 4px}
+  #ckr-pan-chart{display:grid;grid-template-columns:minmax(0,560px) minmax(140px,1fr);column-gap:16px;align-items:start}
+  #ckr-pan-chart>.ckr-pt{grid-column:1/-1}
+  #ckr-pan-chart>.ckr-leg{flex-direction:column;align-items:flex-start;margin:8px 0 0;gap:6px}
+  .ckr-sum{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:18px;align-items:start;margin-top:6px}
+  .ckr-sum .ckr-sumnote{margin:2px 0 0}
+  .ckr-sum .ckr-tbl th,.ckr-sum .ckr-tbl td{line-height:1.25}
+  .ckr-metrics{margin-top:8px}
+  .ckr-metrics .metric .v{line-height:1.25}
+  .ckr-metrics .metric .d{min-height:13px;line-height:13px}
+}}

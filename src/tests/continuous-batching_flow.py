@@ -631,6 +631,50 @@ with sync_playwright() as _p:
         _pg.close()
     _b.close()
 
+# polish round 5 (2026-10-17, R3.2, R9.7, R7.12, the owner's B4; as tests/moe_flow.py): the reader's walk on the whole site (built into
+# out/, wrapped with a doctype; the one-lab page lacks the “Read first” line, which moves every card 28 px), in the lab's real layout (the
+# list of steps beside the rail, window.__aspPrimer, as tests/kit_flow.py), entering each part as the polish probe stage.py does: Next
+# when it is on (a real click, which scrolls it into view first), else the part's title. Entering part 6 in English, the kit's reveal put
+# the card's top under the top bar, little of the bench was left under it, and the bench's end pushed the sticky stage up to −285 px
+# (the whole chart above the screen); part 7 in Chinese to 61 px. keepStage() pulls it back once the page stops scrolling. At every
+# part the stage's top stays at or below the top bar's bottom; at parts 6 and 7 it is not pushed above its sticky line (70 px; it sits
+# there in English at both and in Chinese at part 7, lower when the page did not scroll), needs no scrolling inside, and has 30 px to
+# spare in Chinese
+subprocess.run([sys.executable, str(P / 'build.py'), 'out/site-continuous-batching.html'], check=True, capture_output=True)
+(P / 'out/wrapped-site-continuous-batching.html').write_text('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>'
+                                                           + (P / 'out/site-continuous-batching.html').read_text() + '</body></html>')
+SITE = 'file://' + str(P / 'out/wrapped-site-continuous-batching.html')
+WALK = """()=>{const s=document.querySelector('#cb-stage'), r=s.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
+  cur=document.querySelector('#cb-rail .steps>.step.current'), h=s.querySelector('.stage-head').getBoundingClientRect();
+  return {part:cur?[...cur.parentNode.children].indexOf(cur)+1:0, top:Math.round(r.top), head:Math.round(h.top), bar:Math.round(bar), scroll:s.scrollHeight-s.clientHeight,
+    spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight))};}"""
+with sync_playwright() as _p:
+    _b = _p.chromium.launch()
+    for _lang in ('en', 'zh'):
+        _pg = _b.new_page(viewport={'width': 1440, 'height': 900}, reduced_motion='reduce'); _pg.add_init_script('window.__aspPrimer=true')
+        _pg.on('pageerror', lambda e: errs.append(f'1440 walk: {e}'))
+        _pg.goto(SITE); _pg.wait_for_timeout(600); _pg.click(f'.langsw button[data-lang="{_lang}"]'); _pg.wait_for_timeout(80)
+        _pg.evaluate("()=>{location.hash='continuous-batching'}"); _pg.wait_for_timeout(500)
+        _g = _pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+        if _g.count(): _g.first.click(); _pg.wait_for_timeout(600)
+        _n = _pg.evaluate("()=>document.querySelectorAll('#cb-rail .steps>.step').length"); _rows = [_pg.evaluate(WALK)]
+        for _i in range(1, _n):
+            _nb = _pg.locator('.pbar [data-nav=next]:visible:not([disabled])')
+            if _nb.count(): _nb.first.click()
+            else: _pg.evaluate(f"()=>document.querySelector('#cb-rail .steps>.step:nth-child({_i + 1}) .step-h').click()")
+            _pg.wait_for_timeout(1500); _rows.append(_pg.evaluate(WALK))
+        check(f'1440 {_lang} walk: entering every part, the stage’s top and its head stay below the top bar’s bottom, the top at its sticky line (70 px) or lower (R3.2, R9.7, B4)',
+              len(_rows) == _n and all(r['part'] == i + 1 and r['top'] >= max(68, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
+        for _k in (6, 7):
+            _r = _rows[_k - 1] if len(_rows) >= _k else {}
+            check(f'1440 {_lang} walk part {_k}: the stage is not pushed above its sticky line (its top at 70 px or lower), needs no scrolling inside' + (', 30 px to spare' if _lang == 'zh' else '') + ' (B4, R7.12)',
+                  bool(_r) and _r['top'] >= 68 and _r['scroll'] <= 0 and _r['spare'] >= (30 if _lang == 'zh' else 0), _r)
+        for _k in {'en': (6, 7), 'zh': (7,)}[_lang]:   # the parts whose stage the bench's end pushed up before (or that sit there): back at 70 px
+            _r = _rows[_k - 1] if len(_rows) >= _k else {}
+            check(f'1440 {_lang} walk part {_k}: the stage’s top at its sticky line, 70 px (it was at ' + {('en', 6): '−285', ('en', 7): '70', ('zh', 7): '61'}[(_lang, _k)] + ' px)', bool(_r) and abs(_r['top'] - 70) <= 2, _r)
+        _pg.close()
+    _b.close()
+
 
 print('\n'.join(log))
 print('page errors:', errs or 'none')

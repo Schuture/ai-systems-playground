@@ -301,8 +301,65 @@ def math_scroll(b, w, h, lang):
     pg.close()
 
 
+# polish r5 (B4, R7.12): entering the parts this round fitted, the way a reader does (Next, or the part's title while Next waits for an
+# answer), at 1440 x 900 the stage fits without scrolling inside, with 30 px to spare in Chinese. Sampled for 6.6 s after entering, so a
+# part that plays on entry (part 6 of prefix-caching sends its 8 requests in 5.3 s) fits all the way through; measured in standard mode (the page wrapped in a doctype, as it is published)
+FIT = """p=>{const s=document.getElementById(p+'-stage'), c=document.querySelector('#'+p+'-rail .steps>.step.current');
+  return {step:c?[...c.parentNode.children].indexOf(c)+1:0, spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)),
+          scroll:s.scrollHeight-s.clientHeight, top:Math.round(s.getBoundingClientRect().top)}}"""
+
+
+def fit_next(pg, k):
+    """into part k as a reader goes: Next when it is open, otherwise the part's title"""
+    nb = pg.locator('#mha-rail .step.current [data-nav="next"]:not([disabled])')
+    if nb.count(): nb.first.click()
+    else: pg.evaluate(f"()=>document.querySelector('#mha-rail .steps>.step:nth-child({k}) .step-h').click()")
+
+
+def fit_entry(b, lang, parts=(7, 8)):
+    pg = page(b, 1440, 900, lang)
+    for k in range(1, max(parts) + 1):
+        if k > 1: fit_next(pg, k)
+        if k not in parts:
+            pg.wait_for_timeout(900); continue
+        fs = []
+        for _ in range(44):
+            pg.wait_for_timeout(150); fs.append(pg.evaluate(FIT, 'mha'))
+        f = {'step': fs[-1]['step'], 'spare': min(x['spare'] for x in fs), 'scroll': max(x['scroll'] for x in fs), 'top': fs[-1]['top']}
+        check(f'{lang} 1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""} (B4, R7.12; polish r5)',
+              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0), f)
+    pg.close()
+
+
+# polish r5 (B4, R3.2): clicking Next with the mouse into parts 7 and 8, the stage's top comes back to 70 px, under the top bar, with its
+# head, the card's top and the main figure on the screen (before this round the stage sat at -412 px on entering part 7)
+TOPS = """()=>{const st=document.getElementById('mha-stage'), s=st.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
+  h=st.querySelector('.stage-head').getBoundingClientRect(), cur=document.querySelector('#mha-rail .step.current'), c=cur.getBoundingClientRect(),
+  f=[...st.querySelectorAll('svg,canvas')].filter(e=>e.getClientRects().length&&!e.closest('button')).map(e=>e.getBoundingClientRect()).sort((x,y)=>y.width*y.height-x.width*x.height)[0];
+  return {part:[...cur.parentNode.children].indexOf(cur)+1, top:Math.round(s.top), bar:Math.round(bar), head:Math.round(h.top), card:Math.round(c.top), fig:f?[Math.round(f.top),Math.round(f.bottom)]:null, h:innerHeight}}"""
+
+
+def next_tops(b, lang):
+    pg = page(b, 1440, 900, lang)
+    seen = []
+    for k in range(2, 9):
+        nb = pg.locator('#mha-rail .step.current [data-nav="next"]:not([disabled])')
+        if nb.count(): nb.first.click()
+        else: pg.locator(f'#mha-rail .steps>.step:nth-child({k}) .step-h').first.click()
+        pg.wait_for_timeout(2500)
+        r = pg.evaluate(TOPS); seen.append((r['part'], r['top']))
+        if k < 7: continue
+        check(f'{lang} 1440 part {k}: clicking Next with the mouse, the stage comes back to 70 px (its head under the top bar), the card’s top and the main figure on the screen (B4, R3.2; polish r5)',
+              r['part'] == k and abs(r['top'] - 70) <= 3 and r['head'] >= r['bar'] - 1 and r['bar'] - 1 <= r['card'] < r['h'] - 100 and bool(r['fig']) and r['fig'][0] >= r['bar'] - 1 and r['fig'][1] <= r['h'] + 1,
+              {'last': r, 'tops': seen})
+    pg.close()
+
 with sync_playwright() as p:
     b = p.chromium.launch()
+    for lang in ('en', 'zh'):
+        fit_entry(b, lang)
+    for lang in ('en', 'zh'):
+        next_tops(b, lang)
     for w, h, lang in ((1440, 900, 'zh'), (900, 900, 'en'), (390, 844, 'zh'), (390, 844, 'en')):
         math_scroll(b, w, h, lang)
     for w, h in ((1440, 900), (390, 844)):

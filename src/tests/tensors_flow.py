@@ -17,6 +17,7 @@ Every mode and every guided part at 1440×900 and 390×844, in EN and ZH, light,
   capability card; the language switch keeps the answer;
 - no hover that only expands a number to its exact value, outside Show the math (the owner, 2026-10-07 23:37 UTC);
 - the mini result bar at 390 once the chart scrolls away, with a short status;
+- B4 (polish round 5): entering part 5 at 1440 × 900, the stage needs no scrolling inside (Chinese with 30 px to spare);
 - the writing rules on every visible text node and tooltip (R6.14, R6.7, Chinese spacing and punctuation, no 亿/万, no "toy", no 控件 /
   Controls, no hover instructions), colours only for their data (R5.6), no text wider than its box (R7.8), a tooltip for every help
   cursor (R1.1).
@@ -602,8 +603,44 @@ def owner_b9v6(b, w, h, lang, cfg):
 B9V6 = {'lab': 'tensors', 'math': '#ts-mathbody', 'block': '.ts-mb', 'sep_extra': '.ts-nums', 'nomath_ok': 'Compare the axes|从右边逐个比较轴|The rule is shown in part 3|你预测之后', 'src_gone': ['gives N × M × D numbers', 'holds all N × M × D', 'write the whole N × M × D', '全部 N × M × D 个差值', "tx('only the N × M dot products'", "sub:'N × M'", '<i>${c}</i><sub>${i}</sub>', 'x<sub>i</sub> − y<sub>j</sub>', 'distance ‖x − y‖² (its formula', '欧氏距离的平方 ‖x − y‖²', 'close, ‖x‖² + ‖y‖² and 2 x·y', '很接近时，‖x‖² + ‖y‖² 和 2 x·y', 'C × M × D × 4 = ${fint(e.bytes)}'], 'text_gone': ['‖x − y‖²', '‖x‖² + ‖y‖²', 'C × M × D × 4 =', '⌈N ÷ C⌉ =']}
 
 
+# B4 (polish round 5, reviews/r5-fit-roots.md): entering part 5 at 1440 × 900 as the polish probe stage.py does (Next when it
+# is enabled, else the part's heading), the stage needs no scrolling inside: Chinese with at least 30 px to spare, English with none
+# (147 px of scrolling in both languages before this round: the shapes table and the loop count under one another). Spare = the
+# stage's max-height minus what its content and borders need.
+FIT_ENTRY = """()=>{const s=document.getElementById('ts-stage'), r=s.getBoundingClientRect(); return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top)}}"""
+
+
+def fit_page(b, lang):
+    """the page as the polish probe stage.py opens it: window.__aspPrimer set (without it, automation gets the older tests' compat layout,
+    whose step list also holds the settings panel), the guided parts picked in the step list, the real clock"""
+    pg = b.new_page(viewport={'width': 1440, 'height': 900}); pg.add_init_script('window.__aspPrimer=true')
+    pg.on('pageerror', lambda e: errs.append(f'fit 1440 {lang}: {e}'))
+    pg.goto(URL); pg.wait_for_timeout(300)
+    pg.click(f'.langsw button[data-lang="{lang}"]'); pg.wait_for_timeout(80)
+    pg.evaluate("()=>{location.hash='tensors'}"); pg.wait_for_timeout(500)
+    g = pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+    if g.count(): g.first.click(); pg.wait_for_timeout(700)
+    return pg
+
+
+def fit_entry(b, lang, parts=(5,)):
+    pg = fit_page(b, lang)
+    for k in range(2, max(parts) + 1):
+        nb = pg.locator('.pbar [data-nav="next"]:visible:not([disabled])')
+        if nb.count(): nb.first.click()
+        else: pg.evaluate(f"()=>document.querySelector('#ts-rail .steps>.step:nth-child({k}) .step-h').click()")
+        pg.wait_for_timeout(900); settle(pg)
+        if k not in parts: continue
+        f = pg.evaluate(FIT_ENTRY); f['step'] = state(pg)['step'] + 1
+        check(f'{lang}-1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""}, its top below the top bar (B4, R7.12)',
+              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['top'] >= 59, f)
+    pg.close()
+
+
 with sync_playwright() as p:
     b = p.chromium.launch()
+    if (1440, 900) in SIZES:
+        for lang in LANGS: fit_entry(b, lang)
     for (w, h) in SIZES:
         for lang in LANGS:
             run_guided(b, w, h, lang)

@@ -171,3 +171,30 @@
 .eyebrow.emb-keep{text-transform:none}   /* scenario names hold τ, which must not turn into a capital Τ */
 /* 知识梳理 (2026-10-12): its formula blocks */
 .primer .emb-prfx{margin:2px 0 14px;font-size:1.05em}
+/* ---------- polish r5 (B4, R7.12): part 4 fits a 1440 × 900 screen in English too. Its right column stacked the question's nine rows
+   (339 px with their title, note and result) over the recall curve (299 px), 151 px taller than the table beside them, and the run's
+   controls took two lines (69 px), so the English stage scrolled 134 px inside itself. On a stage at least 736 px wide the run's
+   controls keep their labels beside them on one line (the step count has a fixed width, so the slider does not move while a run plays,
+   R7.9); in part 4 the rows are tighter and the curve is drawn 118 px high instead of 160 (embeddings.js reads --emb-chart-h); the metric
+   cards take the tighter value and change lines of CONTRACT §19; a few gaps are tighter. Same pieces in the same places; phones (≤ 760 px)
+   and narrower stages keep the layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  .emb-transport{padding-bottom:8px}
+  .emb-transport .ctl,.emb-transport .inline-ctl{display:flex;align-items:center;gap:8px}
+  .emb-transport .ctl>.lbl,.emb-transport .inline-ctl>label{flex:none}
+  .emb-transport .inline-ctl>label{width:5.6em}
+  .emb-transport .seg-ctl button{padding-bottom:3px}   /* the speed buttons share the line with Train and Replay now; their mono text sat 1 px below the other two's, now within half a pixel of their baseline (R7.14) */
+  .emb-body.l3{--emb-chart-h:118}
+  .emb-body.l3 .emb-rows{gap:1px;margin:4px 0 2px}
+  .emb-body.l3 .emb-rows li{line-height:17px}
+  .emb-body.l3 .emb-rres{margin-top:2px}
+  .emb-body.l3>#emb-pan-chart{margin-top:6px;padding-top:6px}
+  .emb-body.l3 .emb-chead{gap:4px 10px}
+  .emb-body.l3 .emb-chead>.emb-pt{margin-bottom:2px}
+  .emb-body.l3 #emb-c-leg{margin:2px 0;row-gap:2px}
+  .emb-body #emb-h-leg{margin-bottom:2px}   /* the table's legend ends the taller column in parts 4-6 in Chinese: 2 px under it instead of 6, so those parts fit a 1280 × 800 screen too */
+  .metrics.emb-metrics{margin-top:8px}
+  .emb-metrics .metric .v{line-height:1.25}
+  .emb-metrics .metric .d{min-height:13px;line-height:1.1}
+  .emb-stage>details.math{margin-top:8px;padding-top:8px}
+}}
