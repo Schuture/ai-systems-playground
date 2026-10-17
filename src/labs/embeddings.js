@@ -700,7 +700,9 @@ const fmtLoss=v=>v>=0.01?f(v,2):(v>=0.001?f(v,3):tx('under 0.001','不到 0.001'
 function drawChart(r){
   const T=r.T, t=r.t, svg=$('#emb-chart',app), lg=LG(), loss=view==='loss', pm=isStep('batch')&&xmode==='pairs'&&!loss;
   /* drawn at its own pixel size, so its text stays 11 px at every width (P21) */
-  const W=Math.max(260,Math.floor(svg.parentElement.clientWidth||440)), H=W<480?160:168, Y0=10, Y1=H-30, X0=44;
+  /* polish r5: the training part draws it lower on a wide stage (--emb-chart-h in embeddings.css), so that part fits a 1440 × 900 screen */
+  const hv=parseFloat(getComputedStyle(svg).getPropertyValue('--emb-chart-h'));
+  const W=Math.max(260,Math.floor(svg.parentElement.clientWidth||440)), H=hv>=100?hv:(W<480?160:168), Y0=10, Y1=H-30, X0=44;
   const ser=TT=>loss?TT.loss:TT.r1, LO=-3, HI=2, gs=pm?[]:ghosts(), cw=s=>[...s].reduce((a,ch)=>a+(/[一-鿿＀-￯]/.test(ch)?11.5:6.7),0);
   const Y=v=>loss?Y1-(Y1-Y0)*(Math.max(LO,Math.min(HI,Math.log10(Math.max(v,1e-12))))-LO)/(HI-LO):Y1-(Y1-Y0)*Math.min(1,v);
   /* the lines and their end labels first, so that the plot leaves room on the right for the longest label */
@@ -1051,6 +1053,14 @@ function keepStage(){stageStop(); stageGoal=null;
     dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
   stageT=setTimeout(tickS,A.reduceMotion()?30:150);}
 
+/* polish r5: the curve is drawn for its box's width and, for the training part on a wide stage, the height in embeddings.css; the stage changes width
+   without a window resize when the page puts the step list beside it or leaves the primer, so it is drawn again when it does (as
+   watchStage in ppo.js) */
+let stRO=null, stW=0;
+function watchStage(){if(stRO){stRO.disconnect(); stRO=null;} const st=app&&$('#emb-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w;
+    if(!$('#emb-pan-chart',app).hidden) drawChart(compute(S));}));
+  stRO.observe(st);}
 /* ---------- mount ---------- */
 function bind(el){
   el.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.key; if(k==='steps'){stopAnim(); byLearner(()=>setState({steps:+e.target.value}));}});
@@ -1166,8 +1176,8 @@ A.registerLab({
     A.shell.bindHeader(app,{id:ID,onMode:m=>{setMode(m); A.ui.reveal($('#emb-rail',app)); keepStage();},token});
     bind(app); renderDrill(); if(mode==='challenge') chWarm();
     if(mode==='guided'){const s=STEPS[step]; if(s.view) view=s.view;}
-    renderRail();},
-  leave(){stopAnim(); stageStop(); warmStop(); clearTimeout(annT); root=null; app=null;},
+    renderRail(); watchStage();},
+  leave(){stopAnim(); stageStop(); warmStop(); clearTimeout(annT); if(stRO){stRO.disconnect(); stRO=null;} root=null; app=null;},
   onLang(){if(root){const dm=$('#emb-math',app), open=dm&&dm.open; const a=anim; stopAnim(); this.mount(root,null); if(open) $('#emb-math',app).open=true; if(a) runStart(false);}},
   onResize(){if(app) render();},
   termTip(){return '';},

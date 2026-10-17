@@ -111,3 +111,32 @@
 .arl-eq-l{text-align:right}
 /* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
 @media (max-width:560px){.arl-eqs-nm{grid-template-columns:max-content max-content}.arl-eqs-nm>.arl-eq-l{grid-column:1/-1;text-align:left}.arl-eqs-nm>.arl-eq-l:empty{display:none}}
+
+/* ---------- a wide stage (polish round 5, 2026-10-17; the owner's B4, R7.12): at 1440 × 900 the stage had to scroll inside itself by
+   68 px (Chinese, every part; English parts 1 and 2) and 107 px (English parts 3 to 6, whose legend takes two lines): the grid of
+   tasks, its legend, the player, the tally and the success curve sat one under the other, each across the whole stage. On a stage at
+   least 736 px wide (1440 and 1280 px windows among them) the grid and its legend keep the whole width, and the curve sits beside the
+   player and the tally, drawn shorter (--arl-ch, read by drawCurve); the curve keeps its hairline on top, and one on its left keeps it
+   apart from the player and the tally beside it (H5, R7.13). In its half of the row the player puts its slider on a line of its own,
+   as on a phone. R7.9: the tally keeps two lines, as before, and the curve's caption two lines (the caption before the tasks finish
+   takes one in Chinese, the one after them two), so the row does not change height while the tasks run. The metric cards' value and
+   change lines are tighter (CONTRACT §19) and a few gaps are 2 px tighter. Same pieces, same order, same replay; phones (≤ 760 px) and
+   narrower stages keep the layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  .arl-graph{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto auto 1fr;gap:8px 0;padding:10px 14px 12px}
+  .arl-graph>*{grid-column:1/-1}
+  .arl-graph>#arl-batch{grid-row:1}
+  .arl-graph>.arl-grid{grid-row:2}
+  .arl-graph>.arl-legend{grid-row:3}
+  .arl-graph>.arl-player{grid-column:1;grid-row:4;align-self:start;padding-right:12px;row-gap:6px}
+  .arl-graph>.arl-tally{grid-column:1;grid-row:5;align-self:start;padding-right:12px}
+  .arl-graph>.arl-grid~.arl-curve:not([hidden]){grid-column:2;grid-row:4/span 2;align-self:start;padding:8px 0 0 12px;border-left:1px solid var(--line);--arl-ch:104}
+  .arl-scrub{flex-basis:100%}
+  #arl-curve-cap{min-height:2.7em}
+  .arl-svgw{min-height:104px}
+  .arl-scope{margin:8px 0 4px}
+  .arl-metrics{margin-top:10px}
+  .arl-metrics .metric .v{line-height:1.25}
+  .arl-metrics .metric .d{min-height:13px;line-height:13px}
+  .arl-stage>details.math{margin-top:10px}
+}}

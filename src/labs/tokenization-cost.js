@@ -879,6 +879,35 @@ function metricsDef(){
     tip:tx(`The vocabulary is every token this tokenizer can produce: the 256 byte values plus one per merge, 256 + ${fint(r.k)} = ${fint(r.vocab)}. In a model with hidden size 4,096, such as Llama-3.1-8B, each token takes a row of 4,096 parameters in the embedding table and another in the LM head: 2 × ${fint(r.vocab)} × 4,096 = ${A.fmt.big(par)} parameters here.`,
            `词表是这个 tokenizer 能产出的全部 token：256 个字节值，加上每次合并一个，256 + ${fint(r.k)} = ${fint(r.vocab)}。在隐藏维度 4,096 的模型里（如 Llama-3.1-8B），每个 token 在 embedding 表里占一行 4,096 个参数，在 LM head 里还有一行：这里是 2 × ${fint(r.vocab)} × 4,096 = ${A.fmt.big(par)} 个参数。`)}];
 }
+/* R7.9 (polish r5): on a wide stage (tokenization-cost.css sets --tk-hold on the chart there) the merges and the cost stand side by
+   side, and the merges take more lines for some training texts than for others (pieces of Chinese bytes come with notes on where they
+   come from). Where one control switches between a known set of settings (parts 5 and 6: each training text at the part's merges;
+   part 7: its three examples; Scenarios: each card; the challenge: each training text and number of merges it offers) the merges keep
+   the room of the tallest of those settings, so a pick does not move the stage. To find it, each setting's merges are put in place for
+   a moment and measured (nothing is drawn in between); render calls this after the merges are drawn. Phones and narrower stages are
+   left as they were. */
+function holdSet(){
+  if(mode==='guided'){const id=STEPS[step].id; if(id==='mix'||id==='cost') return MIXES.map(m=>({mix:m.id,k:S.k})); return id==='remember'?Object.values(REM).map(r=>r.s):null;}
+  if(mode==='sandbox') return PRESETS.map(p=>p.s);
+  return mode==='challenge'?CH.mixes.flatMap(mix=>CH.ks.map(k=>({mix,k}))):null;}
+function holdMerges(){const gr=$('#tk-graph',app), mg=$('#tk-merges',app); if(!gr||!mg) return;
+  const set=getComputedStyle(gr).getPropertyValue('--tk-hold').trim()==='1'?holdSet():null;
+  if(!set){if(mg._hold){mg.style.minHeight=''; mg._hold=null;} return;}
+  const key=[mode,mode==='guided'?step:'',JSON.stringify(set),pairId(),A.lang(),mg.clientWidth].join('|');
+  if(!mg._hold||mg._hold.key!==key){
+    const nat=()=>{const t=mg.getBoundingClientRect().top; let b=t; for(const c of mg.children) if(c.getClientRects().length) b=Math.max(b,c.getBoundingClientRect().bottom); return b-t;};
+    const mix=S.mix, k=S.k; let mh=0; mg.style.minHeight='';
+    for(const x of set){S.mix=x.mix; S.k=x.k; drawMerges(); mh=Math.max(mh,nat());}
+    S.mix=mix; S.k=k; drawMerges();
+    mg._hold={key,mh:Math.ceil(mh)};}
+  mg.style.minHeight=mg._hold.mh+'px';}
+/* polish r5: the stage can change width while the window does not (the page puts the steps beside it, or leaves the primer); the
+   strips are drawn for their width and the merges' room is measured for it, so both are done again then (as labs/ppo.js) */
+let stRO=null, stW=0;
+function watchStage(){if(stRO){stRO.disconnect(); stRO=null;} const st=app&&$('#tk-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w;
+    drawStrips(false); holdMerges();}));
+  stRO.observe(st);}
 function drawMetrics(){
   const host=$('#tk-metrics',app), defs=metricsDef(), sig=defs.map(m=>m.k).join();
   if(host._sig!==sig){host._sig=sig; host.dataset.n=defs.length; host.innerHTML=defs.map(m=>`<div class="metric" data-k="${m.k}" tabindex="0"><div class="k"></div><div class="v mono"></div><div class="sub"></div><div class="d mono"></div></div>`).join('');}
@@ -941,7 +970,7 @@ function render(){
   if(mode==='guided'){const s=STEPS[step]; if(s&&s.expect&&s.expect()) observed[step]=true;}
   drawHead();
   const gr=$('#tk-graph',app); gr.dataset.focus=mode==='guided'?(STEPS[step].id==='remember'?(remView?REM[remView].focus:''):(STEPS[step].focus||'')):'';
-  drawStrips(!!app._drawn); app._drawn=true; drawMerges(); drawCost(); drawMetrics();
+  drawStrips(!!app._drawn); app._drawn=true; drawMerges(); drawCost(); holdMerges(); drawMetrics();
   const lg=$('#tk-legend',app), lh=legendHTML(); if(lg._h!==lh){lg.innerHTML=lh; lg._h=lh;}
   const mb=$('#tk-mathbody',app), mh=mathHTML(); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}
   syncControls(); updateRail();
@@ -1174,9 +1203,9 @@ A.registerLab({
     if(mode==='guided'&&!p&&!fromSnap){const s=STEPS[step]; if(s.enter&&step===0) Object.assign(S,s.enter());}
     fromSnap=false;
     const rail=$('#tk-rail',app); rail.innerHTML=railFull(); A.ui.initRanges(rail);
-    render();
+    render(); watchStage();
   },
-  leave(){clearTimeout(annT); stageStop(); root=null; app=null;},
+  leave(){clearTimeout(annT); stageStop(); if(stRO){stRO.disconnect(); stRO=null;} root=null; app=null;},
   onLang(){if(root){const d=$('#tk-math',app), open=d&&d.open; this.mount(root,null); if(open) $('#tk-math',app).open=true;}},
   onResize(){if(app){drawStrips(false);}},
   termTip(k){return termTipHTML(k);},

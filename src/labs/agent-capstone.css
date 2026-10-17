@@ -141,3 +141,24 @@
 .acp-eq-l{text-align:right}
 /* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
 @media (max-width:560px){.acp-eqs-nm{grid-template-columns:max-content max-content}.acp-eqs-nm>.acp-eq-l{grid-column:1/-1;text-align:left}.acp-eqs-nm>.acp-eq-l:empty{display:none}}
+
+/* ---------- a wide stage (polish round 5, 2026-10-17; the owner's B4: “动画播放面板被整体顶得靠下了”) ----------
+   At 1440 × 900 part 5 (the initial setup drawn beside the new harness) ran 8 px past the stage's 814 px in Chinese; in English
+   parts 4 and 6 ran 31 px past it and part 5 61 px. On a stage at least 736 px wide:
+   - the speed buttons are as wide as their words, so “Medium” no longer breaks inside the word and the player keeps one line (13 px);
+   - the five causes of failure sit two to a row, read left to right (stopped, wrong / lost, over the window / unsafe), each still
+     its name, its bar and its count (44 px);
+   - the two captions under the hairlines, the note on the assumptions and the metric cards sit 2–4 px closer, and the cards take
+     CONTRACT §19's compact line heights (value 1.25, change line 13 px).
+   The grid of runs stays first, the success-rate strip keeps the full width, the blocks keep their order and hairlines; phones
+   and narrower stages are unchanged. */
+@media (min-width:761px){@container (min-width:736px){
+  .acp-player .acp-speed{flex:none}
+  .acp-player .acp-speed button{flex:1 0 auto;white-space:nowrap}
+  .acp-causes{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px}
+  #acp-score-cap,#acp-cause-cap{padding-top:8px;margin-top:2px}
+  .acp-stage>.acp-scope{margin:8px 0 4px}
+  .acp-metrics{margin-top:8px}
+  .acp-metrics .metric .v{line-height:1.25}
+  .acp-metrics .metric .d{min-height:13px;line-height:13px}
+}}

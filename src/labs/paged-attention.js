@@ -885,41 +885,44 @@ function makePatterns(ctx,C,dpr){
   const ext=tile((x,s)=>{x.fillStyle=C.surface; x.fillRect(0,0,s,s); x.fillStyle=C.ink2; x.beginPath(); x.arc(s/2,s/2,0.85,0,Math.PI*2); x.fill();});
   return {intf,ext,key:C.key};
 }
-function geometry(W){const cols=W>=440?48:32, rows=NCELL/cols, gap=W>=440?2:1, cs=(W-(cols-1)*gap)/cols; return {cols,rows,gap,cs,W,H:Math.round(rows*cs+(rows-1)*gap)};}
+/* a cell is cs wide and ch tall: ch = cs × --pa-ch, which paged-attention.css sets to 0.8 on a desktop stage wide enough for 48 cells of
+   about 14 px (polish round 5: the stage then fits 1440 × 900 without scrolling inside); 1 (square cells) everywhere else */
+function cellRatio(cv){const q=parseFloat(getComputedStyle(cv).getPropertyValue('--pa-ch')); return q>=0.5&&q<=1?q:1;}
+function geometry(W,q){const cols=W>=440?48:32, rows=NCELL/cols, gap=W>=440?2:1, cs=(W-(cols-1)*gap)/cols, ch=cs*(q||1); return {cols,rows,gap,cs,ch,W,H:Math.round(rows*ch+(rows-1)*gap)};}
 function drawPool(r){
   const cv=$('#pa-cv',host); if(!cv) return;
   const W=cv.clientWidth||cv.parentNode.clientWidth; if(!W) return;
-  const G=geometry(W), dpr=window.devicePixelRatio||1;
-  if(cv._w!==W||cv._dpr!==dpr){cv.width=Math.round(W*dpr); cv.height=Math.round(G.H*dpr); cv.style.height=G.H+'px'; cv._w=W; cv._dpr=dpr; pats=null;}
+  const q=cellRatio(cv), G=geometry(W,q), dpr=window.devicePixelRatio||1;
+  if(cv._w!==W||cv._dpr!==dpr||cv._q!==q){cv.width=Math.round(W*dpr); cv.height=Math.round(G.H*dpr); cv.style.height=G.H+'px'; cv._w=W; cv._dpr=dpr; cv._q=q; pats=null;}
   geo=G;
   const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,G.H);
   const C=colors(cv); if(!pats||pats.key!==C.key) pats=makePatterns(ctx,C,dpr);
   fillSlots(r,t);
   const fillOf=s=>s===TOK?C.kv:(s===RESV?C.line:(s===INTF?pats.intf:(s===EXT?pats.ext:C.surface)));
   const HLC={all:0,tok:TOK,resv:RESV,intf:INTF,ext:EXT,free:FREE}, hc=HLC[hl]||0, hlOn=hl!=='all';
-  const {cols,cs,gap}=G;
+  const {cols,cs,ch,gap}=G;
   for(let k=0;k<NCELL;k++){
-    const x=(k%cols)*(cs+gap), y=((k/cols)|0)*(cs+gap), base=k*CELL;
-    ctx.globalAlpha=hlOn&&hc!==FREE?0.35:1; ctx.fillStyle=C.surface; ctx.fillRect(x,y,cs,cs);
+    const x=(k%cols)*(cs+gap), y=((k/cols)|0)*(ch+gap), base=k*CELL;
+    ctx.globalAlpha=hlOn&&hc!==FREE?0.35:1; ctx.fillStyle=C.surface; ctx.fillRect(x,y,cs,ch);
     let j=0, hit=false;
     while(j<CELL){const s=SL[base+j], o=OW[base+j]; let e=j+1; while(e<CELL&&SL[base+e]===s&&OW[base+e]===o) e++;
       if(hlOn&&s===hc) hit=true;
       if(s!==FREE){const dim=hlOn?(s!==hc):(hoverOwner>=0&&o!==hoverOwner);
-        ctx.globalAlpha=dim?(hlOn?0.2:0.45):1; ctx.fillStyle=fillOf(s); ctx.fillRect(x+cs*j/CELL,y,cs*(e-j)/CELL,cs);}
+        ctx.globalAlpha=dim?(hlOn?0.2:0.45):1; ctx.fillStyle=fillOf(s); ctx.fillRect(x+cs*j/CELL,y,cs*(e-j)/CELL,ch);}
       j=e;}
     ctx.globalAlpha=1;
-    if(hit){ctx.strokeStyle=C.ink; ctx.lineWidth=1.2; ctx.strokeRect(x+0.6,y+0.6,cs-1.2,cs-1.2);}
-    else {ctx.strokeStyle=C.line2; ctx.lineWidth=1; if(cs>=6) ctx.strokeRect(x+0.5,y+0.5,cs-1,cs-1);}
+    if(hit){ctx.strokeStyle=C.ink; ctx.lineWidth=1.2; ctx.strokeRect(x+0.6,y+0.6,cs-1.2,ch-1.2);}
+    else {ctx.strokeStyle=C.line2; ctx.lineWidth=1; if(cs>=6) ctx.strokeRect(x+0.5,y+0.5,cs-1,ch-1);}
   }
   // region starts (contiguous) and the hovered request's cells
   ctx.globalAlpha=1;
   if(!r.paged){ctx.fillStyle=C.ink;
-    for(let i=0;i<r.reqs.length;i++){if(r.a[i]<0||t<r.a[i]||t>r.f[i]) continue; const sl=r.start[i], k=(sl/CELL)|0, x=(k%cols)*(cs+gap)+cs*(sl%CELL)/CELL, y=((k/cols)|0)*(cs+gap);
-      ctx.fillRect(x,y-1,Math.max(1.5,cs/10),cs+2);}}
+    for(let i=0;i<r.reqs.length;i++){if(r.a[i]<0||t<r.a[i]||t>r.f[i]) continue; const sl=r.start[i], k=(sl/CELL)|0, x=(k%cols)*(cs+gap)+cs*(sl%CELL)/CELL, y=((k/cols)|0)*(ch+gap);
+      ctx.fillRect(x,y-1,Math.max(1.5,cs/10),ch+2);}}
   if(hoverOwner>=0){ctx.strokeStyle=C.ink; ctx.lineWidth=1.5;
     for(let k=0;k<NCELL;k++){let hit=false; for(let j=0;j<CELL;j++) if(OW[k*CELL+j]===hoverOwner){hit=true; break;} if(!hit) continue;
-      const x=(k%cols)*(cs+gap), y=((k/cols)|0)*(cs+gap); ctx.strokeRect(x+0.75,y+0.75,cs-1.5,cs-1.5);}}
-  if(kbd>=0){const x=(kbd%cols)*(cs+gap), y=((kbd/cols)|0)*(cs+gap); ctx.setLineDash([2,2]); ctx.strokeStyle=C.ink; ctx.lineWidth=1.5; ctx.strokeRect(x-1,y-1,cs+2,cs+2); ctx.setLineDash([]);}
+      const x=(k%cols)*(cs+gap), y=((k/cols)|0)*(ch+gap); ctx.strokeRect(x+0.75,y+0.75,cs-1.5,ch-1.5);}}
+  if(kbd>=0){const x=(kbd%cols)*(cs+gap), y=((kbd/cols)|0)*(ch+gap); ctx.setLineDash([2,2]); ctx.strokeStyle=C.ink; ctx.lineWidth=1.5; ctx.strokeRect(x-1,y-1,cs+2,ch+2); ctx.setLineDash([]);}
   const mk=masked();
   cv.setAttribute('aria-label',tx(`KV cache pool at decode step ${int(t+1)} of ${int(r.T)}: ${mk?'':`${pc(r.agg.tok[t]/POOL)} stores tokens, `}${r.agg.run[t]} requests running, ${r.agg.wait[t]} waiting. Use the arrow keys to inspect cells.`,
     `KV cache 显存池，decode 第 ${int(t+1)} 步（共 ${int(r.T)} 步）：${mk?'':`${pc(r.agg.tok[t]/POOL)} 存着 token，`}${r.agg.run[t]} 个请求在跑，${r.agg.wait[t]} 个在排队。用方向键查看各格。`));
@@ -962,7 +965,7 @@ function drawFrame(){
   A.dock.render();
 }
 function cellAt(ev){const cv=$('#pa-cv',host); if(!cv||!geo) return null; const rc=cv.getBoundingClientRect(), x=ev.clientX-rc.left, y=ev.clientY-rc.top;
-  const {cols,rows,cs,gap}=geo, c=Math.min(cols-1,Math.max(0,Math.floor(x/(cs+gap)))), rr=Math.min(rows-1,Math.max(0,Math.floor(y/(cs+gap))));
+  const {cols,rows,cs,ch,gap}=geo, c=Math.min(cols-1,Math.max(0,Math.floor(x/(cs+gap)))), rr=Math.min(rows-1,Math.max(0,Math.floor(y/(ch+gap))));
   if(x<0||y<0||x>rc.width||y>rc.height) return null;
   const xin=Math.max(0,Math.min(cs-0.01,x-c*(cs+gap))); return {k:rr*cols+c,slot:(rr*cols+c)*CELL+Math.floor(xin/cs*CELL)};}
 let tipSlot=-1;
@@ -981,8 +984,8 @@ function slotTip(slot){
 }
 function showTipAt(k,slot){
   const an=$('#pa-anchor',host); if(!an||!geo) return;
-  const {cols,cs,gap}=geo, x=(k%cols)*(cs+gap), y=((k/cols)|0)*(cs+gap);
-  an.style.left=x+'px'; an.style.top=y+'px'; an.style.width=cs+'px'; an.style.height=cs+'px';
+  const {cols,cs,ch,gap}=geo, x=(k%cols)*(cs+gap), y=((k/cols)|0)*(ch+gap);
+  an.style.left=x+'px'; an.style.top=y+'px'; an.style.width=cs+'px'; an.style.height=ch+'px';
   const html=slotTip(slot); tipSlot=slot; if(html) A.tip.show(an,html); else A.tip.hide();
 }
 function refreshTip(){if(tipSlot>=0&&(hoverOwner>=0||kbd>=0)){const k=(tipSlot/CELL)|0; showTipAt(k,tipSlot);}}
@@ -1204,6 +1207,31 @@ function unwatchTheme(){if(themeObs){themeObs.disconnect(); themeObs=null;} if(m
 /* the learner's own change: the next update may show change badges */
 function learner(f){userAct=true; try{f();} finally{userAct=false;}}
 
+/* keepStage (CONTRACT §11, R3.2, R9.7; as labs/moe.js; polish round 5): after Next, Back or a part's title the kit's reveal scrolls the
+   new card's top up under the top bar; near the end of the bench that pushes the sticky stage up with it (part 7 entered from part 6 at
+   1440 × 900 in Chinese: the stage's top at −91 px, its head under the top bar). Once the page stops scrolling this pulls the stage back
+   under the top bar without pushing the card's top off the screen, and does nothing once the reader has scrolled the card away */
+let stageT=0;
+function stageStop(){if(stageT){clearTimeout(stageT); stageT=0;}}
+function keepStage(){stageStop();
+  let lastY=null, waited=0;
+  const tick=()=>{stageT=0; if(!host) return;
+    if(scrollY!==lastY){if(waited>=1500) return; lastY=scrollY; waited+=120; stageT=setTimeout(tick,120); return;}
+    const st=$('#pa-stage',host); if(!st||innerWidth<=760||getComputedStyle(st).position!=='sticky') return;
+    const card=$('#pa-rail .step.current',host)||$('#pa-rail',host); if(!card) return;
+    const want=parseFloat(getComputedStyle(st).top)||70, r=st.getBoundingClientRect(), c=card.getBoundingClientRect();
+    let dy=r.top-want; if(dy>=-2||c.bottom<want) return;   // the card has left the screen: the reader scrolled on, so stay put
+    dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
+  stageT=setTimeout(tick,A.reduceMotion()?30:150);}
+/* the pool is drawn for the stage's width and, on a wide desktop stage, the cell height in paged-attention.css: the stage changes width
+   without a window resize when the page puts the step list beside it or leaves the primer (part 1 at 1440 × 900 was drawn for a 554 px
+   stage and stretched, then grew 69 px at the first hover), so it is drawn again when it does (as labs/ppo.js) */
+let stRO=null, stW=0;
+function watchStage(){unwatchStage(); const st=host&&$('#pa-stage',host); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!host||!host.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w; drawFrame();}));
+  stRO.observe(st);}
+function unwatchStage(){if(stRO){stRO.disconnect(); stRO=null;}}
+
 /* ================= mount ================= */
 function mount(el,tok){
   stop(); root=el;
@@ -1218,9 +1246,9 @@ function mount(el,tok){
   host.addEventListener('click',ev=>{
     const b=ev.target.closest('button'); if(!b||!host.contains(b)) return; const d=b.dataset;
     const seg=b.closest('.seg-ctl[data-key]'); if(seg&&d.v!=null){if(!b.disabled) learner(()=>onSeg(seg.dataset.key,d.v,b)); return;}
-    if(d.go!=null){enterStep(+d.go); revealStep(); return;}
-    if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); return;}
-    if(d.nav==='back'){enterStep(step-1); revealStep(); return;}
+    if(d.go!=null){enterStep(+d.go); revealStep(); keepStage(); return;}
+    if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); keepStage(); return;}
+    if(d.nav==='back'){enterStep(step-1); revealStep(); keepStage(); return;}
     if(d.nav==='showme'){showMe(); return;}
     if(d.pred){if(seen) return; pred=d.pred; renderRail(); update(); const f=$(`#pa-rail [data-pred="${pred}"]`,host); if(f) f.focus(); return;}
     if(d.lever!=null){learner(()=>onLever(d.lever)); return;}
@@ -1243,7 +1271,7 @@ function mount(el,tok){
   host.addEventListener('keydown',ev=>{if(ev.key!=='Enter'&&ev.key!==' ') return; const el=ev.target; if(!el.dataset||!el.dataset.jump||el.tagName==='BUTTON'||el.classList.contains('t')) return; ev.preventDefault(); jump(el.dataset.jump,el);});
   bindPool(); watchTheme();
   if(!mounted&&!p&&mode==='guided'){mounted=true; enterStep(step);} else {mounted=true; renderRail(); update(); cue();}
-  renderDrill();
+  renderDrill(); watchStage();
 }
 A.registerLab({
   id:ID,
@@ -1265,7 +1293,7 @@ A.registerLab({
     // the first mount then draws this part as a return in the same session does (enterStep() would reset the settings)
     mounted=true; if(mode==='guided'&&step===4) sweepWarm();},
   mount,
-  leave(){stop(); unwatchTheme(); clearTimeout(sweepT); sweepT=0; A.tip.hide(); hoverOwner=-1; kbd=-1; tipSlot=-1; host=null; root=null;},
+  leave(){stop(); unwatchTheme(); unwatchStage(); stageStop(); clearTimeout(sweepT); sweepT=0; A.tip.hide(); hoverOwner=-1; kbd=-1; tipSlot=-1; host=null; root=null;},
   onLang(){if(root) mount(root,null);},
   onResize(){if(host) drawFrame();},
   termTip, jump, jumpAct,

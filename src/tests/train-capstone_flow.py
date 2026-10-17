@@ -24,7 +24,8 @@ Every guided part and every mode at 1440×900 and 390×844, in EN and ZH (plus o
   the settings that differ as chips, highlighted where they differ from the recommended plan; days, “18% fewer than yours”, GPU hours
   rounded (610K), with no hover that gives the exact value (the owner's clarification, 2026-10-07); the main gap, the best single change, why the counterexample fails; at 390 px the
   summary fits in one screen; the full list (77 layouts, exact GPU hours) behind “See all plans”, closed by default, your row in view
-  when opened; TP 4 instead of 8 updates your row, the stage and the best single change.
+  when opened; TP 4 instead of 8 updates your row, the stage and the best single change;
+- B4 (polish round 5): entering parts 5 and 7 at 1440 × 900, the stage needs no scrolling inside (Chinese with 30 px to spare).
 Screenshots: shots/train-capstone/.
 Run: python3 tests/train-capstone_flow.py [en|zh] [1440|390] [guided|modes]  (filters for a partial run)"""
 import pathlib, subprocess, sys
@@ -492,8 +493,43 @@ def run_modes(b, w, h, lang):
     pg.close()
 
 
+# B4 (polish round 5, reviews/r5-fit-roots.md): entering parts 5 and 7 at 1440 × 900 as the polish probe stage.py does (Next when it
+# is enabled, else the part's heading), the stage needs no scrolling inside: Chinese with at least 30 px to spare, English with none
+# (13 px in English before this round). Spare = the stage's max-height minus what its content and borders need.
+FIT_ENTRY = """()=>{const s=document.getElementById('tcap-stage'), r=s.getBoundingClientRect(); return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top)}}"""
+
+
+def fit_page(b, lang):
+    """the page as the polish probe stage.py opens it: window.__aspPrimer set (without it, automation gets the older tests' compat layout,
+    whose step list also holds the settings panel), the guided parts picked in the step list, the real clock"""
+    pg = b.new_page(viewport={'width': 1440, 'height': 900}); pg.add_init_script('window.__aspPrimer=true')
+    pg.on('pageerror', lambda e: errs.append(f'fit 1440 {lang}: {e}'))
+    pg.goto(URL); pg.wait_for_timeout(300)
+    pg.click(f'.langsw button[data-lang="{lang}"]'); pg.wait_for_timeout(80)
+    pg.evaluate("()=>{location.hash='train-capstone'}"); pg.wait_for_timeout(500)
+    g = pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+    if g.count(): g.first.click(); pg.wait_for_timeout(700)
+    return pg
+
+
+def fit_entry(b, lang, parts=(5, 7,)):
+    pg = fit_page(b, lang)
+    for k in range(2, max(parts) + 1):
+        nb = pg.locator('.pbar [data-nav="next"]:visible:not([disabled])')
+        if nb.count(): nb.first.click()
+        else: pg.evaluate(f"()=>document.querySelector('#tcap-rail .steps>.step:nth-child({k}) .step-h').click()")
+        pg.wait_for_timeout(900); settle(pg)
+        if k not in parts: continue
+        f = pg.evaluate(FIT_ENTRY); f['step'] = state(pg)['step'] + 1
+        check(f'{lang}-1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""}, its top below the top bar (B4, R7.12)',
+              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['top'] >= 59, f)
+    pg.close()
+
+
 with sync_playwright() as p:
     b = p.chromium.launch()
+    if (1440, 900) in SIZES:
+        for lang in LANGS: fit_entry(b, lang)
     for (w, h) in SIZES:
         for lang in LANGS:
             if 'modes' not in ARGS: run_guided(b, w, h, lang)

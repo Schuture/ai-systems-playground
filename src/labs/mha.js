@@ -813,6 +813,23 @@ function enterStep(i){
   if(s.expect){const el=$('#mha-ic-q',app)||$('#mha-ic-H',app); if(el){el.classList.remove('cue'); void el.offsetWidth; el.classList.add('cue');}}
 }
 function revealStep(){A.ui.reveal($('#mha-rail .step.current',app)||$('#mha-rail',app));}
+/* keepStage (CONTRACT §11, R3.2, R9.7; as labs/moe.js; polish round 5): after Next, Back or a part's title the kit's reveal scrolls the
+   new card's top up under the top bar; near the end of the bench that pushes the sticky stage up with it (part 7 entered from part 6 at
+   1440 × 900: the stage's top at −412 px, its head and the four heads' rows above the screen). Once the page stops scrolling this pulls
+   the stage back under the top bar without pushing the card's top off the screen, and does nothing once the reader has scrolled the
+   card away */
+let stageT=0;
+function stageStop(){if(stageT){clearTimeout(stageT); stageT=0;}}
+function keepStage(){stageStop();
+  let lastY=null, waited=0;
+  const tick=()=>{stageT=0; if(!app) return;
+    if(scrollY!==lastY){if(waited>=1500) return; lastY=scrollY; waited+=120; stageT=setTimeout(tick,120); return;}
+    const st=$('#mha-stage',app); if(!st||innerWidth<=760||getComputedStyle(st).position!=='sticky') return;
+    const card=$('#mha-rail .step.current',app)||$('#mha-rail',app);
+    const want=parseFloat(getComputedStyle(st).top)||70, r=st.getBoundingClientRect(), c=card.getBoundingClientRect();
+    let dy=r.top-want; if(dy>=-2||c.bottom<want) return;   // the card has left the screen: the reader scrolled on, so stay put
+    dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
+  stageT=setTimeout(tick,A.reduceMotion()?30:150);}
 /* the result of a part comes into view after the learner's action (R3.10): scroll only as far as needed to show it,
    never so far that the control just used, or the chart row the card talks about, slides under the top bar or the mini
    result bar (N1). A same-frame probe measures where the sticky chart ends up, since the end of the bench can push it up. */
@@ -924,9 +941,9 @@ function bind(el){
       if(qLock(+d.q)){A.tip.show(b,`<div>${esc(tx('“it” comes in part 4, right after this part.','“它”留到第 4 部分，就在这一部分之后。'))}</div>`); return;}
       byLearner(()=>setState({q:+d.q})); return;}
     if(d.on!=null){const h=+d.on, on=S.on.slice(); on[h]=!on[h]; byLearner(()=>setState({on})); return;}
-    if(d.go!=null){enterStep(+d.go); revealStep(); return;}
-    if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); return;}
-    if(d.nav==='back'){enterStep(step-1); revealStep(); return;}
+    if(d.go!=null){enterStep(+d.go); revealStep(); keepStage(); return;}
+    if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); keepStage(); return;}
+    if(d.nav==='back'){enterStep(step-1); revealStep(); keepStage(); return;}
     if(d.nav==='showme'){const s=STEPS[step]; if(s.showMe){acted[step]=true; wantObs=true; setState(s.showMe); wantObs=false;} return;}
     if(d.pred){pred=d.pred; renderRail(); const f=$(`#mha-rail [data-pred="${pred}"]`,app); if(f) f.focus(); return;}
     if(d.preset!=null){applyPreset(+d.preset); return;}
@@ -962,7 +979,7 @@ A.registerLab({
     mounted=true;
     renderRail();
   },
-  leave(){clearTimeout(annT); if(revRaf){cancelAnimationFrame(revRaf); revRaf=0;} root=null; app=null;},
+  leave(){clearTimeout(annT); stageStop(); if(revRaf){cancelAnimationFrame(revRaf); revRaf=0;} root=null; app=null;},
   onLang(){if(root){const d=$('#mha-math',app), open=d&&d.open; this.mount(root,null); if(open) $('#mha-math',app).open=true;}},
   termTip(k){const f=TERM[k]; if(!f) return ''; return `<div>${esc(f())}</div><div class="act">${esc(jumpAct(k))}</div>`;},
   jump, jumpAct,

@@ -527,8 +527,67 @@ for _s in ["The shorter the document, the less its last chunk has to look back a
 for _s in ["half as long as the one in the guided parts", "分步引导里那份的一半", "twice as long as the 32K document in the guided parts", "分步引导里那份 32K 文档", "是原来的 4 倍，每人 4K 个 token 的上下文"]:
     check(f'G2: the sentence that leaned on an earlier part, “{_s[:48]}”, is gone', _s not in _G_SRC)
 
+# polish r5 (B4, R7.12): entering the parts this round fitted, the way a reader does (Next, or the part's title while Next waits for an
+# answer), at 1440 x 900 the stage fits without scrolling inside, with 30 px to spare in Chinese. Sampled for 6.6 s after entering, so a
+# part that plays on entry (part 6 of prefix-caching sends its 8 requests in 5.3 s) fits all the way through; measured in standard mode (the page wrapped in a doctype, as it is published)
+FIT = """p=>{const s=document.getElementById(p+'-stage'), c=document.querySelector('#'+p+'-rail .steps>.step.current');
+  return {step:c?[...c.parentNode.children].indexOf(c)+1:0, spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)),
+          scroll:s.scrollHeight-s.clientHeight, top:Math.round(s.getBoundingClientRect().top)}}"""
+
+
+def fit_next(pg, k):
+    """into part k as a reader goes: Next when it is open, otherwise the part's title"""
+    nb = pg.locator('#ck-rail .step.current [data-nav="next"]:not([disabled])')
+    if nb.count(): nb.first.click()
+    else: pg.evaluate(f"()=>document.querySelector('#ck-rail .steps>.step:nth-child({k}) .step-h').click()")
+
+
+def fit_entry(b, lang, parts=(1, 2, 3, 4, 5, 6)):
+    pg = page(b, 1440, 900, lang)
+    for k in range(1, max(parts) + 1):
+        if k > 1: fit_next(pg, k)
+        if k not in parts:
+            pg.wait_for_timeout(900); continue
+        fs = []
+        for _ in range(44):
+            pg.wait_for_timeout(150); fs.append(pg.evaluate(FIT, 'ck'))
+        f = {'step': fs[-1]['step'], 'spare': min(x['spare'] for x in fs), 'scroll': max(x['scroll'] for x in fs), 'top': fs[-1]['top']}
+        check(f'{lang} 1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""} (B4, R7.12; polish r5)',
+              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0), f)
+    pg.context.close()
+
+
+# polish r5 (R7.9): on a wide stage Show me, the replay and the Scenarios cards keep the stage at one height: the subtitle runs across the
+# whole head in one line, and the legend keeps room for the second line the replay adds to it (“now”, “waiting”)
+HOLD = """p=>{const s=document.getElementById(p+'-stage'); return s.scrollHeight+s.offsetHeight-s.clientHeight;}"""
+
+
+def hold_ck(b, lang):
+    pg = page(b, 1440, 900, lang)
+    for k in (2, 3, 4):
+        fit_next(pg, k); pg.wait_for_timeout(900)
+    hs = [pg.evaluate(HOLD, 'ck')]
+    pg.evaluate("()=>{const e=[...document.querySelectorAll('#ck-rail .step.current [data-nav=showme]')].find(e=>e.getClientRects().length&&!e.disabled); if(e) e.click();}")
+    for _ in range(8):
+        pg.wait_for_timeout(150); hs.append(pg.evaluate(HOLD, 'ck'))
+    played = pg.evaluate("()=>{const e=[...document.querySelectorAll('#ck-stage [data-act=play]')].find(e=>e.getClientRects().length&&!e.disabled); if(e){e.click(); return true;} return false;}")
+    for _ in range(20):
+        pg.wait_for_timeout(150); hs.append(pg.evaluate(HOLD, 'ck'))
+    check(f'{lang} 1440 part 4: Show me, then the replay, keep the stage at one height (R7.9; polish r5)', played and max(hs) - min(hs) <= 1, hs)
+    pg.evaluate("()=>{const b=[...document.querySelectorAll('[data-flow-nav] button[data-flow=scen]')].find(x=>x.offsetParent); if(b) b.click();}"); pg.wait_for_timeout(800)
+    n = pg.evaluate("()=>[...document.querySelectorAll('#ck-rail [data-preset]')].filter(e=>e.getClientRects().length).length")
+    hs = [pg.evaluate(HOLD, 'ck')]
+    for i in range(n):
+        pg.evaluate("i=>[...document.querySelectorAll('#ck-rail [data-preset]')].filter(e=>e.getClientRects().length)[i].click()", i); pg.wait_for_timeout(700)
+        hs.append(pg.evaluate(HOLD, 'ck'))
+    check(f'{lang} 1440 Scenarios: picking each card keeps the stage at one height (R7.9; polish r5)', n >= 4 and max(hs) - min(hs) <= 1, hs)
+    pg.context.close()
+
 with sync_playwright() as p:
     b = p.chromium.launch()
+    for lang in ('en', 'zh'):
+        fit_entry(b, lang)
+        hold_ck(b, lang)
     run_replay(b)
     for (w, h) in [(1440, 900), (390, 844)]:
         for lang in ('en', 'zh'):

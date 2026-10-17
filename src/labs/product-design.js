@@ -716,8 +716,12 @@ function checkTimes(r){const F=r.s.filt; if(!r.chkOn) return [];
   if(typeof F!=='number') return [r.tEnd];
   const out=[]; for(let j=1;j<=Math.ceil(WL.outMean/F);j++) out.push(r.tFirst+(Math.min(j*F,WL.outMean)-1)*r.tpot); return out;}
 const textW=s=>[...s].reduce((a,c)=>a+(c.charCodeAt(0)>0x2e00?11:6.6),0);
+/* polish round 5 (2026-10-17, B4): on a wide stage the rows are drawn a little shorter, so part 8 fits a 1440 × 900 screen. The row height
+   is a CSS variable on the chart (--pdz-rh, set in product-design.css), read when it is drawn; without it (phones, narrower stages) it is
+   as before. The stage's width decides it, and the ResizeObserver on #pdz-main draws the chart again when that width changes. */
+const cssNum=(el,v,d)=>{const x=el?parseFloat(getComputedStyle(el).getPropertyValue(v)):NaN; return x>0?x:d;};
 function wfSVG(r,tau,X){
-  const rows=rowsOf(r), narrow=W<480, LW=narrow?96:Math.min(170,Math.round(W*0.27)), DW=narrow?50:108, RH=narrow?24:23, TOP=22, x0=LW+6, x1=W-DW-4,
+  const rows=rowsOf(r), narrow=W<480, LW=narrow?96:Math.min(170,Math.round(W*0.27)), DW=narrow?50:108, RH=narrow?24:cssNum(app&&$('#pdz-wf',app),'--pdz-rh',23), TOP=22, x0=LW+6, x1=W-DW-4,
     sx=t=>x0+(x1-x0)*Math.min(Math.max(t,0),X)/X, H=TOP+rows.length*RH+20, goal=goalNow(), over=r.vis>goal+1e-9, play=tau!=null, cur=play?tau:Infinity;
   const chk=LAT.chk/1000, ck=checkTimes(r), F=r.s.filt, hseg=segOfK(r,'hold'), gen=segOfK(r,'gen'), streamN=!!r.s.stream&&typeof F==='number'&&!!hseg;
   /* decode ticks: one per token while they are far enough apart, else one per chunk of N tokens, else none; the legend says which (N7, N9) */
@@ -949,6 +953,8 @@ function render(){if(!app) return;
   ['trace','prompt','fleet','sheet'].forEach(k=>{$('#pdz-'+k,app).hidden=!pn[k];});
   /* with the message on the stage, the metric cards come right under it and the other blocks follow, so the cards stay in view (P15) */
   $('#pdz-main',app).classList.toggle('pdz-mup',!!(pn.trace&&(pn.prompt||pn.fleet||pn.sheet)));
+  /* part 8 (the message and the GPUs, nothing else): on a wide stage the cards sit beside the GPUs, under the message (product-design.css) */
+  $('#pdz-main',app).dataset.lay=pn.trace&&pn.fleet&&!pn.prompt&&!pn.sheet?'tf':'';
   if(pn.trace) drawTrace(r);
   if(pn.prompt){const el=$('#pdz-prompt',app), h=promptHTML(r); if(el._h!==h){el.innerHTML=h; el._h=h;}}
   if(pn.fleet){const el=$('#pdz-fleet',app), h=fleetHTML(r); if(el._h!==h){el.innerHTML=h; el._h=h;}}

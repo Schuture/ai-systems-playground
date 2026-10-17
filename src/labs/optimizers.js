@@ -631,6 +631,8 @@ const clampP=v=>Math.max(-1e4,Math.min(1e4,v));
 const shortName=(x,runs)=>x.st==='nobc'?tx('no correction','无校正'):(runs.some(q=>q.st==='nobc')&&x.c.opt==='adam'?tx('with correction','有校正'):optName(x.c.opt));
 const textW=(t,fs)=>[...String(t)].reduce((a,ch)=>a+(/[\u2e80-\uffff]/.test(ch)?1:0.62),0)*fs;
 const fsOf=(svg,sel,d)=>{const e=svg.querySelector(sel), v=e?parseFloat(getComputedStyle(e).fontSize):NaN; return v>0?v:d;};
+/* a number set in optimizers.css (a CSS variable without a unit), or d when it is not set */
+const cssNum=(el,v,d)=>{const x=el?parseFloat(getComputedStyle(el).getPropertyValue(v)):NaN; return x>0?x:d;};
 /* each path's name goes beside the first point of its path with room around it: away from the other paths, the start and bottom
    marks and the names already placed; it appears once the path gets there (cached per set of runs, language and font size) */
 function mapLabels(svg,g,runs,s){
@@ -691,9 +693,13 @@ function drawBars(){
       `<span></span><span class="op-bk mono">y</span><span class="op-btr"><i class="op-b ${st.cls}" style="width:${w(q.d[1])}"></i></span><span class="op-bv mono">${v(q.d[1])}</span></div>`;}).join('');
 }
 function drawLoss(){
-  const runs=runsNow(), W=600, H=150, top=1e3, bot=1e-5, X=t=>t/N*(W-74)+58, Y=v=>{const l=Math.log10(Math.max(bot,Math.min(top,v))); return 8+(Math.log10(top)-l)/(Math.log10(top)-Math.log10(bot))*(H-26);}, svg=$('#op-loss',app);
+  /* polish round 5: on a wide stage optimizers.css puts the chart in a column beside the step sizes and gives it a height (--op-lh); it is
+     then drawn for that column's width at that height, one unit to a pixel, so its labels keep their size; elsewhere it stays 600 × 150,
+     scaled to the stage's width as before */
+  const svg=$('#op-loss',app), lh=cssNum(svg,'--op-lh',0), cw=lh?Math.round(svg.getBoundingClientRect().width):0, fit=cw>=240;
+  const runs=runsNow(), W=fit?cw:600, H=fit?lh:150, top=1e3, bot=1e-5, X=t=>t/N*(W-74)+58, Y=v=>{const l=Math.log10(Math.max(bot,Math.min(top,v))); return 8+(Math.log10(top)-l)/(Math.log10(top)-Math.log10(bot))*(H-26);};
   /* the top label's baseline sits at least one font size below the top, so it stays inside the chart (H7, kit_text_bounds) */
-  const fs0=fsOf(svg,'.op-ax',matchMedia('(max-width:560px)').matches?16:11);
+  const fs0=fsOf(svg,'.op-ax',fit?13:(matchMedia('(max-width:560px)').matches?16:11));
   let h=`<rect x="58" y="8" width="${W-74}" height="${H-26}" class="op-bg"/>`;
   [1e3,1,1e-3].forEach(v=>{h+=`<text class="op-ax" x="54" y="${fx(Math.max(Y(v)+3,fs0+1))}" text-anchor="end">${v===1e3?'1,000':(v===1?'1':'0.001')}</text>`;});
   [0,50,100,150,200].forEach(t=>{h+=`<text class="op-ax" x="${fx(X(t))}" y="${H-4}" text-anchor="middle">${t}</text>`;});
@@ -938,6 +944,28 @@ function enterStep(i){
   renderRail();
 }
 function revealStep(){A.ui.reveal($('#op-rail .step.current',app)||$('#op-rail',app));}
+/* keepStage (CONTRACT §11, R3.2, R9.7; as labs/moe.js; polish round 5): after Next, Back or a part's title the kit's reveal scrolls the
+   new card's top up under the top bar; near the end of the bench that pushes the sticky stage up with it (part 6 entered from part 5 at
+   1440 × 900: the stage's top at −176 px, the top of the valley off the screen). Once the page stops scrolling this pulls the stage back
+   under the top bar without pushing the card's top off the screen, and does nothing once the reader has scrolled the card away */
+let stageT=0;
+function stageStop(){if(stageT){clearTimeout(stageT); stageT=0;}}
+function keepStage(){stageStop();
+  let lastY=null, waited=0;
+  const tick=()=>{stageT=0; if(!app) return;
+    if(scrollY!==lastY){if(waited>=1500) return; lastY=scrollY; waited+=120; stageT=setTimeout(tick,120); return;}
+    const st=$('#op-stage',app); if(!st||innerWidth<=760||getComputedStyle(st).position!=='sticky') return;
+    const card=$('#op-rail .step.current',app)||$('#op-rail',app);
+    const want=parseFloat(getComputedStyle(st).top)||70, r=st.getBoundingClientRect(), c=card.getBoundingClientRect();
+    let dy=r.top-want; if(dy>=-2||c.bottom<want) return;   // the card has left the screen: the reader scrolled on, so stay put
+    dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
+  stageT=setTimeout(tick,A.reduceMotion()?30:150);}
+/* the loss chart is drawn for its column's width on a wide stage (drawLoss): the stage changes width without a window resize when the
+   page puts the step list beside it or leaves the primer, so it is drawn again when it does (as labs/ppo.js) */
+let stRO=null, stW=0;
+function watchStage(){if(stRO){stRO.disconnect(); stRO=null;} const st=app&&$('#op-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w; drawStage();}));
+  stRO.observe(st);}
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
@@ -1052,9 +1080,9 @@ function bind(el){
   el.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.key; if(k&&e.target.closest('#op-rail')){wantObs=true; revealSoon(); wantObs=false;}});
   el.addEventListener('click',e=>{
     const b=e.target.closest('button'); if(!b||!el.contains(b)) return; const d=b.dataset;
-    if(d.go!=null){enterStep(+d.go); revealStep(); return;}
-    if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); return;}
-    if(d.nav==='back'){enterStep(step-1); revealStep(); return;}
+    if(d.go!=null){enterStep(+d.go); revealStep(); keepStage(); return;}
+    if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); keepStage(); return;}
+    if(d.nav==='back'){enterStep(step-1); revealStep(); keepStage(); return;}
     if(d.nav==='showme'){const s=STEPS[step]; if(s.showMe){wantObs=true; byLearner(()=>s.showMe()); revealSoon(); wantObs=false;} return;}
     if(d.pred){pred=d.pred; renderRail(); const fb=$(`#op-rail [data-pred="${pred}"]`,app); if(fb) fb.focus({preventScroll:true}); return;}
     if(d.lever!=null&&isP('bias')){byLearner(()=>setBc(d.lever)); revealSoon(); return;}
@@ -1116,9 +1144,9 @@ A.registerLab({
     renderDrill();
     fillRail();
     render();
-    watchView(); if(resume) loop();
+    watchView(); watchStage(); if(resume) loop();
   },
-  leave(){clearTimeout(annT); stopPlay(); if(io){io.disconnect(); io=null;} inView=false; pendWant=false; runSig=''; onMap=[]; root=null; app=null;},
+  leave(){clearTimeout(annT); stopPlay(); stageStop(); if(stRO){stRO.disconnect(); stRO=null;} if(io){io.disconnect(); io=null;} inView=false; pendWant=false; runSig=''; onMap=[]; root=null; app=null;},
   onLang(){if(root){const d=$('#op-math',app), open=d&&d.open; this.mount(root,null); if(open) $('#op-math',app).open=true;}},
   onResize(){if(app) drawStage();},
   termTip(k){return termTipHTML(k);},

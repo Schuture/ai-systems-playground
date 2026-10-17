@@ -176,3 +176,39 @@ html[lang^="zh"] .tk-crow{grid-template-columns:40px minmax(0,1fr) 86px}
 .tk-graph>.tk-merges,.tk-graph>.tk-cost{position:relative}
 .tk-graph>.tk-merges::before,.tk-graph>.tk-cost::before{content:"";position:absolute;left:0;right:0;top:-8px;border-top:1px solid var(--line);pointer-events:none}
 .tk-graph[data-focus="strips"]>.tk-merges::before,.tk-graph[data-focus="merges"]>.tk-merges::before,.tk-graph[data-focus="merges"]>.tk-cost::before,.tk-graph[data-focus="cost"]>.tk-cost::before{border-top-color:transparent}
+/* ---------- polish r5 (B4, R7.12): parts 1, 3, 5 and 6 fit a 1440 × 900 screen. The stage stacked the two sentences' strips (189 px;
+   part 3 adds the bytes-against-characters box, 352 px), the merges (194 px with the last three listed) and the cost (123 px) over four
+   metric cards, so it scrolled 41–101 px inside itself (English 88–141: there the status also took a line of its own). On a stage at
+   least 736 px wide the merges and the cost stand side by side under the strips, with a hairline between them (R7.13), read left to
+   right as they read top to bottom before. The merges take the wider column (the row of ticks is drawn at its width, 478 px instead of
+   760, still wider than on a phone); in the narrower cost column each sentence's label and count share a line and its bar spans the
+   column under them (in part 3, which lists no merges yet, the cost takes the wider column and keeps its one-line rows). Next to the
+   dashed focus frame the hairline turns transparent, as the others do. The merges' lines change with the training text, so where one
+   control switches between a known set of settings they keep the room of the tallest (R7.9, holdMerges in tokenization-cost.js reads
+   --tk-hold). The status stays beside the title and the subtitle wraps under it; the metric cards take the tighter value and change
+   lines of CONTRACT §19; a few gaps are tighter. Same pieces in the same order; phones (≤ 760 px) and narrower stages keep the layout
+   above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  .tk-stage>.stage-head{flex-wrap:nowrap}
+  .tk-stage>.stage-head>div:first-child{flex:1 1 auto;min-width:0}
+  .tk-stage>.stage-head>.stage-actions{flex:none}
+  .tk-stage>.legend-row{margin-top:8px}
+  .tk-graph{margin-top:8px;padding:10px 14px 12px;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);gap:12px 0;--tk-hold:1}
+  /* part 3 lists no merges yet, so its cost takes the wider column */
+  .tk-graph:has(>.tk-strips>.tk-vs:not([hidden])){grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)}
+  .tk-strips{grid-column:1/-1;gap:6px}
+  .tk-vs{padding:8px 12px;gap:6px}
+  .tk-vsrow{grid-template-columns:minmax(0,190px) max-content minmax(0,1fr)}
+  .tk-merges{align-content:start;gap:3px;padding-right:16px}
+  .tk-mg-list{margin-top:2px}
+  .tk-cost{align-content:start;border-left:1px solid var(--line);padding-left:16px}
+  .tk-graph[data-focus="merges"]>.tk-cost,.tk-graph[data-focus="cost"]>.tk-cost{border-left-color:transparent}
+  .tk-graph:not(:has(>.tk-strips>.tk-vs:not([hidden]))) .tk-crow{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"l v" "b b";row-gap:3px}
+  .tk-graph:not(:has(>.tk-strips>.tk-vs:not([hidden]))) .tk-crow>.tk-cl{grid-area:l}
+  .tk-graph:not(:has(>.tk-strips>.tk-vs:not([hidden]))) .tk-crow>.tk-cbar{grid-area:b}
+  .tk-graph:not(:has(>.tk-strips>.tk-vs:not([hidden]))) .tk-crow>.tk-cv{grid-area:v}
+  .tk-metrics{margin-top:8px}
+  .tk-metrics .metric .v{line-height:1.25}
+  .tk-metrics .metric .d{min-height:13px;line-height:1.1}
+  .tk-stage>details.math{margin-top:8px;padding-top:8px}
+}}

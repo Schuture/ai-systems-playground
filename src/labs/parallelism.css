@@ -179,3 +179,20 @@ html[lang^="zh"] .zr-waitn{margin-left:0}
 .primer .zr-prfx.one{column-gap:.35em}
 .primer .zr-prfx>span{min-width:0;max-width:100%}
 @media (max-width:760px){.primer .zr-prfx{padding-left:.4em;column-gap:1.6em}.primer .zr-prfx.one{column-gap:.35em}}
+
+/* ---------- polish round 5 (B4, 2026-10-17): the stage fits 1440 × 900 ----------
+   In English, parts 5 and 6 (the ZeRO-3 timeline) ran 8 and 14 px past the stage's 814 px at 1440 × 900, and in Chinese they left
+   only 8 and 3 px. On a desktop stage at least 736 px wide (1440 and 1280 px windows) the metric cards take the kit's tight line
+   heights (CONTRACT §19; a card name stays 12 px) and a few gaps are tighter. Same blocks in the same order, the same lines between
+   them (R7.13), the same texts and animation; phones (≤ 760 px) and narrower stages keep the layout above */
+@media (min-width:761px){@container (min-width:736px){
+  .zr-graph{margin-top:10px;padding:8px 12px 10px;gap:12px}
+  .zr-membox+.zr-tlbox{padding-top:10px}
+  #zr-tl-leg{padding-top:8px}
+  .zr-player{margin-top:8px}
+  .zr-metrics{margin-top:8px}
+  .zr-metrics .metric .v{line-height:1.25}
+  .zr-metrics .metric .sub{line-height:1.25}
+  .zr-metrics .metric .d{min-height:13px;line-height:1.1}
+  .zr-stage>details.math{margin-top:8px;padding-top:8px}
+}}

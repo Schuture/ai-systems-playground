@@ -18,6 +18,8 @@ Every mode and every guided part at 1440×900 and 390×844, in EN and ZH:
 - the challenge: only the two settings in the card, Settings hidden with a note (R4.2), live progress, the three feedback tiers (R4.4),
   “Show the answer”, a brief chart (the 5 that pass, the initial setup and the pick, of 18; the owner, 2026-10-07), the capability card; a language switch keeps the answer;
 - the mini result bar at 390 once the chart scrolls away;
+- B4 (polish round 5): entering each part at 1440 × 900, neither the stage nor anything in it scrolls inside (Chinese with 30 px to
+  spare), its top below the top bar, part 6 back at 70 px;
 - the writing rules on every visible text node and tooltip (R6.14, R6.7, Chinese spacing and punctuation, no 亿/万, no “toy”, no 起点 /
   starting point, no 控件 / Controls), colours only for their data (R5.6), no clipped text (R7.8), a tooltip for every help cursor (R1.1).
 - the home tile (review home-v4-A #1: it must answer its title, “What does Adam do that SGD does not?”): SGD / Adam, each pick drawn
@@ -197,9 +199,11 @@ def badges(pg): return pg.evaluate("()=>[...document.querySelectorAll('#op-metri
 def obs(pg): return pg.evaluate("()=>{const o=document.querySelector('#op-rail [data-obs]'); return o&&!o.hidden?o.innerText.replace(/\\u00a0/g,' '):''}")
 
 
+# the loss chart's plot runs from 58 to its width − 16 and from 8 to its height − 18: 600 × 150 on phones, its column's width × 150 px on a
+# wide stage (polish round 5), so the bounds are read from its viewBox
 NAMES_JS = """()=>{const R=e=>{const b=e.getBBox(); return {x0:b.x,x1:b.x+b.width,y0:b.y,y1:b.y+b.height,t:e.textContent}}, sv=document.querySelector('#op-loss'), mp=document.querySelector('#op-map');
- const L=[...sv.querySelectorAll('.op-ll,.op-gl')].map(R), gy=+sv.querySelector('.op-goal').getAttribute('y1'), bad=[], vb=mp.viewBox.baseVal;
- L.forEach((a,i)=>{if(a.x0<58||a.x1>584||a.y0<8||a.y1>132) bad.push('outside the plot: '+a.t); if(a.y0<gy&&a.y1>gy) bad.push('on the goal line: '+a.t);
+ const L=[...sv.querySelectorAll('.op-ll,.op-gl')].map(R), gy=+sv.querySelector('.op-goal').getAttribute('y1'), bad=[], vb=mp.viewBox.baseVal, lv=sv.viewBox.baseVal;
+ L.forEach((a,i)=>{if(a.x0<58||a.x1>lv.width-16||a.y0<8||a.y1>lv.height-18) bad.push('outside the plot: '+a.t); if(a.y0<gy&&a.y1>gy) bad.push('on the goal line: '+a.t);
    L.slice(i+1).forEach(b=>{if(a.x0<b.x1&&b.x0<a.x1&&a.y0<b.y1&&b.y0<a.y1) bad.push('overlap: '+a.t+' / '+b.t);});});
  const M=[...mp.querySelectorAll('.op-pl,.op-tl')].map(R);
  M.forEach((a,i)=>{if(a.x0<0||a.x1>vb.width||a.y0<0||a.y1>vb.height) bad.push('outside the map: '+a.t); M.slice(i+1).forEach(b=>{if(a.x0<b.x1&&b.x0<a.x1&&a.y0<b.y1&&b.y0<a.y1) bad.push('map overlap: '+a.t+' / '+b.t);});});
@@ -605,8 +609,64 @@ def h_page(b, lang):
     check(f'H1 {lang} sandbox: no plain-text formula left in a hover', pg.evaluate(PLAIN) == 0)
     pg.close()
 
+# B4 (polish round 5, reviews/r5-fit-roots.md): entering each part at 1440 × 900 as the polish probe stage.py does (Next when it is
+# enabled, else the part's heading), neither the stage nor anything in it scrolls inside: Chinese with at least 30 px to spare, English
+# with none; the stage's top is never under the top bar. And in Chinese, part 6 entered from part 5 near the end of the bench: on the
+# site its card lands just below the zone the kit's reveal leaves alone, so the reveal scrolls it up under the top bar and that pushed
+# the stage up to −176 px; keepStage now brings the stage back to about 70 px with the card still on the screen. This test page holds
+# the lab alone, so the “read first” line about backprop above the step list is missing, the cards sit 28 px higher and the card stays
+# put; the test reaches the same place another way (the page scrolled on past part 6's card, then its title: the reveal brings the card
+# back under the top bar with the stage pushed up). Spare = the stage's max-height minus what its content and borders need. Before this
+# round the stage scrolled 194 px inside in parts 1 and 8, 186 in part 4, 166 in part 5, 137 in parts 2, 3 and 6, and each formula's
+# paragraph in “Show the math” 2–6 px (part 7).
+FIT = """()=>{const s=document.getElementById('op-stage'), r=s.getBoundingClientRect(); let inner=0;
+ s.querySelectorAll('*').forEach(e=>{if(/(auto|scroll)/.test(getComputedStyle(e).overflowY)&&e.getClientRects().length) inner=Math.max(inner,e.scrollHeight-e.clientHeight);});
+ return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, inner, top:Math.round(r.top)}}"""
+
+
+def fit_page(b, lang):
+    """the page as the polish probe stage.py opens it: window.__aspPrimer set (without it, automation gets the older tests' compat layout,
+    whose step list also holds the settings panel), the guided parts picked in the step list, the real clock (keepStage waits for the
+    page to stop scrolling)"""
+    pg = b.new_page(viewport={'width': 1440, 'height': 900}); pg.add_init_script('window.__aspPrimer=true')
+    pg.on('pageerror', lambda e: errs.append(f'fit 1440 {lang}: {e}'))
+    pg.goto(URL); pg.wait_for_timeout(300)
+    pg.click(f'.langsw button[data-lang="{lang}"]'); pg.wait_for_timeout(80)
+    pg.evaluate("()=>{location.hash='optimizers'}"); pg.wait_for_timeout(500)
+    g = pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+    if g.count(): g.first.click(); pg.wait_for_timeout(700)
+    return pg
+
+
+def fit_entry(b, lang):
+    pg = fit_page(b, lang)
+    title = lambda k: pg.evaluate(f"()=>document.querySelector('#op-rail .steps>.step:nth-child({k}) .step-h').click()")
+    for k in range(1, 9):
+        if k > 1:
+            nb = pg.locator('.pbar [data-nav="next"]:visible:not([disabled])')
+            if nb.count(): nb.first.click()
+            else: title(k)
+            pg.wait_for_timeout(900); settle(pg)
+        f = pg.evaluate(FIT); f['step'] = state(pg)['step'] + 1
+        check(f'{lang}-1440 part {k}: entering it, neither the stage nor anything in it scrolls inside{", 30 px to spare" if lang == "zh" else ""}, its top below the top bar (B4, R7.12)',
+              f['step'] == k and f['scroll'] <= 0 and f['inner'] <= 2 and f['spare'] >= (30 if lang == 'zh' else 0) and f['top'] >= 59, f)
+    if lang == 'zh':
+        title(5); pg.wait_for_timeout(900); settle(pg)
+        pg.evaluate("()=>{const c=document.querySelector('#op-rail .steps>.step.current').getBoundingClientRect(); window.scrollBy(0, c.top+48-71+60)}")
+        pg.wait_for_timeout(400); settle(pg)
+        pushed = pg.evaluate(FIT)['top']
+        title(6); pg.wait_for_timeout(1200); settle(pg)
+        f = pg.evaluate(FIT); f['step'] = state(pg)['step'] + 1; f['pushed'] = pushed
+        f['card'] = pg.evaluate("()=>Math.round(document.querySelector('#op-rail .steps>.step.current').getBoundingClientRect().top)")
+        check('zh-1440 part 6, entered from part 5 near the end of the bench (the stage pushed up under the top bar): the stage is back at about 70 px, the card still on the screen (keepStage, R7.12)',
+              f['step'] == 6 and f['pushed'] < 59 and 66 <= f['top'] <= 74 and 59 <= f['card'] <= 742, f)
+    pg.close()
+
+
 with sync_playwright() as p:
     b = p.chromium.launch()
+    if not TILE_ONLY and (1440, 900) in SIZES:
+        for lang in LANGS: fit_entry(b, lang)
     if not TILE_ONLY: run_reduced(b, SIZES[0][0], SIZES[0][1], LANGS[0])
     for (w, h) in SIZES:
         for lang in LANGS:

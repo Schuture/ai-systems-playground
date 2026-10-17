@@ -116,3 +116,21 @@
   .ljg-wfleg{min-width:0;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
   .ljg-ans{grid-template-columns:16px minmax(0,1fr) 58px}
 }
+
+/* ---------- a wide stage (polish round 5, 2026-10-17; the owner's B4: “动画播放面板被整体顶得靠下了”) ----------
+   At 1440 × 900 (Chinese) part 1 ran 13 px past the stage's 814 px and part 6 11 px, so the stage scrolled inside. Part 1's 300
+   verdicts had been drawn before the stage took its width, 20 marks a row; watchStage() in llm-judge.js draws them again when the
+   stage's width changes (30 a row, 80 px less). Part 6 shows four metric cards: in the kit's five columns the first card's line
+   under the value wrapped (112 px cards). On a stage at least 736 px wide the cards take four columns and CONTRACT §19's compact
+   line heights (value 1.25, change line 13 px), and the gaps between the pair, the verdicts and the bars, inside the picture's
+   frame and the pair's box, and around the note on the simulation, are 1–5 px tighter. The blocks, their order and the hairline
+   stay; phones and narrower stages are unchanged. */
+@media (min-width:761px){@container (min-width:736px){
+  .ljg-graph{gap:10px;padding:10px 14px 12px}
+  .ljg-pair{gap:6px}
+  .ljg-graph>.ljg-wf:not([hidden])~.ljg-bars:not([hidden]){padding-top:10px}
+  .ljg-stage>.ljg-scope{margin:8px 0}
+  .ljg-metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:8px}
+  .ljg-metrics .metric .v{line-height:1.25}
+  .ljg-metrics .metric .d{min-height:13px;line-height:13px}
+}}

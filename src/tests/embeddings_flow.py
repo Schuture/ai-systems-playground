@@ -238,8 +238,39 @@ def timed_run(pg, sel, end_js, timeout=20000):
     return a, (pg.evaluate('()=>performance.now()') - t0) / 1000
 
 
+# polish r5 (B4, R7.12): entering the parts this round fitted, the way a reader does (Next, or the part's title while Next waits for an
+# answer), at 1440 x 900 the stage fits without scrolling inside, with 30 px to spare in Chinese. Sampled for 6.6 s after entering, so a
+# part that plays on entry (part 6 of prefix-caching sends its 8 requests in 5.3 s) fits all the way through; measured in standard mode (the page wrapped in a doctype, as it is published)
+FIT = """p=>{const s=document.getElementById(p+'-stage'), c=document.querySelector('#'+p+'-rail .steps>.step.current');
+  return {step:c?[...c.parentNode.children].indexOf(c)+1:0, spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)),
+          scroll:s.scrollHeight-s.clientHeight, top:Math.round(s.getBoundingClientRect().top)}}"""
+
+
+def fit_next(pg, k):
+    """into part k as a reader goes: Next when it is open, otherwise the part's title"""
+    nb = pg.locator('#emb-rail .step.current [data-nav="next"]:not([disabled])')
+    if nb.count(): nb.first.click()
+    else: pg.evaluate(f"()=>document.querySelector('#emb-rail .steps>.step:nth-child({k}) .step-h').click()")
+
+
+def fit_entry(b, lang, parts=(4,)):
+    pg = page(b, 1440, 900, lang)
+    for k in range(1, max(parts) + 1):
+        if k > 1: fit_next(pg, k)
+        if k not in parts:
+            pg.wait_for_timeout(900); continue
+        fs = []
+        for _ in range(44):
+            pg.wait_for_timeout(150); fs.append(pg.evaluate(FIT, 'emb'))
+        f = {'step': fs[-1]['step'], 'spare': min(x['spare'] for x in fs), 'scroll': max(x['scroll'] for x in fs), 'top': fs[-1]['top']}
+        check(f'{lang} 1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""} (B4, R7.12; polish r5)',
+              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0), f)
+    pg.close()
+
 with sync_playwright() as pw:
     b = pw.chromium.launch()
+    if (1440, 900) in SIZES:
+        for lang in LANGS: fit_entry(b, lang)
     for lang in LANGS:
         for (w, h) in SIZES:
             phone = w <= 760; tag = f'{lang}-{w}'

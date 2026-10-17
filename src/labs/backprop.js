@@ -652,12 +652,17 @@ function opsHTML(net){const X=NETS[net], ids=Object.keys(LAYOUT[net]).filter(id=
 /* input tags next to the boxes that use them */
 const tagsOf=net=>{const X=NETS[net]; return {m1:`x₁ = ${sg(X.x1,1)}`,m2:`x₂ = ${sg(X.x2,1)}`,L:`t = ${sg(X.t,1)}`};};
 let vertical=false;
+/* a number set in backprop.css (a CSS variable without a unit), or d when it is not set */
+const cssNum=(el,v,d)=>{const x=el?parseFloat(getComputedStyle(el).getPropertyValue(v)):NaN; return x>0?x:d;};
+/* polish round 5: on a wide stage backprop.css sets a shorter box and less room above the first row and under the last (--bp-bh,
+   --bp-gt, --bp-gb; the first row holds only parameters, which carry no input tag), so more of the stage fits 1440 × 900; elsewhere
+   (phones, narrower stages, the primer) 56, 18 and 10. Rows stay 16 px apart, room for a contribution's label */
 function geom(net){
-  const W=$('#bp-gwrap',app), cw=W?W.clientWidth:640; vertical=true;
-  const lay=LAYOUT[net], bw=vertical?100:104, bh=56, pad=10, top=18;
-  const pos={}; Object.keys(lay).forEach(id=>{const [c,r]=lay[id]; pos[id]=vertical?{x:pad+r*112,y:top+c*72}:{x:pad+c*(cw>=700?(cw-2*pad-bw)/5:118),y:top+r*80};});
+  const W=$('#bp-gwrap',app), cw=W?W.clientWidth:640, sv=$('#bp-svg',app); vertical=true;
+  const lay=LAYOUT[net], bw=vertical?100:104, bh=cssNum(sv,'--bp-bh',56), pad=10, top=cssNum(sv,'--bp-gt',18), bot=cssNum(sv,'--bp-gb',pad);
+  const pos={}; Object.keys(lay).forEach(id=>{const [c,r]=lay[id]; pos[id]=vertical?{x:pad+r*112,y:top+c*(bh+16)}:{x:pad+c*(cw>=700?(cw-2*pad-bw)/5:118),y:top+r*80};});
   const xs=Object.values(pos).map(p=>p.x), ys=Object.values(pos).map(p=>p.y);
-  return {pos,bw,bh,W:Math.max(...xs)+bw+pad,H:Math.max(...ys)+bh+pad+(vertical?0:46)};
+  return {pos,bw,bh,W:Math.max(...xs)+bw+pad,H:Math.max(...ys)+bh+bot+(vertical?0:46)};
 }
 const gradTxt=(id,r,k)=>(chHide()&&!chChecks.includes(id))||!r.steps[k].got.includes(id)?'?':f4(r.steps[k].grads[id]);
 function drawGraph(){
@@ -673,16 +678,16 @@ function drawGraph(){
     if(on){const c=cur.contribs[i], m=mid(a,b), txt=r.s.over?'= '+f4(c.c):(c.c<0?`+ (${f4(c.c)})`:'+'+f4(c.c)), w=txt.length*6.6+8;
       labels+=`<g class="bp-cl"><rect x="${(m[0]-w/2).toFixed(1)}" y="${(m[1]-9).toFixed(1)}" width="${w.toFixed(1)}" height="16" rx="3"/><text x="${m[0].toFixed(1)}" y="${(m[1]+3).toFixed(1)}" text-anchor="middle">${esc(txt)}</text></g>`;}
   }));
-  const tags=tagsOf(net), isPar=id=>NETS[net].params.includes(id);
+  const tags=tagsOf(net), isPar=id=>NETS[net].params.includes(id), dh=56-g.bh;   // a shorter box (wide stage) moves its three lines up
   Object.keys(g.pos).forEach(id=>{
     const p=g.pos[id], par=isPar(id), on=cur&&cur.id===id, src=curIns.includes(id)&&cur&&!cur.err, err=cur&&cur.err&&cur.id===id;
     const known=hide?chChecks.includes(id):st.got.includes(id), val=id==='h'&&r.changed?f4(r.changed.to):f4(r.vals[id]);
     const tip=boxTip(id,r,k,net);
     boxes+=`<g class="bp-n${par?' bp-par':''}${on?' bp-on':''}${src?' bp-src':''}${err?' bp-errn':''}${known?' bp-known':''}" data-n="${id}" tabindex="0" data-tipx="${esc(tip)}">`+
       `<rect x="${p.x}" y="${p.y}" width="${g.bw}" height="${g.bh}" rx="6"/>`+
-      `<text x="${p.x+7}" y="${p.y+15}" class="bp-t1">${esc(boxTitle(id,net))}</text>`+
-      `<text x="${p.x+7}" y="${p.y+32}" class="bp-t2">${esc(tx('value ','值 '))}${esc(val)}</text>`+
-      `<text x="${p.x+7}" y="${p.y+48}" class="bp-t3">${esc(tx('grad ','梯度 '))}${esc(gradTxt(id,r,k))}</text></g>`;
+      `<text x="${p.x+7}" y="${p.y+15-dh/4}" class="bp-t1">${esc(boxTitle(id,net))}</text>`+
+      `<text x="${p.x+7}" y="${p.y+32-dh/2}" class="bp-t2">${esc(tx('value ','值 '))}${esc(val)}</text>`+
+      `<text x="${p.x+7}" y="${p.y+48-dh*3/4}" class="bp-t3">${esc(tx('grad ','梯度 '))}${esc(gradTxt(id,r,k))}</text></g>`;
     if(id==='h'&&r.changed) tags.h=tx(`clipped, was ${f4(r.changed.from)}`,`截断了，原为 ${f4(r.changed.from)}`);
     if(tags[id]&&!on) boxes+=`<text x="${p.x+g.bw/2+6}" y="${p.y-5}" class="bp-tag">${esc(tags[id])}</text>`;
   });
@@ -797,11 +802,12 @@ const chkP=()=>mode==='challenge'?chChecks[chChecks.length-1]:S.p;
 const chkH=()=>mode==='challenge'?1e-5:HS[S.hi];
 function drawCheck(){
   const box=$('#bp-check',app), on=checkOn(); box.hidden=!on;
-  const top=$('#bp-top',app); if(top) top.classList.toggle('bp-two',on||!$('#bp-err',app).hidden);
   if(!on) return;
   const r=R(), net=netNow(), p=chkP(), h=chkH(), c=check(r,p,h), P0=NETS[net].P[p];
   $('#bp-ck-cap',app).textContent=tx(`Gradient check of ${nm(p)}: the loss as ${nm(p)} moves, with ε = ${fH(h)}`,`${nm(p)} 的梯度检查：${nm(p)} 变化时的 loss，ε = ${fH(h)}`);
-  const W=Math.max(180,Math.min(300,($('#bp-check',app).clientWidth||300)-2)), H=118, half=0.9, pts=curve(net,p,half,48), ys=pts.map(q=>q[1]);
+  /* polish round 5: on a wide stage the curve is narrower and shorter (--bp-ckw, --bp-ckh), so the numbers stand beside it rather than
+     under it */
+  const W=Math.max(180,Math.min(cssNum(box,'--bp-ckw',300),(box.clientWidth||300)-2)), H=cssNum(box,'--bp-ckh',118), half=0.9, pts=curve(net,p,half,48), ys=pts.map(q=>q[1]);
   const y0=Math.min(...ys), y1=Math.max(...ys), pad=8, sx=th=>pad+(th-(P0-half))/(2*half)*(W-2*pad), sy=l=>H-pad-(l-y0)/((y1-y0)||1)*(H-2*pad-6);
   const L0=lossAt(net,NETS[net].P), line=(slope,x0,x1,b=L0)=>`${sx(x0).toFixed(1)},${sy(b+slope*(x0-P0)).toFixed(1)} ${sx(x1).toFixed(1)},${sy(b+slope*(x1-P0)).toFixed(1)}`;
   const span=0.45, poly=pts.map(q=>`${sx(q[0]).toFixed(1)},${sy(q[1]).toFixed(1)}`).join(' ');
@@ -929,20 +935,36 @@ function render(){
   if(!app) return;
   if(mode==='guided'){const s=STEPS[step]; if(s&&s.expect&&s.expect()) observed[step]=true;}
   drawHead(); drawGraph(); drawFx(); drawPlayer(); drawCheck(); drawMetrics();
-  /* a wide stage with no check on: the metric cards fill the column beside the graph, so the stage fits 1440 × 900 (review A6) */
-  const top=$('#bp-top',app), side=$('#bp-side',app), met=$('#bp-metrics',app), chk=!$('#bp-check',app).hidden||!$('#bp-err',app).hidden, inSide=$('#bp-stage',app).clientWidth>=610&&!chk&&$('#bp-fx',app).hidden;
-  if(inSide&&met.parentNode!==side) side.appendChild(met); else if(!inSide&&met.parentNode===side) $('.bp-scope',app).after(met);
-  /* the formula box: first in the column beside the graph on a wide stage, right under the graph on a narrow one */
-  const fx=$('#bp-fx',app), wide=$('#bp-stage',app).clientWidth>=610;
-  if(wide&&fx.parentNode!==side) side.prepend(fx); else if(!wide&&fx.parentNode===side) $('#bp-gwrap',app).after(fx);
-  top.classList.toggle('bp-two',chk||inSide||(wide&&!fx.hidden));
-  const gr=$('#bp-graph',app); gr.dataset.focus=mode==='guided'?({walk:'graph',check:'check',fan:'graph',inplace:'graph'}[STEPS[step].id]||''):'';
   $('#bp-pwrap',app).hidden=(mode==='guided'&&step<SIX('walk'))||chHide();
+  layout();
+  const gr=$('#bp-graph',app); gr.dataset.focus=mode==='guided'?({walk:'graph',check:'check',fan:'graph',inplace:'graph'}[STEPS[step].id]||''):'';
   const lg=$('#bp-legend',app), lh=legendHTML(); if(lg._h!==lh){lg.innerHTML=lh; lg._h=lh;}
   const mb=$('#bp-mathbody',app), mh=mathHTML(); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}
   syncControls(); updateRail();
   A.hash.write(token()); A.dock.refresh(); announce();
 }
+/* where the blocks beside the graph go. One rule for render and for the redraws after a resize (polish round 5: drawCheck used to
+   decide alone after the first frame, so part 1 put its metric cards above the graph instead of beside it, 224 px of scrolling) */
+function layout(){
+  const st=$('#bp-stage',app), top=$('#bp-top',app), side=$('#bp-side',app), met=$('#bp-metrics',app), fx=$('#bp-fx',app), pw=$('#bp-pwrap',app);
+  const chk=!$('#bp-check',app).hidden||!$('#bp-err',app).hidden, wide=st.clientWidth>=610;
+  /* a wide stage with no check on: the metric cards fill the column beside the graph, so the stage fits 1440 × 900 (review A6) */
+  const inSide=wide&&!chk&&fx.hidden;
+  if(inSide&&met.parentNode!==side) side.appendChild(met); else if(!inSide&&met.parentNode===side) $('.bp-scope',app).after(met);
+  /* the formula box: first in the column beside the graph on a wide stage, right under the graph on a narrow one */
+  if(wide&&fx.parentNode!==side) side.prepend(fx); else if(!wide&&fx.parentNode===side) $('#bp-gwrap',app).after(fx);
+  /* polish round 5: on a stage of at least 736 px (backprop.css sets --bp-pside) with the formula box and no check (part 3), the player
+     goes under the formula box, beside the graph; elsewhere it stays under both. Either way it comes after them, as in the page's order */
+  const pIn=cssNum($('#bp-graph',app),'--bp-pside',0)>0&&!chk&&!fx.hidden;
+  if(pIn&&pw.parentNode!==side) side.appendChild(pw); else if(!pIn&&pw.parentNode===side) top.after(pw);
+  top.classList.toggle('bp-two',chk||inSide||(wide&&!fx.hidden));
+}
+/* the graph, the check's curve and where the blocks go depend on the stage's width: the stage changes width without a window resize
+   when the page leaves the primer or puts the step list beside it, so they are drawn again when it does (as labs/ppo.js) */
+let stRO=null, stW=0;
+function watchStage(){if(stRO){stRO.disconnect(); stRO=null;} const st=app&&$('#bp-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w; layout(); drawGraph(); drawCheck();}));
+  stRO.observe(st);}
 function lockNote(){
   if(mode==='challenge') return tx('In the challenge you run checks and name the bug in the task card. The network, its values and its hand-written backward are fixed.','挑战中只能在任务卡里做检查、选 bug。网络、它的值和手写的反向都固定不变。');
   if(mode!=='guided') return '';
@@ -1264,11 +1286,12 @@ A.registerLab({
     fromSnap=false;
     fillRail();
     render();
-    requestAnimationFrame(()=>{if(app){drawGraph(); drawCheck();}});
+    requestAnimationFrame(()=>{if(app){layout(); drawGraph(); drawCheck();}});
+    watchStage();
   },
-  leave(){clearTimeout(annT); stopPlay(); stageStop(); root=null; app=null;},
+  leave(){clearTimeout(annT); stopPlay(); stageStop(); if(stRO){stRO.disconnect(); stRO=null;} root=null; app=null;},
   onLang(){if(root){const d=$('#bp-math',app), open=d&&d.open; this.mount(root,null); if(open) $('#bp-math',app).open=true;}},
-  onResize(){if(app){drawGraph(); drawCheck();}},
+  onResize(){if(app){layout(); drawGraph(); drawCheck();}},
   termTip(k){return termTipHTML(k);},
   jump, jumpAct,
   dock:{

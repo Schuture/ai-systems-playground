@@ -788,6 +788,21 @@ function drawListLegend(seen,cols){const el=$('#ckr-l-leg',app), key=A.lang()+'|
   if(seen.tie) h+=`<span class="lg" data-tipx="${esc(tx('Two chunks with the same score. Keyword, vector and hybrid search then put first the chunk that comes first in the help center; rerank puts first the chunk whose vector is closer to the question.','两块的分数一样。关键词、向量和混合检索这时按块在帮助中心里的先后排；rerank 让向量和问题更接近的排前面。'))}"><span class="ckr-tie ckr-tie-lg">${tx('tie','同分')}</span>${tx('equal scores','分数相同')}</span>`;
   if(cols.filter(c=>c[0]!=='-').length>1) h+=it('ckr-sw-same',tx('same chunk','同一块'),tx('Click a chunk to mark it in every list; click it again to clear.','点一块，各列里的同一块都会标出来；再点一次取消。'));
   el.innerHTML=h;}
+/* R7.9 (polish round 5, 2026-10-17): while the cut plays, the page's panel says the chunks with the answer come when it ends, and the
+   lists show their rows only (marks, verdicts and the legend come when it ends, R3.8). So the stage was shorter while the cut played
+   and grew when it ended (part 1 at 1440 × 900: 79 px; in Scenarios too). Now, on a wide stage, the two panels keep while the cut
+   plays the height they will have when it ends: the finished panels are put in place for a moment and measured (nothing is drawn in
+   between), then the playing ones go back. render calls this after drawing them. Phones are left as they were. */
+let holdKey='';
+function holdCut(){const pans=[$('#ckr-pan-doc',app),$('#ckr-pan-lists',app)].filter(Boolean), vis=pans.filter(p=>!p.hidden);
+  if(!anim||innerWidth<=760||!vis.length){if(holdKey){pans.forEach(p=>{p.style.minHeight='';}); holdKey='';} return;}
+  const key=[anim.key,S.q,S.k,S.ret,S.rr,mode,A.lang(),ctx().cols.join(),vis.map(p=>p.id+':'+p.clientWidth).join()].join('|');
+  if(key!==holdKey||vis.some(p=>!p._hold)){const a=anim, doc=!$('#ckr-pan-doc',app).hidden, lists=!$('#ckr-pan-lists',app).hidden;
+    pans.forEach(p=>{p.style.minHeight=''; p._hold=0;});
+    anim=null; try{if(doc) drawStrip(); if(lists) drawLists();}finally{anim=a;}
+    vis.forEach(p=>{p._hold=p.getBoundingClientRect().height;});
+    if(doc) drawStrip(); if(lists) drawLists(); holdKey=key;}
+  pans.forEach(p=>{p.style.minHeight=!p.hidden&&p._hold?p._hold+'px':'';});}
 /* part 4: the three searches over the 20 questions, a small table under the lists (P8, P9 and P11 of the polish review) */
 function drawSum(){const el=$('#ckr-sum',app); if(!el) return; const on=mode==='guided'&&STEPS[step].id==='search'; el.hidden=!on; if(!on) return;
   const R=setup(LG(),S.size,S.ov), key=[A.lang(),S.size,S.ov].join('|'); if(el._k===key) return; el._k=key;
@@ -993,6 +1008,7 @@ function render(){
   drawHead();
   if(docOn){drawTransport(); drawStrip();}
   if(!$('#ckr-pan-lists',app).hidden){drawLists(); drawSum();}
+  holdCut();
   if(!$('#ckr-pan-chart',app).hidden) drawChart();
   if(!$('#ckr-metrics',app).hidden) drawMetrics();
   const mb=$('#ckr-mathbody',app), mh=mathHTML(); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}

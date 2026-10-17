@@ -18,6 +18,8 @@ Every mode and every guided part at 1440×900 and 390×844, in EN and ZH, light,
 - the challenge: checks count, the three feedback tiers (R4.4), “show all options”, the chart and the table, the capability card,
   a language switch keeps the answer, “Another hidden bug”;
 - the mini result bar at 390 once the graph scrolls away, with a short status;
+- B4 (polish round 5): entering each part at 1440 × 900, no part needs scrolling inside the stage (Chinese with 30 px to spare),
+  with the graph and the column beside it (the formula box and the check) on the screen; the stage's top never under the top bar;
 - the writing rules on every visible text node and tooltip (R6), colours only for their data (R5.6), no text wider than its box and
   no help cursor without a tooltip (R7.8, R1.1), and no SVG box title wider than its box.
 Screenshots: shots/backprop/.
@@ -551,8 +553,48 @@ def math_scroll(b, w, h, lang):
     pg.close()
 
 
+# B4 (polish round 5, reviews/r5-fit-roots.md): entering each part at 1440 × 900 as the polish probe stage.py does (Next when it is
+# enabled, else the part's heading), the stage needs no scrolling inside, Chinese with at least 30 px to spare, English with none
+# (spare = the stage's max-height minus what its content and borders need; before this round parts 1, 3 and 4–7 scrolled 224, 153
+# and 200 px in Chinese, parts 4–7 223 px in English), the graph and the column beside it (the metric cards, the formula box, the
+# check or the error) are whole on the screen (part 1 used to put the metric cards above the graph, its lower half off the screen),
+# and the stage's top is never under the top bar.
+FIT = """()=>{const s=document.getElementById('bp-stage'), r=s.getBoundingClientRect(), top=Math.max(59,r.top), bot=Math.min(innerHeight,r.bottom);
+ const on=id=>{const e=document.getElementById(id); if(!e||!e.getClientRects().length) return null; const q=e.getBoundingClientRect(); return q.top>=top-1&&q.bottom<=bot+1;};
+ return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top), graph:on('bp-svg'), side:on('bp-side')}}"""
+
+
+def fit_page(b, lang):
+    """the page as the polish probe stage.py opens it: window.__aspPrimer set (without it, automation gets the older tests' compat layout,
+    whose step list also holds the settings panel), the guided parts picked in the step list, the real clock"""
+    pg = b.new_page(viewport={'width': 1440, 'height': 900}); pg.add_init_script('window.__aspPrimer=true')
+    pg.on('pageerror', lambda e: errs.append(f'fit 1440 {lang}: {e}'))
+    pg.goto(URL); pg.wait_for_timeout(300)
+    pg.click(f'.langsw button[data-lang="{lang}"]'); pg.wait_for_timeout(80)
+    pg.evaluate("()=>{location.hash='backprop'}"); pg.wait_for_timeout(500)
+    g = pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+    if g.count(): g.first.click(); pg.wait_for_timeout(700)
+    return pg
+
+
+def fit_entry(b, lang):
+    pg = fit_page(b, lang)
+    for k in range(1, 8):
+        if k > 1:
+            nb = pg.locator('.pbar [data-nav="next"]:visible:not([disabled])')
+            if nb.count(): nb.first.click()
+            else: pg.evaluate(f"()=>document.querySelector('#bp-rail .steps>.step:nth-child({k}) .step-h').click()")
+            pg.wait_for_timeout(900); settle(pg)
+        f = pg.evaluate(FIT); f['step'] = state(pg)['step'] + 1
+        check(f'{lang}-1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""}, the graph and the column beside it on the screen, the top below the top bar (B4, R7.12)',
+              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['graph'] and f['side'] is not False and f['top'] >= 59, f)
+    pg.close()
+
+
 with sync_playwright() as p:
     b = p.chromium.launch()
+    if (1440, 900) in SIZES:
+        for lang in LANGS: fit_entry(b, lang)
     for w, h, lang in ((1440, 900, 'zh'), (900, 900, 'en'), (390, 844, 'zh'), (390, 844, 'en')):
         math_scroll(b, w, h, lang)
     for (w, h) in SIZES:

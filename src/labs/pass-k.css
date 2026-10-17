@@ -113,3 +113,17 @@
 @media (prefers-reduced-motion:reduce){.pak-sq{transition:none}}
 /* part 6: the answer to the lab's title question, after the three lines */
 .pak-answer{margin:12px 0}
+
+/* ---------- a wide stage (polish round 5, 2026-10-17; the owner's B4: “动画播放面板被整体顶得靠下了”) ----------
+   At 1440 × 900 parts 2–6 ran 11 px past the stage's 814 px (English parts 5–6, whose chart note takes two lines: 31 px), so the
+   stage scrolled inside. On a stage at least 736 px wide the player's two rows share one: play and the speeds on the left, the
+   ◂ slider ▸ and the count taking the rest of the row (39 px less); the grid and the chart sit 4 px closer, with 2 px less under
+   the hairline between them; the metric cards take CONTRACT §19's compact line heights (value 1.25, change line 13 px). The grid,
+   its player, the chart and the cards keep their order and their sizes; phones and narrower stages are unchanged. */
+@media (min-width:761px){@container (min-width:736px){
+  .pak-graph{gap:12px}
+  .pak-graph>.pak-gridbox:not([hidden])~.pak-chartbox:not([hidden]){padding-top:12px}
+  .pak-player{grid-template-columns:auto minmax(0,1fr);column-gap:16px;align-items:center}
+  .pak-metrics .metric .v{line-height:1.25}
+  .pak-metrics .metric .d{min-height:13px;line-height:13px}
+}}

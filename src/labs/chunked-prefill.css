@@ -245,3 +245,36 @@ html[lang^="zh"] .ck-row{grid-template-columns:64px minmax(0,1fr) 72px}
   .ck-stage>.stage-head{row-gap:6px}
   .ck-stage>.ck-graph{margin-top:8px;padding-top:7px}
 }
+/* ---------- polish r5 (B4, R7.12): every guided part fits a 1440 × 900 screen. The stage stacked the timeline (206 px), the replay,
+   the two limits of a step (248 px: the usual step's box over the box of the step being looked at) and four metric cards, so it
+   scrolled 22–62 px inside itself; from part 5 on the status also took a line of its own under the title. On a stage at least 736 px
+   wide the two boxes stand side by side, the usual step on the left as it read first before, each box's name and time on its first line
+   and what the step computes on the second, so a step that changes while the replay plays never moves the box's lines; the status stays
+   beside the small title and the subtitle runs under both across the whole head, one line whatever Show me or a scenario card puts in
+   it; the legend keeps room for the second line the replay adds to it (R7.9); the metric cards take the tighter value and change lines
+   of CONTRACT §19. Same boxes, same order and the same bars; phones (≤ 760 px) and narrower stages keep the layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  .ck-stage>.stage-head{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:14px;row-gap:0}
+  .ck-stage>.stage-head>div:first-child{display:contents}
+  .ck-stage #ck-st-title{grid-area:1/1}
+  .ck-stage #ck-st-sub{grid-area:2/1/3/3}
+  .ck-stage>.stage-head>.stage-actions{grid-area:1/2}
+  /* the replay adds “now” and “waiting” to the legend: two lines in English, and in Chinese too once the chunks' boxes are on */
+  .ck-stage>.legend-row{min-height:41px;align-content:flex-start}
+  .ck-lim{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:10px}
+  .ck-lim>.ck-cap,.ck-lim>.ck-limleg{grid-column:1/-1}
+  .ck-ph-h{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:1px}
+  .ck-ph-h>b{grid-area:1/1}
+  .ck-ph-t{grid-area:1/2}
+  .ck-ph-d{grid-area:2/1/3/3}
+  .ck-metrics .metric .v{line-height:1.25}
+  .ck-metrics .metric .d{min-height:13px;line-height:1.1}
+  /* a few gaps tighter, as moe's wide stage */
+  .ck-stage>.legend-row{margin-top:10px}
+  .ck-graph{margin-top:10px;gap:8px}
+  .ck-ph{padding:6px 10px 8px}
+  .ck-ph-h{margin-bottom:4px}
+  .ck-stage>.ck-scope{margin:8px 0 4px}
+  .ck-metrics{margin-top:8px}
+  .ck-stage>details.math{margin-top:8px;padding-top:8px}
+}}

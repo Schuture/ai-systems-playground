@@ -259,3 +259,36 @@
    instead of drawing right borders (owner 2026-10-14, R7.13; tests/kit_seg_rows.py) */
 .ts-app .seg-ctl{gap:1px;background:var(--line)}
 .ts-app .seg-ctl button,.ts-app .seg-ctl button:last-child{border-right:0}
+
+/* ---------- polish round 5 (B4, 2026-10-17): the stage fits 1440 × 900 ----------
+   Part 5 (the 1-NN rewrite: the broadcast's axes, the pairs it makes, then the three ways on the log axis) ran 147 px past the stage's
+   814 px at 1440 × 900. On a desktop stage at least 736 px wide (1440 and 1280 px windows):
+   - the table of pairs (x_i − y_j) stands right of the axes picture, which keeps its 460 px, and its caption runs across under both
+     (it had a row of its own under the axes, with the caption beside it in 340 px). The pair box is display:contents, so the
+     order is the page's: the note, the axes, the table, the caption;
+   - in each row of the bars the Python-loop count stands right of the bar instead of on a line under it; the bars and the axis under
+     them share the column left of it, so the axis still reads the bars;
+   - the metric cards take the kit's tight line heights (CONTRACT §19; a card name stays 12 px) and a few gaps are tighter.
+   Same blocks in the same order, the same lines, texts and colours; phones (≤ 760 px) and narrower stages keep the layout above */
+@media (min-width:761px){@container (min-width:736px){
+  .ts-graph{margin-top:10px;padding:8px 12px 10px}
+  .ts-nn{gap:8px}
+  .ts-nnshape{grid-template-columns:minmax(0,460px) minmax(0,1fr);column-gap:24px;row-gap:8px;align-items:center}
+  .ts-nnshape>.ts-sub2{grid-column:1/-1}
+  .ts-nnshape .ts-axes{max-width:none}
+  .ts-pair{display:contents}
+  .ts-pgrid{grid-column:2;justify-self:start}
+  .ts-pcap{grid-column:1/-1;max-width:none}
+  .ts-nnrows{grid-template-columns:minmax(0,1fr) auto;column-gap:14px;row-gap:8px}
+  .ts-nnr{grid-column:1/-1;grid-template-columns:subgrid;row-gap:3px}
+  .ts-nnr>.ts-nnh,.ts-nnr>.ts-code1{grid-column:1/-1}
+  .ts-nnr>.ts-trk{grid-column:1}
+  .ts-nnr>.ts-it{grid-column:2;align-self:center;white-space:nowrap}
+  .ts-axis{grid-column:1}
+  .ts-stage>.ts-scope{margin:8px 0 4px}
+  .ts-metrics{margin-top:8px}
+  .ts-metrics .metric .v{line-height:1.25}
+  .ts-metrics .metric .sub{line-height:1.25}
+  .ts-metrics .metric .d{min-height:13px;line-height:1.1}
+  .ts-stage>details.math{margin-top:8px;padding-top:8px}
+}}

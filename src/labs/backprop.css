@@ -227,3 +227,36 @@
   .primer .pr-bp .bp-ops{border-left:0;border-top:1px solid var(--line);padding:8px 0 0;flex-direction:row;flex-wrap:wrap;gap:4px 14px;font-size:12.5px}
   .primer .pr-bp .bp-ops-k{flex-basis:100%}
 }
+
+/* polish round 5 (fit): on a wide stage (at least 736 px: the desktop at 1440 and 1280) parts 3–7 ran 153–223 px past the screen at
+   1440 × 900: the graph 444 px with what each box computes under it 74, beside it the formula box 252 and the check 300 (the curve
+   300 px wide with its numbers under it), then the player 108, the metric cards 96 and the spacing. There the graph's boxes are 46 px
+   tall with less room above and below (geom reads --bp-bh, --bp-gt, --bp-gb; rows stay 16 px apart) and “What each box computes”
+   starts the first line of its formulas; the check's curve is 190 × 92 px (drawCheck reads --bp-ckw, --bp-ckh), its numbers beside it
+   (wide enough for “no gradient: the backward stopped” on one line) and the chips' caption on their row; in part 3 (no check) the
+   player goes under the formula box (layout reads --bp-pside); under the graph the player's sentence keeps room for two lines, the most
+   any step takes at this width; the metric cards are compact (CONTRACT §19) and the spacing tighter. Every part then fits 1440 × 900
+   without scrolling inside, parts 4–7 with about 35 px to spare in Chinese and 13 in English, whose legend takes two lines
+   (reviews/r5-fit-roots.md). Part 6 with PyTorch's error: the error box joins the formula box (shorter then) and the check beside the
+   graph; with tighter gaps that column stays within the graph's height, so picking this case does not make the stage taller (R7.9; it
+   grew 26 px before). Phones and narrower stages keep the layout above. */
+@media (min-width:761px){@container (min-width:736px){
+  .bp-graph{--bp-pside:1;margin-top:8px;padding:6px 12px 8px;gap:8px}
+  .bp-graph>.bp-pwrap{padding-top:6px;gap:6px}
+  .bp-stage .bp-svg{--bp-bh:46;--bp-gt:6;--bp-gb:4}
+  .bp-stage .bp-ops{margin-top:2px;padding-top:6px}
+  .bp-stage .bp-ops-k{flex-basis:auto}
+  .bp-stage .bp-check{--bp-ckw:190;--bp-ckh:92;gap:6px}
+  .bp-top.bp-two>.bp-side{gap:8px}
+  .bp-top.bp-two>.bp-side:has(>.bp-err:not([hidden])){gap:4px}
+  .bp-stage .bp-side>.bp-err{padding:5px 10px;line-height:1.35}
+  .bp-stage .bp-chips>.bp-sub{flex:0 1 auto;margin-right:4px}
+  .bp-graph>.bp-pwrap .bp-read{min-height:2.9em}
+  .bp-stage>.legend-row{margin-top:6px}
+  .bp-stage>.bp-scope{margin:4px 0 0}
+  .bp-stage .bp-metrics{margin-top:4px}
+  .bp-stage .bp-metrics .metric .v{line-height:1.25}
+  .bp-stage .bp-metrics .metric .sub{line-height:1.25}
+  .bp-stage .bp-metrics .metric .d{min-height:13px;line-height:1.1}
+  .bp-stage>details.math{margin-top:4px;padding-top:6px}
+}}

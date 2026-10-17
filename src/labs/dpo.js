@@ -718,6 +718,10 @@ function drawWire(r){
   const el=$('#dpo-wire',app); if(!el) return;
   const sh=S.mode==='shared', on=sh||(mode==='guided'&&STEPS[step].id==='shared');
   el.hidden=!on; if(!on){el._h=''; return;}
+  const h=wireHTML(r,sh);
+  if(el._h!==h){el.innerHTML=h; el._h=h;}
+}
+function wireHTML(r,sh){
   const dz=sh?wRises(r):r.z.map((v,i)=>v-r.z0[i]), pre=mode==='guided'&&step<SIX('steps');
   const ch=d=>r.t===0||pre?'':(Math.abs(d)<5e-4?tx('logit unchanged','logit 没变'):`logit ${d>0?'+':MINUS}${f(Math.abs(d),sh?3:2)}`);
   const cell=i=>`<div class="dpo-wc dpo-c-${roleCls(i,r.pairs)}"><div class="dpo-wt"><span class="dpo-let">${LET[i]}</span>${sh?`<span class="dpo-wx">${tx('detail','细节')} ${f(DETAIL[i],1)}</span>`:''}</div><div class="dpo-wd mono">${ch(dz[i])}</div></div>`;
@@ -727,8 +731,28 @@ function drawWire(r){
                   `四个 logit 都连在同一个共享权重 w 上。A 的细节比 B 多，DPO 要拉开 A 和 B，只能调大 w。w 每变化 Δw，每个 logit 就移动 ${M('Δw \\times \\text{细节程度}')}（线越粗，细节越多）。所以 B、C、D 的 logit 也跟着升，D 升得最多。`)
               :tx('Separate logits: the four logits are not connected. A step raises A’s logit and lowers B’s; C’s and D’s stay where they were.',
                   '各自的 logit：四个 logit 互不相连。每一步只升 A 的 logit、降 B 的，C 和 D 的 logit 不动。');
-  const h=`<div class="dpo-blk-h">${tx('Where the logits come from','logit 从哪来')}</div>${top}<div class="dpo-wcells${sh?'':' dpo-wsep'}">${LET.map((l,i)=>cell(i)).join('')}</div><p class="dpo-wcap">${cap}</p>`;
-  if(el._h!==h){el.innerHTML=h; el._h=h;}
+  return `<div class="dpo-blk-h">${tx('Where the logits come from','logit 从哪来')}</div>${top}<div class="dpo-wcells${sh?'':' dpo-wsep'}">${LET.map((l,i)=>cell(i)).join('')}</div><p class="dpo-wcap">${cap}</p>`;
+}
+/* R7.9 (polish round 5): on a wide desktop stage (dpo.css sets --dpo-hold on the chart there) the picture sits in the left column under
+   the answers, and the chart is as tall as that column: switching the shared weight on (the option of part 7, the switch in Settings,
+   the scenario “Closer to a real LLM”) made the stage 107 px taller in part 7 (the picture's shared-weight form is taller) and 230 px in
+   Scenarios and Settings (the picture appears). There, the picture keeps the room of its shared-weight form from the start: in part 7
+   under its separate-logit form, elsewhere unseen while the shared weight is off (as the note of ppo.js's --ppo-hold). The room is
+   measured once per language and width by putting the shared-weight form in place for a moment (nothing is drawn in between); render
+   calls this right after drawWire. Phones, narrower stages, the other parts and the challenge (separate logits, locked) are left as they were. */
+function holdWire(r){
+  const el=$('#dpo-wire',app), g=$('#dpo-graph',app); if(!el||!g) return;
+  const on=(mode==='sandbox'||(mode==='guided'&&STEPS[step].id==='shared'))&&getComputedStyle(g).getPropertyValue('--dpo-hold').trim()==='1';
+  if(!on){el.classList.remove('dpo-held'); if(el._hold){el.style.minHeight=''; el._hold=null;} return;}
+  const key=[A.lang(),g.clientWidth].join('|');
+  if(!el._hold||el._hold.key!==key){
+    const hid=el.hidden, kh=el.innerHTML;
+    el.hidden=false; el.classList.remove('dpo-held'); el.style.minHeight='';
+    el.innerHTML=wireHTML(S.mode==='shared'?r:compute({...S,mode:'shared'}),true);
+    const mh=Math.ceil(el.getBoundingClientRect().height);
+    el.innerHTML=kh; el.hidden=hid; el._hold={key,mh};}
+  if(el.hidden){el.hidden=false; el.innerHTML=''; el._h=''; el.classList.add('dpo-held');} else el.classList.remove('dpo-held');
+  el.style.minHeight=el._hold.mh+'px';
 }
 function niceMax(v){if(v<=0) return 1; const e=Math.pow(10,Math.floor(Math.log10(v))), m=v/e; return (m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*e;}
 function seriesFor(T,s,vw){
@@ -935,8 +959,12 @@ function renderRail(){const rail=$('#dpo-rail',app);
 /* ---------- render ---------- */
 function render(){
   if(!app) return;
+  /* R7.9 (polish round 5): where the learner changes β (part 6, Settings, the challenge) the key can also name the previous setting; on a
+     wide desktop stage the curve's column is half as wide, and in English the probabilities view's key then needs four lines. dpo.css
+     keeps room for them there from the start, so switching the view or β does not move the stage */
+  app.classList.toggle('dpo-keyhold',mode==='sandbox'||mode==='challenge'||(mode==='guided'&&STEPS[step].id==='beta'));
   const r=compute(S);
-  drawHead(r); drawBars(r); drawWire(r); drawCurve(r); drawMetrics(r);
+  drawHead(r); drawBars(r); drawWire(r); holdWire(r); drawCurve(r); drawMetrics(r);
   const mb=$('#dpo-mathbody',app), mh=mathHTML(r); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}
   syncControls(r); updateRail(r);
   A.hash.write(token()); A.dock.refresh(); announce(r);
@@ -967,6 +995,31 @@ function enterStep(i){
   if(s.target){const el=$('#dpo-ic-'+s.target,app); if(el){el.classList.remove('cue'); void el.offsetWidth; el.classList.add('cue');}}
 }
 function revealStep(){A.ui.reveal($('#dpo-rail .step.current',app)||$('#dpo-rail',app));}
+/* keepStage (CONTRACT §11, R3.2, R9.7; as labs/moe.js; polish round 5): after Next, Back or a part's title the kit's reveal scrolls the
+   new card's top up under the top bar; near the end of the bench that pushes the sticky stage up with it (at 1440 × 900, entering part 7
+   from part 6: the stage's top at −213 px in Chinese, part 8 at −35 px; in English part 6 at −271 px and part 7 at −55 px). Once the page
+   stops scrolling this pulls the stage back under the top bar without pushing the card's top off the screen, and does nothing once the
+   reader has scrolled the card away */
+let stageT=0;
+function stageStop(){if(stageT){clearTimeout(stageT); stageT=0;}}
+function keepStage(){stageStop();
+  let lastY=null, waited=0;
+  const tick=()=>{stageT=0; if(!app) return;
+    if(scrollY!==lastY){if(waited>=1500) return; lastY=scrollY; waited+=120; stageT=setTimeout(tick,120); return;}
+    const st=$('#dpo-stage',app); if(!st||innerWidth<=760||getComputedStyle(st).position!=='sticky') return;
+    const card=$('#dpo-rail .step.current',app)||$('#dpo-rail',app); if(!card) return;
+    const want=parseFloat(getComputedStyle(st).top)||70, r=st.getBoundingClientRect(), c=card.getBoundingClientRect();
+    let dy=r.top-want; if(dy>=-2||c.bottom<want) return;   // the card has left the screen: the reader scrolled on, so stay put
+    dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
+  stageT=setTimeout(tick,A.reduceMotion()?30:150);}
+/* the curve is drawn for its own width: on a stage at least 736 px wide it sits beside the answers (dpo.css), and the stage changes width
+   without a window resize when the page puts the step list beside it or leaves the primer, so it is drawn again when it does (as
+   labs/ppo.js) */
+let stRO=null, stW=0;
+function watchStage(){unwatchStage(); const st=app&&$('#dpo-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w; drawCurve(compute(S));}));
+  stRO.observe(st);}
+function unwatchStage(){if(stRO){stRO.disconnect(); stRO=null;}}
 /* the result of a part, the verdict on the prediction included, comes into view when it first appears after Show me, Play, a step
    button or an option: scroll just enough to show all of it, never pushing its top under the top bar and the mini result bar */
 function revealBox(box){
@@ -1092,9 +1145,9 @@ function bind(el){
     const seg=b.closest('.seg-ctl[data-key]');
     if(seg&&d.v!=null){if(b.disabled) return; const k=seg.dataset.key; if(k==='view'){setView(d.v); return;} if(k==='speed'){setSpeed(d.v); return;} stopPlay();
       wantObs=true; byLearner(()=>setState({[k]:(k==='beta'||k==='eta')?+d.v:d.v})); revealSoon(); wantObs=false; return;}
-    if(d.go!=null){enterStep(+d.go); revealStep(); return;}
-    if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); return;}
-    if(d.nav==='back'){enterStep(step-1); revealStep(); return;}
+    if(d.go!=null){enterStep(+d.go); revealStep(); keepStage(); return;}
+    if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); keepStage(); return;}
+    if(d.nav==='back'){enterStep(step-1); revealStep(); keepStage(); return;}
     if(d.nav==='showme'){const s=STEPS[step]; if(s.showMe) showMe(s.showMe); return;}
     if(d.pred){pred=d.pred; renderRail(); const fb=$(`#dpo-rail [data-pred="${pred}"]`,app); if(fb) fb.focus(); return;}
     if(d.preset!=null){applyPreset(+d.preset); return;}
@@ -1214,8 +1267,9 @@ A.registerLab({
     bind(app);
     renderDrill();
     renderRail();                       // (renders too) the one path that adds the next-lab footer (site review R10 #3)
+    watchStage();
   },
-  leave(){stopPlay(); clearTimeout(annT); root=null; app=null;},
+  leave(){stopPlay(); clearTimeout(annT); stageStop(); unwatchStage(); root=null; app=null;},
   onLang(){if(root){const d=$('#dpo-math',app), open=d&&d.open; this.mount(root,null); if(open) $('#dpo-math',app).open=true;}},
   onResize(){if(app) drawCurve(compute(S));},
   termTip(k){const tm=TERM[k]; if(!tm) return ''; return `<div>${L(tm)}</div><div class="act">${jumpAct(k)}</div>`;},   // TERM holds HTML: η and ref carry typeset formulas (H1)

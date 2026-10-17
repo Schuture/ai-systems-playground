@@ -808,8 +808,39 @@ for _s in ["halfway through the system prompt.", "正好在 system prompt 的中
 for _s in ["It is the word that part", "部分改的那个词", "so request 2 reuses the cached system prompt", "所以请求 2 复用缓存里的 system prompt", "with today’s date put first, not one of request 2’s tokens hits", "把今天的日期放到最前面，请求 2 一个 token 也没命中"]:
     check(f'G2: the sentence that leaned on an earlier part, “{_s[:48]}”, is gone', _s not in _G_SRC)
 
+# polish r5 (B4, R7.12): entering the parts this round fitted, the way a reader does (Next, or the part's title while Next waits for an
+# answer), at 1440 x 900 the stage fits without scrolling inside, with 30 px to spare in Chinese. Sampled for 6.6 s after entering, so a
+# part that plays on entry (part 6 of prefix-caching sends its 8 requests in 5.3 s) fits all the way through; measured in standard mode (the page wrapped in a doctype, as it is published)
+FIT = """p=>{const s=document.getElementById(p+'-stage'), c=document.querySelector('#'+p+'-rail .steps>.step.current');
+  return {step:c?[...c.parentNode.children].indexOf(c)+1:0, spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)),
+          scroll:s.scrollHeight-s.clientHeight, top:Math.round(s.getBoundingClientRect().top)}}"""
+
+
+def fit_next(pg, k):
+    """into part k as a reader goes: Next when it is open, otherwise the part's title"""
+    nb = pg.locator('#px-rail .step.current [data-nav="next"]:not([disabled])')
+    if nb.count(): nb.first.click()
+    else: pg.evaluate(f"()=>document.querySelector('#px-rail .steps>.step:nth-child({k}) .step-h').click()")
+
+
+def fit_entry(b, lang, parts=(6,)):
+    pg = page(b, 1440, 900, lang)
+    for k in range(1, max(parts) + 1):
+        if k > 1: fit_next(pg, k)
+        if k not in parts:
+            pg.wait_for_timeout(900); continue
+        fs = []
+        for _ in range(44):
+            pg.wait_for_timeout(150); fs.append(pg.evaluate(FIT, 'px'))
+        f = {'step': fs[-1]['step'], 'spare': min(x['spare'] for x in fs), 'scroll': max(x['scroll'] for x in fs), 'top': fs[-1]['top']}
+        check(f'{lang} 1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""} (B4, R7.12; polish r5)',
+              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0), f)
+    pg.close()
+
 with sync_playwright() as p:
     b = p.chromium.launch()
+    for lang in ('en', 'zh'):
+        fit_entry(b, lang)
     for (w, h) in [(1440, 900), (390, 844)]:
         for lang in ('en', 'zh'):
             run_guided(b, w, h, lang)
