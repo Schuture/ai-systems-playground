@@ -252,3 +252,55 @@
 .primer .ppo-nw{white-space:nowrap}
 @media (max-width:760px){.primer .ppo-prfx{padding-left:.4em}}
 @media (max-width:380px){.primer .ppo-prfx{font-size:1em}}
+/* ---------- a wide stage (polish round 4, 2026-10-17; the owner's B4, R7.12): at 1440 × 900 parts 6, 7 and 8 needed 43, 126 and 115 px
+   of scrolling inside the stage, and entering part 7 from part 6 left the stage's top 42 px under the top bar (fixed in ppo.js). On a
+   stage at least 736 px wide (windows from about 1200 px) the curve and part 6's two panels are drawn shorter (--ppo-ch, --ppo-cph, read
+   by drawCurve and drawCP), the bars are shorter, the curve's switch keeps its label on its row, the three prompts' titles share one row
+   that is one line when all three fit on one and two when one needs two (a subgrid, so the three bar groups stay level, H7), the metric
+   cards share the row by their number with the value and change lines tighter (CONTRACT §19), and a few gaps are tighter. Same blocks in
+   the same order, same texts and animation; phones (≤ 760 px) and narrower stages keep the layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  .ppo-curve{--ppo-ch:124;height:124px}
+  .ppo-cp-svg{--ppo-cph:126;height:126px}
+  .ppo-legend{margin-top:8px}
+  .ppo-bars{grid-template-rows:auto auto;row-gap:4px;margin-top:8px;--ppo-hold:1}
+  .ppo-bg{display:grid;grid-row:span 2;grid-template-rows:subgrid}
+  .ppo-bt{min-height:0;margin-bottom:0;align-self:end}
+  .ppo-ct{height:72px}
+  .ppo-kinds{margin-top:4px}
+  /* --ppo-hold (on the bars): in parts 5 and 6, Scenarios and Settings ppo.js keeps the note on one distribution in its place, unseen,
+     while it does not apply (R7.9) */
+  .ppo-same{margin-top:4px}
+  .ppo-same.ppo-held{visibility:hidden;min-height:2.9em}
+  .ppo-run{margin-top:8px}
+  .ppo-curve-head{margin-top:10px;padding-top:10px;align-items:center}
+  .ppo-curve-head .ctl{display:flex;align-items:center;gap:8px}
+  /* with the switch on the title's row, the ratio view's English title takes two lines where the others take one: the title keeps two
+     lines in English, so the stage does not move by 5 px when the view changes (R7.9) */
+  .ppo-curve-title:lang(en){min-height:2.7em}
+  .ppo-curve{margin-top:4px}
+  .ppo-mem{margin-top:10px;padding-top:10px}
+  .ppo-mem.ppo-mem-top{margin:8px 0 2px;padding:8px 12px}
+  .ppo-clip{margin-top:8px;padding:8px 12px}
+  .ppo-clip-ctl,.ppo-cps{margin-top:6px}
+  /* part 6 (R7.9): the line under the panel's title keeps two lines (one beside the switch of a single pass, two beside the five-pass
+     one) and the caption the lines of the longest of the three levers' captions (two in Chinese, three in English), so picking a
+     lever does not move the stage */
+  .ppo-clip-s{min-height:2.9em}
+  .ppo-cp-cap{min-height:2.9em}
+  .ppo-cp-cap:lang(en){min-height:4.35em}
+  /* one column per card shown, all as wide: ppo.js shows and hides a card by its hidden attribute, and a :has() count of the shown
+     cards was not always restyled by Chromium (entering part 7 from part 6, its fourth card went to a second row: 97 px) */
+  .ppo-metrics{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);margin-top:10px}
+  .ppo-metrics .metric .v{line-height:1.25}
+  .ppo-metrics .metric .d{min-height:13px;line-height:1.1}
+  .ppo-stage>details.math{margin-top:8px;padding-top:8px}
+}}
+/* R6.37 (polish round 4, 2026-10-17): in the 280 px rail (windows 761–1180 px) a named formula's name takes its own line above the
+   formula, so the formula has the card's whole width and nothing scrolls sideways (part 8's “reward after the KL penalty” scrolled 51 px
+   at 900 px in English); the chain still lines up at “=” */
+@media (min-width:761px) and (max-width:1180px){
+  #ppo-rail .ppo-eq{grid-template-columns:auto minmax(0,1fr)}
+  #ppo-rail .ppo-eq-n{grid-column:1 / -1;max-width:none}
+  #ppo-rail .ppo-eq-n:empty{display:none}
+}

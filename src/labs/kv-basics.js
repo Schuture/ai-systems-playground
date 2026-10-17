@@ -235,8 +235,8 @@ const STEPS=[
               '<p>模型什么都不存，所以每个 decode 步都要把目前所有的 token 重新过一遍两层。一个词一个词地生成这句话，看 token 前向的次数怎么累加；每一次 token 前向，在每一层的格子里各填一格。至少生成 4 个词，才能进入下一部分。</p>')+genCtl(),
   obs:()=>obsSteps()},
  {id:'check',title:{en:'Do earlier keys and values change?',zh:'之前的 K 和 V 会变吗？'},lead:{en:'Compare earlier tokens’ keys and values across steps, then switch off the causal mask.',zh:'比一比之前 token 的 key 和 value 各步变没变，再关掉因果 mask。'},enter:()=>({view:'toy',n:9,cache:false,mask:true}),expect:()=>!S.mask,always:true,showMe:{mask:false},label:{en:'Observed',zh:'观察到'},
-  body:()=>tx(`<p>By step 9 the model has computed the keys and values of “&lt;s&gt;” once in every step. The row marked ${J('chk','“change”')} under each layer in the chart compares each earlier token’s key and value in step 9 with those from its first step.</p><p>Now switch the ${DEF('causal mask',TIP.mask())} off, so that every token also looks at later tokens, as in ${DEF('an encoder such as BERT',TIP.enc())}, and compare again. When “${esc(wd(1,'en'))}” was first computed, in step 2, no later token existed; in step 9 it would also see every token after it.</p>`,
-              `<p>到第 9 步，“&lt;s&gt;”的 key 和 value 每一步都算了一次。图中每层下面标着${J('chk','“变化”')}的那一行，把之前每个 token 在第 9 步算出的 key 和 value，和它第一次算出时的比较。</p><p>现在关掉${DEF('因果 mask',TIP.mask())}，让每个 token 也能看到后面的 token（${DEF('BERT 这类 encoder',TIP.enc())} 就是这样），再比较一次。“${esc(wd(1,'zh'))}”第一次算出是在第 2 步，那时它后面还没有 token；到第 9 步，它会看到后面所有的 token。</p>`)+maskCtl(true),
+  body:()=>tx(`<p>By step 9 the model has computed the keys and values of “&lt;s&gt;” 9 times. Are they the same every time? The row marked ${J('chk','“change”')} under each layer in the chart compares each earlier token’s key and value in step 9 with those from its first step.</p><p>Now switch the ${DEF('causal mask',TIP.mask())} off, so that every token also looks at later tokens, as in ${DEF('an encoder such as BERT',TIP.enc())}, and compare again.</p>`,
+              `<p>到第 9 步，“&lt;s&gt;”的 key 和 value 已经算了 9 次，每次都一样吗？图中每层下面标着${J('chk','“变化”')}的那一行，把之前每个 token 在第 9 步算出的 key 和 value，和它第一次算出时的比较。</p><p>现在关掉${DEF('因果 mask',TIP.mask())}，让每个 token 也能看到后面的 token（${DEF('BERT 这类 encoder',TIP.enc())} 就是这样），再比较一次。</p>`)+maskCtl(true),
   obs:()=>obsCheck()},
  {id:'keep',title:{en:'Keep them',zh:'把它们存下来'},lead:{en:'Compute each key and value once and keep it: turn on the KV cache.',zh:'每个 key 和 value 只算一次、存下来：打开 KV cache。'},enter:()=>({view:'toy',n:9,cache:false,mask:true}),expect:()=>S.cache,always:true,showMe:{cache:true},label:{en:'Observed',zh:'观察到'},
   body:()=>tx(`<p>So each token’s key and value can be computed once, in the step that takes the token in, and kept for every later step. That store, a key and a value per token in every layer and head, is the ${DEF('KV cache',TIP.kv())}. Turn it on:</p>`,
@@ -273,8 +273,8 @@ function obsCheck(){
                      :tx(`<p><b>Only 1 decode step done, so there is no earlier key or value to compare yet.</b> Write at least two words under ${J('controls','Settings')}.</p>`,
                           `<p><b>只完成了 1 个 decode 步，还没有之前的 key 和 value 可比。</b>在“${J('controls','自由调参')}”里至少生成两个词。</p>`);
   const c=check(n,S.mask), d1=diffS(c.max[0]), d2=diffS(c.max[1]);
-  if(S.mask) return tx(`<p><b>No earlier key or value changed.</b> ${d1===d2?`In both layers the largest change is ${d1}.`:`The largest change is ${d1} in layer 1 and ${d2} in layer 2.`}</p><p>Why: a token enters layer 1 as its own input vector, which never changes. With the causal mask, its layer-1 output mixes only itself and earlier tokens, so that output is fixed too, and the same holds in every later layer. Its keys and values are computed from these fixed vectors, so later steps get exactly the same numbers, and keeping them loses nothing.</p>`,
-                          `<p><b>之前的 key 和 value 一个都没变。</b>${d1===d2?`两层的最大变化都是 ${d1}。`:`第 1 层的最大变化是 ${d1}，第 2 层是 ${d2}。`}</p><p>原因：一个 token 进入第 1 层时就是它自己的输入向量，永远不变。有因果 mask 时，它在第 1 层的输出只混合它自己和之前的 token，所以也不会变；后面每一层都是这样。它每一层的 key 和 value 都由这些不变的向量算出，所以之后每一步算出的数值一模一样，存下来不会丢任何东西。</p>`);
+  if(S.mask) return tx(`<p><b>No earlier key or value changed.</b></p><p>Why: a token enters layer 1 as its own input vector, which never changes. With the causal mask, its layer-1 output mixes only itself and earlier tokens, so that output is fixed too, and the same holds in every later layer. Its keys and values are computed from these fixed vectors, so later steps get exactly the same numbers, and keeping them loses nothing.</p>`,
+                          `<p><b>之前的 key 和 value 一个都没变。</b></p><p>原因：一个 token 进入第 1 层时就是它自己的输入向量，永远不变。有因果 mask 时，它在第 1 层的输出只混合它自己和之前的 token，所以也不会变；后面每一层都是这样。它每一层的 key 和 value 都由这些不变的向量算出，所以之后每一步算出的数值一模一样，存下来不会丢任何东西。</p>`);
   /* R6.20: one number in the sentence (the largest change, on the stage's "change" row); its size against the numbers themselves in
      words, chosen by the ratio at this step (from 1.0 at step 2 to 1.7), and the average itself on hover */
   const at=c.at[1]>=0?wd(c.at[1]):'', mean=absMean(n,S.mask,1), sz=fixd(mean,1), l1=c.max[0]===0, qs=c.max[1]/mean;
@@ -649,7 +649,7 @@ function railHTML(){
 function isNextDisabled(){const s=STEPS[step]; return (!!s.expect&&!observed[step])||(!!s.gate&&!s.gate());}
 function renderRail(){const rail=$('#kvb-rail',app); if(!rail) return;
   const nl=(mode!=='guided'||step===STEPS.length-1)&&A.shell.nextLab?A.shell.nextLab(ID):'';   // the next lab in every mode (R3.11)
-  rail.innerHTML=NB(railHTML()+(mode==='challenge'&&A.ui.exits?A.ui.exits(ID,EXITS()):''))+nl; A.ui.initRanges(rail); render();}
+  rail.innerHTML=NB(railHTML()+(mode==='challenge'&&A.ui.exits?A.ui.exits(ID,EXITS()):''))+nl; wrapFx(rail); A.ui.initRanges(rail); render();}
 function updateRail(){
   const rail=$('#kvb-rail',app); if(!rail) return;
   // inline controls mirror the state
@@ -847,6 +847,26 @@ function mathNarrow(fx){const tb=fx.querySelector('table.kvb-mt'); if(!tb) retur
       `<tr class="kvb-mband${g.tall?' kvb-mtall':''}"><td class="kvb-meq"><span class="kvb-mu">${lines.map((_,r)=>cell(E,r)).join('')}</span></td><td><div class="kvb-mfl">${units.map(u=>`<span class="kvb-mu" style="grid-template-columns:repeat(${u.length},auto)">${lines.map((ln,r)=>u.map(j=>cell(ln[j],r)).join('')).join('')}</span>`).join('')}</div></td></tr>`;
     for(const r of g.rows.slice(k)) h+=`<tr><td class="kvb-meq">${E}</td><td class="kvb-mres">${r.l?`<span class="kvb-mlbl">${r.l}</span> `:''}${r.c.join(' ')}</td></tr>`;}
   tb.className='kvb-mtn'; tb.innerHTML=h;}
+/* polish round 4 (R6.37, the owner's review of 2026-10-09: a formula the reader has to scroll sideways is not read): a formula set on a
+   line of its own in a card (.kvb-fx holding one typeset formula, as in part 7's “KV cache per token = 2 × layers × …”) is cut before
+   each operator into pieces that wrap onto the next line, indented under its first term, the way the kit's KV cache lab writes the same
+   rule (.kv-fx). The same MathML, only split; a piece's leading operator gets its usual space on each side as an mspace (\: in the
+   other labs' pieces): Chromium drops the spaces around an mrow's leading operator */
+const FXOPS={'=':'0.2778em','×':'0.2222em','÷':'0.2222em','+':'0.2222em','−':'0.2222em'};
+function wrapFx(root){if(!root) return;
+  for(const fx of root.querySelectorAll('.kvb-fx')){if(fx.classList.contains('kv-fx')||fx.querySelector('table')) continue;
+    const ms=[...fx.children]; if(ms.length!==1||ms[0].tagName.toLowerCase()!=='math') continue;
+    const m=ms[0], row=m.firstElementChild; if(!row||row.tagName.toLowerCase()!=='mrow'||m.children.length!==1) continue;
+    const pieces=[]; let cur=[];
+    for(const c of [...row.children]){if(c.tagName.toLowerCase()==='mo'&&FXOPS[c.textContent.trim()]&&cur.length){pieces.push(cur); cur=[];} cur.push(c);}
+    pieces.push(cur); if(pieces.length<2) continue;
+    const frag=document.createDocumentFragment();
+    pieces.forEach((p,k)=>{const mm=m.cloneNode(false), r=document.createElementNS(row.namespaceURI,'mrow');
+      p.forEach(c=>r.appendChild(c));
+      if(k){const op=r.firstElementChild, sp=FXOPS[op.textContent.trim()], gap=()=>{const g=document.createElementNS(row.namespaceURI,'mspace'); g.setAttribute('width',sp); return g;};
+        op.setAttribute('lspace','0'); op.setAttribute('rspace','0'); r.insertBefore(gap(),op); op.after(gap());}
+      mm.appendChild(r); if(k) frag.appendChild(document.createElement('wbr')); frag.appendChild(mm);});
+    fx.replaceChildren(frag); fx.classList.add('kv-fx');}}
 function fitMath(mb){if(!mb) return; if(!mb._fwo&&typeof ResizeObserver!=='undefined'){mb._fwo=new ResizeObserver(()=>requestAnimationFrame(()=>fitMath(mb))); mb._fwo.observe(mb);}
   const w=mb.clientWidth; if(!w) return; const nar=!!mb.querySelector('table.kvb-mtn');
   if(nar&&mb._fw===w) return;

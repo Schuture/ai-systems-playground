@@ -239,8 +239,8 @@ const STEPS=[
  {id:'train',title:{en:'Train on preference pairs',zh:'用偏好对训练'},
   lead:()=>tx('Each step raises the chosen response’s score and lowers the rejected one’s.','每一步都让选中的回答分数升高、落选的降低。'),
   enter:()=>({...BASE,pair:0}),expect:()=>watched.has(keyOf({...BASE},T)),showMe:()=>finishRun(),label:{en:'Result',zh:'结果'},
-  body:()=>tx(`<p>The training data are 1,000 preference pairs. At every step the reward model scores both responses of every pair, and this loss adjusts its parameters (log is the natural logarithm):</p>${FX(LOSSF())}<p>The further the chosen response’s score is above the rejected one’s, the smaller the loss. So each step moves the parameters a little toward “chosen up, rejected down”. In TRL, Hugging Face’s training library, the RewardTrainer computes exactly this line.</p><p>Play the training and watch the loss, and the accuracy on ${DEF('500 held-out pairs',TIP.held())}.</p>`+playBtn(),
-              `<p>训练数据是 1,000 个偏好对。每一步，奖励模型给每一对的两个回答各打一个分，再用这个 loss 调整参数（log 是自然对数）：</p>${FX(LOSSF())}<p>选中的回答分数比落选的高得越多，loss 就越小。所以每一步，参数都往“选中的升、落选的降”的方向挪一点。Hugging Face 的训练库 TRL 里，RewardTrainer 算的就是这一行。</p><p>播放训练，看 loss 和${DEF('留出的 500 对',TIP.held())}上的准确率。</p>`+playBtn()),
+  body:()=>tx(`<p>The training data are 1,000 preference pairs. At every step the reward model scores both responses of every pair, and its parameters move a little toward “chosen up, rejected down”, which makes this loss smaller (log is the natural logarithm):</p>${FX(LOSSF())}<p>The further the chosen response’s score is above the rejected one’s, the smaller the loss.</p><p>Press Replay and watch how the loss and the accuracy on ${DEF('500 held-out pairs',TIP.held())} change.</p>`+playBtn(),
+              `<p>训练数据是 1,000 个偏好对。每一步，奖励模型给每一对的两个回答各打一个分，再把参数往“选中的升、落选的降”的方向挪一点，让这个 loss 变小（log 是自然对数）：</p>${FX(LOSSF())}<p>选中的回答分数比落选的高得越多，loss 就越小。</p><p>点“重放”，看 loss 和${DEF('留出的 500 对',TIP.held())}上的准确率怎么变。</p>`+playBtn()),
   obs:()=>obsTrain()},
  {id:'shift',title:{en:'Only differences mean something',zh:'只有分差有意义'},
   lead:()=>tx('Add the same number to every score, and nothing changes.','给所有分数加上同一个数，什么都不变。'),
@@ -285,9 +285,11 @@ function obsBt(){
        `<p>为什么不接近 100%：σ 越往两头越平。分差从 0 到 1，概率升了 23 个百分点；从 1 到 2，只再升 15 个百分点。分差再大，也只是越来越接近 100%。</p><p>拖动分差，看曲线上的点。现在分差是 ${gd(d)}，概率是 ${pR(p)}。</p>`)+dCtl('rm-ic-d');
 }
 function obsTrain(){
+  /* polish r4: “the reward model now says a person picks A 90% of the time” left the result box: the example on the stage says it
+     (“分差 … 2.15：奖励模型认为人有 90% 的时候选 A”) */
   const r=dflt();
-  return tx(`<p><b>After ${T} steps the loss falls from ${q2(r.LOSS[0])} to ${q2(r.LOSS[T])}, and on the 500 held-out pairs the reward model is right ${pR(r.acc[T])} of the time.</b></p><p>In the example pair, A’s score rose and B’s fell, so the reward model now says a person picks A ${pR(sig(score(r.W[T],EX[0].A)-score(r.W[T],EX[0].B)))} of the time.</p><p>${pR(r.acc[T])} may sound low. But people disagree with each other: even guessing these 500 labels from the true quality gets only ${pR(r.ceil)} of them right. And 500 pairs are a small sample: another 500 would move the accuracy by about ±${fixd(196*Math.sqrt(r.acc[T]*(1-r.acc[T])/NH),0)} points (the lab ${lk('eval-ci')} shows why).</p>`,
-            `<p><b>训练 ${T} 步后，loss 从 ${q2(r.LOSS[0])} 降到 ${q2(r.LOSS[T])}。在留出的 500 对里，奖励模型判对了 ${pR(r.acc[T])}。</b></p><p>示例里，A 的分数升了，B 的降了。按现在的分数，奖励模型算出人选 A 的概率是 ${pR(sig(score(r.W[T],EX[0].A)-score(r.W[T],EX[0].B)))}。</p><p>${pR(r.acc[T])} 听起来不高。可标注的人自己也会不一致：就算按真实质量去猜这 500 对标注，也只能猜对 ${pR(r.ceil)}。500 对也只是一个小样本，换一批 500 对，准确率大约会上下变动 ±${fixd(196*Math.sqrt(r.acc[T]*(1-r.acc[T])/NH),0)} 个百分点（原因见${lk('eval-ci')}）。</p>`);
+  return tx(`<p><b>After ${T} steps the loss falls from ${q2(r.LOSS[0])} to ${q2(r.LOSS[T])}, and on the 500 held-out pairs the reward model is right ${pR(r.acc[T])} of the time.</b></p><p>In the example pair, A’s score rose and B’s fell.</p><p>${pR(r.acc[T])} may sound low. But people disagree with each other: even guessing these 500 labels from the ${DEF('true quality',TIP.q())} gets only ${pR(r.ceil)} of them right. And 500 pairs are a small sample: another 500 would move the accuracy by about ±${fixd(196*Math.sqrt(r.acc[T]*(1-r.acc[T])/NH),0)} points (the lab ${lk('eval-ci')} shows why).</p>`,
+            `<p><b>训练 ${T} 步后，loss 从 ${q2(r.LOSS[0])} 降到 ${q2(r.LOSS[T])}。在留出的 500 对里，奖励模型判对了 ${pR(r.acc[T])}。</b></p><p>示例里，A 的分数升了，B 的降了。</p><p>${pR(r.acc[T])} 听起来不高。可标注的人自己也会不一致：就算按${DEF('真实质量',TIP.q())}去猜这 500 对标注，也只能猜对 ${pR(r.ceil)}。500 对也只是一个小样本，换一批 500 对，准确率大约会上下变动 ±${fixd(196*Math.sqrt(r.acc[T]*(1-r.acc[T])/NH),0)} 个百分点（原因见${lk('eval-ci')}）。</p>`);
 }
 function exScores(){const w=dflt().W[T]; return [score(w,EX[0].A),score(w,EX[0].B)];}
 function obsShift(){
@@ -727,9 +729,14 @@ function miniChart(o){/* x 0..xmax, series [{vals, cls, label}] */
   (o.dots||[]).forEach(([x,v,c])=>{s+=`<circle class="${c}" cx="${X(x)}" cy="${Y(v)}" r="4"/>`;});
   return s+`</svg>`;
 }
+/* polish round 4 (2026-10-17, B4): on a wide stage the blocks sit in two columns and the charts are drawn shorter, so the stage fits a
+   1440 × 900 screen. The heights (and whether best-of-n's two charts sit side by side) are CSS variables on the chart's box, set in
+   reward-model.css and read when a chart is drawn; without them (phones, narrower stages) everything is drawn as before. */
+const cssNum=(host,v,d)=>{const x=parseFloat(getComputedStyle(host).getPropertyValue(v)); return x>0?x:d;};
 function drawTr(){
-  const r=R(), Tm=Tn(), t=tNow(), host=$('#rm-tr-charts',app), W=Math.max(150,Math.floor(((host.clientWidth||300)-12)/2)), H=118;
-  host.hidden=!panels().trc;
+  const r=R(), Tm=Tn(), t=tNow(), host=$('#rm-tr-charts',app);
+  host.hidden=!panels().trc;   // shown before it is measured: hidden in part 7, it measured 0 px wide and part 8 drew its charts 150 px wide
+  const W=Math.max(150,Math.floor(((host.clientWidth||300)-12)/2)), H=cssNum(host,'--rm-trh',118);
   const lp=[], ap=[]; const stepN=Math.max(1,Math.round(Tm/100)); for(let i=0;i<=t;i+=stepN){lp.push([i,r.LOSS[i]]); ap.push([i,r.acc[i]]);} if(lp.length&&lp[lp.length-1][0]!==t){lp.push([t,r.LOSS[t]]); ap.push([t,r.acc[t]]);}
   const xt=Tm===400?[0,200,400]:(Tm===50?[0,25,50]:[0,Tm/2,Tm]);
   $('#rm-tr-cap',app).textContent=tx(`Training on ${fint(r.N+r.bal)} pairs: step ${t} of ${Tm}`,`在 ${fint(r.N+r.bal)} 个偏好对上训练：第 ${t} / ${Tm} 步`);
@@ -739,14 +746,14 @@ function drawTr(){
   drawPlayer();
 }
 function drawBon(){
-  const host=$('#rm-bon',app), W=Math.max(220,Math.round(host.clientWidth||320)), b=bonAt(runS(),tNow()), k=peakOf(b), ch=mode==='challenge';
+  const host=$('#rm-bon',app), cols=cssNum(host,'--rm-bcols',1), W=cols>1?Math.max(150,Math.floor(((host.clientWidth||300)-12)/2)):Math.max(220,Math.round(host.clientWidth||320)), b=bonAt(runS(),tNow()), k=peakOf(b), ch=mode==='challenge';
   /* part 6: the curves reach only as far as the reader has raised n, and turn red once n passes the peak (review S11, R3.8, R5.11) */
   const lim=isP('hack')?Math.max(hackSeen,S.ni):NS.length-1, ni=ch?NS.indexOf(CH_N):S.ni, hackOn=k<NS.length-1&&lim>k;
   const sp=b.slice(0,lim+1).map(x=>[x.n,x.s]), qp=b.slice(0,lim+1).map(x=>[x.n,x.q]);
   const qn=hackOn?qp.slice(0,k+1):qp, qr=hackOn?qp.slice(k):[];
   const smin=Math.min(0,...b.map(x=>x.s)), smax=Math.max(4,...b.map(x=>x.s));
-  const top=miniChart({W,H:104,xlog:true,xmax:256,y0:Math.floor(smin),y1:Math.ceil(smax),yt:[Math.floor(smin),Math.ceil(smax)],yf:v=>v<0?MINUS+(-v):String(v),xt:[1,4,16,64,256],series:[{pts:sp,cls:'rm-line'}],mark:NS[ni],dots:[[NS[ni],b[ni].s,'rm-dot']],aria:tx('Reward-model score of the pick against n','挑中的回答的奖励模型分数随 n 的变化')});
-  const bot=miniChart({W,H:118,xlog:true,xmax:256,y0:5,y1:9,yt:[5,7,9],yf:v=>String(v),xt:[1,4,16,64,256],goal:ch?CH_Q:null,series:[{pts:qn,cls:'rm-line'},{pts:qr,cls:'rm-line rm-bad'}],mark:NS[ni],dots:[[NS[ni],b[ni].q,ni>k&&hackOn?'rm-dot rm-bad':'rm-dot']],aria:tx('True quality of the pick against n','挑中的回答的真实质量随 n 的变化')});
+  const top=miniChart({W,H:cssNum(host,'--rm-bsh',104),xlog:true,xmax:256,y0:Math.floor(smin),y1:Math.ceil(smax),yt:[Math.floor(smin),Math.ceil(smax)],yf:v=>v<0?MINUS+(-v):String(v),xt:[1,4,16,64,256],series:[{pts:sp,cls:'rm-line'}],mark:NS[ni],dots:[[NS[ni],b[ni].s,'rm-dot']],aria:tx('Reward-model score of the pick against n','挑中的回答的奖励模型分数随 n 的变化')});
+  const bot=miniChart({W,H:cssNum(host,'--rm-bqh',118),xlog:true,xmax:256,y0:5,y1:9,yt:[5,7,9],yf:v=>String(v),xt:[1,4,16,64,256],goal:ch?CH_Q:null,series:[{pts:qn,cls:'rm-line'},{pts:qr,cls:'rm-line rm-bad'}],mark:NS[ni],dots:[[NS[ni],b[ni].q,ni>k&&hackOn?'rm-dot rm-bad':'rm-dot']],aria:tx('True quality of the pick against n','挑中的回答的真实质量随 n 的变化')});
   host.innerHTML=`<div class="rm-cap">${tx(`Best-of-n with this reward model (n = ${NS[ni]} marked)`,`用这个奖励模型做 best-of-n（标出的是 n = ${NS[ni]}）`)}</div>`+
     `<figure class="rm-fig1"><figcaption>${tx(`Reward-model score of the pick: ${sg2(b[ni].s)}`,`挑中的回答的分数：${sg2(b[ni].s)}`)}</figcaption>${top}</figure>`+
     `<figure class="rm-fig1"><figcaption>${tx(`True quality of the pick, out of 10: ${q2(b[ni].q)}`,`挑中的回答的真实质量（满分 10）：${q2(b[ni].q)}`)}</figcaption>${bot}</figure>`+
@@ -951,6 +958,13 @@ function keepStage(){stageStop();
     let dy=r.top-want; if(dy>=-2||c.bottom<want) return;   // the card has left the screen: the reader scrolled on (keys, scrollbar, a link), so stay put
     dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
   stageT=setTimeout(tick_,A.reduceMotion()?30:150);}
+/* the charts are drawn for their box's width and, on a wide stage, the heights in reward-model.css: the stage changes width without a
+   window resize when the page puts the step list beside it or leaves the primer, so they are drawn again when its width changes */
+let stRO=null, stW=0;
+function watchStage(){if(stRO){stRO.disconnect(); stRO=null;} const st=app&&$('#rm-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w;
+    const P=panels(); if(P.sig) drawSig(); if(P.tr) drawTr(); if(P.bon) drawBon();}));
+  stRO.observe(st);}
 function revealObs(){if(!app) return; if(mode==='guided') revealBox($('#rm-rail [data-obs]',app)); else if(mode==='sandbox') revealBox($('#rm-insight',app)); else revealBox($('#rm-ch-res',app));}
 const revealSoon=()=>requestAnimationFrame(revealObs);
 function setMode(m){
@@ -1145,7 +1159,7 @@ A.registerLab({
     bind(app);
     renderDrill();
     fillRail();
-    render();
+    render(); watchStage();
     if(replay) play();
   },
   /* round 3 #6 (the lab state contract): a reload continues where the learner was. The snapshot holds what the learner did: the mode,
@@ -1171,7 +1185,7 @@ A.registerLab({
     if(observed[SIX('train')]) watched.add(keyOf({...BASE},T));
     tShow=mode==='guided'?T:Tn(); if(mode!=='guided') watched.add(runKey());
     restored=true;},
-  leave(){clearTimeout(annT); stageStop(); pause(); root=null; app=null;},
+  leave(){clearTimeout(annT); stageStop(); pause(); if(stRO){stRO.disconnect(); stRO=null;} root=null; app=null;},
   onLang(){if(root){const d=$('#rm-math',app), open=d&&d.open, was=playing; pause(); relang=true; try{this.mount(root,null);} finally{relang=false;} if(open) $('#rm-math',app).open=true; if(was) play();}},
   onResize(){if(app) render();},
   termTip(k){return termTipHTML(k);},

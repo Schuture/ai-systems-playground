@@ -319,9 +319,11 @@ def guided(b, w, h, lang):
     check(f'{tag}: part 2 compares “added at the input” with “turned inside attention”, a thick box where the position enters in each',
           cmp_['cols'] == 2 and cmp_['thick'] == 2 and all(x in cmp_['t'] for x in Z(lang, ('Added at the input', 'Turned inside attention: RoPE', 'GPT‑2', 'BERT', 'Llama, Mistral, Qwen', 'v is not turned'), ('加在输入上', '在注意力里转动：RoPE', 'GPT‑2', 'BERT', 'Llama、Mistral、Qwen', 'v 不转'))), cmp_)
     body = text(pg, '#rp-rail .step.current')
-    check(f'{tag}: part 2 says why pairing works and that the value is never turned',
-          all(x in body for x in Z(lang, ('a turn needs a plane', 'Any fixed pairing works', 'sum of the 64 pairs’ own dot products', 'Keys are split the same way', 'the value is never turned', 'KV cache'),
-                                       ('转动需要一个平面', '怎么配对都行', '64 对各自点积的总和', 'key 也这样配对', 'value 从来不转', 'KV cache'))), body[:400])
+    # round-4 reader (r4-read-models.md, must-fix 6): the card first says what RoPE turns (the query and the key, so both are paired),
+    # then why the numbers are paired
+    check(f'{tag}: part 2 says what RoPE turns, why pairing works and that the value is never turned',
+          all(x in body for x in Z(lang, ('turns the query and the key', 'a turn needs a plane', 'Any fixed pairing works', 'sum of the 64 pairs’ own dot products', 'the value is never turned', 'KV cache'),
+                                       ('转动 query 和 key', '转动需要一个平面', '怎么配对都行', '64 对各自点积的总和', 'value 从来不转', 'KV cache'))), body[:400])
     rules(pg, f'{tag} part 2 (128 numbers)', lang)
     seg(pg, 'hv', 'pairs'); rules(pg, f'{tag} part 2 (64 pairs)', lang)
     check(f'{tag}: part 2 “64 pairs” changes the result text (A18)', Z(lang, 'Each bracket joins numbers 2i and 2i + 1', '每个括号把第 2i 和第 2i + 1 个数值连成一对') in text(pg, '#rp-rail [data-obs]'), text(pg, '#rp-rail [data-obs]')[:160])

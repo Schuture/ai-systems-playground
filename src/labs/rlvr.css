@@ -216,3 +216,41 @@
   .rlvr-ms{grid-template-columns:minmax(0,1fr);gap:0}
   .rlvr-msw{margin-top:4px}
 }
+
+/* ---------- polish r4 (B4, R7.12): parts 4–8 on a 1440 × 900 screen. The run (505 px: its player on a row of its own, the shares chart
+   150 px tall, the two line charts 120 px), the group of 8 (468–486 px) and, in parts 7–8, pass@k (228 px) were stacked, so the stage
+   scrolled 469–731 px inside itself. Side by side they do not fit a 790 px stage: the group's one-line rows need 486 px and the run's
+   charts their full width, so on a stage at least 760 px wide (the group and the run then 706 px or more inside) the stage is made
+   shorter instead: the run's player sits in its heading line, right of the title (as the group's does), at a fixed width so the title
+   never rewraps while the button's word and the step change (R7.9); the charts are drawn shorter (their SVGs stretch to the box); the
+   gaps, the rows' padding and the metric cards' line heights are a little tighter. Same blocks, same order, same animation; phones
+   (≤ 760 px) and narrower stages keep the layout above. The block the card talks about (the run in parts 4–6, pass@k in parts 7–8)
+   comes first and is whole on entry; what is left to scroll is the rest of the group, the metric cards and “Show the math”. ---------- */
+@media (min-width:761px){
+  @container (min-width:760px){
+    .rlvr-graph{gap:12px;padding:10px 14px 12px}
+    .rlvr-run{gap:8px;grid-template-columns:minmax(0,1fr) auto;column-gap:0}
+    .rlvr-grp{gap:6px}
+    .rlvr-pk .rlvr-plot.small{height:92px}
+    .rlvr-metrics .metric .v{line-height:1.25}
+    .rlvr-metrics .metric .d{min-height:13px;line-height:1.1}
+  }
+  @container rlvr-run (min-width:706px){
+    .rlvr-run>*{grid-column:1/-1}
+    .rlvr-run>.rlvr-bh{grid-column:1;grid-row:1}
+    /* the heading's hairline runs on under the player (R7.13) */
+    .rlvr-run>#rlvr-rpl{grid-column:2;grid-row:1;width:var(--rlvr-rplw,400px);box-sizing:border-box;flex-wrap:nowrap;padding:0 0 8px 12px;border-bottom:1px solid var(--line)}
+    #rlvr-rpl>.btn,#rlvr-rpl>.seg-ctl,#rlvr-rpl>#rlvr-tlab{flex:none;white-space:nowrap}
+    #rlvr-rpl>.rlvr-scrub{flex:1 1 60px;min-width:60px}
+    .rlvr-plot.rlvr-mixp{height:112px}
+    .rlvr-plot.small{height:92px}
+    .rlvr-two{padding-top:8px}
+  }
+  /* English: longer speed words, so a wider player and a two-line title */
+  html[lang="en"] #rlvr-rpl{--rlvr-rplw:480px}
+  @container rlvr-grp (min-width:706px){
+    .rlvr-rows{gap:2px}
+    .rlvr-row{padding-top:2px;padding-bottom:2px}
+    .rlvr-sel{padding-top:6px}
+  }
+}

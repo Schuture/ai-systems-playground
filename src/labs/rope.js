@@ -191,10 +191,10 @@ const STEPS=[
   lead:()=>tx('RoPE groups a head’s 128 numbers into 64 pairs and turns each pair; it adds nothing to the embedding.','RoPE 把 head 的 128 维两两配成 64 对，逐对转动；它不往 embedding 上加东西。'),
   enter:()=>{}, expect:()=>seenView.has('arrows'), showMe:()=>setHV('arrows'), always:true, label:{en:'Observed',zh:'观察到'},
   why:()=>tx('Click “64 arrows” to go on.','点“64 个箭头”，才能进入下一部分。'),
-  body:()=>tx(`<p>In one head of ${M3}, the query of “bites” is a vector of 128 numbers, and so is each key. RoPE groups them into ${DEF('64 pairs of neighbours',TIP.pairing())}: a turn needs a plane, and two numbers are the x and y of an arrow. Any fixed pairing works, because the model learns Wq and Wk with it.</p><p>The score ${MX('q \\cdot k')} adds up the products of the 128 numbers, so it is also the sum of the 64 pairs’ own dot products: turning a pair changes only that pair’s share. Keys are split the same way; the value is never turned.</p>`,
-              `<p>在 ${M3} 的一个 head 里，“咬”的 query 是一个 128 维的向量，每个 key 也是。RoPE 把这些数${DEF('按相邻两个配成 64 对',TIP.pairing())}：转动需要一个平面，两个数正好是一个箭头的 x 和 y。怎么配对都行，只要固定下来，因为模型的 Wq 和 Wk 就是按这种配对学出来的。</p><p>得分 ${MX('q \\cdot k')} 是把 128 维逐维相乘再相加，所以它也等于 64 对各自点积的总和：转动一对，只改变这一对贡献的那一份。key 也这样配对；value 从来不转。</p>`)+headCtl()+
-    tx(`<p>You may know the older way (${J('cmp','the comparison in the chart')}): the original Transformer, GPT‑2 and BERT ${DEF('add a position vector',TIP.absPos())} to each token’s embedding, once, at the input. RoPE adds nothing there; it turns q and k inside every layer’s attention, right before the dot product. ${PL(4,'Part 4')} shows what this buys when both tokens move. The cost is one small step in every layer: each key is turned once, when it is written to the ${labLink('kv-basics','KV cache')}.</p>`,
-       `<p>你可能学过另一种做法（见${J('cmp','图里的对比')}）：最早的 Transformer、GPT‑2 和 BERT 在输入处${DEF('给每个 token 的 embedding 加一个位置向量',TIP.absPos())}，只加一次。RoPE 不在那里加任何东西；它在每一层的注意力里，在点积之前转动 q 和 k。两个 token 一起挪动时这样做有什么好处，${PL(4,'第 4 部分')}会看到。代价是每一层多一个小步骤：每个 key 在写进 ${labLink('kv-basics','KV cache')} 时转一次。</p>`),
+  body:()=>tx(`<p>RoPE turns the query and the key by position, inside every layer’s attention. In one head of ${M3}, each is a vector of 128 numbers; a turn needs a plane, two numbers, so RoPE groups them into ${DEF('64 pairs of neighbours',TIP.pairing())}. Any fixed pairing works, because the model learns Wq and Wk with it.</p><p>The score ${MX('q \\cdot k')} adds up the products of the 128 numbers, so it is also the sum of the 64 pairs’ own dot products: turning a pair changes only that pair’s share; the value is never turned.</p>`,
+              `<p>RoPE 在每一层的注意力里按位置转动 query 和 key。在 ${M3} 的一个 head 里，它们都是 128 维的向量；转动需要一个平面，也就是两个数，所以 RoPE 把这些数${DEF('按相邻两个配成 64 对',TIP.pairing())}。怎么配对都行，只要固定：模型的 Wq 和 Wk 就是按这种配对学出来的。</p><p>得分 ${MX('q \\cdot k')} 是 128 维逐维乘积的和，所以也等于 64 对各自点积的总和：转动一对，只改变这一对贡献的那一份。value 从来不转。</p>`)+headCtl()+
+    tx(`<p>You may know the older way: ${DEF('add a position vector',TIP.absPos())} to the embedding at the input (${J('cmp','the comparison in the chart')}). RoPE adds nothing; it only turns. ${PL(4,'Part 4')} shows what this buys when both tokens move. The cost: each key is turned once, when it is written to the ${labLink('kv-basics','KV cache')}.</p>`,
+       `<p>你可能学过另一种做法：在输入处${DEF('给 embedding 加一个位置向量',TIP.absPos())}（见${J('cmp','图里的对比')}）。RoPE 什么也不加，只转动。两个 token 一起挪动时这有什么好处，${PL(4,'第 4 部分')}会看到。代价是每个 key 写进 ${labLink('kv-basics','KV cache')} 时要转一次。</p>`),
   obs:()=>obsHead()},
  {id:'rope',view:'pair2',title:{en:'RoPE on “dog bites man”',zh:'“狗咬人”上的 RoPE'},focusCtl:'#rp-ic-rope',
   lead:()=>tx('Each arrow turns by its position × 57.3°; the angle between query and key then changes with the order.','每个箭头转过“位置 × 57.3°”；query 和 key 的夹角于是随顺序变化。'),
@@ -236,10 +236,10 @@ function setHV(v){headView=v; seenView.add(v);}
 /* part 2 */
 function obsHead(){
   const q=QV.bites;
-  if(headView==='128') return tx(`<p><b>The query of “bites” in this head: 128 numbers, from ${n3(q[0])} and ${n3(q[1])} at the start.</b> Group them into pairs.</p>`,`<p><b>这个 head 里“咬”的 query：128 个数值，开头是 ${n3(q[0])} 和 ${n3(q[1])}。</b>把它们两两配对。</p>`);
+  if(headView==='128') return tx(`<p><b>The query of “bites”: 128 numbers, from ${n3(q[0])} and ${n3(q[1])} at the start.</b> Group them into pairs.</p>`,`<p><b>“咬”的 query：128 个数值，开头是 ${n3(q[0])} 和 ${n3(q[1])}。</b>把它们两两配对。</p>`);
   if(headView==='pairs') return tx(`<p><b>Each bracket joins numbers 2i and 2i + 1: pair 0 is numbers 0 and 1, (${n3(q[0])}, ${n3(q[1])}); pair 63 is numbers 126 and 127.</b> Now draw each pair as an arrow.</p>`,`<p><b>每个括号把第 2i 和第 2i + 1 个数值连成一对：第 0 对是第 0、1 个数值（${n3(q[0])}，${n3(q[1])}）；第 63 对是第 126、127 个数值。</b>现在把每一对画成一个箭头。</p>`);
-  return tx(`<p><b>Each pair is an arrow: its first number is x, its second y.</b> Pair 0 of “bites” is (${n3(q[0])}, ${n3(q[1])}): an arrow of length 1.5 pointing at −47°. RoPE turns every such arrow of q and k by an angle; the arrow’s length, its content, stays.</p>`,
-            `<p><b>每一对是一个箭头：第一个数值是 x，第二个是 y。</b>“咬”的第 0 对是（${n3(q[0])}，${n3(q[1])}）：一个长 1.5、指向 −47° 的箭头。RoPE 把 q 和 k 的每个这样的箭头转一个角度；箭头的长度（也就是内容）不变。</p>`);
+  return tx(`<p><b>Each pair is an arrow: its first number is x, its second y.</b> Pair 0 of “bites” is (${n3(q[0])}, ${n3(q[1])}): an arrow of length 1.5 pointing at −47°. RoPE turns every such arrow of q and k by an angle; the arrow’s length stays.</p>`,
+            `<p><b>每一对是一个箭头：第一个数值是 x，第二个是 y。</b>“咬”的第 0 对是（${n3(q[0])}，${n3(q[1])}）：一个长 1.5、指向 −47° 的箭头。RoPE 把 q 和 k 的每个这样的箭头转一个角度；箭头的长度不变。</p>`);
 }
 /* the row of "bites" in one sentence: the key with the highest score */
 const topOf=(ord,rope)=>{const g=grid(ord,rope)[1], j=g.indexOf(Math.max(...g)); return {w:ORD[ord][j],v:g[j],j};};

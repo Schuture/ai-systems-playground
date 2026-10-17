@@ -279,11 +279,11 @@ const STEPS=[
     bCtl('moe-ic-B','B',memOf('fp8',S.c).max,tx('Requests decoding together','一起 decode 的请求数'),true),
   obs:()=>obsBatch()},
  {id:'adv',title:{en:'Then where is the advantage?',zh:'那优势在哪？'},focus:'cmp',
-  lead:()=>tx('Against a dense model of the same quality, Mixtral computes and reads far less; the price is memory.','和质量相当的稠密模型比，Mixtral 算得少得多，读得也少；代价是显存。'),
+  lead:()=>tx('Against a dense model of the same quality, Mixtral computes and reads far less; against one that computes as much, it needs more memory.','和质量相当的稠密模型比，Mixtral 算得少得多，读得也少；和计算量相同的比，它更占显存。'),
   enter:()=>{cmp='l13'; cmpSeen=new Set(['l13']); return {...BASE};},expect:()=>cmpSeen.has('l70'),always:true,showMe:()=>setCmp('l70'),label:{en:'Result',zh:'结果'},
   why:()=>tx('Look at Llama 2 70B, the dense model of the same quality, to go on.','看一看质量相当的稠密模型 Llama 2 70B，才能进入下一部分。'),
-  body:()=>tx(`<p>A busy server reads almost every expert in every step. So what does MoE buy? That depends on what you compare it with. The chart sets ${MODEL} next to dense models you could run instead, on four things: quality, arithmetic per token, weights read per decode step, and GPU memory.</p><p class="small">Pick a dense model to compare with ${MODEL} and see where MoE wins and where it loses.</p>`,
-              `<p>服务端一忙起来，每一步几乎要读遍所有专家。那 MoE 到底换来了什么？这要看拿它和谁比。图里把 ${MODEL} 和你可能改用的稠密模型放在一起，比四样东西：质量、每个 token 的计算量、每个 decode 步读的权重，以及显存。</p><p class="small">选一个稠密模型和 ${MODEL} 比，看看 MoE 赢在哪里、输在哪里。</p>`)+cmpLevers(),
+  body:()=>tx(`<p>A busy server reads almost every expert in every step. So where is the advantage of MoE?</p><p class="small">Pick a dense model to compare with Mixtral and see where MoE wins and where it loses.</p>`,
+              `<p>服务端一忙起来，每一步几乎要读遍所有专家。那 MoE 的优势在哪？</p><p class="small">选一个稠密模型和 Mixtral 比，看看 MoE 赢在哪里、输在哪里。</p>`)+cmpLevers(),
   obs:()=>obsCmp()},
  {id:'imb',title:{en:'When the router plays favourites',zh:'路由器偏心的时候'},focus:'ep',
   lead:()=>tx('Spread over 8 GPUs, a layer waits for its busiest expert.','专家分到 8 张 GPU 上以后，一层要等最忙的那个专家。'),
@@ -312,29 +312,27 @@ const cmpLevers=()=>A.ui.levers({aria:tx('Compare Mixtral with, pick one','拿 M
 function setCmp(id){if(!['l13','l70','d47'].includes(id)) return; cmp=id; cmpSeen.add(id); render();}
 function obsCmp(){
   const m=cmpOf('mx'), b=cmpOf(cmp), bi=BENCH_SHOW[bench], bn=BENCH_COLS[bi], q=x=>fixd(x,1)+'%', fr=fixd(b.fl/m.fl,1);
-  if(cmp==='l13') return tx(`<p><b>Llama 2 13B computes about as much per token as ${MODEL}, yet ${MODEL} is the better model: ${q(BENCH.mx[bi])} against ${q(BENCH.l13[bi])} on ${bn}, and higher on all ${beats('l13')} benchmarks in the Mixtral paper.</b></p>`+
-      `<p>Why: part of the gap is training, not MoE. Mistral 7B, a dense model from the same team with about half the arithmetic of either model, already scores ${q(BENCH.m7[bi])} on ${bn} (the faded row). Mixtral adds ${fixd(BENCH.mx[bi]-BENCH.m7[bi],1)} more points over Mistral 7B, but with ${fixd(P_MULT/M7.mult,1)} times its arithmetic, so not all of that is MoE either. What the experts add is choice: each token still computes with only a quarter of the experts, but in every layer the router picks the ones that suit it. The controlled test is the ${cite(SRC.switch,'Switch Transformers paper')}’s: with the arithmetic per token fixed, more experts gave a better model.</p>`+
-      `<p>The price is memory: ${MODEL} holds ${fixd(m.mem/b.mem,1)} times the weights of Llama 2 13B, and a busy decode step reads about ${fixd(m.readB/b.readB,1)} times as many. The KV cache works the other way: Llama 2 13B has no GQA and keeps over six times as much per token, so one ${GPUN} holds far fewer of its requests (the memory bars).</p>`,
-    `<p><b>Llama 2 13B 每个 token 的计算量和 ${MODEL} 差不多，${MODEL} 却是更好的模型：${bn} 是 ${q(BENCH.mx[bi])}，Llama 2 13B 是 ${q(BENCH.l13[bi])}；Mixtral 论文的 ${beats('l13')} 个基准上它都更高。</b></p>`+
-      `<p>原因：差距里有一部分来自训练，而不是 MoE。同一个团队的稠密模型 Mistral 7B，计算量只有这两个模型的约一半，${bn} 就已经是 ${q(BENCH.m7[bi])}（半透明的那一行）。Mixtral 比 Mistral 7B 又高 ${fixd(BENCH.mx[bi]-BENCH.m7[bi],1)} 分，但 Mixtral 的计算量是 Mistral 7B 的 ${fixd(P_MULT/M7.mult,1)} 倍，所以这部分也不全是 MoE 的功劳。专家带来的是选择：每个 token 仍然只用四分之一的专家计算，但路由器在每一层为它挑合适的专家。受控的检验来自 ${cite(SRC.switch,'Switch Transformer 论文')}：每个 token 的计算量不变时，专家越多，模型越好。</p>`+
-      `<p>代价是显存：${MODEL} 的权重是 Llama 2 13B 的 ${fixd(m.mem/b.mem,1)} 倍，繁忙时一个 decode 步读的权重也约是 Llama 2 13B 的 ${fixd(m.readB/b.readB,1)} 倍。KV cache 则反过来：Llama 2 13B 没有 GQA，每个 token 的 KV cache 是 Mixtral 的六倍多，所以一张 ${GPUN} 放得下的请求少得多（见显存那一组条形）。</p>`);
+  if(cmp==='l13') return tx(`<p><b>${MODEL} computes about as much per token as Llama 2 13B, yet scores higher on ${bn}: ${q(BENCH.mx[bi])} against ${q(BENCH.l13[bi])}.</b></p>`+
+      `<p>Part of the gap is training: Mistral 7B, a dense model from the same team, scores ${q(BENCH.m7[bi])} on ${bn} with about half the arithmetic of either model. Mixtral adds ${fixd(BENCH.mx[bi]-BENCH.m7[bi],1)} points over it with ${fixd(P_MULT/M7.mult,1)} times its arithmetic, so not all of that is MoE either. Yet with the arithmetic per token fixed, the ${cite(SRC.switch,'Switch Transformers paper')} finds that more experts give a better model.</p>`+
+      `<p>The price is memory: ${MODEL} holds ${fixd(m.mem/b.mem,1)} times the weights of Llama 2 13B.</p>`,
+    `<p><b>Mixtral 每个 token 的计算量和 Llama 2 13B 差不多，${bn} 却更高：${q(BENCH.mx[bi])} 对 ${q(BENCH.l13[bi])}。</b></p>`+
+      `<p>差距不全是 MoE 的功劳：同一个团队的稠密模型 Mistral 7B 计算量约是它们的一半，${bn} 就有 ${q(BENCH.m7[bi])}；Mixtral 比它高 ${fixd(BENCH.mx[bi]-BENCH.m7[bi],1)} 分，计算量也是它的 ${fixd(P_MULT/M7.mult,1)} 倍，所以这 ${fixd(BENCH.mx[bi]-BENCH.m7[bi],1)} 分也不全来自 MoE。而 ${cite(SRC.switch,'Switch Transformer 论文')}固定每个 token 的计算量，发现专家越多，模型越好。</p>`+
+      `<p>代价是显存：Mixtral 的权重是 Llama 2 13B 的 ${fixd(m.mem/b.mem,1)} 倍。</p>`);
   if(cmp==='l70'){const same=BENCH.mx[bi]-BENCH.l70[bi]<=1.5;
     return tx(`<p><b>Llama 2 70B ${same?`scores about the same as ${MODEL} on ${bn} (${q(BENCH.l70[bi])} against ${q(BENCH.mx[bi])})`:`scores lower than ${MODEL} on ${bn} (${q(BENCH.l70[bi])} against ${q(BENCH.mx[bi])}) and about the same over all 12 benchmarks`}, yet it computes ${fr} times as much per token and reads more weights in every decode step.</b></p>`+
-      `<p>Why: Llama 2 70B multiplies and reads all of its parameters for every token. ${MODEL} multiplies only 2 experts per layer, and even a busy server’s decode step reads no more than its own 46.7B parameters. ${MODEL} also needs less GPU memory.</p>`+
-      `<p>In time: a long prompt’s prefill, which arithmetic sets, takes about ${secS(m.pre)} instead of ${secS(b.pre)}.</p>`+
-      `<p>A busy decode step reads its weights in about ${msR(m.tB)} instead of ${msR(b.tB)}. The KV cache comes on top, and one ${GPUN} holds over ten times as many Mixtral requests (the memory bars).</p>`+
-      `<p>So the advantage of MoE is quality per unit of arithmetic. It is largest where arithmetic sets the time, in training and in prefill, and it holds in decode against a dense model of the same quality. Against Llama 2 13B at a large batch, Mixtral reads more weights, but less once the KV cache is counted.</p>`,
+      `<p>Why: Llama 2 70B multiplies and reads all of its parameters for every token. ${MODEL} multiplies only 2 experts per layer, and even a busy decode step reads no more than its own 46.7B parameters; it also needs less GPU memory.</p>`+
+      `<p>In time: Mixtral prefills a ${tokK(CMP_N)}-token prompt in about ${secS(m.pre)} instead of ${secS(b.pre)}, and reads its weights in a busy decode step in about ${msR(m.tB)} instead of ${msR(b.tB)}.</p>`+
+      `<p>So the advantage of MoE is quality per unit of arithmetic. It is largest where arithmetic sets the time, in training and in prefill, and it holds in decode against a dense model of the same quality.</p>`,
     `<p><b>Llama 2 70B 的 ${bn} 分数${same?`和 ${MODEL} 差不多（${q(BENCH.l70[bi])} 对 ${q(BENCH.mx[bi])}）`:`比 ${MODEL} 低（${q(BENCH.l70[bi])} 对 ${q(BENCH.mx[bi])}），12 个基准总体上差不多`}，每个 token 的计算量却是 Mixtral 的 ${fr} 倍，每个 decode 步读的权重也更多。</b></p>`+
-      `<p>原因：Llama 2 70B 每个 token 都要乘、都要读它的全部参数。${MODEL} 每层只乘 2 个专家；就算是繁忙的服务端，一个 decode 步读的也不会超过它自己的 46.7B 个参数。${MODEL} 需要的显存也更少。</p>`+
-      `<p>换成时间：prefill 一个长 prompt 由计算决定，约 ${secS(m.pre)}，而不是 ${secS(b.pre)}。</p>`+
-      `<p>繁忙时一个 decode 步读权重约 ${msR(m.tB)}，而不是 ${msR(b.tB)}。KV cache 还要另外读，一张 ${GPUN} 放得下的 Mixtral 请求是 Llama 2 70B 的十倍以上（见显存那一组条形）。</p>`+
-      `<p>所以 MoE 的优势是“每单位计算换来的质量”。在由计算决定耗时的地方（训练和 prefill）优势最大；decode 时和质量相当的稠密模型比也占优。和 Llama 2 13B 在大 batch 下比，Mixtral 读的权重更多，但算上 KV cache 就更少。</p>`);}
-  return tx(`<p><b>A dense model with ${MODEL}’s 46.7B parameters (hypothetical: the Mixtral paper trains none) needs the same memory, but computes ${fr} times as much per token.</b></p>`+
-      `<p>Would it score higher? Most likely, yes, by a margin that depends on the MoE design. The ${cite(SRC.dsmoe,'DeepSeekMoE paper')} treats a dense model with about the same total parameters, all used by every token, as “the strict upper bound of MoE models in terms of the model capacity”. Its own fine-grained MoE “nearly approaches” that bound, while ${DEF('a conventional top-2 MoE like Mixtral’s stays clearly below it',DSM_TIP())} (at about 2B parameters and 100B training tokens).</p>`+
-      `<p>So the dense model would buy some quality with ${fr} times the arithmetic; per unit of arithmetic MoE wins, as the Llama 2 13B comparison shows. In decode at a large batch both read about the same weights per step, so there MoE saves nothing; for one request ${MODEL} reads about a quarter as much.</p>`,
-    `<p><b>一个参数和 ${MODEL} 一样多（46.7B）的稠密模型（假想的：Mixtral 论文没有训练它）需要同样的显存，每个 token 的计算量却是 Mixtral 的 ${fr} 倍。</b></p>`+
-      `<p>它的分数会更高吗？多半会，高多少取决于 MoE 的设计。${cite(SRC.dsmoe,'DeepSeekMoE 论文')}把总参数量相近、每个 token 都用全部参数的稠密模型看作 MoE 的上限（“the strict upper bound of MoE models in terms of the model capacity”）。它自己的细粒度 MoE 接近（“nearly approaches”）这个上限，而${DEF('像 Mixtral 这样常规的 top-2 MoE 明显低于它',DSM_TIP())}（规模约 2B 个参数、100B 个训练 token）。</p>`+
-      `<p>所以这个稠密模型要用 ${fr} 倍的计算量换来一些质量；按每单位计算算，MoE 更划算，和 Llama 2 13B 的比较说明了这一点。decode 时 batch 大的话，两者每一步读的权重差不多，这时 MoE 什么也没省；只有一个请求时，Mixtral 只读约四分之一。</p>`);
+      `<p>原因：Llama 2 70B 每个 token 都要乘、都要读全部参数；Mixtral 每层只乘 2 个专家，再忙的 decode 步也最多读 46.7B 个参数，占的显存也更少。</p>`+
+      `<p>换成时间：Mixtral prefill ${tokK(CMP_N)} token 约 ${secS(m.pre)}，而不是 ${secS(b.pre)}；繁忙的 decode 步读权重约 ${msR(m.tB)}，而不是 ${msR(b.tB)}。</p>`+
+      `<p>所以 MoE 的优势是“每单位计算换来的质量”：在由计算决定耗时的训练和 prefill 里最大，decode 时和质量相当的稠密模型比也占优。</p>`);}
+  return tx(`<p><b>This hypothetical dense model has ${MODEL}’s 46.7B parameters and needs the same memory, but computes ${fr} times as much per token.</b></p>`+
+      `<p>Would it score higher? Most likely, yes, by a margin that depends on the MoE design: the ${cite(SRC.dsmoe,'DeepSeekMoE paper')} treats such a dense model as “the strict upper bound” of MoE. DeepSeekMoE’s own design nearly reaches it, while ${DEF('a conventional top-2 MoE like Mixtral’s stays clearly below it',DSM_TIP())} (at about 2B parameters and 100B training tokens).</p>`+
+      `<p>So the dense model would buy some quality with ${fr} times the arithmetic; per unit of arithmetic, MoE wins. In decode at a large batch both read about the same weights per step, so there MoE saves nothing; for one request ${MODEL} reads about a quarter as much.</p>`,
+    `<p><b>这个假想的稠密模型和 ${MODEL} 一样有 46.7B 个参数，需要同样的显存，每个 token 的计算量却是 Mixtral 的 ${fr} 倍。</b></p>`+
+      `<p>它的分数会更高吗？多半会，高多少取决于 MoE 的设计：${cite(SRC.dsmoe,'DeepSeekMoE 论文')}把这样的稠密模型看作 MoE 的上限（“strict upper bound”），DeepSeekMoE 自己的设计几乎追平，而${DEF('像 Mixtral 这样常规的 top-2 MoE 明显低于它',DSM_TIP())}（约 2B 个参数、100B 个训练 token 的实验）。</p>`+
+      `<p>所以这个稠密模型用 ${fr} 倍的计算量换来一些质量，按每单位计算，MoE 更划算。decode 时 batch 大的话，两者每一步读的权重差不多，MoE 什么也没省；只有一个请求时，Mixtral 只读约四分之一。</p>`);
 }
 /* DeepSeekMoE's Tables 1 and 2 (arXiv 2401.06066), for the dense 46.7B answer */
 const DSM_TIP=()=>tx('Pile loss in the DeepSeekMoE paper (lower is better): a dense model of the same total size (Dense×16) 1.806, DeepSeekMoE 1.808, GShard 1.867. GShard routes like Mixtral, to the top 2 of 16 full-size experts with no shared expert; HellaSwag 55.1, 54.8 and 50.5. All at about 2B parameters and 100B training tokens (Tables 1 and 2).',
@@ -534,6 +532,7 @@ const FIDPOP=()=>tx(
  `<li>FP8 checkpoint: ${cite(SRC.fp8,'neuralmagic/Mixtral-8x7B-Instruct-v0.1-FP8')}.</li>`+
  `<li>Llama 2 13B and 70B: config.json of ${cite(SRC.l13,'Llama-2-13b-hf')} and ${cite(SRC.l70,'Llama-2-70b-hf')} (meta-llama, read from the NousResearch mirrors); both take at most 4,096 tokens (max_position_embeddings), ${MODEL} 32,768. Mistral 7B: ${cite(SRC.m7,'Mistral-7B-v0.1 config.json')}, 7.24B parameters.</li>`+
  `<li>Benchmark scores: the Mixtral paper, Table 2, with the settings of its §3 (MMLU 5-shot; HellaSwag and HumanEval 0-shot; GSM8K 8-shot, maj@8); Mistral AI re-ran every model “with our own evaluation pipeline for fair comparison”. The caption: “Mixtral outperforms or matches Llama 2 70B performance on almost all popular benchmarks while using 5x fewer active parameters during inference”.</li>`+
+ `<li>${cite(SRC.paper,'Mixtral paper')}, Table 2: ${MODEL} scores higher than Llama 2 13B on all ${beats('l13')} benchmarks, and higher than Llama 2 70B on ${beats('l70')} of the 12. Mistral 7B, faded, is a dense model from the same team.</li>`+
  `<li>Fedus et al., ${cite(SRC.switch,'Switch Transformers')} §3.1, T5-based models trained on the C4 corpus: “when keeping the FLOPS per token fixed, having more parameters (experts) speeds up training”.</li>`+
  `<li>Dai et al., ${cite(SRC.dsmoe,'DeepSeekMoE (2024)')} §4.3: “DeepSeekMoE nearly approaches the performance of Dense×16, which sets the strict upper bound of MoE models in terms of the model capacity”. Dense×16 runs all 1.89B of its FFN parameters for every token; DeepSeekMoE 2B holds the same 1.89B of expert parameters and runs 0.24B of them (0.3B of its 2.0B parameters in all); both were trained on 100B tokens. GShard, a conventional top-2 MoE of the same size (0.3B of 2.0B active), stays below both: Pile loss 1.867 against 1.808 and 1.806 (Tables 1 and 2).</li></ul>`+
  `<p class="mono small muted" style="margin-top:8px">Last verified 2026-09-30. Prototype, not yet expert-reviewed.</p></div></div>`,
@@ -555,6 +554,7 @@ const FIDPOP=()=>tx(
  `<li>FP8 checkpoint：${cite(SRC.fp8,'neuralmagic/Mixtral-8x7B-Instruct-v0.1-FP8')}。</li>`+
  `<li>Llama 2 13B 和 70B：${cite(SRC.l13,'Llama-2-13b-hf')} 和 ${cite(SRC.l70,'Llama-2-70b-hf')} 的 config.json（meta-llama 的模型，读自 NousResearch 的镜像）；两者最多只能处理 4,096 个 token（max_position_embeddings），${MODEL} 是 32,768 个。Mistral 7B：${cite(SRC.m7,'Mistral-7B-v0.1 的 config.json')}，7.24B 个参数。</li>`+
  `<li>基准分数：Mixtral 论文表 2，设置见它的第 3 节（MMLU 5-shot；HellaSwag 和 HumanEval 0-shot；GSM8K 8-shot，maj@8）；Mistral AI 用自己的评测流程重跑了每个模型（“with our own evaluation pipeline for fair comparison”）。表注原文：“Mixtral outperforms or matches Llama 2 70B performance on almost all popular benchmarks while using 5x fewer active parameters during inference”。</li>`+
+ `<li>${cite(SRC.paper,'Mixtral 论文')}表 2：${MODEL} 在全部 ${beats('l13')} 个基准上都高于 Llama 2 13B，在 12 个里有 ${beats('l70')} 个高于 Llama 2 70B。半透明的 Mistral 7B 是同一个团队的稠密模型。</li>`+
  `<li>Fedus 等，${cite(SRC.switch,'Switch Transformers')} 第 3.1 节，基于 T5、在 C4 语料上训练的模型：“when keeping the FLOPS per token fixed, having more parameters (experts) speeds up training”。</li>`+
  `<li>Dai 等，${cite(SRC.dsmoe,'DeepSeekMoE（2024）')}第 4.3 节：“DeepSeekMoE nearly approaches the performance of Dense×16, which sets the strict upper bound of MoE models in terms of the model capacity”。Dense×16 每个 token 都用它全部 1.89B 个 FFN 参数；DeepSeekMoE 2B 有同样多的 1.89B 个专家参数，每个 token 用其中 0.24B（全部 2.0B 个参数里用 0.3B）；两者都训练了 100B 个 token。同样大小的常规 top-2 MoE GShard（2.0B 里激活 0.3B）比两者都差：Pile loss 1.867，对 1.808 和 1.806（表 1 和表 2）。</li></ul>`+
  `<p class="mono small muted" style="margin-top:8px">最近核验 2026-09-30。原型，尚未经专家审阅。</p></div></div>`);
@@ -910,7 +910,9 @@ function drawCmp(){
   const kvG=id=>fint(Math.round(cmpOf(id).kvB/1e9));
   const kvNote=tx(`Weights only. The KV cache comes on top and depends on the attention design, not on MoE: at ${CMP_B} requests of ${tokK(CMP_C)} tokens it adds about ${kvG('l13')} GB per step for Llama 2 13B (no GQA), ${kvG('l70')} GB for Llama 2 70B and ${kvG('mx')} GB for Mixtral.`,`只算权重。KV cache 还要另外读，它取决于注意力的设计，和 MoE 无关：${CMP_B} 个请求、每个 ${tokK(CMP_C)} 个 token 时，每一步还要多读约 ${kvG('l13')} GB（Llama 2 13B，没有 GQA）、${kvG('l70')} GB（Llama 2 70B）和 ${kvG('mx')} GB（Mixtral）。`);
   const g=M.map(m=>row(m.id,m.mem,mmx,gib1(m.mem),tx(`${fint(m.fit)} fit`,`放得下 ${fint(m.fit)} 个`),tx(`${cmpName(m.id)}: ${big(m.total)} parameters × 1 byte = ${gib1(m.mem)} of GPU memory for the weights. Next to them, one ${GPUN} (${gib1(H100.mem*A.GiB*UTIL)} usable, ${OH} GiB of overhead) holds the KV caches of ${fint(m.fit)} requests of ${tokK(CMP_C)} tokens, at ${fint(m.kv/1024)} KiB per token${m.id==='d47'?' (if it kept Mixtral’s attention)':''}.`,`${cmpName(m.id)}：${big(m.total)} 个参数 × 1 字节 = ${gib1(m.mem)} 显存。除去权重，一张 ${GPUN}（可用 ${gib1(H100.mem*A.GiB*UTIL)}，开销 ${OH} GiB）放得下 ${fint(m.fit)} 个 ${tokK(CMP_C)} token 请求的 KV cache，每个 token ${fint(m.kv/1024)} KiB${m.id==='d47'?'（假设它沿用 Mixtral 的 attention）':''}。`),'moe-cm-w')).join('');
-  $('#moe-cmp-body',app).innerHTML=blk(tx(`Quality: ${bn} score`,`质量：${bn} 分数`),q,seg,tx(`Mixtral paper, Table 2: ${MODEL} scores higher than Llama 2 13B on all ${beats('l13')} benchmarks, and higher than Llama 2 70B on ${beats('l70')} of the 12. Mistral 7B, faded, is a dense model from the same team.`,`Mixtral 论文表 2：${MODEL} 在全部 ${beats('l13')} 个基准上都高于 Llama 2 13B，在 12 个里有 ${beats('l70')} 个高于 Llama 2 70B。半透明的 Mistral 7B 是同一个团队的稠密模型。`))+
+  /* the note on the paper's Table 2 that stood under the quality bars is with the sources at the end of the page (FIDPOP; polish round 4,
+     checklist A3: sources go to the page's end), so the four blocks fit in one screen */
+  $('#moe-cmp-body',app).innerHTML=blk(tx(`Quality: ${bn} score`,`质量：${bn} 分数`),q,seg)+
     blk(tx(`Arithmetic per token, and the prefill of a ${tokK(CMP_N)}-token prompt`,`每个 token 的计算量，以及 prefill 一个 ${tokK(CMP_N)} token 的 prompt 要多久`),f)+
     blk(tx(`Weights read per decode step, and the time to read them: 1 request, and ${CMP_B} requests`,`每个 decode 步读的权重和读它们的时间：1 个请求，以及 ${CMP_B} 个请求`),r,'',kvNote)+
     blk(tx(`Weights in GPU memory, and the requests of ${tokK(CMP_C)} tokens one ${GPUN} holds next to them`,`权重占的显存，以及一张 ${GPUN} 还放得下几个 ${tokK(CMP_C)} token 的请求`),g);
@@ -1002,7 +1004,10 @@ function drawRead(){
 /* the step time against the number of requests: the MoE curve between the 2-expert and the 8-expert lines (both straight: KV only) */
 function drawCurve(){
   const box=$('#moe-curve',app); if(!box) return;
-  const r=R(), cw=box.clientWidth||520, W=Math.max(300,Math.min(680,Math.round(cw))), narrow=W<460, H=narrow?170:158, ml=narrow?44:50, mr=narrow?10:14, mt=12, mb=30;
+  /* a wide stage draws the curve shorter (--moe-ch, set in moe.css) so parts 5 and 8 fit in one screen (polish round 4). On a wider curve
+     the plot starts at 57 and the time axis's labels end at 45 (ml − 12), where they were: the ring round the point at one request
+     (radius 9, at the plot's left edge) then clears them whatever its value (the shorter curve had brought it onto the “10”) */
+  const r=R(), cw=box.clientWidth||520, W=Math.max(300,Math.min(680,Math.round(cw))), narrow=W<460, chV=parseFloat(getComputedStyle(box).getPropertyValue('--moe-ch')), H=narrow?170:(chV>0?chV:158), ml=narrow?44:57, lx=narrow?ml-5:ml-12, mr=narrow?10:14, mt=12, mb=30;
   const Bmax=r.m.max, ch=mode==='challenge', can=curveCan(), f70=l70Fit(r.c), show70=!ch&&r.p==='fp8'&&f70>0&&l70Takes(r.c), B70=Math.min(f70,Bmax), t70a=l70Step(1,r.c).t*1e3, t70b=l70Step(Math.max(1,B70),r.c).t*1e3;
   const ymax=Math.max(ch?40:0,show70?t70b*1.14:0,decode(Bmax,r.c,r.p,MX.E).t*1e3*1.08);
   const X=B=>ml+(B-1)/Math.max(1,Bmax-1)*(W-ml-mr), Y=v=>H-mb-(v/ymax)*(H-mt-mb);
@@ -1010,7 +1015,7 @@ function drawCurve(){
   const line=(T)=>`M${X(1)},${Y(decode(1,r.c,r.p,T).t*1e3)} L${X(Bmax)},${Y(decode(Bmax,r.c,r.p,T).t*1e3)}`;
   const ty=niceStep(ymax,4); let g='';
   const tops=[]; for(let v=0;v<=ymax;v+=ty) tops.push(v);
-  tops.forEach((v,i)=>{g+=`<line class="moe-cg" x1="${ml}" y1="${Y(v)}" x2="${W-mr}" y2="${Y(v)}"/><text class="moe-ct" x="${ml-5}" y="${Y(v)+4}" text-anchor="end">${fint(v)}${i===tops.length-1?' ms':''}</text>`;});
+  tops.forEach((v,i)=>{g+=`<line class="moe-cg" x1="${ml}" y1="${Y(v)}" x2="${W-mr}" y2="${Y(v)}"/><text class="moe-ct" x="${lx}" y="${Y(v)+4}" text-anchor="end">${fint(v)}${i===tops.length-1?' ms':''}</text>`;});
   const tx0=niceStep(Bmax,narrow?4:6); for(let B=0;B<=Bmax;B+=tx0){if(B<1) continue; g+=`<text class="moe-ct" x="${X(B)}" y="${H-mb+14}" text-anchor="middle">${fint(B)}</text>`;}
   g+=`<text class="moe-ct" x="${X(1)}" y="${H-mb+14}" text-anchor="middle">1</text>`;
   g+=`<text class="moe-ct moe-cax" x="${(ml+W-mr)/2}" y="${H-3}" text-anchor="middle">${esc(ch?tx('users decoding together','一起 decode 的用户数'):tx('requests decoding together','一起 decode 的请求数'))}</text>`;
@@ -1275,6 +1280,23 @@ function enterStep(i){
   if(tg){const el=$(`#moe-rail ${tg}`,app); if(el){el.classList.remove('cue'); void el.offsetWidth; el.classList.add('cue');}}
 }
 function revealStep(){A.ui.reveal($('#moe-rail .step.current',app)||$('#moe-rail',app));}
+/* keepStage (CONTRACT §11, R3.2, R9.7; as labs/spec-decoding.js; polish round 4): after Next, Back or a part's title the kit's reveal
+   scrolls the new card's top up under the top bar; near the end of the bench that pushes the sticky stage up with it (part 7 entered
+   from part 6 at 1440 × 900: the stage's top at −149 px, its head under the top bar). Once the page stops scrolling this pulls the
+   stage back under the top bar without pushing the card's top off the screen, and does nothing once the reader has scrolled the card
+   away */
+let stageT=0;
+function stageStop(){if(stageT){clearTimeout(stageT); stageT=0;}}
+function keepStage(){stageStop();
+  let lastY=null, waited=0;
+  const tick=()=>{stageT=0; if(!app) return;
+    if(scrollY!==lastY){if(waited>=1500) return; lastY=scrollY; waited+=120; stageT=setTimeout(tick,120); return;}
+    const st=$('#moe-stage',app); if(!st||innerWidth<=760||getComputedStyle(st).position!=='sticky') return;
+    const card=$('#moe-rail .step.current',app)||$('#moe-rail',app);
+    const want=parseFloat(getComputedStyle(st).top)||70, r=st.getBoundingClientRect(), c=card.getBoundingClientRect();
+    let dy=r.top-want; if(dy>=-2||c.bottom<want) return;   // the card has left the screen: the reader scrolled on, so stay put
+    dy=Math.max(dy,c.top-(innerHeight-160)); if(dy<-2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});};
+  stageT=setTimeout(tick,A.reduceMotion()?30:150);}
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
@@ -1417,9 +1439,9 @@ function bind(el){
     byLearner(()=>setState({B:S.B+(e.key==='ArrowRight'?1:-1)})); const nb=$('#moe-curve',app); if(nb){nb.focus({preventScroll:true}); curveShow(nb,S.B);}});
   el.addEventListener('click',e=>{
     const b=e.target.closest('button'); if(!b||!el.contains(b)) return; const d=b.dataset;
-    if(d.go!=null){const i=+d.go; if(mode!=='guided'){step=Math.max(0,Math.min(STEPS.length-1,i)); setMode('guided'); A.ui.reveal($('#moe-rail',app));} else {enterStep(i); revealStep();} return;}
-    if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); return;}
-    if(d.nav==='back'){enterStep(step-1); revealStep(); return;}
+    if(d.go!=null){const i=+d.go; if(mode!=='guided'){step=Math.max(0,Math.min(STEPS.length-1,i)); setMode('guided'); A.ui.reveal($('#moe-rail',app));} else {enterStep(i); revealStep(); keepStage();} return;}
+    if(d.nav==='next'||d.nav==='skip'){enterStep(step+1); revealStep(); keepStage(); return;}
+    if(d.nav==='back'){enterStep(step-1); revealStep(); keepStage(); return;}
     if(d.nav==='showme'){const s=STEPS[step]; if(s.showMe){wantObs=true; byLearner(()=>typeof s.showMe==='function'?s.showMe():setState(s.showMe)); revealSoon(); wantObs=false;} return;}
     if(d.pred){pred=d.pred; renderRail(); const fb=$(`#moe-rail [data-pred="${pred}"]`,app); if(fb) fb.focus({preventScroll:true}); return;}
     if(d.lever!=null&&stepId()==='adv'){byLearner(()=>setCmp(d.lever)); requestAnimationFrame(()=>{if(app) revealBox($('#moe-rail [data-obs]',app));}); return;}
@@ -1470,7 +1492,7 @@ A.registerLab({
     const rail=$('#moe-rail',app); rail.innerHTML=railHTML()+railExtra(); railWhy(rail); A.ui.initRanges(rail);
     render();
   },
-  leave(){clearTimeout(annT); cancelAnimationFrame(animT); animT=0; animShown=''; root=null; app=null;},
+  leave(){clearTimeout(annT); stageStop(); cancelAnimationFrame(animT); animT=0; animShown=''; root=null; app=null;},
   onLang(){if(root){const d=$('#moe-math',app), open=d&&d.open; this.mount(root,null); if(open) $('#moe-math',app).open=true;}},
   onResize(){if(app){drawFlow(); if(!$('#moe-read',app).hidden) drawCurve();}},
   termTip(k){return termTipHTML(k);},

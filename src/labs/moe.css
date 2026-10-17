@@ -235,3 +235,35 @@ html[lang^="zh"] .moe-prow{grid-template-columns:104px minmax(0,1fr) 58px}
   .moe-mg>.moe-mn:empty{display:none}
 }
 .moe-fxp{margin:6px 0;overflow-x:auto}
+/* ---------- a wide stage (polish round 4, 2026-10-16; the owner's B4, R7.12): at 1440 × 900 parts 5 and 8 needed 39 px of scrolling
+   inside the stage and part 6 343 px, so on reaching “代价是显存” in part 6 the GPU-memory block and the metric cards were under the
+   stage's edge (the first reader of round 4). On a stage at least 736 px wide (windows from about 1226 px) part 6's four comparison
+   blocks sit two by two, read left to right as before (quality and arithmetic, then reads and memory), with their rows' name and value
+   columns narrower; its stage head keeps the status beside the title and the subtitle under both, and the benchmark's label sits beside
+   its buttons. The batch curve is drawn a little shorter (drawCurve reads --moe-ch); the metric cards share the row by their number (it
+   was five columns, the rest empty) with the value and change lines tighter (as spec-decoding's, CONTRACT §19); a few gaps are tighter.
+   Same pieces in the same order, same animation; phones (≤ 760 px) and narrower stages keep the layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  .moe-stage>.legend-row{margin-top:8px}
+  .moe-graph{margin-top:10px;padding:8px 12px;gap:10px}
+  .moe-flow,.moe-par,.moe-read,.moe-ep{gap:5px}
+  #moe-curve{--moe-ch:136}
+  .moe-stage>.moe-scope{margin-top:8px;margin-bottom:8px}
+  .moe-metrics{margin-top:8px}
+  .moe-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .moe-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .moe-metrics .metric .v{line-height:1.25}
+  .moe-metrics .metric .d{min-height:13px;line-height:1.1}
+  .moe-stage>details.math{margin-top:8px;padding-top:8px}
+  /* part 6: the title and the status on one line, the subtitle across under them (the subtitle and the status did not fit side by side,
+     so the status took a line of its own). The title keeps room for two lines, centred beside the status: a longer status (“Same
+     arithmetic; Mixtral +21.3 points on HumanEval”) narrows its column and wraps it, and the head, with the benchmark's buttons under
+     it, must not move when a button is pressed (R7.9) */
+  .moe-stage:has(#moe-cmp:not([hidden]))>.stage-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 14px;align-items:center}
+  .moe-stage:has(#moe-cmp:not([hidden]))>.stage-head>div:first-child{display:contents}
+  .moe-stage:has(#moe-cmp:not([hidden])) #moe-st-title{min-height:2lh;display:flex;align-items:center}
+  .moe-stage:has(#moe-cmp:not([hidden])) #moe-st-sub{grid-column:1/-1;grid-row:2}
+  #moe-cmp-body{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:20px;row-gap:12px;align-items:start}
+  .moe-cm-row{grid-template-columns:84px minmax(0,1fr) 104px}
+  #moe-bench{grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:10px}
+}}

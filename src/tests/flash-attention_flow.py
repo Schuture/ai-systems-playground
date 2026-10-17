@@ -21,6 +21,7 @@ Every mode and every guided part at 1440×900 and 390×844, in EN and ZH:
   data (R5.6), no text wider than its box (R7.8), a tooltip for every help cursor (R1.1);
 - the home tile: the slider changes the sentence; no overflow.
 Screenshots: shots/flash-attention/.
+At 1440 × 900 parts 3 and 4 fit the screen (polish round 4).
 Run: python3 tests/flash-attention_flow.py [en|zh] [1440|390]  (filters for a partial run)"""
 import pathlib, re, subprocess, sys
 from playwright.sync_api import sync_playwright
@@ -195,6 +196,23 @@ def before_answer(pg):
     return '\n'.join(out)
 
 
+# polish round 4 (2026-10-16, R7.12, the owner's B4; as tests/data-pipeline_flow.py part 4): at 1440 × 900, on entering parts 3 and 4,
+# the stage needs no scrolling inside itself and could still grow by 30 px in Chinese (its max-height minus the height its content and
+# borders need; in English it only needs no scrolling), and the 12-token example lies inside it and on the screen; stepping the example to
+# its end leaves the stage's height as it was (R7.9)
+FIT = """()=>{const s=document.querySelector('#fa-stage'), r=s.getBoundingClientRect(), t=document.querySelector('#fa-toy').getBoundingClientRect(), tb=document.querySelector('.topbar').getBoundingClientRect().bottom;
+  return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, stH:Math.round(r.height),
+    toy:[Math.round(t.top),Math.round(t.bottom)], inside:t.top>=r.top-1&&t.bottom<=r.bottom+1, shown:t.top>=tb-1&&t.bottom<=innerHeight+1};}"""
+
+
+def fit_check(pg, tag, part, w, h, lang):
+    if w != 1440 or h != 900: return None
+    fit = pg.evaluate(FIT)
+    check(f'{tag}: part {part} fits the stage without scrolling inside' + (', 30 px to spare' if lang == 'zh' else '') + ', the example inside it and on the screen (R7.12, B4)',
+          fit['scroll'] <= 0 and fit['spare'] >= (30 if lang == 'zh' else 0) and fit['inside'] and fit['shown'], fit)
+    return fit
+
+
 def run_guided(b, w, h, lang):
     tag = f'{w} {lang}'
     pg = page(b, w, h, lang)
@@ -219,6 +237,7 @@ def run_guided(b, w, h, lang):
     check(f'{tag}: part 2 saved after a pick', Z(lang, 'Saved', '已记下') in text(pg, '#fa-rail .step.current') and not any(nexts(pg)), nexts(pg))
     nxt(pg)
     # part 3: standard attention, the player
+    fit3 = fit_check(pg, tag, 3, w, h, lang)
     s = state(pg)
     check(f'{tag}: part 3 is the 12-token example, standard path, step 0', s['tstep'] == 0 and vis(pg, '#fa-toy') and not vis(pg, '#fa-real'), s)
     check(f'{tag}: part 3 Next disabled before the last step', all(nexts(pg)), nexts(pg))
@@ -241,19 +260,31 @@ def run_guided(b, w, h, lang):
     check(f'{tag}: part 3 why: 160 µs against 17 µs', '160 µs' in o and '17 µs' in o, o[:500])
     check(f'{tag}: part 3 Next enabled at the last step', not any(nexts(pg)), nexts(pg))
     check(f'{tag}: part 3 counter at 768', '768' in text(pg, '#fa-cnt'), text(pg, '#fa-cnt'))
+    if fit3: check(f'{tag}: part 3 at its last step, the stage as tall as on entering (R7.9)', pg.evaluate(FIT)['stH'] == fit3['stH'], (fit3['stH'], pg.evaluate(FIT)['stH']))
     every(pg, f'{tag} part 3 end', lang, w); shot(pg, f'{w}-{lang}-3-std-end')
     nxt(pg)
     # part 4: FlashAttention, tile by tile
+    fit4 = fit_check(pg, tag, 4, w, h, lang)
     check(f'{tag}: part 4 Next disabled before the last tile', all(nexts(pg)), nexts(pg))
     click(pg, '#fa-rail [data-act="fwd"]'); click(pg, '#fa-rail [data-act="fwd"]'); click(pg, '#fa-rail [data-act="fwd"]')
     check(f'{tag}: part 4 tile 3: the row table shows a rescale', pg.evaluate("()=>document.querySelectorAll('#fa-row tr.fa-up').length") >= 1, text(pg, '#fa-row'))
     check(f'{tag}: part 4: S, P never written', vis(pg, '.fa-never'))
     every(pg, f'{tag} part 4 mid', lang, w); shot(pg, f'{w}-{lang}-4-fa-mid')
+    if w <= 760:
+        # round-4 reader (r4-read-models.md, must-fix 4): on a phone the drawing sits above the card; the card's ▶ first scrolls it
+        # into view (HBM, SRAM and the row table under the bars), then plays
+        pg.evaluate("()=>document.querySelector('#fa-rail [data-act=\"play\"]').scrollIntoView({block:'center'})"); pg.wait_for_timeout(300)
+        away = pg.evaluate("()=>document.getElementById('fa-graph').getBoundingClientRect().bottom<0")
+        pg.evaluate("()=>document.querySelector('#fa-rail [data-act=\"play\"]').click()"); pg.wait_for_timeout(1500)
+        g_ = pg.evaluate("()=>{const r=document.getElementById('fa-graph').getBoundingClientRect(), t=document.getElementById('fa-row').getBoundingClientRect(); return {top:Math.round(r.top), row:Math.round(t.bottom), h:innerHeight}}")
+        check(f'{tag}: part 4 on a phone, the card’s ▶ brings the drawing into view, then plays', away and state(pg)['playing'] and 0 < g_['top'] < 200 and g_['row'] <= g_['h'], (away, g_))
+        pg.evaluate("()=>document.querySelector('#fa-rail [data-act=\"play\"]').click()"); pg.wait_for_timeout(300)
     click(pg, '#fa-rail [data-nav="showme"]')
     o = obs(pg)
     check(f'{tag}: part 4 Show me runs to the end: 384 instead of 768', state(pg)['doneFa'] and '384' in o and '768' in o, o[:300])
     check(f'{tag}: part 4 outputs match (1.7 × 10^-16)', '1.7 × 10' in o and Z(lang, 'Same output', '输出相同') in text(pg, '#fa-status'), (o[:300], text(pg, '#fa-status')))
     check(f'{tag}: part 4 rescale factor 0.19 named', '0.19' in o, o[:600])
+    if fit4: check(f'{tag}: part 4 at its last tile, the stage as tall as on entering (R7.9)', pg.evaluate(FIT)['stH'] == fit4['stH'], (fit4['stH'], pg.evaluate(FIT)['stH']))
     every(pg, f'{tag} part 4 end', lang, w); shot(pg, f'{w}-{lang}-4-fa-end')
     # R3.20 (product owner, 2026-10-04): back to part 3 and on to part 4 again: both runs were watched to the end, so each shows its end
     # at once (no replay) and Next stays open

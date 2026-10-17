@@ -31,6 +31,9 @@ Every mode and every guided part at 1440×900 and 390×844, in EN and ZH:
 - the writing rules on every visible text and tooltip (Chinese spacing and punctuation, two colons, no company names, no English
   “reward model / policy” inside Chinese), and red only for what goes wrong, green only for the goal (R5.6).
 R6.11: the model is “小奖励模型 / the small reward model”; “玩具 / toy” only in the fidelity label “玩具实跑 / Toy run” (the older labs' check).
+Polish round 4 (2026-10-17, the owner's B4, R7.12): at 1440 × 900, on entering parts 3 and 5–8 the stage needs no scrolling inside itself,
+with at least 30 px to spare in Chinese, its top below the top bar and its figures (best-of-n's included) on the screen; in parts 5–7
+the stage keeps its height whichever option is picked (R7.9).
 Screenshots: shots/reward-model/.
 Run: python3 tests/reward-model_flow.py [en|zh] [1440|390]  (filters for a partial run)"""
 import pathlib, re, subprocess, sys, time
@@ -105,6 +108,34 @@ def playing_after(pg, sel):
     """click, then report whether a run is playing from (near) step 0 two frames later"""
     return pg.evaluate("""async (sel)=>{document.querySelector(sel).click(); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
       const s=window.__rm.state(); return {playing:s.playing, t:s.tShow};}""", sel)
+
+
+# polish round 4 (2026-10-17, R7.12, the owner's B4; as tests/data-pipeline_flow.py part 4 and tests/admission_flow.py): on entering
+# parts 3 and 5–8 at 1440 × 900 the stage needs no scrolling inside itself and could still grow by 30 px in Chinese (its max-height minus
+# the height its content and borders need; in English it only needs no scrolling); its top is not under the top bar, and its figures (the
+# example pair, the training curves, best-of-n's charts) lie inside it and on the screen
+FIT = """([st,sels])=>{const s=document.querySelector(st), r=s.getBoundingClientRect(), tb=document.querySelector('.topbar'), dk=document.querySelector('#dock');
+ const top=Math.max(tb?tb.getBoundingClientRect().bottom:0, dk&&!dk.hidden&&getComputedStyle(dk).display!=='none'?dk.getBoundingClientRect().bottom:0);
+ const figs=[]; for(const x of sels) for(const e of document.querySelectorAll(x)){if(!e.getClientRects().length) continue; const q=e.getBoundingClientRect(); figs.push([x,Math.round(q.top),Math.round(q.bottom)]);}
+ return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top), bar:Math.round(top), figs,
+   inside:figs.length>0&&figs.every(q=>q[1]>=r.top-1&&q[2]<=r.bottom+1), shown:r.top>=top-1&&figs.length>0&&figs.every(q=>q[1]>=top-1&&q[2]<=innerHeight+1)};}"""
+
+
+def fits(pg, tag, part, lang, sels):
+    pg.wait_for_timeout(300); last, same = None, 0
+    for _ in range(30):   # the page has stopped scrolling for 0.6 s (the kit brings the card up after Next; the lab then puts the stage back)
+        y = pg.evaluate('()=>scrollY'); same = same + 1 if y == last else 0; last = y
+        if same >= 3: break
+        pg.wait_for_timeout(200)
+    f = pg.evaluate(FIT, ['#rm-stage', sels])
+    check(f'{tag} part {part}: the stage fits without scrolling inside' + (', 30 px to spare' if lang == 'zh' else '') + ', its top below the top bar, its figures inside it and on the screen (R7.12, B4)',
+          f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['inside'] and f['shown'], f)
+    return f
+
+
+FIGS = ['#rm-pair', '#rm-tr-charts svg', '#rm-bon svg']
+# R7.9 (polish round 4): the height the stage's content and borders need; in parts 5, 6 and 7 at 1440 it is the same for every option
+STH = "()=>{const s=document.querySelector('#rm-stage'); return s.scrollHeight+s.offsetHeight-s.clientHeight;}"
 
 
 def shot(pg, name, full=False):
@@ -307,6 +338,7 @@ with sync_playwright() as pw:
             else:
                 to_end(pg)
             pg.wait_for_timeout(300); settle(pg)
+            if w == 1440: fits(pg, tag, 3, lang, FIGS)   # after the timed run (the stage keeps its height while it plays, R7.9)
             ob = text(pg, '#rm-rail [data-obs]')
             check(f'{tag} part 3: the result: loss 0.69 → 0.52, accuracy 75%, ceiling 81%, ±4 points; Next enabled', '0.69' in ob and '0.52' in ob and '75%' in ob and '81%' in ob and '±4' in ob and not any(nexts(pg)), ob[:300])
             check(f'{tag} part 3: the replay control is named 重放 / Replay (R3.20)', Z(lang, 'Replay', '重放') in text(pg, '#rm-player'))
@@ -354,21 +386,28 @@ with sync_playwright() as pw:
             shot(pg, f'{tag}_p4', full=phone); rules(pg, f'{tag} part 4', lang)
             # ---- part 5
             click(pg, '#rm-rail [data-nav="next"]')
+            if w == 1440: fits(pg, tag, 5, lang, FIGS)
+            h5 = [pg.evaluate(STH)]
             check(f'{tag} part 5: Next waits for the other data', all(nexts(pg)), why(pg))
             p5 = playing_after(pg, '#rm-rail [data-lever="none"]')
             if phone:   # G6: the stage is above the card on a phone, so the new run shows its end state at once
                 check(f'{tag} part 5: other data, the new run shows its end state at once (G6, phone)', not p5['playing'] and p5['t'] == 200 and vis(pg, '#rm-player [data-act="play"]'), p5)
             else:
                 check(f'{tag} part 5: other data, a new run plays (the picture differs)', p5['playing'] and p5['t'] < 20, p5)
-            to_end(pg); settle(pg)
+            to_end(pg); settle(pg); h5.append(pg.evaluate(STH))
             ob = text(pg, '#rm-rail [data-obs]')
             check(f'{tag} part 5: the length weight falls to almost nothing; AlpacaEval’s 64%', '0.51' in ob and '64%' in ob and not any(nexts(pg)), ob[:300])
             p5b = playing_after(pg, '#rm-rail [data-lever="tied"]')
             check(f'{tag} part 5: back to the data already watched: no replay (R3.20)', not p5b['playing'] and p5b['t'] == 200, p5b)
+            if w == 1440:
+                settle(pg); h5.append(pg.evaluate(STH))
+                check(f'{tag} part 5: the stage keeps its height with either data (R7.9)', len(set(h5)) == 1, h5)
             owner_b9(pg, f'{tag} part 5')
             shot(pg, f'{tag}_p5', full=phone); rules(pg, f'{tag} part 5', lang)
             # ---- part 6
             click(pg, '#rm-rail [data-nav="next"]')
+            if w == 1440: fits(pg, tag, 6, lang, FIGS)
+            h6 = [pg.evaluate(STH)]
             check(f'{tag} part 6: Next waits for n = 64, nothing red yet', all(nexts(pg)) and not pg.evaluate("()=>document.querySelector('#rm-status').classList.contains('bad')"))
             p6 = pg.evaluate("()=>({pts:[...document.querySelectorAll('#rm-bon path.rm-line')].map(e=>(e.getAttribute('d').match(/[ML]/g)||[]).length), red:document.querySelectorAll('#rm-bon .rm-bad').length, best:!!document.querySelector('#rm-metrics [data-k=\"bestn\"]')})")
             check(f'{tag} part 6: at n = 1 the curves are not drawn ahead, no red, no “best n” card (R3.8, review S11)', all(x <= 1 for x in p6['pts']) and p6['red'] == 0 and not p6['best'], p6)
@@ -389,10 +428,15 @@ with sync_playwright() as pw:
             check(f'{tag} part 6: n = 64: the score still rises, the quality fell from 6.95 to 6.68; Next enabled', '6.95' in ob and '6.68' in ob and 'reward hacking' in ob and not any(nexts(pg)), ob[:300])
             check(f'{tag} part 6: the turn is red on the chart, the dot and the badge (R5.11)', red['seg'] == 1 and red['dot'] == 1 and red['badge'], red)
             check(f'{tag} part 6: at n = 64 the “best n” card shows 16', vis(pg, '#rm-metrics [data-k="bestn"]') and '16' in text(pg, '#rm-metrics [data-k="bestn"]'), text(pg, '#rm-metrics'))
+            if w == 1440:
+                h6.append(pg.evaluate(STH))
+                check(f'{tag} part 6: the stage keeps its height from n = 1 to n = 64 (R7.9)', len(set(h6)) == 1, h6)
             owner_b9(pg, f'{tag} part 6')
             shot(pg, f'{tag}_p6', full=phone); rules(pg, f'{tag} part 6', lang)
             # ---- part 7
             click(pg, '#rm-rail [data-nav="next"]')
+            if w == 1440: fits(pg, tag, 7, lang, FIGS)
+            h7 = [pg.evaluate(STH)]
             c7 = text(pg, '#rm-rail .step.current')
             check(f'{tag} part 7: a lead-in names what to pick and what to watch (G1); the first option no longer cites part 3 (G2)',
                   Z(lang, 'Pick an amount and see how the true quality of the pick at n = 256 changes.', '选一个数量，看看 n = 256 时挑出的回答，真实质量怎么变。') in c7
@@ -400,18 +444,20 @@ with sync_playwright() as pw:
             p7 = playing_after(pg, '#rm-rail [data-lever="50"]')
             check(f'{tag} part 7: 50 balanced pairs, a new run {"shows its end state at once (G6, phone)" if phone else "plays"} with its replay control',
                   (not p7['playing'] and p7['t'] == 200 if phone else p7['playing']) and vis(pg, '#rm-player [data-act="play"]'), p7)
-            to_end(pg); settle(pg)
+            to_end(pg); settle(pg); h7.append(pg.evaluate(STH))
             ob = text(pg, '#rm-rail [data-obs]')
             check(f'{tag} part 7: the length weight falls to 0.18; 8.72 against 6.40 at n = 256; no fix that needs PPO (item 1)', '0.18' in ob and '8.72' in ob and '6.40' in ob and not re.search(NO_PPO_RE, ob) and not vis(pg, '#rm-bon path.rm-bad'), ob[:400])
             p7b = playing_after(pg, '#rm-rail [data-lever="0"]')
             check(f'{tag} part 7: back to the initial setup already watched: no replay', not p7b['playing'], p7b)
-            click(pg, '#rm-rail [data-lever="200"]'); to_end(pg); settle(pg)
+            click(pg, '#rm-rail [data-lever="200"]'); to_end(pg); settle(pg); h7.append(pg.evaluate(STH))
             ob = text(pg, '#rm-rail [data-obs]')
             check(f'{tag} part 7: 200 pairs: the length weight below 0, accuracy 75% → 69%', '75%' in ob and '69%' in ob and '−0.21' in ob, ob[:300])
+            if w == 1440: check(f'{tag} part 7: the stage keeps its height with 0, 50 and 200 balanced pairs (R7.9)', len(set(h7)) == 1, h7)
             owner_b9(pg, f'{tag} part 7')
             shot(pg, f'{tag}_p7', full=phone); rules(pg, f'{tag} part 7', lang)
             # ---- part 8
             click(pg, '#rm-rail [data-nav="next"]')
+            if w == 1440: fits(pg, tag, 8, lang, FIGS)
             cur = text(pg, '#rm-rail .step.current')
             check(f'{tag} part 8: three misconceptions, See the scenarios, the next lab', cur.count('✗') == 3 and vis(pg, '#rm-rail [data-mode-go="sandbox"]') and pg.evaluate("()=>!!document.querySelector('#rm-rail .next-lab')"), cur[:200])
             rec = Z(lang, ['so a score on its own says nothing', 'add pairs that break them', 'Check the picks themselves'], ['一个分数单独拿出来说明不了好坏', '补上能打破它的偏好对', '直接检查挑出来的回答'])

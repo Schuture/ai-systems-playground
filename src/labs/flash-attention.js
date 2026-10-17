@@ -183,11 +183,11 @@ const DEFK=(text,key)=>`<span class="def" tabindex="0" data-tip="${key}">${text}
 A.addStrings({en:{
   fa_score:`<div>A score says how well one token’s query matches another token’s key:</div>${FXM('S_{ij} = \\frac{q_i \\cdot k_j}{\\sqrt{d}}')}<div>${mx('q_i')} is token i’s query, ${mx('k_j')} is token j’s key, and d is the head size, 128 here. S holds one score for every pair of tokens: ${mx('N \\times N')} in all.</div>`,
   fa_sm:`<div>Softmax turns each row of S into attention weights that add up to 1:</div>${FXM('P_{ij} = \\frac{e^{S_{ij}}}{\\sum_k e^{S_{ik}}}')}<div>The output then mixes the values with these weights:</div>${FXM('O = P V')}`,
-  fa_on:`<div>Online softmax computes a softmax while it reads the scores one tile at a time. Each row keeps its largest score so far, m, and a running sum, ℓ. When a tile brings a larger score, what was added so far is rescaled once:</div>${FXM('m_{\\text{new}} = \\max(m, \\max_j S_{ij})')}${FXM('ℓ \\leftarrow ℓ \\cdot e^{m - m_{\\text{new}}} + \\sum_j e^{S_{ij} - m_{\\text{new}}}')}<div>The result equals the ordinary softmax exactly.</div>`
+  fa_on:`<div>Online softmax computes a softmax while it reads the scores one tile at a time. Each row keeps its largest score so far, m, and a running sum, ℓ: the softmax’s denominator so far, the sum of ${mx('e^{S - m}')}. When a tile brings a larger score, what was added so far is rescaled once:</div>${FXM('m_{\\text{new}} = \\max(m, \\max_j S_{ij})')}${FXM('ℓ \\leftarrow ℓ \\cdot e^{m - m_{\\text{new}}} + \\sum_j e^{S_{ij} - m_{\\text{new}}}')}<div>The result equals the ordinary softmax exactly.</div>`
 },zh:{
   fa_score:`<div>得分衡量一个 token 的 query 和另一个 token 的 key 有多匹配：</div>${FXM('S_{ij} = \\frac{q_i \\cdot k_j}{\\sqrt{d}}')}<div>${mx('q_i')} 是第 i 个 token 的 query，${mx('k_j')} 是第 j 个 token 的 key，d 是 head 的维数，这里是 128。S 为每一对 token 存一个得分，一共 ${mx('N \\times N')} 个。</div>`,
   fa_sm:`<div>softmax 把 S 的每一行变成加起来等于 1 的注意力权重：</div>${FXM('P_{ij} = \\frac{e^{S_{ij}}}{\\sum_k e^{S_{ik}}}')}<div>输出再用这些权重给 value 加权求和：</div>${FXM('O = P V')}`,
-  fa_on:`<div>online softmax 一个 tile 一个 tile 地读得分，边读边算 softmax。每一行记两个值：累计最大值 m，也就是目前最大的得分；累计和 ℓ，也就是目前为止的总和。某个 tile 带来更大的得分时，把已经加起来的部分整体缩放一次：</div>${FXM('m_{\\text{新}} = \\max(m, \\max_j S_{ij})')}${FXM('ℓ \\leftarrow ℓ \\cdot e^{m - m_{\\text{新}}} + \\sum_j e^{S_{ij} - m_{\\text{新}}}')}<div>结果和普通的 softmax 完全相同。</div>`
+  fa_on:`<div>online softmax 一个 tile 一个 tile 地读得分，边读边算 softmax。每一行记两个值：累计最大值 m，也就是目前最大的得分；累计和 ℓ，也就是 softmax 的分母（各 ${mx('e^{S - m}')} 之和）到目前为止的值。某个 tile 带来更大的得分时，把已经加起来的部分整体缩放一次：</div>${FXM('m_{\\text{新}} = \\max(m, \\max_j S_{ij})')}${FXM('ℓ \\leftarrow ℓ \\cdot e^{m - m_{\\text{新}}} + \\sum_j e^{S_{ij} - m_{\\text{新}}}')}<div>结果和普通的 softmax 完全相同。</div>`
 }});
 const STEPS=[
  {id:'mission',title:{en:'Your mission',zh:'你的任务'},view:'real',
@@ -195,14 +195,14 @@ const STEPS=[
   enter:()=>({...BASE}),
   body:()=>{const t=traffic(8192,128,128), lay=fB(t.s*32,'G').replace('.0 ',' ');
    const f3=FXL(tx('\\text{scores}\\ S = \\frac{Q K^{T}}{\\sqrt{d}}','\\text{得分}\\ S = \\frac{Q K^{T}}{\\sqrt{d}}'))+FXL(tx('\\text{attention weights}\\ P = \\text{softmax}(S)','\\text{注意力权重}\\ P = \\text{softmax}(S)'))+FXL(tx('\\text{output}\\ O = P V','\\text{输出}\\ O = P V'));
-   return tx(`<p>${M8} reads an 8K-token document on an H100 before it answers (the prefill). In every layer, each of its 32 ${DEF('heads',kt('head'))} computes attention in three steps:</p>${f3}`+
-     `<p>S holds a ${DEFK('score','fa_score')} for every pair of tokens, so at 8K tokens it has 8,192 × 8,192 of them. ${DEFK('Softmax','fa_sm')} turns each row of S into attention weights: the matrix P, of the same size.</p>`+
-     `<p>A GPU has two kinds of memory. ${DEF('HBM',TIP.hbm())} is large and slow: 80 GB. ${DEF('SRAM',TIP.sram())}, on the chip, is small and fast: a few hundred KB. All arithmetic happens on the chip. One head’s S takes ${fB(t.s,'M')} in BF16, far more than SRAM holds, so standard attention writes S out to HBM and reads it back for the softmax; P makes the same round trip.</p>`+
-     `<p>FlashAttention keeps the work in the small, fast SRAM and never writes S or P to HBM, yet its output is exactly the same. How, and what does it save?</p>`,
-     `<p>${M8} 在 H100 上回答之前，要先读完一份 8K token 的文档（prefill）。每一层里，它的 32 个 ${DEF('head',kt('head'))} 各自分三步算 attention：</p>${f3}`+
-     `<p>S 为每一对 token 存一个${DEFK('得分','fa_score')}，所以 8K token 时有 8,192 × 8,192 个。${DEFK('softmax','fa_sm')} 把 S 的每一行变成注意力权重，得到同样大小的矩阵 P。</p>`+
-     `<p>GPU 有两种存储：${DEF('HBM',TIP.hbm())}（显存）又大又慢，有 80 GB；芯片上的 ${DEF('SRAM',TIP.sram())} 又小又快，只有几百 KB。计算只在芯片上做。一个 head 的 S 在 BF16 下就有 ${fB(t.s,'M')}，SRAM 放不下，所以标准 attention 把 S 写到 HBM、做 softmax 时再读回来，P 也一样。</p>`+
-     `<p>FlashAttention 把计算留在又小又快的 SRAM 里，从不把 S 和 P 写到 HBM，输出却完全一样。它是怎么做到的？省下了什么？</p>`);}},
+   return tx(`<p>${M8} reads an 8K-token document on an H100 (the prefill), and each ${DEF('head',kt('head'))} computes attention in three steps:</p>${f3}`+
+     `<p>S holds a ${DEFK('score','fa_score')} for every pair of tokens, so at 8K tokens one head’s S takes ${fB(t.s,'M')}. P, from the ${DEFK('softmax','fa_sm')}, is as large.</p>`+
+     `<p>${DEF('HBM',TIP.hbm())}, the GPU’s memory, is large and slow; ${DEF('SRAM',TIP.sram())}, on the chip, is small and fast, a few hundred KB per compute unit, and all arithmetic happens on the chip. S and P do not fit in SRAM, so standard attention writes them out to HBM and reads them back (the hatched part of the bar).</p>`+
+     `<p>FlashAttention never writes S or P to HBM, yet its output is exactly the same. How, and what does it save?</p>`,
+     `<p>${M8} 在 H100 上读一份 8K token 的文档（prefill），每个 ${DEF('head',kt('head'))} 分三步算 attention：</p>${f3}`+
+     `<p>S 为每对 token 存一个${DEFK('得分','fa_score')}，8K token 时一个 head 的 S 就有 ${fB(t.s,'M')}；${DEFK('softmax','fa_sm')} 得出的 P 一样大。</p>`+
+     `<p>${DEF('HBM',TIP.hbm())}（显存）又大又慢；芯片上的 ${DEF('SRAM',TIP.sram())} 又小又快，每个计算单元几百 KB，计算只在芯片上做。SRAM 放不下 S 和 P，标准 attention 把它们写到 HBM 再读回来（图中斜纹）。</p>`+
+     `<p>FlashAttention 从不把 S 和 P 写到 HBM，输出却完全一样。它怎么做到，省下了什么？</p>`);}},
  {id:'predict',title:{en:'Predict first',zh:'先预测'},view:'real',gate:()=>!!pred,skip:true,
   lead:()=>tx('Guess: what takes most of standard attention’s time at 8K tokens?','先猜：8K token 时，标准 attention 的时间大多花在哪？'),
   enter:()=>({...BASE}),
@@ -220,24 +220,24 @@ const STEPS=[
   enter:()=>({...BASE,view:'toy',path:'fa'}),expect:()=>doneFa,showMe:()=>{toEnd();},label:{en:'Result',zh:'结果'},
   body:()=>{const up=FXL('m_{\\text{new}} = \\max(m, \\max_j S_{ij})')+FXL('ℓ \\leftarrow ℓ \\cdot e^{m - m_{\\text{new}}} + \\sum_j e^{S_{ij} - m_{\\text{new}}}')+FXL('o \\leftarrow o \\cdot e^{m - m_{\\text{new}}} + \\sum_j e^{S_{ij} - m_{\\text{new}}} v_j');
    const upZ=FXL('m_{\\text{新}} = \\max(m, \\max_j S_{ij})')+FXL('ℓ \\leftarrow ℓ \\cdot e^{m - m_{\\text{新}}} + \\sum_j e^{S_{ij} - m_{\\text{新}}}')+FXL('o \\leftarrow o \\cdot e^{m - m_{\\text{新}}} + \\sum_j e^{S_{ij} - m_{\\text{新}}} v_j');
-   return tx(`<p>FlashAttention cuts Q, K and V into ${DEF('tiles',TIP.tile())} of 4 rows. One Q tile stays in ${DEF('SRAM',TIP.sram())} while the K and V tiles stream past. Each pair gives a 4 × 4 tile of scores, which is used at once and dropped, so S never goes to HBM.</p>`+
-     `<p>One problem remains: softmax needs a whole row of scores, and each tile sees only part of a row. FlashAttention solves it with an ${DEFK('online softmax','fa_on')}. Each row keeps two values as it goes: the running max m, its largest score so far, and the running sum ℓ. When a tile brings a larger score, the sum and the output built so far are rescaled once. The result is exact, not an approximation. To see it block by block, go to part 6 of the lab ${labLink('softmax-numerics')}.</p>`+
+   return tx(`<p>FlashAttention cuts Q, K and V into ${DEF('tiles',TIP.tile())} of 4 rows: one Q tile stays in ${DEF('SRAM',TIP.sram())} while the K and V tiles stream past, and each 4 × 4 tile of scores is used at once and dropped, so S never goes to HBM.</p>`+
+     `<p>The hard part is softmax: it needs a whole row of scores, and each tile sees only part of it. FlashAttention solves it with an ${DEFK('online softmax','fa_on')}: each row keeps a running max m and a running sum ℓ, and when the max rises, the sum and the output built so far are rescaled once, so the result is exact. Part 6 of the lab ${labLink('softmax-numerics')} works it through block by block.</p>`+
      `<p>After each K/V tile, row i updates like this:</p>${up}<p>At the end, the row’s output is ${mx('O = \\frac{o}{ℓ}')}.</p>`,
-     `<p>FlashAttention 把 Q、K、V 切成每块 4 行的 ${DEF('tile',TIP.tile())}。一个 Q tile 留在 ${DEF('SRAM',TIP.sram())} 里，K 和 V 的 tile 依次进来。每一对 tile 算出一块 4 × 4 的得分，马上用掉，随即丢弃，所以 S 从不写到 HBM。</p>`+
-     `<p>还剩一个问题：softmax 要用到一整行得分，而每个 tile 只看得到一行的一部分。FlashAttention 用 ${DEFK('online softmax','fa_on')} 解决它。每一行边算边记两个值：累计最大值 m，也就是目前最大的得分；累计和 ℓ，也就是目前为止的总和。某个 tile 带来更大的得分时，就把累计和与已经算出的输出整体缩放一次。结果是精确的，不是近似。想看它一块一块怎么算，去 ${labLink('softmax-numerics')}这个 Lab 的第 6 部分。</p>`+
-     `<p>每处理完一个 K/V tile，第 i 行这样更新：</p>${upZ}<p>最后，这一行的输出是 ${mx('O = \\frac{o}{ℓ}')}。</p>`)+playerHTML('fa-ic-play');},
+     `<p>FlashAttention 把 Q、K、V 切成每块 4 行的 ${DEF('tile',TIP.tile())}：一个 Q tile 留在 ${DEF('SRAM',TIP.sram())} 里，K 和 V 的 tile 依次进来，4 × 4 的得分用完就丢，S 从不写到 HBM。</p>`+
+     `<p>难处在 softmax：它要用一整行得分，每个 tile 却只有一部分。FlashAttention 用 ${DEFK('online softmax','fa_on')} 解决：每一行记下累计最大值 m 和累计和 ℓ，最大值变大时，就把累计和与已经算出的输出整体缩放一次，结果是精确的。逐块怎么算，见 ${labLink('softmax-numerics')}这个 Lab 第 6 部分。</p>`+
+     `<p>每算完一个 K/V tile，第 i 行这样更新：</p>${upZ}<p>最后这一行的输出是 ${mx('O = \\frac{o}{ℓ}')}。</p>`)+playerHTML('fa-ic-play');},
   obs:()=>obsFa()},
  {id:'len',title:{en:'Longer context',zh:'上下文变长'},view:'real',
   lead:()=>tx('Drag the context from 1K up to 128K tokens: what does FlashAttention save, and why half?','把上下文从 1K 拖到 128K：FlashAttention 省下了什么？为什么正好省一半？'),
   enter:()=>({...BASE}),expect:()=>seenN.has(NS.length-1),showMe:{ni:NS.length-1},label:{en:'Result',zh:'结果'},
-  body:()=>tx(`<p>Back to ${M8} on an H100, with Q tiles of 128 rows. Take one Q tile and one token of the context: the tile has 128 scores with that token. Here is what each path moves through HBM for them:</p>`+
-     `<ul class="fa-pair"><li><b>Standard attention</b> writes the 128 scores out as S, reads them back, writes them out as P and reads them back: 4 × 128 = 512 numbers.</li>`+
-     `<li><b>FlashAttention</b> keeps S and P in SRAM. Instead, the Q tile reads that token’s key and value from HBM again: 128 + 128 = 256 numbers, since the head size is 128.</li></ul>`+
-     `<p>So FlashAttention moves about half: it trades the round trips of S and P for one re-read of K and V per Q tile. Here ${DEF('every re-read is counted as HBM traffic',TIP.count())}, as in the FlashAttention paper. Drag the context length:</p>`,
-     `<p>回到 H100 上的 ${M8}，Q tile 每块 128 行。拿一个 Q tile 和上下文里的某一个 token 来看：这个 tile 和这个 token 之间有 128 个得分。为了这 128 个得分，两条路径经 HBM 搬的量是：</p>`+
-     `<ul class="fa-pair"><li><b>标准 attention</b> 把这 128 个得分作为 S 写出去、读回来，再作为 P 写出去、读回来：4 × 128 = 512 个数值。</li>`+
-     `<li><b>FlashAttention</b> 把 S 和 P 留在 SRAM 里。代价是这个 Q tile 要从 HBM 再读一次这个 token 的 key 和 value。head 维数是 128，所以是 128 + 128 = 256 个数值。</li></ul>`+
-     `<p>所以 FlashAttention 大约只搬一半：它用“每个 Q tile 重读一遍 K 和 V”，换掉了“S 和 P 写出去再读回来”。这里${DEF('假设每次重读都从 HBM 读',TIP.count())}，和 FlashAttention 论文的算法一样。拖动上下文长度：</p>`)+nCtl('fa-ic-N',true),
+  body:()=>tx(`<p>FlashAttention moves about half as much as standard attention: it trades the round trips of S and P for one re-read of K and V per Q tile. Count the 128 scores between one Q tile (128 rows) and one token of the context:</p>`+
+     `<ul class="fa-pair"><li><b>Standard attention</b> writes them out as S, reads them back, writes them out as P and reads them back: 4 × 128 = 512 numbers.</li>`+
+     `<li><b>FlashAttention</b> keeps S and P in SRAM; instead, the Q tile ${DEF('reads that token’s key and value from HBM again',TIP.count())}, 128 numbers each: 128 + 128 = 256 numbers.</li></ul>`+
+     `<p>Exactly half, because the head size happens to equal the Q tile’s rows: both are 128. Drag the context length:</p>`,
+     `<p>FlashAttention 搬的量大约只有标准 attention 的一半：它用“每个 Q tile 重读一遍 K 和 V”，换掉了“S 和 P 写出去再读回来”。拿一个 Q tile（128 行）和上下文里一个 token 之间的 128 个得分来数：</p>`+
+     `<ul class="fa-pair"><li><b>标准 attention</b> 把它们作为 S 写出去、读回来，再作为 P 写出去、读回来：4 × 128 = 512 个数值。</li>`+
+     `<li><b>FlashAttention</b> 把 S 和 P 留在 SRAM 里，代价是这个 Q tile 要${DEF('从 HBM 重读这个 token 的 key 和 value',TIP.count())}，各 128 维：128 + 128 = 256 个数值。</li></ul>`+
+     `<p>正好一半，是因为 head 的维数恰好等于 Q tile 的行数，都是 128。拖动上下文长度：</p>`)+nCtl('fa-ic-N',true),
   obs:()=>obsLen()},
  {id:'tile',title:{en:'Choose a tile size',zh:'选 tile 大小'},view:'real',gauge:true,
   lead:()=>tx('Bigger tiles mean fewer passes over K and V, but they must fit on chip.','tile 越大，扫 K 和 V 的遍数越少，但它们必须放得进芯片。'),
@@ -273,7 +273,7 @@ function obsStd(){
 }
 function rowRise(){const st=TIL.steps.filter(s=>s.i===0), k=st.findIndex((s,j)=>j>0&&s.f[0]<1); return {j:k, from:st[k].mOld[0], to:st[k].m[0], f:st[k].f[0]};}
 function obsFa(){
-  if(!doneFa&&tstep===0) return tx('<p><b>Tile pair 0 of 9: nothing has crossed between HBM and the chip yet.</b> Press ▸ to load the first tile pair.</p>','<p><b>第 0 对 tile（共 9 对）：HBM 和芯片之间还什么都没搬。</b>按 ▸ 读入第一对 tile。</p>');
+  if(!doneFa&&tstep===0) return tx('<p><b>Tile pair 0 of 9 (3 Q tiles, each paired with 3 K/V tiles): nothing has moved yet.</b></p>','<p><b>第 0 对 tile（3 个 Q tile 各配 3 个 K/V tile，共 9 对）：还什么都没搬。</b></p>');
   if(!doneFa) return tx(`<p><b>Tile pair ${tstep} of ${TIL.steps.length}: ${fint(faSoFar(tstep))} numbers have crossed so far, and no score has left the chip.</b> Go on to the last tile pair.</p>`,
                         `<p><b>第 ${tstep} 对 tile（共 ${TIL.steps.length} 对）：到目前为止搬了 ${fint(faSoFar(tstep))} 个数值，没有一个得分离开芯片。</b>继续走到最后一对。</p>`);
   const r=rowRise();
@@ -294,8 +294,8 @@ function obsLen(){
     res=tx(`<p><b>At ${fTok(N)} tokens, ${q.en} of the 8K context, one head’s standard attention moves ${fB(t.std,u)}; at 8K it moved about ${fint(Math.round(b8.std/t.std))} times as much. FlashAttention moves ${fB(t.fa,u)}, still about half of standard attention’s.</b></p>`,
            `<p><b>上下文缩短到 ${fTok(N)}（8K 的${q.zh}），一个 head 的标准 attention 只搬 ${fB(t.std,u)}，8K 时是它的约 ${fint(Math.round(b8.std/t.std))} 倍；FlashAttention 搬 ${fB(t.fa,u)}，仍然约是标准 attention 的一半。</b></p>`);}
   if(!seenN.has(NS.length-1)) return res+tx('<p class="small">Drag it up to 128K.</p>','<p class="small">把它拖到 128K。</p>');
-  return res+tx(`<p>Why: the number of scores grows with the square of the context length, so each doubling of the context gives 4 times as many. Each score costs a fixed number of bytes: 8 in standard attention, and about 4 in FlashAttention once its re-reads are spread over the scores. So both grow together, and FlashAttention stays at about half.</p>`,
-     `<p>原因是，得分的数量随上下文长度的平方增长，上下文每翻一倍，得分就变成 4 倍。每个得分要搬的字节数却是固定的：标准 attention 是 8 字节，FlashAttention 把重读摊到每个得分上，约 4 字节。所以两者一起涨，FlashAttention 始终约是一半。</p>`);
+  return res+tx(`<p>Why: the number of scores grows with the square of the context length, while each score costs a fixed amount: 4 numbers (8 bytes) in standard attention, and about 2 (4 bytes) in FlashAttention once its re-reads are spread over the scores. So FlashAttention stays at about half.</p>`,
+     `<p>原因是，得分的数量随上下文长度的平方增长，每个得分要搬的量却是固定的：标准 attention 是 4 个数值（8 字节），FlashAttention 把重读摊到每个得分上，约 2 个（4 字节）。所以 FlashAttention 始终约是一半。</p>`);
 }
 function obsTile(){
   const t=traffic(8192,128,lv), m=sram(lv,lv,128), std=traffic(8192,128,128).std, t128=traffic(8192,128,128).fa;
@@ -984,10 +984,10 @@ function markDone(){const n=stepsN(); if(tstep>=n){if(pathNow()==='std') doneStd
 function setStep(k){tstep=Math.max(0,Math.min(stepsN(),k)); markDone(); render();}
 function toEnd(){stopPlay(); setStep(stepsN()); wantObs=true; revealSoon(); wantObs=false;}
 function stopPlay(){playing=false; if(raf) cancelAnimationFrame(raf); raf=0;}
-function startPlay(){
+function startPlay(wait){
   if(A.reduceMotion()){toEnd(); return;}
   if(tstep>=stepsN()) tstep=0;
-  playing=true; lastT=0; acc=Math.max(0,stepMs()-300);   // the first step comes 0.3 s after Play
+  playing=true; lastT=0; acc=Math.max(0,stepMs()-300-(wait||0));   // the first step comes 0.3 s after Play (after the scroll, below)
   const tick=ts=>{if(!playing||!app) return; if(!lastT) lastT=ts; acc+=ts-lastT; lastT=ts;
     if(acc>=stepMs()){acc=0; byLearner(()=>setStep(tstep+1)); if(tstep>=stepsN()){stopPlay(); render(); if(mode==='guided'&&!playPhone){wantObs=true; revealSoon(); wantObs=false;} return;}}
     raf=requestAnimationFrame(tick);};
@@ -1133,11 +1133,22 @@ const bySettings=(el,f)=>el&&el.closest('#fa-controls')?holdPlace(el,()=>byLearn
 /* phones: the stage's own player does not scroll the page to the card at the end; the stage offers a link instead (R1.11) */
 const fromStagePhone=b=>!!(b&&b.closest('#fa-stage'))&&innerWidth<=760;
 let playPhone=false;
+/* phones: the drawing sits above the card, so the card's ▶ first scrolls the drawing (HBM, SRAM and the row table) under the bars,
+   then plays; the result is revealed at the end as before (round-4 reader, B1 and B4: the run played out of sight) */
+function stageToView(btn){
+  if(innerWidth>760||!btn||!btn.closest('#fa-rail')||A.reduceMotion()) return false;
+  const g=$('#fa-graph',app); if(!g) return false;
+  const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
+  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:50)+8, r=g.getBoundingClientRect();
+  if(Math.abs(r.top-top)<8||(r.top>=top&&r.bottom<=innerHeight)) return false;
+  window.scrollBy({top:r.top-top,behavior:'smooth'});
+  return true;
+}
 function act(a,btn){
   if(a==='fwd'){stopPlay(); A.tip.quiet(); byLearner(()=>setStep(tstep+1)); if(tstep>=stepsN()&&mode==='guided'&&!fromStagePhone(btn)){wantObs=true; revealSoon(); wantObs=false;} return;}
   if(a==='toresult'){wantObs=true; revealObs(); wantObs=false; return;}
   if(a==='back'){stopPlay(); A.tip.quiet(); byLearner(()=>setStep(tstep-1)); return;}
-  if(a==='play'){if(playing){stopPlay(); syncPlayer();} else {playPhone=fromStagePhone(btn); startPlay();} return;}
+  if(a==='play'){if(playing){stopPlay(); syncPlayer();} else {playPhone=fromStagePhone(btn); startPlay(stageToView(btn)?600:0);} return;}
   if(a==='reset'){bySettings(btn,()=>{S={...BASE,view:S.view,path:S.path}; render();}); return;}
   if(a==='submit'){chSubmitted=true; if(chEval(S.Br,S.Bc).ok) chReveal=true; renderRail(); revealSoon(); return;}
   if(a==='reveal'){chReveal=true; render(); return;}

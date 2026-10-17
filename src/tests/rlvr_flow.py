@@ -265,8 +265,36 @@ def r320(pg, sel, tag, what, expect):
     return p
 
 
+# B4 (polish r4, reviews/r4-fit-post-b.md): entering parts 4–8 at 1440 × 900 as the polish probe stage.py does (Next when it is
+# enabled, else the part's heading). These parts cannot fit a 814 px stage without hiding something (the run, the group of 8 and, in
+# parts 7–8, pass@k, all full width), so the check is that the block the card talks about (the run in parts 4–6, pass@k in parts 7–8)
+# comes first and is whole inside the stage's visible box, and that the stage scrolls inside itself no more than the layout of
+# 2026-10-16 needs (Chinese 317–325 px and 529 px, English 395–403 px and 607 px; before it, 469–507 px and 731 px in Chinese).
+FIT = """(sel)=>{const s=document.getElementById('rlvr-stage'), e=document.querySelector(sel), r=s.getBoundingClientRect(), q=e?e.getBoundingClientRect():null;
+  const g=[...document.querySelectorAll('#rlvr-graph > section')].filter(x=>x.getClientRects().length).sort((a,b)=>a.getBoundingClientRect().top-b.getBoundingClientRect().top);
+  return {scroll:s.scrollHeight-s.clientHeight, first:g.length?g[0].id:'', whole:!!q&&q.top>=r.top-1&&q.bottom<=Math.min(r.bottom,innerHeight)+1, bottom:q?Math.round(q.bottom):-1, visible:Math.round(Math.min(r.bottom,innerHeight))}}"""
+FIT_CAP = {'zh': {4: 340, 5: 340, 6: 345, 7: 550, 8: 550}, 'en': {4: 415, 5: 415, 6: 425, 7: 630, 8: 630}}
+
+
+def fit_entry(b, lang, parts=(4, 5, 6, 7, 8)):
+    pg = page(b, 1440, 900, lang)
+    for k in range(2, max(parts) + 1):
+        nb = pg.locator('.pbar [data-nav="next"]:visible:not([disabled])')
+        if nb.count(): nb.first.click()
+        else: pg.evaluate(f"()=>document.querySelector('#rlvr-rail .steps>.step:nth-child({k}) .step-h').click()")
+        pg.wait_for_timeout(900)
+        if k not in parts: continue
+        sel = '#rlvr-pk' if k >= 7 else '#rlvr-run'
+        f = pg.evaluate(FIT, sel); f['step'] = state(pg)['step'] + 1
+        check(f'{lang}-1440 part {k}: entering it, {"pass@k" if k >= 7 else "the run"} comes first and is whole on screen, and the stage scrolls inside itself at most {FIT_CAP[lang][k]} px (B4, R7.12)',
+              f['step'] == k and f['first'] == sel[1:] and f['whole'] and f['scroll'] <= FIT_CAP[lang][k], f)
+    pg.close()
+
+
 with sync_playwright() as pw:
     b = pw.chromium.launch()
+    if (1440, 900) in SIZES:
+        for lang in LANGS: fit_entry(b, lang)
     for lang in LANGS:
         for (w, h) in SIZES:
             phone = w <= 760; tag = f'{lang}-{w}'
@@ -578,7 +606,7 @@ import re as _re
 _SRC = ''.join((P / d / 'rlvr.js').read_text() for d in ('labs', 'teasers') if (P / d / 'rlvr.js').exists())
 _G1 = _re.findall(r'.{0,30}(?:一次只能选|不会叠加|do not stack|[Oo]ne at a time|一次选一).{0,30}', _SRC)
 check('G1: no “one at a time / do not stack” note left in the lab or its tile (EN and ZH)', not _G1, _G1[:3])
-_NEW = ["The chart compares the model before training with the one after", "steps of training with the strict checker.", "图里比较训练前的模型，和用严格的判分程序训练", "So when a group has both right and wrong answers, the right ones are pushed up, and an all-wrong group teaches nothing. As training goes on, the way of writing that is right most often takes over.", "The checker is the reward model now; test it before training.", "If the checker has a loophole, the model finds it: when listing candidate numbers earns a reward, the model soon learns to guess. Before you train, try such answers on your checker.", "Watch pass@k, not only pass@1.", "RL often only makes the model use the ways of writing it already had more often: pass@1 rises, while the problems it solves with many tries do not grow.", "the problems no way could solve stayed unsolved. A study of real models found something similar.", "Tülu 3 的 RLVR 用的就是 PPO。所以一组回答有对有错时，答对的回答被加强。全错的一组，什么也学不到。训练下去，最常答对的那种写法就成了主流。", "判分程序现在就是奖励模型，训练前先检查它。", "判分程序有漏洞，模型就会去钻。只要写一串候选数字也能拿分，模型很快就学会了猜。训练之前，先拿这类回答去试一试你的判分程序。", "不只看 pass@1，也看 pass@k。", "RL 常常只是让模型更多地用它本来就会的写法。所以 pass@1 涨了，给很多次机会时能解出的题却没有变多。", "哪种写法都做不对的题，训练后还是做不对。一项对真实模型的研究，也有类似的发现。", "With nothing but 1 or 0 on the final answer, training took “solve, then check” from", "of the answers.", "只按最后的答案给 1 分或 0 分，训练下来，“算完再检查”这种写法就从", "without making sure the tests were still the original ones: a checker that is too loose.", "没确认测试还是原来那些：这是一个太松的判分程序。", "of the time on average. Real reasoning models", "A checker that is too loose is soon gamed.", "判分程序太松，模型很快就会钻它的空子。"]
+_NEW = ["The chart compares the SFT model before training with the one after", "steps of training with the strict checker.", "图里比较训练前的 SFT 模型，和用严格的判分程序训练", "So when a group has both right and wrong answers, the right ones are pushed up, and an all-wrong group teaches nothing. As training goes on, the way of writing that is right most often takes over.", "The checker is the reward model now; test it before training.", "If the checker has a loophole, the model finds it: when listing candidate numbers earns a reward, the model soon learns to guess. Before you train, try such answers on your checker.", "Watch pass@k, not only pass@1.", "RL often only makes the model use the ways of writing it already had more often: pass@1 rises, while the problems it solves with many tries do not grow.", "the problems no way could solve stayed unsolved. A study of real models found something similar.", "Tülu 3 的 RLVR 用的就是 PPO。所以一组回答有对有错时，答对的回答被加强。全错的一组，什么也学不到。训练下去，最常答对的那种写法就成了主流。", "判分程序现在就是奖励模型，训练前先检查它。", "判分程序有漏洞，模型就会去钻。只要写一串候选数字也能拿分，模型很快就学会了猜。训练之前，先拿这类回答去试一试你的判分程序。", "不只看 pass@1，也看 pass@k。", "RL 常常只是让模型更多地用它本来就会的写法。所以 pass@1 涨了，给很多次机会时能解出的题却没有变多。", "哪种写法都做不对的题，训练后还是做不对。一项对真实模型的研究，也有类似的发现。", "With nothing but 1 or 0 on the final answer, training took “solve, then check” from", "of the answers.", "只按最后的答案给 1 分或 0 分，训练下来，“算完再检查”这种写法就从", "without making sure the tests were still the original ones: a checker that is too loose.", "没确认测试还是原来那些：这是一个太松的判分程序。", "of the time on average. Real reasoning models", "A checker that is too loose is soon gamed.", "判分程序太松，模型很快就会钻它的空子。"]
 check(f'G1/G2: the new lead-ins and the rewritten sentences are in the lab ({len(_NEW)})', all(x in _SRC for x in _NEW), [x for x in _NEW if x not in _SRC][:3])
 _OLD = ["steps of part 4.", "图里比较训练前的模型和第 4 部分训练", "In part 3, a group with some right answers pushed the right ones up, and a group of all wrong answers taught nothing. Over", "In part 5 the loose checker paid for listing candidate numbers, and the model learned to guess. Feed your checker such answers before you train.", "In part 7, pass@1 rose from", "the problems no way could solve stayed unsolved. The study quoted in part 7 found something similar for real models.", "✗ “A verifiable reward cannot be gamed.” In part 5 a loose checker was gamed in", "Tülu 3 的 RLVR 用的就是 PPO。第 3 部分里，有对有错的一组，答对的回答被加强。全错的一组什么也没教。训练", "第 5 部分里，宽松的判分程序给写候选数字的回答发分，模型就学会了猜。训练之前，先拿这类回答去试一试你的判分程序。", "第 7 部分里，pass@1 从", "哪种写法都做不对的题，训练后还是做不对。第 7 部分引的那项研究，在真实模型上也有类似的发现。", "✗ “可验证的奖励不会被钻空子。”第 5 部分里，宽松的判分程序", "In part 4, “solve, then check” grew from", "第 4 部分只按最后的答案给分，“算完再检查”从", "without making sure the tests were still the original ones: like the loose checker of part 5.", "没确认测试还是原来那些：和第 5 部分的宽松判分程序一样。", "of the time on average: the numbers of part 1. Real reasoning models", "，也就是第 1 部分给的数。"]
 check(f'G2: none of the {len(_OLD)} sentences that leaned on an earlier part (or said “one at a time”) is left', not any(x in _SRC for x in _OLD), [x for x in _OLD if x in _SRC][:3])

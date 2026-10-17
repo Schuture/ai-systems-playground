@@ -40,6 +40,8 @@ Every mode and every guided part at 1440×900 and 390×844, in EN and ZH (plus o
   Chinese and Latin letters or digits, full-width punctuation in Chinese, no 亿 / 万, no number over 6 digits outside the math and
   tooltips, no “toy”, 起点, 控件), and blue, amber, red and green only for what they mean (R5.6).
 Screenshots: shots/moe/.
+At 1440 × 900 parts 5, 6 and 8 fit the screen (polish round 4), and Next clicked with the mouse into part 7 keeps the stage below the
+top bar.
 Run: python3 tests/moe_flow.py [1440|390] [en|zh]  (no arguments: everything)"""
 import pathlib, re, subprocess, sys
 from playwright.sync_api import sync_playwright
@@ -209,6 +211,67 @@ def obs_on_screen(pg):
       return {top:Math.round(r.top), vh:innerHeight, ok:r.top>=top-2&&r.top<innerHeight-40}}""")
 
 
+FIT = """(sels)=>{const s=document.querySelector('#moe-stage'), r=s.getBoundingClientRect(), tb=document.querySelector('.topbar').getBoundingClientRect().bottom;
+  const q=sels.map(x=>{const e=document.querySelector(x); if(!e||!e.getClientRects().length) return null; const b=e.getBoundingClientRect(); return [Math.round(b.top),Math.round(b.bottom)];});
+  return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top), q,
+    out:sels.filter((x,i)=>!q[i]||q[i][0]<r.top-1||q[i][1]>r.bottom+1), shown:!!q[0]&&q[0][0]>=tb-1&&q[0][1]<=innerHeight+1};}"""
+
+
+def fit_check(pg, tag, part, w, h, lang, sels):
+    """polish round 4 (2026-10-16, R7.12, the owner's B4; as tests/data-pipeline_flow.py part 4): at 1440 × 900, on entering parts 5, 6
+    and 8, the stage needs no scrolling inside itself and could still grow by 30 px in Chinese (its max-height minus the height its content
+    and borders need; in English it only needs no scrolling), the pieces named lie inside it (part 6: the GPU-memory block and the metric
+    cards, which the card's “the price is memory” points at), and the first of them, the main picture, lies on the screen"""
+    if w != 1440 or h != 900: return
+    fit = pg.evaluate(FIT, sels)
+    check(f'{tag} part {part}: the stage fits without scrolling inside' + (', 30 px to spare' if lang == 'zh' else '') + f', {", ".join(sels)} inside it, the first on the screen (R7.12, B4)',
+          fit['scroll'] <= 0 and fit['spare'] >= (30 if lang == 'zh' else 0) and not fit['out'] and fit['shown'], fit)
+
+
+# polish round 4 (2026-10-17, N6): on the wide stage the batch curve is drawn shorter, which brought the ring round the point at one
+# request (radius 9, at the plot's left edge) onto the time axis's “10”; the plot now starts further right of the axis's labels. The
+# labels' boxes (getBBox: their advance and the font's ascent and descent) and the ring with its stroke must not meet
+RING1 = """()=>{const sv=document.querySelector('#moe-curve svg'), ring=sv&&sv.querySelector('.moe-cring'); if(!ring) return {n:0, hits:['no ring']};
+  const rb=ring.getBBox(), pad=(parseFloat(getComputedStyle(ring).strokeWidth)||0)/2, cx=+ring.getAttribute('cx');
+  const labs=[...sv.querySelectorAll('text.moe-ct')].filter(t=>t.getAttribute('text-anchor')==='end'&&+t.getAttribute('x')<cx);
+  return {n:labs.length, cx, hits:labs.filter(t=>{const q=t.getBBox(); return q.x<rb.x+rb.width+pad&&rb.x-pad<q.x+q.width&&q.y<rb.y+rb.height+pad&&rb.y-pad<q.y+q.height;}).map(t=>t.textContent)};}"""
+
+# polish round 4 (2026-10-16, R3.2, R9.7, the owner's B4; as tests/spec-decoding_flow.py): a reader's click on Next (下一部分) scrolls the
+# button into view first, which element.click() does not. Entering part 7 that way at 1440 × 900, the kit's reveal put the card's top
+# under the top bar, little of the rail was left under it, and the bench's end pushed the stage up under the top bar (its top at −149 px).
+# This walk uses real mouse clicks, opening each gate as a reader does, and after each Next waits for the scroll to settle (keepStage
+# waits for it, then pulls the stage back)
+TOPS = """()=>{const s=document.querySelector('#moe-stage').getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
+ h=document.querySelector('#moe-stage .stage-head').getBoundingClientRect(), f=document.querySelector('#moe-flow-svg svg'), q=f&&f.getClientRects().length?f.getBoundingClientRect():null,
+ c=document.querySelector('#moe-rail .step.current').getBoundingClientRect();
+ return {part:window.__moe.state().step+1, top:Math.round(s.top), bar:Math.round(bar), head:Math.round(h.top), card:Math.round(c.top), fig:q?[Math.round(q.top),Math.round(q.bottom)]:null, h:innerHeight};}"""
+
+
+def next_into_7(b, lang):
+    tag = f'{lang} 1440 Next clicked with the mouse'
+    pg = b.new_page(viewport={'width': 1440, 'height': 900}, reduced_motion='reduce')
+    open_drawers(pg); pg.on('pageerror', lambda e: errs.append(f'1440 {lang} mouse: {e}'))
+    pg.goto(URL); pg.wait_for_timeout(250); pg.click(f'.langsw button[data-lang="{lang}"]'); pg.wait_for_timeout(80)
+    pg.evaluate("()=>{location.hash='moe'}"); pg.wait_for_timeout(700)
+    miss = []
+
+    def mouse(sel, ms):
+        try: pg.locator(sel).first.click(timeout=4000)
+        except Exception as e: miss.append(f'{sel}: {str(e)[:60]}')
+        pg.wait_for_timeout(ms)
+    gates = {2: ['[data-pred="lt40"]'], 3: ['[data-act="route"]'] * 3, 4: ['.seg-ctl[data-key="p"] button[data-v="fp8"]'], 5: ['[data-act="bplus"]'], 6: ['[data-lever="l70"]']}
+    seen = []
+    for part in range(1, 7):
+        for g in gates.get(part, []): mouse('#moe-rail .step.current ' + g, 300)
+        mouse('#moe-rail .step.current [data-nav="next"]', 1500)
+        seen.append(pg.evaluate(TOPS))
+    r = seen[-1]
+    check(f'{tag}: entering part 7, the stage’s top stays at or below the top bar’s bottom (its head shown), the card’s top and the router picture on the screen (R3.2, R9.7, B4)',
+          not miss and r['part'] == 7 and r['top'] >= r['bar'] - 1 and r['head'] >= r['bar'] - 1 and r['bar'] - 1 <= r['card'] < r['h'] - 100 and bool(r['fig']) and r['fig'][0] >= r['bar'] - 1 and r['fig'][1] <= r['h'] + 1,
+          {'last': r, 'tops': [(x['part'], x['top']) for x in seen], 'miss': miss})
+    pg.close()
+
+
 def why_state(pg):
     """the why line under the buttons (and on the phone's part bar) against Next's tooltip"""
     return pg.evaluate("""()=>{const nb=document.querySelector('#moe-rail .step.current [data-nav="next"]'), ws=[...document.querySelectorAll('#moe-rail .moe-why')];
@@ -325,9 +388,13 @@ def run_guided(b, w, h, lang, dark=False):
     check(f'{tag} R3.20 part 4: FP8 → BF16 → FP8 comes back to a picture already watched, so it is drawn finished with no dots', state(pg)['plays'] == plays + 1 and state(pg)['p'] == 'fp8', (plays, state(pg)['plays']))
     # part 5: the batch
     go_part(pg, 4)
+    fit_check(pg, tag, 5, w, h, lang, ['#moe-flow-svg svg', '#moe-curve svg', '#moe-metrics'])
     check(f'{tag} part 5: no ▲▼ on entering', not badges(pg), badges(pg))
     check(f'{tag} part 5: Next disabled at one request', next_disabled(pg) is True)
     check(f'{tag} part 5: one request reads 2 experts, 6.48 ms', '6.48 ms' in text(pg, '#moe-metrics') and pg.evaluate("()=>document.querySelectorAll('#moe-flow .moe-ex.on').length") == 2)
+    if w > 760:
+        r1 = pg.evaluate(RING1)
+        check(f'{tag} part 5: at one request the ring round the point touches none of the time axis’s labels (N6)', r1['n'] >= 3 and not r1['hits'], r1)
     plays = state(pg)['plays']
     slide(pg, '#moe-ic-B-in', 8)
     s = state(pg); check(f'{tag} part 5: 8 requests', s['B'] == 8 and next_disabled(pg) is False, s)
@@ -358,12 +425,19 @@ def run_guided(b, w, h, lang, dark=False):
     pg.click(f'.langsw button[data-lang="{lang}"]'); pg.wait_for_timeout(400)
     # part 6: the advantage, against three dense models (R6.26)
     go_part(pg, 5)
+    fit_check(pg, tag, 6, w, h, lang, ['#moe-cmp', '#moe-cmp-body>.moe-cm-blk:nth-child(4)', '#moe-metrics'])
     check(f'{tag} part 6: the comparison replaces the router picture', pg.evaluate("()=>!document.querySelector('#moe-cmp').hidden&&document.querySelector('#moe-flow').hidden"))
     check(f'{tag} part 6: Next disabled before the same-quality model', next_disabled(pg) is True)
     ob = text(pg, '#moe-rail [data-obs]')
-    check(f'{tag} part 6: Llama 2 13B first: same arithmetic, 70.6% against 55.6%', '70.6%' in ob and '55.6%' in ob and ('12' in ob), ob)
+    # polish round 4: the note on the paper's Table 2 (higher than Llama 2 13B on all 12 benchmarks) moved from under the bars to the
+    # sources at the page end (A3), so the check reads it there
+    ends = pg.evaluate("()=>{const e=document.querySelector('#moe-fid'); return e?e.textContent:''}")
+    check(f'{tag} part 6: Llama 2 13B first: same arithmetic, 70.6% against 55.6%; higher on all 12 benchmarks, in the sources at the page end', '70.6%' in ob and '55.6%' in ob and Z(lang, 'on all 12 benchmarks', '全部 12 个基准') in ends, (ob, ends[:200]))
     check(f'{tag} part 6: four models on the picture, and Mistral 7B in the quality bars only', pg.evaluate("()=>new Set([...document.querySelectorAll('#moe-cmp .moe-cm-row')].map(r=>r.dataset.m)).size") == 5 and pg.evaluate("()=>document.querySelectorAll('#moe-cmp .moe-cm-row[data-m=\"m7\"]').length") == 1)
     check(f'{tag} part 6: Llama 2 13B first: part of the gap is training (Mistral 7B, 62.5%)', 'Mistral 7B' in ob and '62.5%' in ob and 'Switch' in ob, ob)
+    # round-4 reader (r4-read-models.md, must-fix 2): the result no longer brings the KV cache (GQA, not MoE) into this comparison;
+    # it states the price in memory, and the KV cache of each model stays in the stage's note (F2 below)
+    check(f'{tag} part 6: against Llama 2 13B the price is memory, 3.6 times the weights; no GQA in the result', Z(lang, 'The price is memory', '代价是显存') in ob and '3.6' in ob and 'GQA' not in ob, ob)
     cm = text(pg, '#moe-cmp')
     check(f'{tag} part 6: the prefill times on the arithmetic rows (F1)', all(x in cm for x in ('0.21 s', '1.14 s', '0.77 s')), cm[:400])
     check(f'{tag} part 6: the read times under the weights read (F1)', all(x in cm for x in ('6.4 ms', '6.3 → 23.2 ms', '34.2 ms')), cm[:600])
@@ -378,7 +452,6 @@ def run_guided(b, w, h, lang, dark=False):
     check(f'{tag} part 6: Llama 2 70B: same quality, 5.4 times the arithmetic, the advantage in words', '69.9%' in ob and '5.4' in ob and Z(lang, 'quality per unit of arithmetic', '每单位计算换来的质量') in ob and next_disabled(pg) is False, ob)
     check(f'{tag} part 6: option pressed and its result says who computes more', pg.evaluate("()=>document.querySelector('#moe-rail [data-lever=\"l70\"]').getAttribute('aria-pressed')") == 'true' and '5.4' in text(pg, '#moe-rail [data-lever="l70"] .lv-r') and 'Mixtral' in text(pg, '#moe-rail [data-lever="l70"] .lv-r'))
     check(f'{tag} part 6: Llama 2 70B in time: prefill and decode', '0.21 s' in ob and '1.14 s' in ob and '23 ms' in ob and '34 ms' in ob, ob)
-    check(f'{tag} part 6: against Llama 2 13B Mixtral reads more weights, but less with the KV cache', Z(lang, 'reads more weights, but less once the KV cache is counted', '读的权重更多，但算上 KV cache 就更少') in ob, ob)
     why_ok(pg, f'{tag} part 6 after Llama 2 70B', phone, False)
     if phone: check(f'{tag} part 6: the status badge stays inside the stage (70B)', status_inside(pg)['ok'], status_inside(pg))
     click(pg, '#moe-rail [data-lever="d47"]')
@@ -420,6 +493,7 @@ def run_guided(b, w, h, lang, dark=False):
     ok_state(pg, f'{tag} part 7'); rules(pg, f'{tag} part 7', lang); shot(pg, f'{tag}_p7')
     # part 8
     go_part(pg, 7)
+    fit_check(pg, tag, 8, w, h, lang, ['#moe-flow-svg svg', '#moe-curve svg', '#moe-metrics'])
     rem = text(pg, '#moe-rail .step.current')
     check(f'{tag} part 8: four misconceptions, “MoE saves nothing” among them', rem.count('✗') == 4 and Z(lang, 'MoE saves nothing', 'MoE 什么也没省') in rem, rem)
     check(f'{tag} part 8: the next-lab footer', pg.evaluate("()=>!!document.querySelector('#moe-rail .next-lab')"))
@@ -838,6 +912,8 @@ with sync_playwright() as p:
             run_misc(b, w, h, lang)
             owner_b9(b, w, h, lang)
             owner_b9v6(b, w, h, lang, B9V6)
+    if 1440 in WIDTHS and not TILE_ONLY:
+        for lang in LANGS: next_into_7(b, lang)
     if 1440 in WIDTHS and 'en' in LANGS and (not ARGS or ARGS == ['tile']):
         tile_checks(b, 1440, 900, 'en', dark=True)
     if 1440 in WIDTHS and 'en' in LANGS and not ARGS:

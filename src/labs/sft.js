@@ -200,7 +200,7 @@ const SP_TIP={
 /* ======================= copy ======================= */
 const LEV4=[{v:'all',t:{en:'Every token counts',zh:'每个 token 都算'},d:{en:'The question, the template tokens and the answer: every position after the first.',zh:'提问、模板加的 token 和回答，除了第一个 token，每个位置都算。'}},
             {v:'resp',t:{en:'Only the answer counts',zh:'只算回答部分'},d:{en:'The prompt’s labels are −100; the answer and its end token count.',zh:'提问部分的 label 都是 −100；回答和它末尾的结束 token 算。'}}];
-const LEV5=[{v:'sep',t:{en:'A separate pad token',zh:'用单独的 pad token'},d:{en:'Padding uses <|finetune_right_pad_id|>; only those positions get −100.',zh:'补齐用 <|finetune_right_pad_id|>，只有这些位置是 −100。'}},
+const LEV5=[{v:'sep',t:{en:'A separate pad token',zh:'用单独的 pad token'},d:{en:'Padding uses <|finetune_right_pad_id|>; the end token keeps its label.',zh:'补齐用 <|finetune_right_pad_id|>，结束 token 不受影响。'}},
             {v:'eot',t:{en:'The pad token is the end token',zh:'pad token 就是结束 token'},d:{en:'Padding uses <|eot_id|>; every position holding that id gets −100.',zh:'补齐用 <|eot_id|>，凡是这个 id 的位置都设成 −100。'}}];
 const PREDS=[{v:'lt10',t:{en:'Under 10%',zh:'不到 10%'}},{v:'10to50',t:{en:'10% to 50%',zh:'10% 到 50%'}},{v:'50to90',t:{en:'50% to 90%',zh:'50% 到 90%'}},{v:'gt90',t:{en:'Over 90%',zh:'超过 90%'}}];
 const predOf=sh=>sh<0.1?'lt10':(sh<0.5?'10to50':(sh<0.9?'50to90':'gt90'));
@@ -233,8 +233,12 @@ const STEPS=[
   obs:()=>obsResp()},
  {id:'eot',title:{en:'The end token must count',zh:'结束 token 也要算'},lead:{en:'When the pad token is the end token, the model never learns to stop.',zh:'pad token 就是结束 token 时，模型学不会停。'},gate:()=>tried5.has('eot')&&watchedNow(),
   enter:()=>({...DEF}),showMe:()=>setLever5('eot'),
-  body:()=>tx(`<p>Training runs several conversations together as one batch. Their tokens are stacked into one matrix, one conversation per row, so every row must have the same length. Shorter conversations are filled up at the end with a pad token, up to the length of the longest (${J('batch','see the chart')}). The padded positions only hold places, so they must not count in the loss.</p><p>In Hugging Face’s transformers library, the function that puts several conversations into one batch is called a data collator. Its <code>DataCollatorForLanguageModeling</code>, made for language models, sets the label to −100 wherever the token id equals the pad token’s.</p><p>When a tokenizer has no pad token, a training script may pad with the end token instead. The same rule then also sets the real ${EOT} after the answer to −100, so the model never learns to write it. Pick a pad token, and see whether the trained small model stops after its answer.</p>${A.ui.levers({aria:tx('The pad token','pad token'),value:S.pad,options:LEV5.map(o=>({v:o.v,title:L(o.t),desc:L(o.d),result:tried5.has(o.v)?esc(lev5Res(o.v)):''}))})}`,
-              `<p>训练时，几段对话合成一个 batch 一起算。它们的 token 要叠成一个矩阵，每段对话占一行，所以每一行必须一样长。短的对话就在后面补 pad token，补到和最长的一样长（${J('batch','见图')}）。补上的位置只是占位，不该算 loss。</p><p>Hugging Face 的 transformers 库里，把几段对话拼成一个 batch 的函数叫 data collator。给语言模型用的 <code>DataCollatorForLanguageModeling</code> 会找出 token id 等于 pad token 的位置，把这些位置的 label 都设成 −100。</p><p>tokenizer 没有 pad token 时，训练脚本可能拿结束 token 来补。这样一来，同一条规则会把回答末尾真正的 ${EOT} 也设成 −100，模型就学不到要写它。选一种 pad token，看看训练出来的小模型答完停不停。</p>${A.ui.levers({aria:tx('The pad token','pad token'),value:S.pad,options:LEV5.map(o=>({v:o.v,title:L(o.t),desc:L(o.d),result:tried5.has(o.v)?esc(lev5Res(o.v)):''}))})}`),
+  /* polish r4, reader round: the card opens with its point (a wrong pad token and the model never learns to stop), then says why a
+     batch is padded before the end token is used as the pad (the owner's item 4, G4).
+     polish r4: the collator's class name moved out of the card (the sources and the explain-it answer name it, with its line of code);
+     the observations no longer repeat what the stage writes (16 tokens and still going, the red token where it should have stopped) */
+  body:()=>tx(`<p>Pad with the wrong token, and the model never learns to stop.</p><p>Training runs several conversations together as one batch. Their tokens are stacked into one matrix, one conversation per row, so every row must have the same length, and shorter ones are filled up at the end with a pad token (${J('batch','see the chart')}). The padded positions only hold places, so they must not count in the loss.</p><p>When Hugging Face’s transformers library builds a batch for a language model, it sets the label to −100 wherever the token id equals the pad token’s.</p><p>When a tokenizer has no pad token, a training script may pad with the end token instead. That rule then also sets the real ${EOT} after the answer to −100, so the model never learns to write it. Pick a pad token, and see whether the trained small model stops after its answer.</p>${A.ui.levers({aria:tx('The pad token','pad token'),value:S.pad,options:LEV5.map(o=>({v:o.v,title:L(o.t),desc:L(o.d),result:tried5.has(o.v)?esc(lev5Res(o.v)):''}))})}`,
+              `<p>补齐用错了 token，模型就学不会停。</p><p>几段对话合成一个 batch 时，token 要叠成一个矩阵，每段对话占一行，所以每一行必须一样长，短的就在后面补 pad token（${J('batch','见图')}）。补上的位置只是占位，不该算 loss。</p><p>Hugging Face 的 transformers 库给语言模型拼 batch 时，凡是 token id 等于 pad token 的位置，label 都设成 −100。</p><p>tokenizer 没有 pad token 时，训练脚本可能拿结束 token 来补。这条规则就会把回答末尾真正的 ${EOT} 也设成 −100，模型学不到要写它。选一种 pad token，看看训练出来的小模型答完停不停。</p>${A.ui.levers({aria:tx('The pad token','pad token'),value:S.pad,options:LEV5.map(o=>({v:o.v,title:L(o.t),desc:L(o.d),result:tried5.has(o.v)?esc(lev5Res(o.v)):''}))})}`),
   obs:()=>obsEot()},
  {id:'dpo',title:{en:'From the SFT loss to DPO',zh:'从 SFT 的 loss 到 DPO'},lead:{en:'The response’s log-probability: DPO uses it too.',zh:'回答的 log 概率：DPO 也用它。'},enter:()=>({...DEF}),
   body:()=>bridgeHTML()},
@@ -263,10 +267,10 @@ function obsResp(){
 function obsEot(){
   if(!watchedNow()) return '';
   const g=genFor(S,'sft'), gi=genInfo(g);
-  if(S.pad==='sep') return tx(`<p><b>A separate pad token: the small model answers and stops at ${EOT}.</b> Only the padded positions got −100; the real end token kept its label.</p>`,
-                              `<p><b>用单独的 pad token：小模型答完，写出 ${EOT} 就停了。</b>只有补齐的位置是 −100，真正的结束 token 保留了它的 label。</p>`);
-  return tx(`<p><b>The pad token is the end token: the small model answers, does not stop, and writes the user’s next question itself.</b> It was still writing after ${MAXG} tokens; the red token in the chart is where it should have stopped.</p><p>Its training never contained “after the answer comes ${EOT}”, so after the full stop it falls back on what pretraining taught it: on an FAQ page a new question follows. Two fixes: pad with a separate token (Llama 3.1 reserves ${PADT}), or set the padded labels to −100 by position, not by token id.</p>`,
-          `<p><b>pad token 就是结束 token：小模型答完不停，接着替用户写下一个提问。</b>写满 ${MAXG} 个 token 还没停，图里标红的 token 就是它该停的地方。</p><p>它的训练里从来没有“答完接着写 ${EOT}”这一条，所以写完句号，它就照预训练的习惯来：问答网页上，一个回答后面是下一个提问。修法有两个：用单独的 pad token 补齐（Llama 3.1 留了 ${PADT}）；或者按位置把补齐处的 label 设成 −100，不按 token id。</p>`);}
+  if(S.pad==='sep') return tx(`<p><b>A separate pad token: the small model answers and stops at ${EOT}.</b> The real end token kept its label.</p>`,
+                              `<p><b>用单独的 pad token：小模型答完，写出 ${EOT} 就停了。</b>真正的结束 token 保留了它的 label。</p>`);
+  return tx(`<p><b>The pad token is the end token: the small model answers, does not stop, and writes the user’s next question itself.</b></p><p>It never learned to write ${EOT} after an answer, so it falls back on what pretraining taught it: on an FAQ page a new question follows. Two fixes: pad with a separate token (Llama 3.1 reserves ${PADT}), or set the padded labels to −100 by position, not by token id.</p>`,
+          `<p><b>pad token 就是结束 token：小模型答完不停，接着替用户写下一个提问。</b></p><p>它没学过答完要写 ${EOT}，就照预训练的习惯来：问答网页上，一个回答后面是下一个提问。修法有两个：用单独的 pad token 补齐（Llama 3.1 留了 ${PADT}）；或者按位置把补齐处的 label 设成 −100，不按 token id。</p>`);}
 /* part 6 (Codex R11, round 3): the calculation sits on the stage, not in the narrow rail. The table of the 5 answer tokens and the
    derivation go step by step: probability, log, sum, minus the reference model; each step adds one thing to the table, and the row of
    the current token is highlighted. The rail keeps one short paragraph that says what to look at. */
@@ -488,6 +492,13 @@ const SCOPE={cnt:{en:'Counts for the current scenario: its tokens, and which of 
   share:{en:'Counts for the current scenario',zh:'当前场景的计数'},
   model:{en:'The small model trained on its fixed 6 example conversations: its training data does not change with the scenario',zh:'固定 6 段示例对话训练的小模型：训练数据不随场景变化'}};
 function drawScope(){$$('[data-scope]',app).forEach(e=>{const on=mode==='sandbox', t=on?L(SCOPE[e.dataset.scope]):''; e.hidden=!on; if(e.textContent!==t) e.textContent=t;});}
+/* the strip's groups of chips for a setting s (part 5's hold lays out the other pad token's with it, R7.9) */
+function stripGroups(ex,showLab,showPad,s){
+  const ps=partsOf(ex);
+  const groups=[]; let cur=null;
+  ps.forEach((x,i)=>{if(!cur||cur.who!==x.who){cur={who:x.who,items:[]}; groups.push(cur);} cur.items.push({x,lab:chipLab(x,i,s)});});
+  if(showPad){const padK=s.pad==='eot'?'eot':'pad'; const g={who:'pad',items:[]}; for(let i=0;i<NPAD;i++) g.items.push({x:{who:'pad',k:padK,pad:1},lab:{cls:'ign',t:'−100'}}); groups.push(g);}
+  return groups.map(g=>`<div class="sft-grp sft-g-${g.who}"><div class="sft-grp-t">${g.who==='p'?tx('Prompt part','提问部分'):(g.who==='r'?tx('Response part','回答部分'):tx('Padding (illustrative)','补齐（示意）'))}</div><div class="sft-chips">${g.items.map(it=>it.x.pad?padChip(it.x,showLab,s):chipHTML(it.x,it.lab,showLab)).join('')}</div></div>`).join('');}
 function drawStrip(){
   const sb=$('#sft-stripbox',app); sb.hidden=isP('dpo'); if(sb.hidden) return;
   const {ex,showLab,showPad}=stripParts(), host=$('#sft-strip',app), cap=$('#sft-strip-cap',app), leg=$('#sft-strip-leg',app);
@@ -495,11 +506,7 @@ function drawStrip(){
   let html='';
   if(ex==='plain'){cap.innerHTML=tx(`The base model’s input: ${qTxt()} as plain text, no template`,`基础模型的输入：纯文字的${qTxt()}，没有模板`);
     html=`<div class="sft-grp"><div class="sft-grp-t">${tx('Plain text','纯文字')}</div><div class="sft-chips">${P_PLAIN.map(k=>chipHTML({who:'p',k},null,false)).join('')}</div></div>`; leg.innerHTML=''; host.innerHTML=html; return;}
-  const ps=partsOf(ex);
-  const groups=[]; let cur=null;
-  ps.forEach((x,i)=>{if(!cur||cur.who!==x.who){cur={who:x.who,items:[]}; groups.push(cur);} cur.items.push({x,lab:chipLab(x,i,s)});});
-  if(showPad){const padK=s.pad==='eot'?'eot':'pad'; const g={who:'pad',items:[]}; for(let i=0;i<NPAD;i++) g.items.push({x:{who:'pad',k:padK,pad:1},lab:{cls:'ign',t:'−100'}}); groups.push(g);}
-  html=groups.map(g=>`<div class="sft-grp sft-g-${g.who}"><div class="sft-grp-t">${g.who==='p'?tx('Prompt part','提问部分'):(g.who==='r'?tx('Response part','回答部分'):tx('Padding (illustrative)','补齐（示意）'))}</div><div class="sft-chips">${g.items.map(it=>it.x.pad?padChip(it.x,showLab,s):chipHTML(it.x,it.lab,showLab)).join('')}</div></div>`).join('');
+  html=stripGroups(ex,showLab,showPad,s);
   host.innerHTML=html;
   const c=counts(ex,s.count,masked(s));
   cap.innerHTML=(ex==='toy'?tx(`One of the 6 example conversations, in Llama 3.1’s format: ${c.P+c.R} tokens`,`6 段示例对话中的一段，按 Llama 3.1 的格式拼成 ${c.P+c.R} 个 token`)
@@ -577,10 +584,39 @@ function drawPlayer(){const pl=$('#sft-player',app); if(!pl||!PL.g) return;
    A.ui.seg({id:'sft-spd',key:'spd',label:tx('Speed','速度'),options:[['slow',tx('Slow','慢')],['med',tx('Medium','中')],['fast',tx('Fast','快')]],value:PL.spd})+
    `<div class="sft-scrub"><input type="range" min="0" max="${n}" step="1" value="${k}" data-key="scrub" aria-label="${esc(tx('How many tokens are shown','显示到第几个 token'))}"><span class="sft-cnt mono">${cnt}</span></div>`;
   A.ui.initRanges(pl);}
+/* the tokens of a run, the first k of them shown.
+   R7.9 (polish round 4, 2026-10-17): the “should stop” label and the “still going” note take their place from the first token on,
+   hidden like the tokens not written yet, so the box does not grow by a line while the run plays (it grew by 15 px, and by 42 px where
+   the writing sits beside the share of the counted tokens) */
+function genHTML(g,k){const gi=genInfo(g);
+  return g.map((x,i)=>{const show=i<k, red=i===gi.red, extra=gi.red>=0&&i>gi.red, stop=x.k==='eot';
+    const cls=['sft-gt',stop?'sft-stop':'',red?'sft-red':'',extra?'sft-extra':''].filter(Boolean).join(' ');
+    const tip=(red?tx('It should have written <|eot_id|> here and stopped. ','这里该写 <|eot_id|> 然后停下。'):(stop?tx('The end token: generation stops here. ','结束 token：生成到这里就停了。'):''))+tx(`The model gave this token ${pc(x.p)} probability.`,`模型给这个 token 的概率是 ${pc(x.p)}。`);
+    return `<span class="${cls}"${show?'':' style="visibility:hidden"'} tabindex="${show?0:-1}" data-tipx="${esc(tip)}"><span class="sft-tt${isMono(x.k)?' mono':''}">${esc(tokS(x.k))}</span><span class="sft-pr mono">${pc(x.p)}</span>${red?`<span class="sft-redt">${tx('should stop','该停了')}</span>`:''}</span>`;}).join('')+
+    (g.length&&g[g.length-1].k!=='eot'?`<span class="sft-more muted small"${k>=g.length?'':' style="visibility:hidden"'}>${tx(`… still going after ${MAXG} tokens`,`…写满 ${MAXG} 个 token 还没停`)}</span>`:'');}
+/* R7.9 (polish round 4, 2026-10-17): in part 5, on a wide stage (sft.css sets --sft-hold there), picking the other pad token does not
+   move the stage. Two blocks change with it: the padding chips of the strip (three long <|finetune_right_pad_id|> take two rows, three
+   <|eot_id|> one) and the model's writing (with the end token as pad it writes on to the limit, with a separate pad token it stops after
+   the answer). With the separate pad token the stage needs less room (13 px less in Chinese, 35 px less in English at 1440 × 900), so
+   there the box of the model's writing keeps that much more room under its tokens. To find how much, the other setting's chips and run
+   are put in place for a moment and the stage is measured (nothing is drawn in between); render calls this after every block has been
+   drawn. Phones and narrower stages are left as they were. */
+function holdP5(){const gen=$('#sft-gen',app), strip=$('#sft-strip',app), st=$('#sft-stage',app); if(!gen||!strip||!st) return;
+  const on=mode==='guided'&&STEPS[step].id==='eot'&&!gen.closest('[hidden]')&&getComputedStyle(gen).getPropertyValue('--sft-hold').trim()==='1';
+  if(!on){if(gen._hold){gen.style.minHeight=''; gen._hold=null;} return;}
+  const key=[S.count,S.eotl,S.pad,S.tmpl,S.steps,A.lang(),st.clientWidth].join('|');
+  if(!gen._hold||gen._hold.key!==key){
+    const need=()=>st.scrollHeight+st.offsetHeight-st.clientHeight, s2={...S,pad:S.pad==='eot'?'sep':'eot'}, g2=genFor(s2,'sft'), {ex,showLab,showPad}=stripParts();
+    gen.style.minHeight=''; const h0=need(), ks=strip.innerHTML, kg=gen.innerHTML;
+    strip.innerHTML=stripGroups(ex,showLab,showPad,s2); gen.innerHTML=genHTML(g2,g2.length); const h1=need();
+    strip.innerHTML=ks; gen.innerHTML=kg;
+    let mh=0; if(h1>h0){mh=Math.ceil(gen.getBoundingClientRect().height+h1-h0); gen.style.minHeight=mh+'px'; const h2=need(); if(h2<h1){mh+=Math.ceil(h1-h2);}}
+    gen._hold={key,mh};}
+  gen.style.minHeight=gen._hold.mh?gen._hold.mh+'px':'';}
 function drawGen(){
   const host=$('#sft-gen',app), cap=$('#sft-gen-cap',app), leg=$('#sft-gen-leg',app); if(!host) return;
   const gv=genView(); if(gv==='none'||!PL.g) return;
-  const g=PL.g, gi=genInfo(g), k=Math.floor(PL.i+1e-9);
+  const g=PL.g, k=Math.floor(PL.i+1e-9);
   /* the caption says who is asked what, then what it does (review S12: a sentence with a verb, not a noun phrase) */
   const tail=tx(' It takes the most likely token at every step and writes the tokens below.','它每一步都挑概率最高的 token，写出下面这些。');
   const diff=(mode==='challenge'||gv==='sft')&&S.tmpl==='diff';
@@ -590,11 +626,7 @@ function drawGen(){
     :tx(`After ${S.steps} SFT steps, the small model is asked ${qTxt()} in the training template, ending with the assistant header.`,`小模型 SFT ${S.steps} 步之后，按训练时的模板问它${qTxt()}，提问末尾接上 assistant 的 header。`);
   const sig=[PL.sig,k,A.lang(),mode].join('|'); if(host._sig===sig) return; host._sig=sig;
   cap.innerHTML=capT+tail;
-  host.innerHTML=g.map((x,i)=>{const show=i<k, red=i===gi.red, extra=gi.red>=0&&i>gi.red, stop=x.k==='eot';
-    const cls=['sft-gt',stop?'sft-stop':'',red?'sft-red':'',extra?'sft-extra':''].filter(Boolean).join(' ');
-    const tip=(red?tx('It should have written <|eot_id|> here and stopped. ','这里该写 <|eot_id|> 然后停下。'):(stop?tx('The end token: generation stops here. ','结束 token：生成到这里就停了。'):''))+tx(`The model gave this token ${pc(x.p)} probability.`,`模型给这个 token 的概率是 ${pc(x.p)}。`);
-    return `<span class="${cls}"${show?'':' style="visibility:hidden"'} tabindex="${show?0:-1}" data-tipx="${esc(tip)}"><span class="sft-tt${isMono(x.k)?' mono':''}">${esc(tokS(x.k))}</span><span class="sft-pr mono">${pc(x.p)}</span>${red&&show?`<span class="sft-redt">${tx('should stop','该停了')}</span>`:''}</span>`;}).join('')+
-    (k>=g.length&&g.length&&g[g.length-1].k!=='eot'?`<span class="sft-more muted small">${tx(`… still going after ${MAXG} tokens`,`…写满 ${MAXG} 个 token 还没停`)}</span>`:'');
+  host.innerHTML=genHTML(g,k);
   leg.innerHTML=`<span data-tipx="${esc(tx('The number under each token is the probability the model gave it.','每个 token 下面的数，是模型给它的概率。'))}"><b class="mono">%</b> ${tx('probability','概率')}</span><span data-tipx="${esc(tx('Green: the model wrote the end token and stopped.','绿框：模型写出结束 token，停了。'))}"><i class="sw sft-sw-stop"></i>${tx('end token, stops','结束 token，停了')}</span><span data-tipx="${esc(tx('Red: where the answer ended and the model should have written <|eot_id|>.','红框：回答已经结束，这里该写 <|eot_id|>。'))}"><i class="sw sft-sw-bad"></i>${tx('should have stopped','该停没停')}</span><span data-tipx="${esc(tx('Dashed: tokens written after the point where it should have stopped.','虚线框：该停之后多写的 token。'))}"><i class="sw sft-sw-x"></i>${tx('written after that','多写的')}</span>`;}
 function drawShare(){
   const box=$('#sft-sharebox',app), host=$('#sft-sharebar',app), cap=$('#sft-share-cap',app);
@@ -695,7 +727,7 @@ function renderRail(){const rail=$('#sft-rail',app);
 function render(){
   if(!app) return;
   showGen();
-  drawHead(); drawStrip(); drawBatch(S); drawGen(); drawPlayer(); drawShare(); drawBridge(); drawScope(); drawMetrics();
+  drawHead(); drawStrip(); drawBatch(S); drawGen(); drawPlayer(); drawShare(); drawBridge(); drawScope(); drawMetrics(); holdP5();
   const mb=$('#sft-mathbody',app), mh=mathHTML(); if(mb._h!==mh){mb.innerHTML=mh; mb._h=mh;}
   syncControls(); updateRail();
   A.hash.write(token()); A.dock.refresh(); announce();}

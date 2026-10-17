@@ -138,3 +138,38 @@
 .grpo-mb-sub{margin:6px 0 2px;color:var(--ink-2)}
 /* Show the math reads as prose with formulas, not as code */
 #grpo-mathbody{font-family:var(--font-ui);font-size:13.5px;line-height:1.6}
+
+/* ---------- polish r4 (B4, R7.12): parts 5 and 6 fit a 1440 × 900 screen. Part 5 stacked the group (314 px), the bars (296 px) and
+   the chart (282 px), so the stage scrolled 367 px inside itself; part 6's chart started 450 px down. On a stage at least 736 px wide
+   the panels a part shows share rows (#grpo-pans[data-lay], set by panelsShow): part 5 the group beside the bars and the chart under
+   both, drawn shorter (--grpo-ch, read by drawChart) with its title and its view buttons on one line; part 6 the bars beside the chart.
+   A line between the columns and above the chart (R7.13). Same panels, same order, same animation; phones (≤ 760 px), narrower
+   stages and the other parts keep the stacked layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  .grpo-pans[data-lay]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:16px;padding-top:6px}
+  .grpo-pans[data-lay]>.grpo-pan{margin-top:0;padding-top:0;border-top:0}
+  .grpo-pans[data-lay="gpc"]>#grpo-pan-probs,.grpo-pans[data-lay="pc"]>#grpo-pan-chart{border-left:1px solid var(--line);padding-left:15px}
+  .grpo-pans[data-lay="gpc"]>#grpo-pan-chart{grid-column:1/-1;border-top:1px solid var(--line);padding-top:6px;margin-top:6px;--grpo-ch:120}
+  .grpo-pans[data-lay="gpc"] .grpo-chead{flex-direction:row;align-items:center;justify-content:space-between;gap:4px 16px;min-height:36px}
+  .grpo-pans[data-lay="gpc"] .grpo-chead .grpo-pt{flex:1 1 auto}
+  .grpo-pans[data-lay="gpc"] #grpo-c-view .ctl{display:flex;align-items:center;gap:6px}
+  /* part 5: the bars a little tighter, so they are no taller than the group beside them */
+  .grpo-pans[data-lay="gpc"] .grpo-probs{gap:2px}
+  .grpo-pans[data-lay="gpc"] .grpo-prow{padding-top:1px;padding-bottom:1px}
+  .grpo-pans[data-lay="gpc"] #grpo-p-leg{row-gap:2px}
+  .grpo-pans[data-lay="gpc"] .grpo-pnote{margin-top:4px}
+  /* R7.9: a row keeps one height with and without its kind word; the group's title and note keep the lines their longest text needs
+     (Chinese: 1 and 2; English: 2 and 3), so the row does not grow while the run plays */
+  .grpo-pans[data-lay] .grpo-ptag{line-height:1.4}
+  .grpo-pans[data-lay="gpc"] .grpo-gnote{min-height:3.1em}
+  html[lang="en"] .grpo-pans[data-lay="gpc"] .grpo-gnote{min-height:4.65em}
+  html[lang="en"] .grpo-pans[data-lay="gpc"] #grpo-g-title,html[lang="en"] .grpo-pans[data-lay="gpc"] #grpo-p-title{min-height:2.7em}
+  /* English needs more lines above, so its chart is drawn a little shorter, the legend's lines closer, and part 5's metric cards take
+     the line heights tool-scheduling uses (CONTRACT §19) */
+  html[lang="en"] .grpo-pans[data-lay="gpc"]>#grpo-pan-chart{--grpo-ch:100}
+  .grpo-pans[data-lay="gpc"] #grpo-g-leg{row-gap:2px}
+  .grpo-stage[data-lay="gpc"] .grpo-metrics .metric .v{line-height:1.25}
+  .grpo-stage[data-lay="gpc"] .grpo-metrics .metric .d{min-height:13px;line-height:1.1}
+}}
+/* four metric cards in one row of four on a wide stage, not four of five columns (desktop only: ≤ 760 px keeps its layout) */
+@media (min-width:761px){@container (min-width:560px){.grpo-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}}
