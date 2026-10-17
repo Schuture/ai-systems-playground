@@ -52,6 +52,10 @@
 
 /* ---------- part 4: the answer sheet, 2 × 2; a square's area is its share ---------- */
 .evc-gridwrap{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:14px;align-items:center}
+/* B4 (the owner: "the player was pushed down, I did not see there was more below"): on a desktop the answer sheet's side follows the
+   screen's height (420 px on a tall screen, 320 at 900 px, never under 240), so part 4 fits one screen with nothing cut, also
+   once the paired error bar is added under the first one */
+@media (min-width:761px){.evc-gridwrap{grid-template-columns:minmax(0,clamp(240px,calc(100vh - 580px),420px)) minmax(0,1fr)}}
 .evc-grid{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);gap:5px;align-items:center}
 .evc-grh,.evc-gr{font:11px/1.2 var(--font-mono);color:var(--ink-3);white-space:nowrap}
 .evc-grh{text-align:center}
@@ -106,6 +110,8 @@
 .evc-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
 .evc-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
 @container (min-width:560px){.evc-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* a desktop stage between 480 and 560 px wide (a window about 900 px wide) keeps the four cards in one row too; phones keep two per row */
+@media (min-width:761px){@container (min-width:480px){.evc-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}}
 
 /* ---------- formulas on their own line ---------- */
 .evc-fx{margin:8px 0 10px;overflow-x:auto;font-size:15px;line-height:1.3}

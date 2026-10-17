@@ -380,23 +380,21 @@ function remBtn(k){const on=remView===k;
     subx:tx('Shows the agent that trims, summarizes every 20 steps, takes notes and hands the docs to a sub-agent.','在图里显示修剪、每 20 步压缩、记笔记，再把查文档交给子 agent 的 agent。')}[k];
   return ` <button type="button" class="linkbtn cte-rem" data-rem="${k}" aria-pressed="${on}" data-tipx="${esc(tip)}">${on?tx('In the chart now','图里正显示'):tx('Show in the chart','在图里看')}</button>`;}
 /* owner point 4 (R6.31): how Codex and Claude Code manage context, only what their public docs and code say (sources/b8src/context-mgmt,
-   claims CC1–CC11 and CX1–CX9), each point tied to a lever the reader already used, each with its sources */
+   claims CC1–CC11 and CX1–CX9), each point tied to a lever the reader already used. Polish round 3 (2026-10-16): the per-claim source
+   links moved to the page-end sources (FIDPOP, “Sources”), so the card keeps only the five conclusions */
 function prodHTML(){
-  const src=(...a)=>` <span class="cte-srcs">${a.map(([u,t])=>cite(u,t)).join(tx(', ','、'))}</span>`;
-  const DOC={[SRC.ccp]:tx('prompt caching docs','prompt caching 文档'),[SRC.cch]:tx('how-it-works docs','工作原理文档'),[SRC.ccw]:tx('context window docs','上下文窗口文档'),[SRC.ccs]:tx('sub-agents docs','子 agent 文档')};
-  const ccd=t=>[t,DOC[t]], cxc=t=>[t,tx('Codex code','Codex 代码')];
-  return tx(`<p>Claude Code and Codex both run long tasks. Their public docs and code use the same ideas as this lab.</p><ul class="cte-remlist">`+
-    `<li><b>Keep the start fixed, and only append.</b> Claude Code orders each request from least to most changing: the system prompt and tools first, the conversation last. When a file changes mid-session, it appends a reminder instead of editing what came before. Codex works the same way: each new request is the previous one, unchanged, plus the new items. A sliding window, which changes the beginning at every step, does the opposite.${remBtn('trim')}${src(ccd(SRC.ccp),[SRC.cxp,'OpenAI’s post'],cxc(SRC.cxk))}</li>`+
-    `<li><b>Compact only when nearly full.</b> Codex compacts by default when the context reaches 90% of the window. Near the limit, Claude Code first clears old tool outputs, then summarizes if it needs to. This lab summarizes every 20 steps only so that runs are easy to compare.${remBtn('comp')}${src(cxc(SRC.cxm),ccd(SRC.cch))}</li>`+
-    `<li><b>The summary call reads the cache too.</b> Claude Code writes the summary with a request that starts exactly like the conversation and only appends the instruction to summarize. While the cache is still warm, that beginning is read from the cache. The Σ call in the chart is priced the same way.${src(ccd(SRC.ccp))}</li>`+
-    `<li><b>After compacting, put the essentials back.</b> Claude Code re-injects CLAUDE.md, its memory and the plan, and re-reads up to 5 recently changed files. Codex keeps the recent user messages and a handoff summary. This is the same idea as notes: keep what matters where a compaction cannot delete it.${remBtn('sum')}${src(ccd(SRC.ccw),cxc(SRC.cxc))}</li>`+
-    `<li><b>Sub-agents work in their own context.</b> A Claude Code sub-agent has its own context and cache and brings back only a summary, so the main agent’s beginning stays the same.${remBtn('subx')}${src(ccd(SRC.ccp),ccd(SRC.ccs))}</li></ul>`,
-    `<p>Claude Code 和 Codex 都要跑很长的任务。它们公开的文档和代码里，用的正是这个 Lab 讲的办法。</p><ul class="cte-remlist">`+
-    `<li><b>开头不变，新内容只往后加。</b>Claude Code 按变化从少到多排，system prompt 和工具在最前，对话在最后。中途改了文件，就在后面追加一条提醒，不去改前面的内容。Codex 也是这样，新的请求就是上一次的请求原样加上新内容。滑动窗口每一步都改开头，正好相反。${remBtn('trim')}${src(ccd(SRC.ccp),[SRC.cxp,'OpenAI 的文章'],cxc(SRC.cxk))}</li>`+
-    `<li><b>快满了才压缩。</b>Codex 默认在上下文用到窗口的 90% 时压缩。Claude Code 快到上限时，先清掉旧的工具输出，不够再写摘要。这个 Lab 每 20 步压缩一次，只是为了好比较。${remBtn('comp')}${src(cxc(SRC.cxm),ccd(SRC.cch))}</li>`+
-    `<li><b>写摘要的那次调用也读缓存。</b>Claude Code 写摘要时，发出的开头和对话里一模一样，只在最后加一句总结的要求。缓存还没过期时，这段开头就从缓存读。图里 Σ 那次调用也是这样算的。${src(ccd(SRC.ccp))}</li>`+
-    `<li><b>压缩之后，把要紧的放回来。</b>Claude Code 会重新放进 CLAUDE.md、记忆和计划，再重读最近改过的最多 5 个文件。Codex 留下最近的用户消息和一段交接摘要。这和记笔记是同一个思路，把要紧的东西放在压缩删不掉的地方。${remBtn('sum')}${src(ccd(SRC.ccw),cxc(SRC.cxc))}</li>`+
-    `<li><b>子 agent 用自己的上下文。</b>Claude Code 的子 agent 有自己的上下文和缓存，只把总结交回来，主 agent 的开头不受影响。${remBtn('subx')}${src(ccd(SRC.ccp),ccd(SRC.ccs))}</li></ul>`);
+  return tx(`<p>Codex and Claude Code must fit very long tasks in the window and also keep hitting the cache; their public docs and code (sources at the end of the page) use the same ideas as this lab.</p><ul class="cte-remlist">`+
+    `<li><b>Keep the start fixed, and only append.</b> Claude Code puts the system prompt and tools first; each new Codex request is the previous one, unchanged, plus the new items. A sliding window changes the beginning at every step, so it misses the cache and costs more, not less.${remBtn('slide')}</li>`+
+    `<li><b>Compact only when nearly full.</b> Codex compacts by default when the context reaches 90% of the window; Claude Code first clears old tool outputs, then summarizes if it needs to. This lab summarizes every 20 steps only so that runs are easy to compare.${remBtn('comp')}</li>`+
+    `<li><b>The summary call reads the cache too.</b> Claude Code’s summary request is the conversation with only the instruction to summarize appended, so its beginning is read from the cache. The Σ in the chart marks such a call.</li>`+
+    `<li><b>After compacting, put the essentials back.</b> Claude Code re-injects CLAUDE.md, its memory and the plan, and re-reads up to 5 recently changed files; Codex keeps the recent user messages and a handoff summary. This is the same idea as notes.${remBtn('sum')}</li>`+
+    `<li><b>Sub-agents work in their own context.</b> A Claude Code sub-agent has its own context and cache and brings back only a summary, so the main agent’s beginning stays the same.${remBtn('subx')}</li></ul>`,
+    `<p>Codex 和 Claude Code 跑超长任务，既要放得下，也要多命中缓存；它们公开的文档和代码（出处在页末）里，用的正是这个 Lab 的办法。</p><ul class="cte-remlist">`+
+    `<li><b>开头不变，新内容只往后加。</b>Claude Code 把 system prompt 和工具放在最前；Codex 的新请求就是上一次的请求原样加上新内容。滑动窗口每一步都改开头，用不上缓存，反而更贵。${remBtn('slide')}</li>`+
+    `<li><b>快满了才压缩。</b>Codex 默认在上下文用到窗口的 90% 时压缩；Claude Code 先清掉旧的工具输出，不够再写摘要。本 Lab 每 20 步压缩一次，只是为了好比较。${remBtn('comp')}</li>`+
+    `<li><b>写摘要的那次调用也读缓存。</b>Claude Code 写摘要的请求，只在对话后面加一句总结的要求，开头不变，就能从缓存读。图里标 Σ 的就是这种调用。</li>`+
+    `<li><b>压缩之后，把要紧的放回来。</b>Claude Code 重新放进 CLAUDE.md、记忆和计划，再重读最近改过的最多 5 个文件；Codex 留下最近的用户消息和一段交接摘要。这和记笔记是同一个思路。${remBtn('sum')}</li>`+
+    `<li><b>子 agent 用自己的上下文。</b>Claude Code 的子 agent 有自己的上下文和缓存，只交回总结，主 agent 的开头不受影响。${remBtn('subx')}</li></ul>`);
 }
 function remember(){
   const t=run({...BASE,trim:1}), sl=run(REMS.slide.s), sn=run(REMS.sum.s), sm=run({...BASE,hist:'sum',M:20,trim:1}), big=run({...BASE,W:262144});
@@ -513,7 +511,8 @@ const FIDPOP=()=>tx(
  `<li>${cite(SRC.cache,'Anthropic cookbook, prompt_caching.ipynb')} gives the cache prices: a cache write costs 1.25 times the base input price, a cache read 0.1 times.</li>`+
  `<li>${cite(SRC.oaic,'OpenAI cookbook, Prompt_Caching101.ipynb')}: caching turns on automatically for prompts longer than 1,024 tokens.</li>`+
  `<li>${cite(SRC.codex,'Codex CLI, compact.rs')}: when the context nears the limit, it summarizes the conversation and keeps the user’s own messages, up to 20,000 tokens. ${cite(SRC.cxm,'openai_models.rs')}: by default, Codex compacts when the context reaches 90% of the window.</li>`+
- `<li>Claude Code docs: ${cite(SRC.ccp,'prompt caching')} (requests ordered from least to most changing, changes appended, the summary request and sub-agents reuse or keep the cache), ${cite(SRC.cch,'how it works')} (old tool outputs cleared first, then a summary), ${cite(SRC.ccw,'context window')} (what is put back after compaction).</li></ul>`+
+ `<li>Codex’s requests and compaction, at commit c2f7fe8: ${cite(SRC.cxp,'OpenAI’s post on the Codex agent loop')} and ${cite(SRC.cxk,'client.rs')} (each new request is the previous one, unchanged, plus the new items), ${cite(SRC.cxc,'compact.rs')} (the recent user messages and a handoff summary are kept after compaction).</li>`+
+ `<li>Claude Code docs: ${cite(SRC.ccp,'prompt caching')} (requests ordered from least to most changing, changes appended, the summary request and sub-agents reuse or keep the cache), ${cite(SRC.cch,'how it works')} (old tool outputs cleared first, then a summary), ${cite(SRC.ccw,'context window')} (what is put back after compaction), ${cite(SRC.ccs,'sub-agents')} (a sub-agent has its own context and brings back a summary).</li></ul>`+
  `<p class="mono small muted" style="margin-top:8px">Last verified 2026-10-04. Prototype, not yet expert-reviewed.</p></div></div>`,
  `<p><b>玩具实跑：</b>用固定的随机数种子生成一个长任务，再按每种删法一步一步跑一遍。每次调用读进去多少 token、花多少，${J('math','“展开公式”')}里逐项加给你看。</p><div class="pop-grid"><div><div class="eyebrow">建模了什么</div><ul>`+
  `<li>每次调用都发出整个上下文，包括 system prompt、工具和任务，有摘要时加上摘要，再加上留着的每一步。一共读进去的 token 是所有调用加起来，子 agent 读的也算。</li>`+
@@ -528,7 +527,8 @@ const FIDPOP=()=>tx(
  `<li>${cite(SRC.cache,'Anthropic cookbook，prompt_caching.ipynb')} 写明了缓存的价格。写进缓存是输入原价的 1.25 倍，从缓存读是 0.1 倍。</li>`+
  `<li>${cite(SRC.oaic,'OpenAI cookbook，Prompt_Caching101.ipynb')}：超过 1,024 个 token 的 prompt 会自动缓存。</li>`+
  `<li>${cite(SRC.codex,'Codex CLI 的 compact.rs')}：上下文快到上限时，它把对话写成摘要，保留用户自己说过的话，最多 20,000 个 token。${cite(SRC.cxm,'openai_models.rs')} 里，Codex 默认在上下文用到窗口的 90% 时压缩。</li>`+
- `<li>Claude Code 文档。${cite(SRC.ccp,'prompt caching')} 讲请求按变化从少到多排、变化往后追加，以及写摘要的请求和子 agent 怎么保住缓存。${cite(SRC.cch,'how Claude Code works')} 讲先清旧的工具输出、再写摘要。${cite(SRC.ccw,'context window')} 讲压缩后放回什么。</li></ul>`+
+ `<li>Codex 的请求和压缩（代码取自 commit c2f7fe8）：${cite(SRC.cxp,'OpenAI 讲 Codex agent 循环的文章')}和 ${cite(SRC.cxk,'client.rs')} 讲每次的新请求是上一次的请求原样加上新内容；${cite(SRC.cxc,'compact.rs')} 讲压缩后留下最近的用户消息和一段交接摘要。</li>`+
+ `<li>Claude Code 文档。${cite(SRC.ccp,'prompt caching')} 讲请求按变化从少到多排、变化往后追加，以及写摘要的请求和子 agent 怎么保住缓存。${cite(SRC.cch,'how Claude Code works')} 讲先清旧的工具输出、再写摘要。${cite(SRC.ccw,'context window')} 讲压缩后放回什么。${cite(SRC.ccs,'sub-agents')} 讲子 agent 有自己的上下文，只交回总结。</li></ul>`+
  `<p class="mono small muted" style="margin-top:8px">最近核验 2026-10-04。原型，尚未经专家审阅。</p></div></div>`);
 const OUTCOME=()=>tx('predict when an agent’s context overflows and what it costs, and choose what to trim, summarize, note or hand off so that the facts it needs are still there.','预测 agent 的上下文什么时候塞满、要花多少钱，并决定哪些该修剪、压缩、记笔记或交给子 agent，让要用的事实到时候还在。');
 const PRIMER=()=>tx(`<p>An agent is a loop: it sends the conversation to the model, runs the tool the model asks for, appends the result, and sends it all again. The model remembers nothing between calls; everything it knows is in the context of this call. The lab ${labLink('agent-anatomy')} walks through one such run.</p>`,
@@ -751,11 +751,13 @@ const cssv=(el,v)=>getComputedStyle(el).getPropertyValue(v).trim();
 const SEGN=()=>[tx('system prompt, tools, task','system prompt、工具、任务'),tx('summary','摘要'),tx('conversation','对话'),tx('tool outputs','工具输出')];
 function colors(){return {ink:cssv(app,'--ink'),ink2:cssv(app,'--ink-2'),ink3:cssv(app,'--ink-3'),line:cssv(app,'--line'),line2:cssv(app,'--line-2'),s2:cssv(app,'--surface-2'),surf:cssv(app,'--surface'),ok:cssv(app,'--c-ok'),bad:cssv(app,'--c-oom')};}
 function hatch(g,x,y,w,h,col,step_){g.save(); g.beginPath(); g.rect(x,y,w,h); g.clip(); g.strokeStyle=col; g.lineWidth=1; for(let k=-h;k<w+h;k+=step_){g.beginPath(); g.moveTo(x+k,y+h); g.lineTo(x+k+h,y); g.stroke();} g.restore();}
-let geo=null;
+let geo=null, ro=null;
+/* the chart's height comes from the CSS (--cte-ch through its min-height): 210 px, shorter on a wide desktop stage */
+const chartH=h=>{const v=parseFloat(getComputedStyle(h).minHeight); return v>=60?v:210;};
 function drawChart(){
   const host=$('#cte-chart',app), cv=$('#cte-cv',app); if(!host||!cv) return;
   const Wd=host.clientWidth; if(!Wd) return;
-  const H=210, dpr=window.devicePixelRatio||1, r=R_(), C=colors(), pre=hideRes()&&!pred;
+  const H=chartH(host), dpr=window.devicePixelRatio||1, r=R_(), C=colors(), pre=hideRes()&&!pred;
   if(cv.width!==Math.round(Wd*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(Wd*dpr); cv.height=Math.round(H*dpr); cv.style.width=Wd+'px'; cv.style.height=H+'px';}
   const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,Wd,H);
   const T_n=TASKS[S.task].n, Lp=40, Rp=8, T=14, B=18, pw=Wd-Lp-Rp, ph=H-T-B, n=Math.max(1,r.calls.length+(r.over?Math.max(0,T_n-r.over):0));   // S7: the axis ends with the run; a run that stopped keeps room for the steps it never reached
@@ -1226,10 +1228,15 @@ A.registerLab({
     if(mode==='guided'&&!p&&step===0&&!pred){S={...BASE};}
     fillRail(); render();
     const h=$('#cte-chart',app); if(h) h.addEventListener('mouseleave',()=>{h._i=null; A.tip.hide();});
+    /* the stage changes width without a window resize (the guided flow narrows the bench, and the chart's height follows the stage's
+       width): redraw the chart and the rows when the width or the height the CSS asks for changes */
+    if(ro) ro.disconnect(); ro=window.ResizeObserver?new ResizeObserver(()=>{if(!app) return; const c=$('#cte-chart',app), cv=$('#cte-cv',app); if(!c||!cv) return;
+      if(Math.abs(c.clientWidth-(parseFloat(cv.style.width)||0))>1||Math.abs(chartH(c)-(parseFloat(cv.style.height)||0))>0.5){drawChart(); drawLanes();}}):null;
+    if(ro) ro.observe($('#cte-graph',app));
     if(PL.on){PL.last=0; stopLoop(); PL.raf=requestAnimationFrame(frame);}
     else if(!(hideRes()&&!pred)&&PL.pv===0) play();
   },
-  leave(){clearTimeout(annT); stageStop(); stopLoop(); root=null; app=null;},
+  leave(){clearTimeout(annT); stageStop(); stopLoop(); if(ro){ro.disconnect(); ro=null;} root=null; app=null;},
   onLang(){if(root){const d=$('#cte-math',app), open=d&&d.open; stopLoop(); this.mount(root,null); if(open) $('#cte-math',app).open=true;}},
   onResize(){if(app){drawChart(); drawLanes();}},
   termTip(k){const f=TERM[k]; return f?`<div>${esc(f())}</div><div class="act">${esc(jumpAct(k))}</div>`:'';},

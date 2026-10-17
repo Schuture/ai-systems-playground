@@ -78,3 +78,30 @@
 .adm-blk[hidden]+.adm-blk{border-top:0}
 .adm-prod code,.adm-app .small code{overflow-wrap:anywhere;word-break:break-word}
 .adm-gnote{margin:2px 0 0;padding-left:8px;border-left:3px solid var(--c-oom);font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+/* ---------- a wide stage (polish round 3, 2026-10-16; the owner's B4, R7.12): at 1440 × 900 parts 1, 2, 7 and 8 needed 69 px of
+   scrolling inside the stage (part 5: 27). On a stage at least 736 px wide (windows from about 1226 px) the day chart and the busiest
+   minute are drawn shorter (--adm-ch, read by chartH), the metric cards share the row by their number (it was five columns, the rest
+   empty, so a card's name and its note took two lines) with the value and change lines tighter (as tool-scheduling's, CONTRACT §19),
+   and a few gaps are tighter. In English the status badge keeps to the first line, beside the run's settings, and the title runs under
+   it, instead of the badge taking a line of its own (40 px). Same pieces in the same order, same animation; phones (≤ 760 px) and
+   narrower stages keep the layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  html:not([lang^="zh"]) .adm-stage>.stage-head{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:14px;align-items:start}
+  html:not([lang^="zh"]) .adm-stage>.stage-head>div:first-child{display:contents}
+  html:not([lang^="zh"]) #adm-st-title{grid-column:1;grid-row:1;align-self:center}
+  html:not([lang^="zh"]) #adm-st-sub{grid-column:1/-1;grid-row:2}
+  html:not([lang^="zh"]) .adm-stage>.stage-head>.stage-actions{grid-column:2;grid-row:1}
+  #adm-graph{margin-top:10px;padding-top:8px;padding-bottom:8px}
+  .adm-blk{padding:6px 0}
+  .adm-bh{margin-bottom:4px}
+  .adm-legend{margin:2px 0}
+  .adm-run{padding-top:6px}
+  .adm-goals{gap:4px}
+  #adm-day,#adm-q{--adm-ch:120}
+  .adm-metrics{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:8px}
+  .adm-metrics:has(>.metric:nth-child(4 of :not([hidden]))){grid-template-columns:repeat(4,minmax(0,1fr))}
+  .adm-metrics:has(>.metric:nth-child(5 of :not([hidden]))){grid-template-columns:repeat(5,minmax(0,1fr))}
+  .adm-metrics .metric .v{line-height:1.25}
+  .adm-metrics .metric .d{min-height:13px;line-height:1.1}
+  .adm-stage>details.math{margin-top:8px;padding-top:8px}
+}}

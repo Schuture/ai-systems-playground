@@ -90,3 +90,25 @@ mark.ctm-m{color:inherit;background:color-mix(in srgb,var(--ink) 16%,transparent
 .ctm-app .seg-ctl[data-key="s"] button:nth-child(3n){border-right:0}
 .ctm-why,.ctm-rules{margin:4px 0 8px;padding-left:18px}
 .ctm-why li,.ctm-rules li{margin:2px 0}
+/* B4 (the owner: "the panel was pushed down, I did not see there was more below"): on a wide desktop stage (>= 736 px) part 7 (the
+   score chart, the release gate, the 100 runs and the cards) fits one 1440x900 screen with nothing cut or folded. When the gate is
+   shown under it, the score chart keeps its 460 px and its legend moves to its right, still beside the bars it labels (R5.9); each
+   gate row's small chart is drawn at most 240 px wide (shorter); the panels' spacing and the cards' padding are tighter, the
+   cards' change line keeps 12 px type (CONTRACT §19) and its place. Phones and narrow stages keep the stacked layout. */
+@media (min-width:761px){
+@container (min-width:736px){
+ .ctm-stage:has(>#ctm-pan-gate:not([hidden])) #ctm-pan-score:not([hidden]){display:grid;grid-template-columns:minmax(0,460px) minmax(0,1fr);column-gap:16px;align-items:end}
+ .ctm-stage:has(>#ctm-pan-gate:not([hidden])) #ctm-pan-score>.ctm-pt{grid-column:1/-1}
+ .ctm-stage:has(>#ctm-pan-gate:not([hidden])) #ctm-pan-score>#ctm-s-leg{flex-direction:column;align-items:flex-start;margin:0 0 30px;gap:6px}
+ .ctm-gr .ctm-gsvg{max-width:240px;justify-self:center}
+ .ctm-pan{padding-top:6px;margin-top:6px}
+ .ctm-gr{padding:3px 0}
+ .ctm-pt2{margin-top:8px;padding-top:6px}
+ .ctm-strip{margin:4px 0 0}
+ .ctm-leg{margin:2px 0 4px}
+ .ctm-stage>.ctm-metrics{margin-top:8px}
+ .ctm-stage>details.math{margin-top:8px}
+ .ctm-metrics .metric{padding-block:6px 5px}
+ .ctm-metrics .metric .v{line-height:1.25}
+ .ctm-metrics .metric .d{min-height:13px;line-height:13px}
+}}

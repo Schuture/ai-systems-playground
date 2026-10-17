@@ -81,3 +81,35 @@
   #pdd-gp .cmp-row{display:grid;grid-template-columns:minmax(150px,30%) minmax(0,1fr);align-items:center;column-gap:10px;margin-top:6px}
   #pdd-gp .cmp-track{margin:0 28px 0 0}
 }
+/* ---------- a wide stage (polish round 3, 2026-10-16; the owner's B4, R7.12): at 1440 × 900 part 7 needed 122 px of scrolling inside
+   the stage (English: 196). On a stage at least 736 px wide (windows from about 1226 px) more than four lanes are drawn shorter
+   (--pdd-rh, --pdd-gap, read by drawTimeline), the goodput bars sit closer, the metric cards share the row by their number (it was five
+   columns, the last empty) with the value and change lines tighter (as tool-scheduling's, CONTRACT §19), and a few gaps are tighter.
+   In English the status badge sits beside the subtitle instead of taking a line of its own (40 px). Same pieces in the same order,
+   same animation; phones (≤ 760 px) and narrower stages keep the layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  html:not([lang^="zh"]) .pdd-stage>.stage-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 14px;align-items:center}
+  html:not([lang^="zh"]) .pdd-stage>.stage-head>div:first-child{display:contents}
+  html:not([lang^="zh"]) #pdd-st-title{grid-column:1/-1;grid-row:1}
+  html:not([lang^="zh"]) #pdd-st-sub{grid-column:1;grid-row:2}
+  html:not([lang^="zh"]) .pdd-stage>.stage-head>.stage-actions{grid-column:2;grid-row:2}
+  #pdd-graph{margin-top:10px;padding-top:6px;padding-bottom:6px}
+  .pdd-blk{padding:6px 0}
+  .pdd-bh{margin-bottom:4px}
+  #pdd-tl{--pdd-rh:14;--pdd-gap:2}
+  .pdd-app input[type=range].pdd-prog{height:24px}
+  .pdd-run{padding-top:4px}
+  .pdd-legend{margin:2px 0}
+  .pdd-wcap{margin-bottom:4px}
+  #pdd-gp .cmp{margin:6px 0 0}
+  #pdd-gp .cmp-row{margin-top:2px}
+  /* while part 7's sweep is computed (about a second after the lab opens) its line takes the chart's height, so the stage does not
+     grow under the reader when the chart comes (it pushed the stage's top under the top bar) */
+  #pdd-gp>.pdd-gp-wait{margin:6px 0 0;min-height:184.4px}
+  .pdd-metrics{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:8px}
+  .pdd-metrics:has(>.metric:nth-child(4)){grid-template-columns:repeat(4,minmax(0,1fr))}
+  .pdd-metrics:has(>.metric:nth-child(5)){grid-template-columns:repeat(5,minmax(0,1fr))}
+  .pdd-metrics .metric .v{line-height:1.25}
+  .pdd-metrics .metric .d{min-height:13px;line-height:1.1}
+  .pdd-stage>details.math{margin-top:8px;padding-top:8px}
+}}

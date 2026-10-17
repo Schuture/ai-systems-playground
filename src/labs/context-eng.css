@@ -12,7 +12,8 @@
 .cte-badm{color:var(--c-oom);margin-right:6px;font-weight:700}
 
 /* ---------- the bars: one per model call ---------- */
-.cte-chart{position:relative;min-width:0;min-height:210px;cursor:help;outline-offset:3px;border-radius:2px}
+/* the chart's height: drawChart reads --cte-ch; shorter on a wide desktop stage (see the end of this file) */
+.cte-chart{--cte-ch:210px;position:relative;min-width:0;min-height:var(--cte-ch);cursor:help;outline-offset:3px;border-radius:2px}
 .cte-chart canvas,.cte-lanes canvas{display:block;max-width:100%}
 .cte-lanes-h{margin-top:2px;min-width:0;overflow-x:auto}
 /* H5 (the owner, 2026-10-09): a hairline between the context chart and the facts’ lanes */
@@ -108,6 +109,34 @@
   .cte-play{min-width:84px}
   .cte-scrub{flex-basis:100%}
 }
+/* B4 (the owner: "the player was pushed down, I did not see there was more below"): on a wide desktop stage (>= 736 px) the whole
+   stage fits one 1440x900 screen with nothing cut: the chart is drawn shorter (180 px, and shorter still on a lower screen, never
+   under 120), the line legend sits beside the facts table, right above the rows it labels (R5.9), and the hairline runs on under
+   both (H5); the tally keeps one line (it fits on this width, and its height still never changes while the run plays, R7.9); the
+   five cards sit in one row. Phones and narrow stages keep the stacked layout. */
+@media (min-width:761px){
+@container (min-width:736px){
+  /* R7.9: the status chip changes its words when a run ends ("Running" -> "Fits; 0 of 3 facts sure"); beside a long English setting
+     line it dropped to a row of its own at that moment and pushed the whole stage down 40 px. Here the chip sits at the right of the
+     small question line and the setting line under both has the stage's whole width, so the head keeps one height whatever the
+     chip says. */
+  .stage-head:has(#cte-status){display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 14px;align-items:center}
+  .stage-head:has(#cte-status)>div:first-child{display:contents}
+  #cte-st-title{grid-column:1;grid-row:1}
+  .stage-head:has(#cte-status)>.stage-actions{grid-column:2;grid-row:1}
+  #cte-st-sub{grid-column:1/-1;grid-row:2}
+  .cte-graph{padding:10px 14px;gap:6px 0;grid-template-columns:max-content minmax(0,1fr)}
+  .cte-graph>*{grid-column:1/-1}
+  .cte-graph>.cte-lanes-h{grid-column:1;grid-row:4}
+  .cte-graph>#cte-legend2{grid-column:2;grid-row:4;align-content:flex-end;border-top:1px solid var(--line);padding:8px 0 2px 24px;margin-top:2px}
+  .cte-graph>.cte-lanes{grid-row:5}
+  .cte-chart{--cte-ch:clamp(120px,calc(100vh - 720px),180px)}
+  .cte-tally{min-height:1.45em;white-space:nowrap}
+  .cte-metrics{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+  .cte-metrics .metric,.cte-metrics .metric:nth-child(n+4){grid-column:auto}
+  /* the widest change line (“this run stopped at step 38”, one line, S5) still fits inside a card */
+  .cte-metrics .metric{padding-inline:5px}
+}}
 @media (prefers-reduced-motion:reduce){.cte-dk i{transition:none}}
 /* owner point 4: each point's sources, small and after its button */
 .cte-srcs{font-size:12px;color:var(--ink-3)}

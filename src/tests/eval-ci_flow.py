@@ -510,6 +510,44 @@ check('H5 src: the stage hairline rule is in the lab’s CSS', 'H5 (the owner, 2
 for _x in _H1_SRC_NEW:
     check(f'H1/H2 src: present: {_x[:70]}', _x in _h1src)
 # end H1 H2
+# polish round 3 (2026-10-16, B4 / R7.12, the owner: "the panel was pushed down, I did not see there was more below"): at 1440 × 900,
+# entering each listed guided part the way a reader does (Next), the stage needs no scrolling inside itself and nothing in it
+# scrolls either; in Chinese it could still grow by 30 px (its max-height minus the height its content and borders need), in
+# English it does not scroll; its main picture lies inside it and on the screen. The real layout: window.__aspPrimer, as the probe.
+_FIT_PARTS = [4]
+_FIT_V = "(()=>{const v=document.querySelector('#view-dyn:not([hidden])')||document.querySelector('#view-lab:not([hidden])'); return [...v.querySelectorAll('.bench')].find(x=>x.offsetParent)||v;})()"
+_FIT_M = ("(()=>{const b=" + _FIT_V + ", s=b.querySelector(':scope>.stage'), cur=b.querySelector('.steps>.step.current'), r=s.getBoundingClientRect(), tb=(document.querySelector('.topbar')||{offsetHeight:0}).offsetHeight; let inner=0;"
+          "s.querySelectorAll('*').forEach(e=>{const c=getComputedStyle(e); if(/(auto|scroll)/.test(c.overflowY)&&e.getClientRects().length) inner=Math.max(inner,e.scrollHeight-e.clientHeight);});"
+          "const f=[...s.querySelectorAll('svg,canvas')].filter(e=>e.getClientRects().length&&!e.closest('button,.btn')).map(e=>e.getBoundingClientRect()).sort((x,y)=>y.width*y.height-x.width*x.height)[0];"
+          "return {part:cur?[...cur.parentNode.children].indexOf(cur)+1:0, spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, inner,"
+          "fig:!f||(f.top>=r.top-1&&f.bottom<=r.bottom+1&&f.top>=tb-2&&f.bottom<=innerHeight+2)};})()")
+if '1440' in str(SIZES):
+    with sync_playwright() as _fp:
+        _fb = _fp.chromium.launch()
+        for _lang in LANGS:
+            _pg = _fb.new_page(viewport={'width': 1440, 'height': 900}); _pg.add_init_script('window.__aspPrimer=true')
+            _pg.on('pageerror', lambda e, _l=_lang: errs.append(f'fit 1440 {_l}: {e}'))
+            _pg.goto(URL); _pg.wait_for_timeout(300); _pg.click(f'.langsw button[data-lang="{_lang}"]'); _pg.wait_for_timeout(80)
+            _pg.evaluate("()=>{location.hash='eval-ci'}"); _pg.wait_for_timeout(500)
+            _g = _pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+            if _g.count(): _g.first.click(); _pg.wait_for_timeout(700)
+            for _i in range(1, max(_FIT_PARTS) + 1):
+                if _i > 1:
+                    _nb = _pg.locator('.pbar [data-nav=next]:visible:not([disabled])')
+                    if _nb.count(): _nb.first.click()
+                    else: _pg.evaluate(f"{_FIT_V}.querySelector('.steps>.step:nth-child({_i}) .step-h').click()")
+                    _pg.wait_for_timeout(900)
+                if _i not in _FIT_PARTS: continue
+                _f = _pg.evaluate(_FIT_M)
+                if _lang == 'zh':
+                    check(f'B4 1440 zh part {_i}: the stage fits without scrolling inside, nothing in it scrolls, 30 px to spare, its picture inside it and on screen (R7.12)',
+                          _f['part'] == _i and _f['scroll'] <= 0 and _f['inner'] <= 4 and _f['spare'] >= 30 and _f['fig'], _f)
+                else:
+                    check(f'B4 1440 en part {_i}: the stage fits without scrolling inside, its picture inside it and on screen (R7.12)',
+                          _f['part'] == _i and _f['scroll'] <= 0 and _f['spare'] >= 0 and _f['fig'], _f)
+            _pg.close()
+        _fb.close()
+# end B4
 check('no page errors', not errs, errs[:5])
 # the owner, 2026-10-08 (G1, G2) src: every option group leads in with what to pick and what to watch (G1); no sentence leans on an earlier part's detail (G2)
 _src = (P / 'labs' / 'eval-ci.js').read_text() + (P / 'teasers' / 'eval-ci.js').read_text()

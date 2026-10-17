@@ -197,3 +197,45 @@
 .primer .spd-prfx{display:flex;flex-wrap:wrap;align-items:center;column-gap:.35em;row-gap:6px;margin:2px 0 14px;padding-left:1em;font-size:1.05em;line-height:1.3;min-width:0}
 .primer .spd-prfx>span{min-width:0;max-width:100%}
 @media (max-width:760px){.primer .spd-prfx{padding-left:.4em}}
+/* ---------- a wide stage (polish round 3, 2026-10-16; the owner's B4, R7.12): at 1440 × 900 parts 5 and 7 needed 126 and 56 px of
+   scrolling inside the stage, and on entering part 7, the stage pushed up at the end of the bench, the batch curve began under the top
+   bar. On a stage at least 736 px wide (windows from about 1226 px) the k curve, the batch curve and the timeline have their legend in a
+   column on their right (the plots drawn as much narrower, at the same scale, and the two curves a little shorter: plotBox reads
+   --spd-legw and --spd-ch), the metric cards share the row by their number with the value and change lines tighter (as
+   tool-scheduling's, CONTRACT §19), a Chinese title keeps one line (every Chinese title fits on one line here, so it never grows while
+   a round plays, R7.9), and a few gaps are tighter. Same pieces in the same order, same animation; phones (≤ 760 px) and narrower
+   stages keep the layout above. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  html[lang^="zh"] .spd-st-title{min-height:1.3em}
+  .spd-main{gap:8px}
+  .spd-blk{padding-top:8px;padding-bottom:8px}
+  .spd-ch-t{margin-bottom:4px}
+  .spd-axl{margin-top:0}
+  .spd-leg{margin-top:4px}
+  .spd-stepin{padding-bottom:8px;margin-bottom:8px}
+  /* the legend beside its plot: the title across the top, the plot (and its axis note) on the left, the legend on the right */
+  #spd-kcurve,#spd-bcurve,#spd-time{display:grid;grid-template-columns:minmax(0,1fr) var(--spd-legw);column-gap:16px;align-items:start;--spd-legw:212px}
+  #spd-kcurve{--spd-ch:176}
+  #spd-bcurve{--spd-ch:160}
+  :is(#spd-kcurve,#spd-bcurve,#spd-time)>.spd-ch-t{grid-column:1/-1}
+  :is(#spd-kcurve,#spd-bcurve,#spd-time)>.spd-svg{grid-column:1;grid-row:2}
+  :is(#spd-kcurve,#spd-bcurve)>.spd-axl{grid-column:1;grid-row:3}
+  :is(#spd-kcurve,#spd-bcurve,#spd-time)>.spd-leg{grid-column:2;grid-row:2/span 2;flex-direction:column;flex-wrap:nowrap;align-items:flex-start;gap:5px;margin-top:0}
+  #spd-time>.spd-leg{grid-row:2}
+  #spd-time>.spd-tnote{grid-column:1/-1;grid-row:3}
+  /* the round: the same rows, a little closer */
+  .spd-ctx{margin-bottom:4px}
+  .spd-stg{margin-top:6px}
+  .spd-stl{margin-bottom:3px}
+  .spd-chip{height:26px}
+  .spd-brk{margin-top:8px;margin-bottom:2px}
+  .spd-rleg{margin-top:6px}
+  .spd-player{margin-top:8px}
+  /* the metric cards share the row: three columns for up to three cards, else one per card (it was five columns, the rest empty) */
+  .spd-metrics{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:8px}
+  .spd-metrics:has(>.metric:nth-child(4 of :not([hidden]))){grid-template-columns:repeat(4,minmax(0,1fr))}
+  .spd-metrics:has(>.metric:nth-child(5 of :not([hidden]))){grid-template-columns:repeat(5,minmax(0,1fr))}
+  .spd-metrics .metric .v{line-height:1.25}
+  .spd-metrics .metric .d{min-height:13px;line-height:1.1}
+  .spd-stage>details.math{margin-top:8px;padding-top:8px}
+}}

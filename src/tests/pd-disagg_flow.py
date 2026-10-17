@@ -44,6 +44,23 @@ def check(name, ok, info=''):
 Z = lambda lang, en, zh: zh if lang == 'zh' else en
 
 
+# polish round 3 (2026-10-16, R7.12, the owner's B4; as tests/data-pipeline_flow.py part 4): on entering a listed part at 1440 × 900 the
+# stage needs no scrolling inside itself and could still grow by 30 px in Chinese (its max-height minus the height its content and borders
+# need; in English it only needs no scrolling), and the part's figures lie inside it and on the screen (below the top bar and the mini
+# result bar, above the window's bottom)
+FIT = """([st,sels])=>{const s=document.querySelector(st), r=s.getBoundingClientRect(), tb=document.querySelector('.topbar'), dk=document.querySelector('.dock');
+ const top=Math.max(tb?tb.getBoundingClientRect().bottom:0, dk&&getComputedStyle(dk).display!=='none'?dk.getBoundingClientRect().bottom:0);
+ const figs=sels.map(x=>{const e=document.querySelector(x); if(!e||!e.getClientRects().length) return null; const q=e.getBoundingClientRect(); return [Math.round(q.top),Math.round(q.bottom)];});
+ return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top), figs,
+   inside:figs.every(q=>q&&q[0]>=r.top-1&&q[1]<=r.bottom+1), shown:figs.every(q=>q&&q[0]>=top-1&&q[1]<=innerHeight+1)};}"""
+
+
+def fits(pg, tag, part, lang, sels):
+    f = pg.evaluate(FIT, ['#pdd-stage', sels])
+    check(f'{tag} part {part}: the stage fits without scrolling inside' + (', 30 px to spare' if lang == 'zh' else '') + ', its figures inside it and on the screen (R7.12, B4)',
+          f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['inside'] and f['shown'], f)
+
+
 def page(b, w, h, lang, hash_='pd-disagg'):
     pg = b.new_page(viewport={'width': w, 'height': h})
     open_drawers(pg)
@@ -241,6 +258,7 @@ def guided(b, w, h, lang):
     rules(pg, f'{tag} part 6')
     # part 7: the sweep
     nav(pg, 'next'); pg.wait_for_function('()=>window.__pdd.state().gpQueue===0', timeout=90000); pg.wait_for_timeout(300); finish(pg)
+    if w == 1440: fits(pg, tag, 7, lang, ['#pdd-tl svg', '#pdd-gp .cmp'])
     check(f'{tag} part 7: Next waits for a setup', next_dis(pg) and set(why(pg)) == {Z(lang, 'Click a setup (6:2 too) to watch its run and continue.', '点一种方案（6:2 也行）看它的运行，才能继续。')}, why(pg))
     chart = text(pg, '#pdd-app .stage')
     check(f'{tag} part 7: the chart shows goodput per GPU for the setups', '6.5' in chart and '4' in chart, chart[:300])
@@ -293,7 +311,10 @@ def challenge(b, w, h, lang):
     click(pg, '#pdd-app .seg-ctl[data-key="chp"] button[data-v="3"]'); finish(pg)
     click(pg, '#pdd-app [data-act="submit"]', 350); r = text(pg, '#pdd-ch-res')
     check(f'{tag} challenge: 3 + 5 misses, says why, offers the answer', Z(lang, 'Not met: 24% of requests meet their goals.', '没达标：24% 的请求达标。') in r and Z(lang, 'Show the answer', '直接看答案') in r and not pg.query_selector('#pdd-ch-res .cmp'), r)
-    click(pg, '#pdd-ch-res [data-act="reveal"]', 350); r = text(pg, '#pdd-ch-res')
+    click(pg, '#pdd-ch-res [data-act="reveal"]', 350)
+    # the goodput tags come when the lab has computed every passing setup's goodput (it renders again then); under load that can take
+    # longer than 350 ms, so wait for the queue as the checks below do
+    pg.wait_for_function('()=>window.__pdd.state().gpQueue===0', timeout=90000); pg.wait_for_timeout(300); r = text(pg, '#pdd-ch-res')
     rows = pg.evaluate("()=>document.querySelectorAll('#pdd-ch-res .cmp-row, #pdd-ch-res [class*=cmp] li, #pdd-ch-res tr').length")
     tags = text(pg, '#pdd-ch-res')
     check(f'{tag} challenge: Show the answer shows the chart (passing setups, your pick, the initial setup) and why', rows >= 4 and Z(lang, 'your pick', '你的选择') in tags and Z(lang, 'initial setup', '初始设置') in tags and Z(lang, 'The initial setup, 2 prefill + 6 decode, meets only 7%.', '初始设置是 2 张 prefill、6 张 decode，只有 7% 达标。') in r and Z(lang, 'goodput 3 per GPU', '达标吞吐：每张卡每秒 3 个') in tags, (rows, r[:300]))

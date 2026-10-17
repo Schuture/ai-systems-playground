@@ -166,6 +166,45 @@ mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;pad
   .pin-chips{gap:4px}
   .pin-tools{gap:2px}
 }
+/* B4 (the owner: "the player was pushed down, I did not see there was more below"): on a wide desktop stage (>= 736 px) the whole
+   stage fits one 1440x900 screen with nothing cut or folded. The tools sit at the left of the replay's caption and player (a
+   hairline at the right of the tools and under them, H5); the model's context gets the wider column and its blocks (and the log's lines) are packed
+   tighter, so a replay needs about 100 px less; each row of the 100 tasks has its name at the left of its cells; the line on the
+   assumed rates sits at the right of "Show the math"; the spacing is tighter. The context box keeps its rule (one height per
+   replay, the newest block in view when the replay is longer than the box); on a desktop its cap follows the screen's height:
+   at 900 px 300 px in Chinese (the whole replay of every guided part) and 240 px in English, whose legends and player take
+   more lines; never under 164 / 160 px. */
+@media (min-width:761px){.pin-stage{padding-block:12px}}   /* the stage is its own container, so this one is a plain media rule */
+@media (min-width:761px){
+@container (min-width:736px){
+  .pin-stage .stage-graph{margin-top:6px}
+  .pin-graph{padding:10px 14px;row-gap:6px;column-gap:0;grid-template-columns:max-content minmax(0,1fr)}
+  .pin-graph>*{grid-column:1/-1}
+  /* the tools block keeps its hairlines on the sides that face the replay: at its right (the caption and the player) and under it (the context) */
+  .pin-graph>.pin-tools:not(:empty){grid-column:1;grid-row:1 / span 2;padding:0 14px 4px 0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);align-self:stretch;gap:3px}
+  .pin-graph>.pin-tools:not(:empty)~#pin-rp-cap{grid-column:2;grid-row:1;border-top:0;padding:0 0 0 14px}
+  .pin-graph>.pin-tools:not(:empty)~.pin-player{grid-column:2;grid-row:2;padding-left:14px;align-self:end;gap:6px}
+  .pin-play{min-width:80px}
+  .pin-scrub{flex:1 1 96px;min-width:96px}
+  .pin-rp{grid-template-columns:minmax(0,2.4fr) minmax(0,1fr);gap:10px}
+  .pin-ctx,.pin-log{gap:3px;padding:4px}
+  .pin-blk,.pin-li{padding:3px 6px;line-height:1.35}
+  .pin-graph>.pin-rp~.pin-gridw{padding-top:8px}
+  .pin-ctx{max-height:clamp(160px,calc(100vh - 660px),286px)}
+  html[lang^="zh"] .pin-ctx{max-height:clamp(164px,calc(100vh - 600px),300px)}
+  .pin-legend{row-gap:3px}
+  .pin-strips{grid-template-columns:max-content minmax(0,1fr);column-gap:10px;row-gap:6px}
+  .pin-strip{grid-column:1/-1;grid-template-columns:subgrid;align-items:start}
+  .pin-stage>.pin-metrics{margin:8px 0 0;gap:5px}
+  .pin-metrics .metric{padding-inline:6px}
+  /* the scope line floats at the right of the math drawer's summary (its text level with the summary's); the math opens below both */
+  .pin-stage>.pin-scope{float:right;margin:20px 0 0 16px;max-width:60%}
+  .pin-stage>details.math{margin-top:8px}
+  .pin-stage>details.math>.mathbody{clear:both}
+}}
+/* phones: the context and the log were boxes 200 and 176 px tall that scrolled inside the stage; they now show the whole replay
+   (fitBox gives each box the replay's full height up front, so the stage still does not jump while it plays, R7.9) */
+@media (max-width:760px){.pin-ctx,.pin-log{max-height:none}}
 @media (prefers-reduced-motion:reduce){.pin-dk i{transition:none}.pin-blk.harm.pin-now,.pin-li.harm.pin-now,.pin-hx.pin-now,.pin-now mark.pin-hid{animation:none}}
 /* the four sending rules are long: two per row, so no label is clipped in the narrow Settings column or the task card */
 .pin-app .seg-ctl[data-key="rule"],.pin-app .seg-ctl[data-key="chR"]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}

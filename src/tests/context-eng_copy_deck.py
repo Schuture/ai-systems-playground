@@ -161,10 +161,10 @@ with sync_playwright() as p:
             elif sid == 'sub':
                 lever(pg, 'sub'); Lines += ['## Card after “sub”', txt(pg, '#cte-rail .step.current'), '## Stage', stage(pg)]
             elif sid == 'prod':
-                for r in ('trim', 'comp', 'sum', 'subx'):
+                for r in ('slide', 'comp', 'sum', 'subx'):
                     click(pg, f'#cte-rail [data-rem="{r}"]', 350); end(pg)
                     Lines += [f'## Part {k + 1} after “Show in the chart” ({r})', '## Stage', stage(pg)]
-                Lines += ['## Source links', '\n'.join(pg.evaluate("()=>[...document.querySelectorAll('#cte-rail .step.current .cte-srcs a')].map(a=>a.textContent+' → '+a.href)"))]
+                Lines += ['## Source links (page-end sources since polish round 3)', '\n'.join(pg.evaluate("()=>[...document.querySelectorAll('[data-endnotes] a')].map(a=>a.textContent+' → '+a.href)"))]
             elif sid == 'remember':
                 for r in ('trim', 'slide', 'sum'):
                     click(pg, f'#cte-rail [data-rem="{r}"]', 350); end(pg)

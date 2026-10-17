@@ -4,6 +4,7 @@ the three challenge tiers and the brief comparison chart, the capability layer, 
 the dock on phones, no horizontal overflow, the copy rules shared with the other labs (no “toy”, no option-group disclaimers, Chinese
 spacing and punctuation, no formula as plain text), and the replay rules of R3.20 for the round player (no replay when nothing changed,
 none when returning to a watched round, a replay when something changed, the 重放 / Replay control, default speed 中, pause, step, scrub).
+At 1440 × 900 the listed parts fit the screen (polish round 3), and in Chinese, Next clicked with the mouse into part 7 keeps the stage below the top bar.
 The 知识梳理 (primer, outline approved 2026-10-14): its four sections in order, the link to the prefill-decode primer, the two inert pictures,
 no result of the guided parts and no sentence copied from them, the copy rules, and its button to the guided parts.
 Screenshots go to shots/spec-decoding/.
@@ -52,6 +53,59 @@ lever = lambda pg, v, ms=250: click(pg, f'#spd-rail [data-lkey][data-lever="{v}"
 go = lambda pg, i, ms=350: click(pg, f'#spd-rail [data-go="{i}"]', ms)
 nxt = lambda pg, ms=350: click(pg, '#spd-rail .step.current [data-nav="next"]', ms)
 shot = lambda pg, n: pg.screenshot(path=str(SH / f'{n}.png'))
+
+# polish round 3 (2026-10-16, R7.12, the owner's B4; as tests/data-pipeline_flow.py part 4): on entering a listed part at 1440 × 900 the
+# stage needs no scrolling inside itself and could still grow by 30 px in Chinese (its max-height minus the height its content and borders
+# need; in English it only needs no scrolling), and the part's figures lie inside it and on the screen (below the top bar and the mini
+# result bar, above the window's bottom)
+FIT = """([st,sels])=>{const s=document.querySelector(st), r=s.getBoundingClientRect(), tb=document.querySelector('.topbar'), dk=document.querySelector('.dock');
+ const top=Math.max(tb?tb.getBoundingClientRect().bottom:0, dk&&getComputedStyle(dk).display!=='none'?dk.getBoundingClientRect().bottom:0);
+ const figs=sels.map(x=>{const e=document.querySelector(x); if(!e||!e.getClientRects().length) return null; const q=e.getBoundingClientRect(); return [Math.round(q.top),Math.round(q.bottom)];});
+ return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top), figs,
+   inside:figs.every(q=>q&&q[0]>=r.top-1&&q[1]<=r.bottom+1), shown:figs.every(q=>q&&q[0]>=top-1&&q[1]<=innerHeight+1)};}"""
+
+
+def fits(pg, tag, part, lang, sels):
+    f = pg.evaluate(FIT, ['#spd-stage', sels])
+    check(f'{tag} part {part}: the stage fits without scrolling inside' + (', 30 px to spare' if lang == 'zh' else '') + ', its figures inside it and on the screen (R7.12, B4)',
+          f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['inside'] and f['shown'], f)
+
+
+# polish round 3 (2026-10-16, R9.7, the owner's B4; as admission and pd-disagg): a reader's click on Next (下一部分) scrolls the button into
+# view first, which the walk's element.click() does not. Entering part 7 that way, little of the rail is left under its card, and the bench's
+# end pushed the stage up under the top bar (its head and title hidden, top 27 against the bar's 59). This walk uses real mouse clicks, opening
+# each gate as a reader does, and after each Next waits for the scroll to settle (keepStage waits for it)
+TOPS = """()=>{const s=document.querySelector('#spd-stage').getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
+ h=document.querySelector('#spd-stage .stage-head').getBoundingClientRect(), f=document.querySelector('#spd-bcurve svg'), q=f&&f.getClientRects().length?f.getBoundingClientRect():null;
+ return {part:window.__spd.state().step+1, top:Math.round(s.top), bar:Math.round(bar), head:Math.round(h.top), fig:q?[Math.round(q.top),Math.round(q.bottom)]:null, h:innerHeight};}"""
+
+
+def next_into_7(b):
+    tag = 'zh 1440 Next clicked with the mouse'
+    pg = b.new_page(viewport={'width': 1440, 'height': 900}, reduced_motion='reduce'); pg.add_init_script('window.__aspPrimer=true')
+    pg.on('pageerror', lambda e: errs.append(f'1440 zh mouse: {e}'))
+    pg.goto(URL); pg.wait_for_timeout(250); pg.click('.langsw button[data-lang="zh"]'); pg.wait_for_timeout(80)
+    pg.evaluate("()=>{location.hash='spec-decoding'}"); pg.wait_for_timeout(700)
+    miss = []
+
+    def mouse(sel, ms):
+        try: pg.locator(sel).first.click(timeout=4000)
+        except Exception as e: miss.append(f'{sel}: {str(e)[:60]}')
+        pg.wait_for_timeout(ms)
+    mouse('[data-flow-nav] button[data-flow="guided"]:visible', 600)
+    gates = {2: ['[data-lkey][data-lever="5"]', '[data-lkey][data-lever="640"]'], 4: ['[data-pred="a34"]'], 5: ['[data-lkey][data-lever="2"]', '[data-lkey][data-lever="8"]'],
+             6: ['[data-lkey][data-lever="greedy"]', '[data-lkey][data-lever="nocheck"]']}
+    seen = []
+    for part in range(1, 7):
+        for g in gates.get(part, []): mouse('#spd-rail ' + g, 300)
+        mouse('#spd-rail .step.current [data-nav="next"]', 1500)
+        seen.append(pg.evaluate(TOPS))
+    r = seen[-1]
+    check(f'{tag}: entering part 7, the stage’s top stays at or below the top bar’s bottom (its head and title shown) and the batch chart lies on the screen (R9.7, B4)',
+          not miss and r['part'] == 7 and r['top'] >= r['bar'] - 1 and r['head'] >= r['bar'] - 1 and bool(r['fig']) and r['fig'][0] >= r['bar'] - 1 and r['fig'][1] <= r['h'] + 1,
+          json.dumps({'last': r, 'tops': [(x['part'], x['top']) for x in seen], 'miss': miss}))
+    pg.close()
+
 
 # the copy rules the other labs' flow tests check (tests/grpo_flow.py, tests/ppo_flow.py), on this lab's root
 RULES = """(sel)=>{const root=document.querySelector(sel); if(!root) return [];
@@ -144,8 +198,8 @@ def walk(b, lang, w):
     check(f'{tag} part 2 gated until 1 × 5 and 128 × 5 tokens are tried; the reason is shown', next_off(pg) and Z(lang, 'Try 1 request × 5 tokens and 128 requests × 5 tokens', '试过“1 个请求 × 5 个 token”和“128 个请求 × 5 个 token”') in text(pg, '#spd-rail'))
     hit = pg.evaluate("""()=>{const t=[...document.querySelectorAll('#spd-cost .spd-stepin svg text')].filter(e=>e.textContent.trim()).map(e=>e.getBoundingClientRect()), o=[];
       for(let i=0;i<t.length;i++) for(let j=i+1;j<t.length;j++){const a=t[i], b=t[j]; if(a.left<b.right-1&&b.left<a.right-1&&a.top<b.bottom-1&&b.top<a.bottom-1) o.push(i+'/'+j);} return o;}""")
-    check(f'{tag} part 2 (reader 2026-10-14): the one-token step drawn first has no labels running into each other; the options’ paragraph sends the reader to 1 × 5 for the causal mask',
-          not hit and Z(lang, 'with “1 request × 5 tokens” the top of the chart also draws', '选“1 个请求 × 5 个 token”时，图上半部分还会画出') in text(pg, '#spd-rail .step.current p:has(+ .levers)'), hit)
+    check(f'{tag} part 2 (reader 2026-10-14): the one-token step drawn first has no labels running into each other; the options’ paragraph sends the reader to the top of the chart for the causal mask (reader 2026-10-16: drawn for every option, not only 1 × 5)',
+          not hit and Z(lang, 'the top of the chart draws which tokens each position sees', '图上半部分画出每个位置看得到哪些 token') in text(pg, '#spd-rail .step.current p:has(+ .levers)') and Z(lang, '1 request × 5', '1 个请求 × 5') not in text(pg, '#spd-rail .step.current p:has(+ .levers)'), hit)
     check(f'{tag} part 2: the rows not tried yet (and the plain-decode baseline of 128 requests) show no step time', '20.1' not in text(pg, '#spd-cost') and '8.54' not in text(pg, '#spd-cost') and '16.0' not in text(pg, '#spd-cost'), text(pg, '#spd-cost')[:120])
     lever(pg, '5'); c5 = text(pg, '#spd-cost')
     check(f'{tag} part 2: 5 tokens take the same 7.53 ms as 1', c5.count('7.53 ms') == 2, c5[:120])
@@ -193,6 +247,7 @@ def walk(b, lang, w):
     rules(pg, f'{tag} part 4', lang); shot(pg, f'{lang}_{w}_4_predict')
     nxt(pg)
     # part 5: the formula, k = 2 / 4 / 8
+    if w == 1440: fits(pg, tag, 5, lang, ['#spd-round', '#spd-kcurve svg'])
     vis_eq = "()=>[...document.querySelectorAll('#spd-rail .spd-eq math')].filter(m=>m.getClientRects().length&&!m.closest('details:not([open])')).length"
     shut5 = count(pg, '#spd-rail .step.current details.spd-more:not([open])'); eq0 = pg.evaluate(vis_eq)
     pg.evaluate("()=>document.querySelectorAll('#spd-rail .step.current details.spd-more').forEach(d=>d.open=true)"); pg.wait_for_timeout(150)
@@ -221,6 +276,7 @@ def walk(b, lang, w):
     rules(pg, f'{tag} part 6', lang); shot(pg, f'{lang}_{w}_6_same')
     nxt(pg)
     # part 7: the batch
+    if w == 1440: fits(pg, tag, 7, lang, ['#spd-bcurve svg', '#spd-time svg'])
     check(f'{tag} part 7: gated; four metric cards; batch 1 gives 1.67 times', next_off(pg) and count(pg, '#spd-metrics .metric') == 4 and '1.67' in text(pg, '#spd-metrics'))
     lever(pg, '128')
     obs = text(pg, '#spd-rail .obs')
@@ -393,6 +449,7 @@ with sync_playwright() as p:
             walk(b, lang, w)
             primer_walk(b, lang, w)
         if 1440 in WIDTHS: replay_rules(b, lang)
+        if lang == 'zh' and 1440 in WIDTHS: next_into_7(b)
     b.close()
 check('copy rules (RULES, spacing, punctuation, colons, boxes, drawing text)', not rule_hits, '; '.join(rule_hits[:10]))
 check('no page errors', not errs, '; '.join(errs[:4]))
