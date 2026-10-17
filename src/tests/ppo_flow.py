@@ -4,7 +4,9 @@ the capability layer, the language switch mid-challenge, the hash round-trip, th
 replay rules of R3.20 (no replay when nothing changed, none when returning to a watched run, a replay when something changed, the
 重放 / Replay control, default speeds 中 for the whole run, the one-step replay and part 6's passes, about 3 s for 200 steps at 中
 and 1.5 s at 快). The owner's message of 2026-10-08 (reviews/owner-b9-2026-10-08.md), PPO items 1-4 and rules G1/G2, each has its
-own checks, named “owner b9 item …”, “G1” and “G2”. Screenshots go to shots/ppo/.
+own checks, named “owner b9 item …”, “G1” and “G2”. Polish round 4 (2026-10-17, the owner's B4, R7.12): at 1440x900, on entering
+parts 6, 7 and 8 the stage needs no scrolling inside itself, with at least 30 px to spare in Chinese, its top below the top bar and its
+figures on the screen; in parts 5 and 6 the stage keeps its height whichever lever is picked (R7.9). Screenshots go to shots/ppo/.
 
 Run: python3 tests/ppo_flow.py [en|zh] [1440|390]   (filters; without them, everything)
 """
@@ -132,6 +134,30 @@ def wait_run(pg, limit=16000):
     while pg.evaluate("()=>window.__ppo.state().running") and (time.time() - t0) * 1000 < limit: pg.wait_for_timeout(100)
     return time.time() - t0
 
+# polish round 4 (2026-10-17, R7.12, the owner's B4; as tests/data-pipeline_flow.py part 4 and tests/admission_flow.py): on entering
+# parts 6, 7 and 8 at 1440 × 900 the stage needs no scrolling inside itself and could still grow by 30 px in Chinese (its max-height minus
+# the height its content and borders need; in English it only needs no scrolling); its top is not under the top bar (entering part 7 left it
+# 42 px under the top bar before the lab put the stage back after a part change), and its figures (part 6's two panels, the memory strip,
+# the bars, the curve) lie inside it and on the screen
+FIT = """([st,sels])=>{const s=document.querySelector(st), r=s.getBoundingClientRect(), tb=document.querySelector('.topbar'), dk=document.querySelector('#dock');
+ const top=Math.max(tb?tb.getBoundingClientRect().bottom:0, dk&&!dk.hidden&&getComputedStyle(dk).display!=='none'?dk.getBoundingClientRect().bottom:0);
+ const figs=[]; for(const x of sels) for(const e of document.querySelectorAll(x)){if(!e.getClientRects().length) continue; const q=e.getBoundingClientRect(); figs.push([x,Math.round(q.top),Math.round(q.bottom)]);}
+ return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top), bar:Math.round(top), figs,
+   inside:figs.length>0&&figs.every(q=>q[1]>=r.top-1&&q[2]<=r.bottom+1), shown:r.top>=top-1&&figs.length>0&&figs.every(q=>q[1]>=top-1&&q[2]<=innerHeight+1)};}"""
+FIGS = ['#ppo-clip .ppo-cp-svg', '#ppo-mem', '#ppo-bars', '#ppo-curve']
+def fits(pg, tag, part, lang):
+    pg.wait_for_timeout(300); last, same = None, 0
+    for _ in range(30):   # the page has stopped scrolling for 0.6 s (the kit brings the card up after a part change; the lab then puts the stage back)
+        y = pg.evaluate('()=>scrollY'); same = same + 1 if y == last else 0; last = y
+        if same >= 3: break
+        pg.wait_for_timeout(200)
+    f = pg.evaluate(FIT, ['#ppo-stage', FIGS])
+    check(f'{tag} part {part}: the stage fits without scrolling inside' + (', 30 px to spare' if lang == 'zh' else '') + ', its top below the top bar, its figures inside it and on the screen (R7.12, B4)',
+          f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['inside'] and f['shown'], json.dumps(f))
+    return f
+# R7.9 (polish round 4): the height the stage's content and borders need; in parts 5 and 6 at 1440 it is the same for every lever
+STH = "()=>{const s=document.querySelector('#ppo-stage'); return s.scrollHeight+s.offsetHeight-s.clientHeight;}"
+
 def walk(b, lang, w):
     tag = f'{lang}_{w}'
     pg = page(b, w, lang)
@@ -141,11 +167,13 @@ def walk(b, lang, w):
     check(f'{tag} owner b9 item 4: default speeds Medium for the whole run, the one-step replay and part 6’s passes; a whole run takes 6 / 3 / 1.5 s, Scenarios and Settings at most 1.5 s (R3.9)',
           (s['runSpd'], s['loopSpd'], s['passSpd']) == ('med', 'med', 'med') and s['runSecs'] == {'slow': 6, 'med': 3, 'fast': 1.5} and s['quickSecs'] == 1.5, json.dumps({k: s[k] for k in ('runSpd', 'loopSpd', 'passSpd', 'runSecs', 'quickSecs')}))
     card1, app1 = text(pg, '#ppo-rail .step.current'), text(pg, '#ppo-app')
-    rl_def = Z(lang, 'reinforcement learning (RL)', '强化学习（reinforcement learning，简称 RL）')
+    # polish r4: the Chinese card says 强化学习（RL） without the English name, and InstructGPT moved to the papers and sources at the
+    # end of the page (“用 PPO 做 RLHF：Ouyang 等，2022”); the card still names PPO the classic RLHF algorithm
+    rl_def = Z(lang, 'reinforcement learning (RL)', '强化学习（RL）')
     m_rl = re.search(r'\bRL\b(?!HF)', app1)
-    check(f'{tag} owner b9 item 1 (G3): the mission says what RL is (try, a reward per try, high-scoring behaviour more likely) and that PPO is one RL algorithm, the one InstructGPT used; no “RL” before that',
-          rl_def in card1 and m_rl is not None and m_rl.start() >= app1.find(rl_def) and all(x in card1 for x in Z(lang, ['letting it try', 'reward', 'high-scoring behaviour more likely', 'PPO is one RL algorithm', 'InstructGPT was trained with it'],
-          ['让它自己去试', '叫作奖励', '让得分高的做法更常出现', 'PPO 是一种 RL 算法', 'InstructGPT 就是用它训练的'])), card1[:400])
+    check(f'{tag} owner b9 item 1 (G3): the mission says what RL is (try, a reward per try, high-scoring behaviour more likely) and that PPO is one RL algorithm, the classic one for RLHF; no “RL” before that',
+          rl_def in card1 and m_rl is not None and m_rl.start() >= app1.find(rl_def) and all(x in card1 for x in Z(lang, ['letting it try', 'reward', 'high-scoring behaviour more likely', 'PPO is one RL algorithm', 'the classic one for RLHF'],
+          ['让它自己去试', '叫作奖励', '让得分高的做法更常出现', 'PPO 是一种 RL 算法', 'RLHF 最经典的做法'])), card1[:400])
     check(f'{tag} G1: no “pick one at a time / they do not stack” in the lab’s source', not G1_SRC, str(G1_SRC))
     shot(pg, f'{tag}_1_mission')
     k, v = knobs(pg), shown(pg, ['#ppo-mem', '#ppo-cvw', '#ppo-math', '#ppo-clip', '#ppo-later', '#ppo-reset-wrap']); lat = text(pg, '#ppo-later')
@@ -183,6 +211,7 @@ def walk(b, lang, w):
     go(pg, 4, 500)
     s = st(pg)
     check(f'{tag} part 5 starts with no KL penalty, 200 steps', s['beta'] == 0 and s['steps'] == 200 and next_off(pg))
+    h5 = pg.evaluate(STH)
     c5 = text(pg, '#ppo-rail .step.current')
     check(f'{tag} G2: part 5 says what its chart shows without recalling part 4’s seeds', Z(lang, 'The chart shows true quality for 6 random seeds, 200 steps each.', '图里画的是 6 个随机种子各训练 200 步的真实质量。') in c5
           and not re.search(Z(lang, r'as part 4|[Ii]n part 4', r'第 4 部分'), c5), c5[:240])
@@ -193,11 +222,16 @@ def walk(b, lang, w):
     shot(pg, f'{tag}_5a_nokl')
     lever(pg, '0.05', 500)
     check(f'{tag} part 5 beta 0.05: no red, status ok, gate open', count(pg, '#ppo-curve .ppo-l-hack') == 0 and count(pg, '#ppo-bars .ppo-hot') == 0 and 'ok' in pg.get_attribute('#ppo-status', 'class') and not next_off(pg))
+    if w == 1440:
+        h = pg.evaluate(STH)
+        check(f'{tag} part 5: the stage keeps its height when β changes and the note on one distribution appears (R7.9)', h == h5 and pg.is_visible('#ppo-same'), (h5, h))
     obs = text(pg, '#ppo-rail [data-obs]')
     check(f'{tag} part 5 observation compares E with and without the penalty', '11%' in obs and '99%' in obs and '3%' in obs, obs[:200])
     shot(pg, f'{tag}_5b_kl')
     go(pg, 5, 500)
     s = st(pg)
+    if w == 1440: fits(pg, tag, 6, lang)
+    h6 = [pg.evaluate(STH)]
     check(f'{tag} part 6 starts with one pass and the large step; its 200-step run is there at once', s['view'] == 'rho' and s['eta'] == 'l' and s['K'] == 1 and s['steps'] == 200 and not s['running'] and next_off(pg),
           json.dumps({k: s[k] for k in ('view', 'eta', 'K', 'steps', 'running')}))
     k = knobs(pg); card6 = text(pg, '#ppo-rail .step.current')
@@ -211,7 +245,7 @@ def walk(b, lang, w):
           all(x in card6 for x in Z(lang, ['does not keep ρ inside [0.8, 1.2].', 'its gradient is 0', 'The other responses keep learning'], ['不会把 ρ 留在 [0.8, 1.2] 里。', '它的梯度是 0', '其余的回答照样学']))
           and Z(lang, 'does not keep ρ inside', '不会把 ρ 留在') in pg.evaluate("()=>[...document.querySelectorAll('#ppo-rail .step.current b')].map(b=>b.innerText).join(' ')"), card6[:400])
     check(f'{tag} owner b9 item 3b: the card ties steps and passes (one batch per step, learned several times, then a new batch)',
-          all(x in card6 for x in Z(lang, ['each PPO training step has two halves', 'learns from that same batch several times, one update per pass', 'The next step writes a new batch'], ['PPO 的每一步训练分两段', '再用这同一批回答学几遍，每学一遍更新一次参数', '下一步再重新写一批'])), card6[:300])
+          all(x in card6 for x in Z(lang, ['each PPO training step writes one batch of responses', 'learns from that same batch several times, one update per pass', 'the next step writes a new batch'], ['PPO 每一步训练只写一批回答', '拿这同一批学好几遍，每学一遍更新一次参数', '下一步再写新的一批'])), card6[:300])
     note = text(pg, '#ppo-ctl-clip-wrap')
     check(f'{tag} review item 7: the clipping note in the settings names the advantage’s sign both ways', all(x in note for x in Z(lang, ['positive advantage', 'negative advantage', 'above 1.2', 'below 0.8', 'pushed back'], ['优势为正', '优势为负', '超过 1.2', '低于 0.8', '推回来'])), note[:200])
     cp = pg.evaluate(CP)
@@ -219,6 +253,7 @@ def walk(b, lang, w):
           cp['show'] and cp['pass'] == 0 and cp['title'] == Z(lang, 'Step 1’s batch after its one pass: where did the ratios end?', '第 1 步的这批回答学完 1 遍：比值停在哪里？')
           and all(x in cp['sub'] for x in Z(lang, ['Each training step writes one batch', 'learns from that same batch once', '200 steps in all'], ['每一步训练先写一批回答', '再用这同一批学 1 遍', '一共训练 200 步'])) and cp['pressed'] == Z(lang, 'After', '学完'), json.dumps(cp, ensure_ascii=False)[:300])
     lever(pg, '4-0', 500)
+    h6.append(pg.evaluate(STH))
     cp = pg.evaluate(CP); lr = text(pg, '#ppo-rail [data-lkey][data-lever="4-0"] .lv-r')
     check(f'{tag} review item 7: without clipping, after the 4 passes, the ratios out of the band are red and the caption says every pass pushed again (24 times)',
           cp['pass'] == 0 and cp['bad'] >= 1 and cp['flat'] == 0 and Z(lang, 'Every pass pushed again', '每一遍都照样推') in cp['cap'] and Z(lang, '24 times', '24 倍') in cp['cap'] and Z(lang, '24 times', '24 倍') in lr, json.dumps(cp, ensure_ascii=False)[:300] + ' | ' + lr)
@@ -229,6 +264,9 @@ def walk(b, lang, w):
           and cp['title'] == Z(lang, 'Step 1’s batch, pass 2 of 4: which responses are still pushed?', '第 1 步的这批回答，第 2 遍（共 4 遍）：哪些还在被推？'), json.dumps(cp, ensure_ascii=False)[:300])
     shot(pg, f'{tag}_6a_noclip')
     lever(pg, '4-1', 500)
+    h6.append(pg.evaluate(STH))
+    if w == 1440:
+        check(f'{tag} part 6: the stage keeps its height for one pass, 4 passes and 4 clipped passes (R7.9)', len(set(h6)) == 1, h6)
     cp = pg.evaluate(CP); lr = text(pg, '#ppo-rail [data-lkey][data-lever="4-1"] .lv-r')
     check(f'{tag} part 6 clipped: gate open, the end view shows hollow (stopped) and filled (pushed to the last pass) dots, the lever reads 1.57', not next_off(pg) and cp['pass'] == 0 and cp['flat'] == 6 and cp['on'] == 2 and cp['bad'] == 0 and '1.57' in lr, json.dumps(cp, ensure_ascii=False)[:200] + ' | ' + lr)
     check(f'{tag} owner b9 item 3d: the end caption says clipping did not pull the 6 hollow responses back into the band, it only stopped pushing them; 2 were pushed to the last pass',
@@ -254,6 +292,7 @@ def walk(b, lang, w):
           and not any(x in obs for x in Z(lang, ['shared', 'does not lock', '1.55'], ['共用', '锁住', '1.55'])), obs[:400])
     shot(pg, f'{tag}_6b_clip')
     go(pg, 6, 400)
+    if w == 1440: fits(pg, tag, 7, lang)
     mem = text(pg, '#ppo-mem')
     check(f'{tag} part 7 memory strip first in the stage: 321.2 GB, 5 H100s', pg.evaluate("()=>document.querySelector('#ppo-stage .stage-head').nextElementSibling.id") == 'ppo-mem' and '321.2' in mem and Z(lang, 'at least 5 H100s', '至少 5 张') in mem, mem[:140])
     lever(pg, 'grpo'); g = text(pg, '#ppo-mem'); lever(pg, 'dpo'); d = text(pg, '#ppo-mem')
@@ -261,6 +300,7 @@ def walk(b, lang, w):
     shot(pg, f'{tag}_7_cost')
     lever(pg, 'ppo')
     go(pg, 7, 400)
+    if w == 1440: fits(pg, tag, 8, lang)
     r = text(pg, '#ppo-rail .step.current')
     check(f'{tag} part 8 lists the three misconceptions', r.count('✗') == 3)
     check(f'{tag} G2: the recap says what each piece does and why, without recalling what parts 4, 5 and 6 showed',

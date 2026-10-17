@@ -244,3 +244,36 @@
   .fa-mg>.fa-mn:empty{display:none}
 }
 .fa-metrics .k{overflow-wrap:anywhere}
+/* ---------- a wide stage (polish round 4, 2026-10-16; the owner's B4, R7.12): at 1440 × 900 the 12-token example needed 94 px (part 3)
+   and 117 px (part 4) of scrolling inside the stage. On a stage at least 736 px wide (windows from about 1226 px) each lane's name sits
+   in a column on its left instead of on a line above its matrices, the player's buttons and its step slider share one row, the metric
+   cards' value and change lines are tighter (as spec-decoding's, CONTRACT §19), and a few gaps are tighter. Same pieces in the same
+   order, same animation; the chip lane and the transfer line still keep their tallest step's height (R7.9); phones (≤ 760 px) and
+   narrower stages keep the layout above.
+   R7.9 here: this stage no longer scrolls inside, so it is as tall as its content, and three sub-pixel or 1 px changes during a run,
+   hidden before by the scrolling box, would move its bottom edge: the ▼/▲ after a matrix's name (a fallback font) grew its caption by
+   0.5 px, a step text with ▼/▲ is 0.25 px taller than the transfer line's reserved height (offsetHeight rounds it down), and the row
+   table's “不缩放” (Chinese in the mono table) is a 19 px row among 18 px ones. The arrow's line box is held to its font size, the
+   transfer line is held at two lines (its reserved height still wins when larger), and the table's lines have a fixed height (its rows
+   18 px, its head 17.5 px), which also keeps the table as tall in a page with a doctype, where a table inherits the stage's taller
+   line height, as in the page without one that build.py writes. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  .fa-stage>.legend-row{margin-top:8px}
+  .fa-graph{margin-top:10px;padding-top:8px;padding-bottom:10px}
+  .fa-toy{gap:6px}
+  .fa-lane{display:grid;grid-template-columns:104px minmax(0,1fr);column-gap:12px;align-items:start;padding:6px 10px 8px}
+  .fa-lh{margin:0;padding-top:2px}
+  .fa-lh b{display:block;margin:0 0 2px}
+  .fa-m figcaption b::after{line-height:1}
+  .fa-xfer{padding-top:2px;padding-bottom:2px;height:calc(2.9em + 4px)}
+  .fa-rh{margin-bottom:2px}
+  .fa-rt th,.fa-rt td{padding-top:1px;padding-bottom:1px}
+  .fa-rt th{line-height:14.5px}
+  .fa-rt td{line-height:15px}
+  #fa-stplay .fa-player{grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:16px}
+  .fa-scope{margin:8px 0 4px}
+  .fa-metrics{margin-top:8px}
+  .fa-metrics .metric .v{line-height:1.25}
+  .fa-metrics .metric .d{min-height:13px;line-height:1.1}
+  .fa-stage>details.math{margin-top:8px;padding-top:8px}
+}}

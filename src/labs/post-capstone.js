@@ -219,15 +219,15 @@ const flatWhy=c=>c.metric==='acc'?tx(`By this lab’s rule, SFT on final answers
 /* the four methods, defined before any option uses them (R2.10) */
 const METH_DEF=()=>tx(
  `<ul class="pcap-defs">`+
- `<li><b>${labLink('sft','SFT')}</b>: pair each prompt with a written answer and train the model to write that answer, with the loss on the answer tokens only. The model learns to write what those answers contain. <i>Needs:</i> prompts with answers, such as demonstrations.</li>`+
+ `<li><b>${labLink('sft','SFT')}</b>: pair each prompt with a written answer and train the model to write that answer. The model learns to write what those answers contain. <i>Needs:</i> prompts with answers, such as demonstrations.</li>`+
  `<li><b>${labLink('dpo','DPO')}</b>: train on ${DEF('preference pairs',TIP.pair())} directly, raising the chosen answer against the rejected one while a ${DEF('reference model',TIP.ref())} holds the model back. While training, the model does not ${DEF('generate answers of its own',TIP.roll())}. <i>Needs:</i> preference pairs.</li>`+
  `<li><b>${labLink('reward-model','Reward model')} + ${labLink('ppo','PPO')}</b>: first train a ${DEF('reward model',TIP.rm())} on the pairs. Then the ${DEF('policy',TIP.policy())} generates answers itself and is pushed toward what the reward model scores high, with a ${DEF('value model',TIP.value())} and the reference model alongside. <i>Needs:</i> preference pairs.</li>`+
- `<li><b>${labLink('grpo','GRPO')}</b>: the policy generates a group of ${DEF('G answers',TIP.G())} to each prompt and compares each answer’s reward with the group’s average. That average is the baseline, so GRPO needs no value model. The reward comes from a ${DEF('checker',TIP.checker())}, which is what the lab ${labLink('rlvr','RLVR')} is about. Without a checker, a reward model must be trained on preference pairs first. <i>Needs:</i> a checker, or preference pairs.</li></ul>`,
+ `<li><b>${labLink('grpo','GRPO')}</b>: the policy generates a group of ${DEF('G answers',TIP.G())} to each prompt and takes the group’s average score as the baseline, so GRPO needs no value model. <i>Needs:</i> a ${DEF('checker',TIP.checker())} (see ${labLink('rlvr','RLVR')}); without one, a reward model trained on preference pairs first.</li></ul>`,
  `<ul class="pcap-defs">`+
- `<li><b>${labLink('sft','SFT')}</b>：给每个提问配一个写好的回答，训练模型照着写，只在回答部分算 loss。回答里写了什么，模型就学着写什么。<i>需要：</i>提问和配好的回答，比如示范回答。</li>`+
+ `<li><b>${labLink('sft','SFT')}</b>：给每个提问配一个写好的回答，训练模型照着写。回答里写了什么，模型就学着写什么。<i>需要：</i>提问和配好的回答，比如示范回答。</li>`+
  `<li><b>${labLink('dpo','DPO')}</b>：直接用${DEF('偏好对',TIP.pair())}训练，让选中的回答比落选的回答更可能出现，同时用${DEF('参考模型',TIP.ref())}拉住它不跑远。训练时，模型不用${DEF('自己生成回答',TIP.roll())}。<i>需要：</i>偏好对。</li>`+
  `<li><b>${labLink('reward-model','奖励模型')} + ${labLink('ppo','PPO')}</b>：先用偏好对训练一个${DEF('奖励模型',TIP.rm())}，再让${DEF('策略模型',TIP.policy())}自己生成回答，朝着奖励模型打高分的方向改。旁边还要有${DEF('价值模型',TIP.value())}和参考模型。<i>需要：</i>偏好对。</li>`+
- `<li><b>${labLink('grpo','GRPO')}</b>：策略模型给每个提问生成${DEF('一组 G 个回答',TIP.G())}，拿每个回答的得分和这组的平均分比。平均分就是基准，所以不需要价值模型。奖励来自${DEF('判分程序',TIP.checker())}，${labLink('rlvr','RLVR')} 那个 Lab 讲的就是它。没有判分程序，就得先用偏好对训练一个奖励模型。<i>需要：</i>判分程序，或者偏好对。</li></ul>`);
+ `<li><b>${labLink('grpo','GRPO')}</b>：策略模型给每个提问生成${DEF('一组 G 个回答',TIP.G())}，以这组的平均分为基准，所以不需要价值模型。<i>需要：</i>${DEF('判分程序',TIP.checker())}（见 ${labLink('rlvr','RLVR')}）；没有的话，要先用偏好对训练一个奖励模型来打分。</li></ul>`);
 const MODE_DEF=()=>tx(
  `<ul class="pcap-defs">`+
  `<li><b>Full fine-tuning</b> trains every parameter and keeps ${DEF('18 bytes for each',TIP.bytes18())}.</li>`+
@@ -317,12 +317,14 @@ const STEPS=[
   lead:()=>tx('Three teams, three kinds of data: which method for which?','三个团队，三种数据：各用什么方法？'),
   enter:()=>({card:view1,meth:'sft',mode:'lora',x:3}),
   body:()=>tx(`<p>Three teams ask you to post-train their model. Their data differ: one has example conversations, one has users’ choices between two answers, one has math problems a program can check.</p>`+
-    `<p>The earlier labs each covered one method: ${labLink('sft','SFT')}, ${labLink('lora','LoRA')}, the ${labLink('reward-model','reward model')}, ${labLink('ppo','PPO')}, ${labLink('dpo','DPO')}, ${labLink('grpo','GRPO')} and ${labLink('rlvr','RLVR')}. This lab puts them together, and you choose.</p>`+LEAD.lv1()+
+    `<p>The earlier labs covered the methods ${labLink('sft','SFT')}, ${labLink('dpo','DPO')}, ${labLink('reward-model','reward model')} + ${labLink('ppo','PPO')} and ${labLink('grpo','GRPO')}, and ${labLink('lora','LoRA')}, which saves memory. This lab puts them together, and you choose.</p>`+LEAD.lv1()+
     levers('pcap-ic-lv1',tx('Task to look at','看哪个任务'),view1,LV1,new Set(),null),
     `<p>三个团队请你给他们的模型做后训练。他们手里的数据各不一样：一个有写好的示范对话，一个有用户在两个回答里选过的记录，一个有能用程序判对错的数学题。</p>`+
-    `<p>前面几个 Lab 各讲了一种做法：${labLink('sft','SFT')}、${labLink('lora','LoRA')}、${labLink('reward-model','奖励模型')}、${labLink('ppo','PPO')}、${labLink('dpo','DPO')}、${labLink('grpo','GRPO')} 和 ${labLink('rlvr','RLVR')}。这个 Lab 把它们放在一起，由你来选。</p>`+LEAD.lv1()+
+    `<p>前面几个 Lab 讲了 ${labLink('sft','SFT')}、${labLink('dpo','DPO')}、${labLink('reward-model','奖励模型')} + ${labLink('ppo','PPO')} 和 ${labLink('grpo','GRPO')} 这几种方法，还有省显存的 ${labLink('lora','LoRA')}。这个 Lab 把它们放在一起，由你来选。</p>`+LEAD.lv1()+
     levers('pcap-ic-lv1',tx('Task to look at','看哪个任务'),view1,LV1,new Set(),null)),
-  obs:()=>`<p>${esc(L(CARDW[view1].story))}</p>`+tx('<p>The task card on the stage also lists the model, the number of GPUs and the budget. The later parts use them.</p><p>The budget is in GPU hours, which add up the time of every GPU:</p>','<p>任务卡上还写着用什么模型、几张卡、多少预算，后面几部分都会用到。</p><p>预算用 GPU 小时来算，它把每张卡用的时间加在一起：</p>')+
+  /* polish r4: the picked task's goal, metric, data, model, GPUs and budget are the task card on the stage (above the card on a phone),
+     so the card no longer retells them (CARDW[...].story stays for reference); the GPU-hours definition stays (the owner, 2026-10-09, item 1) */
+  obs:()=>tx('<p>The task card in the chart lists the team’s goal, data and metric, the model, the number of GPUs and the budget. The later parts use them.</p><p>The budget is in GPU hours, which add up the time of every GPU:</p>','<p>图里的任务卡写着这个团队的目标、数据、指标，用什么模型、几张卡、多少预算，后面都会用到。</p><p>预算用 GPU 小时来算，它把每张卡用的时间加在一起：</p>')+
     MX(tx('\\text{GPU hours} = \\text{GPUs} \\times \\text{hours}','\\text{GPU 小时} = \\text{GPU 数} \\times \\text{小时数}'))+
     tx('<p>8 GPUs running for 1 hour use 8 GPU hours. Every budget and cost in this lab counts all GPUs together, as papers do.</p>','<p>8 张卡一起跑 1 小时，就是 8 GPU 小时。这个 Lab 里的预算和花费，都是所有卡加起来的总数，论文里也是这样算的。</p>')},
  {id:'data',title:{en:'Start from the data',zh:'先看手里的数据'},
@@ -330,9 +332,9 @@ const STEPS=[
   enter:()=>({...S,card:S.card==='big'?'fmt':S.card,mode:'full',x:1}),
   expect:()=>tried2.size>=3,
   body:()=>tx(`<p>Each method learns from a different kind of data. Before cost or quality, ask: what does the team actually have?</p>`+METH_DEF()+
-    `<p>Pick a task and a method. The chart says whether it can run.</p>`,
+    `<p>Pick a task and a method. The chart says whether the team has the data it needs.</p>`,
     `<p>每个方法从不同的数据里学东西。先别管花多少钱、效果多好，先问：团队手里到底有什么数据？</p>`+METH_DEF()+
-    `<p>选一个任务、一个方法，图里会告诉你它跑不跑得起来。</p>`)+
+    `<p>选一个任务、一个方法，图里会告诉你数据够不够。</p>`)+
     A.ui.seg({id:'pcap-ic-card',key:'card',label:tx('Task','任务'),options:CARD_IDS.slice(0,3).map(k=>[k,L(CARDW[k].t)]),value:S.card,inline:true})+methSeg('pcap-ic-meth','meth',S.meth,true),
   obs:()=>{const r=plan(S), c=CARDS[S.card];
     if(!tried2.size) return '';
@@ -1249,6 +1251,8 @@ A.registerLab({
       if(predHidden()){vis.innerHTML=''; read.innerHTML=esc(tx('GRPO or SFT on 7,473 problems: answer first','7,473 道题，GRPO 和 SFT：先作答')); return;}
       const st=mode==='challenge'?{card:'ch',...ch}:S, r=plan(st), c=curCard();
       if(isP('mission')){vis.innerHTML=''; read.innerHTML=esc(tx(`${L(CARDW[c.id].t)}: ${gpuW(c)}, budget ${ghU(c.budget)}, target ${c.target}%`,`${L(CARDW[c.id].t)}：${gpuW(c)}，预算 ${ghU(c.budget)}，目标 ${c.target}%`)); return;}
+      /* polish r4 (reader): part 2 judges the data only, as its stage does; memory and GPU hours wait for parts 3 and 4 */
+      if(isP('data')){vis.innerHTML=''; read.innerHTML=esc(r.can?tx(`${methName(st.meth)}: ${exOf(c,st.meth,r)}`,`${methName(st.meth)}：${exOf(c,st.meth,r)}`):tx(`${methName(st.meth)}: no ${dataName(r.miss)}`,`${methName(st.meth)}：缺${dataName(r.miss)}`)); return;}
       vis.innerHTML=`<div class="pcap-dk${r.fits?'':' bad'}"><i style="width:${Math.min(100,r.mem/CAP*100).toFixed(1)}%"></i></div>`;
       read.innerHTML=esc(!r.can?tx(`${methName(st.meth)} cannot run: no ${dataName(r.miss)}`,`${methName(st.meth)} 跑不起来：缺${dataName(r.miss)}`)
         :(mode!=='guided'||secs().met||isP('wrong'))?tx(`${GB(r.mem)} per GPU, ${ghU(r.gpuh)}, ${metricName(c)} ${pc(r.metric)} (target ${c.target}%)`,`每张卡 ${GB(r.mem)}，${ghU(r.gpuh)}，${metricName(c)} ${pc(r.metric)}（目标 ${c.target}%）`)

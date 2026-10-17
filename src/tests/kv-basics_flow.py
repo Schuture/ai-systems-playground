@@ -17,7 +17,8 @@ Review round 14 (review 8): guided → Scenarios → Challenge by the cards' but
 “reads the weights” and GiB on hover; every term of Show the math has its own tooltip, the pairs' derivation sits in its term and no
 gray note is left (R1.4), in EN and ZH; the primer's words, part 1's “layer” and part 5's “KV cache” carry the kit's definitions
 (CONTRACT §11); no number over 6 digits outside the math and tooltips (R6.18), no 亿 / 万 / 个权重 (R6.17); the Connect code without
-sideways scrolling at 1440 and 1280. Screenshots: shots/kv-basics/.
+sideways scrolling at 1440 and 1280. Polish round 4: part 7's formula in the card (KV cache per token = 2 × layers × …) is cut before
+its operators and wraps instead of scrolling sideways, at 1440 (EN, ZH), 900 (EN) and 390 (EN, ZH) (R6.37). Screenshots: shots/kv-basics/.
 
 Run: python3 tests/kv-basics_flow.py
 """
@@ -250,7 +251,7 @@ def run_guided(b, w, h, lang, dark=False):
     stage_head('part 4 after Next')
     check(f'{tag} part 4: no badge on entering a part', not badges(pg), badges(pg))
     o4 = pg.inner_text('#kvb-rail [data-obs]')
-    check(f'{tag} part 4: with the mask the largest difference is 0 in both layers', Z(lang, 'In both layers the largest change is 0.', '两层的最大变化都是 0。') in o4, o4)
+    check(f'{tag} part 4: with the mask no earlier key or value changed (the “change” rows below show 0 in both layers)', Z(lang, 'No earlier key or value changed.', '之前的 key 和 value 一个都没变。') in o4, o4)
     check(f'{tag} part 4: Next disabled until the mask is switched off', disabled(pg, '#kvb-rail [data-nav="next"]'))
     chk = pg.evaluate("()=>[...document.querySelectorAll('#kvb-grid .kvb-chk')].map(r=>r.hidden?null:[...r.querySelectorAll('.kvb-d')].map(d=>d.textContent))")
     check(f'{tag} part 4: the “change” rows show 0 under every earlier token', chk == [['0'] * 8 + ['—'], ['0'] * 8 + ['—']], chk)
@@ -697,6 +698,11 @@ MSCROLL = r"""r=>{const out=[]; for(const d of document.querySelectorAll(r+' det
   for(const e of d.querySelectorAll('*')){const cs=getComputedStyle(e); if(!/auto|scroll/.test(cs.overflowX)||!e.offsetParent) continue;
     const o=e.scrollWidth-e.clientWidth; if(o>1) out.push(o+' px: '+(e.textContent||'').trim().replace(/\s+/g,' ').slice(0,40));}}
   const pg=document.documentElement.scrollWidth-innerWidth; if(pg>1) out.push('the page scrolls sideways by '+pg+' px'); return out;}"""
+# a formula on a line of its own in a card (part 7's “KV cache per token = 2 × layers × …”): cut before its operators into pieces that
+# wrap (.kv-fx, as the kit's KV cache lab writes it), never a box scrolled sideways (R6.37, kit_math_scroll's second probe; polish round 4)
+FXSCROLL = r"""()=>{const fs=[...document.querySelectorAll('#view-dyn aside.rail .step.current .kvb-fx')].filter(f=>f.offsetParent);
+  return {bad:fs.filter(f=>f.scrollWidth-f.clientWidth>1).map(f=>(f.scrollWidth-f.clientWidth)+' px: '+f.textContent.trim().replace(/\s+/g,' ').slice(0,40)),
+    split:fs.map(f=>f.classList.contains('kv-fx')?f.querySelectorAll(':scope>math').length:0)};}"""
 with sync_playwright() as _p:
     _b = _p.chromium.launch()
     for (_w, _h, _lang) in [(1440, 900, 'en'), (1440, 900, 'zh'), (900, 900, 'en'), (390, 844, 'en'), (390, 844, 'zh')]:
@@ -704,7 +710,7 @@ with sync_playwright() as _p:
         _pg.click(f'.langsw button[data-lang="{_lang}"]'); _pg.wait_for_timeout(60)
         _pg.evaluate("()=>{location.hash='kv-basics'}"); _pg.wait_for_timeout(500)
         _n = _pg.evaluate("()=>new Set([...document.querySelectorAll('#view-dyn aside.rail [data-go]')].map(e=>e.dataset.go)).size")
-        _bad = []
+        _bad, _fx, _fx7 = [], [], None
         for _mode, _k in [('guided', k) for k in range(_n)] + [('sandbox', None), ('challenge', None)]:
             if _k is None or _k == 0:
                 _pg.evaluate("m=>{const b=[...document.querySelectorAll('#view-dyn .modes button[data-mode=\"'+m+'\"]')].filter(x=>x.offsetParent).pop(); if(b) b.click();}", _mode); _pg.wait_for_timeout(300)
@@ -713,7 +719,12 @@ with sync_playwright() as _p:
             _pg.wait_for_timeout(700)
             _pg.evaluate("()=>document.querySelectorAll('#view-dyn details.math').forEach(d=>{d.open=true})"); _pg.wait_for_timeout(400)
             _bad += [f"{_mode}{'' if _k is None else ' part ' + str(_k + 1)}: {x}" for x in _pg.evaluate(MSCROLL, '#view-dyn')]
+            if _mode == 'guided':
+                _f = _pg.evaluate(FXSCROLL); _fx += [f"part {_k + 1}: {x}" for x in _f['bad']]
+                if _k == 6: _fx7 = _f['split']
         check(f'{_w} {_lang}: no row of Show the math scrolls sideways, in any guided part, Scenarios or the challenge (the owner, 2026-10-09; R6.37)', not _bad, _bad[:6])
+        check(f'{_w} {_lang}: part 7’s formula in the card (KV cache per token = 2 × layers × …) is cut before its operators and wraps, no card formula scrolls sideways (R6.37, polish round 4)',
+              not _fx and _fx7 == [6], (_fx[:4], _fx7))
         _pg.close()
     _b.close()
 

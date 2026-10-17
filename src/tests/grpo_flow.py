@@ -231,8 +231,30 @@ def go_next(pg):
     click(pg, sel, 300)
 
 
+# B4 (polish r4, reviews/r4-fit-post-b.md): entering parts 5 and 6 at 1440 × 900 as the polish probe stage.py does (Next when it is
+# enabled, else the part's heading), the stage needs no scrolling inside: Chinese with at least 30 px to spare, English with none.
+# Spare = the stage's max-height minus what its content and borders need.
+FIT = """()=>{const s=document.getElementById('grpo-stage'); return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight}}"""
+
+
+def fit_entry(b, lang, parts=(5, 6)):
+    pg = page(b, 1440, 900, lang)
+    for k in range(2, max(parts) + 1):
+        nb = pg.locator('.pbar [data-nav="next"]:visible:not([disabled])')
+        if nb.count(): nb.first.click()
+        else: pg.evaluate(f"()=>document.querySelector('#grpo-rail .steps>.step:nth-child({k}) .step-h').click()")
+        pg.wait_for_timeout(900)
+        if k not in parts: continue
+        f = pg.evaluate(FIT); f['step'] = state(pg)['step'] + 1
+        check(f'{lang}-1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""} (B4, R7.12)',
+              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0), f)
+    pg.close()
+
+
 with sync_playwright() as pw:
     b = pw.chromium.launch()
+    if (1440, 900) in SIZES:
+        for lang in LANGS: fit_entry(b, lang)
     for lang in LANGS:
         for (w, h) in SIZES:
             phone = w <= 760; tag = f'{lang}-{w}'
@@ -321,7 +343,7 @@ with sync_playwright() as pw:
             check(f'{tag} part 5 (owner item 3, H3): the card says why the clip cannot act with one update per batch',
                   ''.join(Z(lang, 'still exactly the model that wrote the answers, so every ρ is 1', '正在训练的模型和写出这批回答的模型还是同一个，所以每个回答的 ρ 都等于 1').split()) in curn
                   and Z(lang, 'learned a second time', '同一批回答学第二遍时') in cur and Z(lang, 'it limits how far an answer’s probability has already moved', '截断管的不是优势有多大') in cur
-                  and pg.evaluate("()=>!!document.querySelector('#grpo-rail .step.current .grpo-math-line math')"), cur[:900])
+                  and pg.evaluate("()=>!!document.querySelector('#grpo-rail .step.current p math')"), cur[:900])   # ρ typeset (since the reader round, inline in the sentence that defines it)
             kinds = pg.evaluate("""()=>{const cs=getComputedStyle(document.documentElement), col=v=>{const d=document.createElement('i'); d.style.color=cs.getPropertyValue(v).trim(); document.body.appendChild(d); const c=getComputedStyle(d).color; d.remove(); return c;};
               const C={ok:col('--c-ok'),mix:col('--c-weights'),wrong:col('--c-oom')};
               const rows=[...document.querySelectorAll('#grpo-probs .grpo-prow')].map(r=>{const k=['ok','mix','wrong'].find(x=>r.classList.contains('k-'+x))||''; const f=getComputedStyle(r.querySelector('.grpo-pfill')).backgroundColor;

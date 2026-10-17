@@ -152,3 +152,54 @@
 .primer .rm-prfx>span{min-width:0;max-width:100%}
 .primer .rm-prfx math{padding-block:2px}
 @media (max-width:760px){.primer .rm-prfx{padding-left:.4em;column-gap:1.6em}}
+/* ---------- a wide stage (polish round 4, 2026-10-17; the owner's B4, R7.12): at 1440 × 900 parts 3 and 5–8 needed 24–415 px of
+   scrolling inside the stage, and entering parts 7 and 8 best-of-n's charts were below the screen. On a stage at least 736 px wide
+   (windows from about 1200 px), whenever the training curves or best-of-n are on it (parts 3 and 5–8, Scenarios, the submitted
+   challenge), its blocks sit in two columns with a hairline between them: the example pair and the weights on the left, the training
+   curves with their player and best-of-n on the right, each column stacked as before (a multi-column box, so the DOM order is kept).
+   In the left column the pair's two answers sit one above the other and the pair and the weights have a little less padding, so that
+   column is no taller than the right one (in English too). Best-of-n's two charts sit side by side, the charts are drawn shorter
+   (--rm-trh, --rm-bsh, --rm-bqh, --rm-bcols, read by drawTr and drawBon), and the captions of two charts side by side share one row,
+   so the charts stay level. The metric cards share the row by their number with the value and change lines tighter (as admission's,
+   CONTRACT §19), and a few gaps are tighter. Same blocks, same texts and animation; phones (≤ 760 px) and narrower stages keep one
+   column. ---------- */
+@media (min-width:761px){@container (min-width:736px){
+  .rm-graph{margin-top:10px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden]))){display:block;columns:2;column-gap:29px;column-rule:1px solid var(--line);padding:8px 14px 10px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>div{break-inside:avoid}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-pair{padding:6px 10px 6px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-pair .rm-anss{grid-template-columns:minmax(0,1fr);gap:6px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-pair .rm-ans{padding:5px 9px 5px;gap:4px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-pair .rm-verdict{margin-top:5px}
+  /* lines that change while a run plays keep the room of their longest form in these narrower columns (R7.9): the gap line under the
+     verdict (“−1.41” and “0.58” made it two lines or one in Chinese and English), and in English the verdict (“…gives the two responses
+     the same score.”, for a moment while the scores cross, needs two lines where the others need one) and the weights' title (two lines
+     from step 10 on); without this the stage moved by 19–36 px while a run played */
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-pair .rm-foot{min-height:2.9em}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-pair .rm-verdict:lang(en){min-height:2.9em}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-w>.rm-cap:lang(en){min-height:2.7em}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-w{margin-top:8px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-w .rm-wrows{gap:4px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-w .rm-wleg{margin-top:4px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-tr{break-before:column;border-top:0;padding-top:0}
+  .rm-graph:has(>#rm-tr:not([hidden]))>#rm-bon{margin-top:10px}
+  .rm-graph:not(:has(>#rm-tr:not([hidden])))>#rm-bon{break-before:column;border-top:0;padding-top:0}
+  .rm-graph>div:not([hidden]):not(.rm-phone)~div:not([hidden]):not(.rm-pair){padding-top:9px}
+  #rm-tr-charts{--rm-trh:92;grid-template-rows:auto auto;row-gap:0}
+  #rm-tr-charts>.rm-fig{display:grid;grid-row:span 2;grid-template-rows:subgrid}
+  #rm-bon{--rm-bcols:2;--rm-bsh:92;--rm-bqh:92;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto auto auto;column-gap:12px;align-items:start}
+  #rm-bon>.rm-cap,#rm-bon>.rm-bleg{grid-column:1 / -1}
+  /* best-of-n's key keeps three lines (R7.9): its red item (“the score still rises, the true quality falls (after n = …)”) is there
+     only when the two part ways, and without it the key takes one line; where best-of-n sits under the training curves (Scenarios,
+     Settings) that column is the taller one in Chinese, so the stage moved by 18 px from one scenario to the next */
+  #rm-bon>.rm-bleg{min-height:calc(3 * 1.35em + 8px);align-content:flex-start}
+  #rm-bon>.rm-fig1{display:grid;grid-row:span 2;grid-template-rows:subgrid;margin:0}
+  .rm-fig>figcaption,.rm-fig1>figcaption{align-self:end}
+  .rm-player{margin-top:6px}
+  .rm-scope{margin-bottom:6px}
+  /* one column per card shown, all as wide (no :has() count: Chromium does not always restyle it when a card is shown or hidden) */
+  .rm-metrics{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);margin-top:8px}
+  .rm-metrics .metric .v{line-height:1.25}
+  .rm-metrics .metric .d{min-height:13px;line-height:1.1}
+  .rm-stage>details.math{margin-top:8px;padding-top:8px}
+}}

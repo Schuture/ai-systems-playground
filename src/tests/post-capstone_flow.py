@@ -141,7 +141,7 @@ H1_MATH = r"""()=>{const tex=/\\|\bfrac\b|\bleft\b|\bright\b|\bsqrt\b|\binfty\b|
 # H5: the stage's blocks, each with a label (the tags excepted) and a 1 px hairline in the line colour, in order without overlap
 H5_BLOCKS = """(line)=>{const g=document.getElementById('pcap-graph'); return [...g.querySelectorAll(':scope > .pcap-blk')].filter(e=>e.getClientRects().length).map(e=>{
  const cs=getComputedStyle(e), lab=e.querySelector(':scope > .pcap-bl'), r=e.getBoundingClientRect();
- return {id:e.id, label:lab?lab.textContent.trim():'', rule:cs.borderTopWidth==='1px'&&cs.borderTopStyle==='solid'&&cs.borderTopColor===line, top:r.top, bottom:r.bottom}})}"""
+ return {id:e.id, label:lab?lab.textContent.trim():'', rule:cs.borderTopWidth==='1px'&&cs.borderTopStyle==='solid'&&cs.borderTopColor===line, top:r.top, bottom:r.bottom, left:r.left, right:r.right}})}"""
 # H7: no element of the stage, the metric cards, the controls or the challenge chart crosses its panel (scrolling formulas aside)
 H7_BOUNDS = """()=>{const out=[]; for(const sel of ['#pcap-graph','#pcap-metrics','#pcap-controls','#pcap-rail .pcap-ch-res','.tz-pcap']){const P=document.querySelector(sel);
  if(!P||!P.getClientRects().length) continue; const R=P.getBoundingClientRect();
@@ -172,7 +172,10 @@ def b9v6(pg, where, labels=None):
     hp = pg.evaluate(H1_PLAIN); check(f'{where}: no plain-text formula on the page (H1)', not hp, hp)
     hm = pg.evaluate(H1_MATH); check(f'{where}: every formula is MathML with no TeX word showing (H1)', not hm['bad'], hm)
     bl = pg.evaluate(H5_BLOCKS, line)
-    ordered = all(bl[i]['top'] >= bl[i - 1]['bottom'] - 0.5 for i in range(1, len(bl)))
+    # in order, row by row: each block under the one before it, or (polish r4: two blocks share a row on a wide stage) beside it on its
+    # right, tops level
+    ordered = all(bl[i]['top'] >= bl[i - 1]['bottom'] - 0.5 or (abs(bl[i]['top'] - bl[i - 1]['top']) <= 1 and bl[i]['left'] >= bl[i - 1]['right'] - 0.5)
+                  for i in range(1, len(bl)))
     check(f'{where}: the stage is in blocks, each with a hairline in the line colour and a label, in order (H5)',
           len(bl) >= 2 and all(x['rule'] for x in bl) and all(x['label'] for x in bl if x['id'] != 'pcap-tags') and ordered
           and (labels is None or [x['label'] for x in bl if x['id'] != 'pcap-tags'] == labels), bl)
@@ -321,8 +324,11 @@ def run_guided(b, w, h, lang, dark=False):
     # ---- part 1: the mission, three task cards
     st = state(pg)
     check(f'{tag} part 1: Next enabled, the strip shows only the data, status neutral', st['step'] == 0 and not any(nexts(pg)) and pg.evaluate("()=>document.querySelectorAll('#pcap-strip li').length") == 1 and 'neutral' in status(pg), (nexts(pg), status(pg)))
-    o = obs(pg)
-    check(f'{tag} part 1: the support card, 3,000 conversations, 95%', '3,000' in o and '95%' in o, o[:300])
+    o = obs(pg); card = text(pg, '#pcap-card')
+    # polish r4: the picked task's goal, data and target are on the task card of the stage; the observation points to that card
+    # instead of retelling it, so the task's numbers are checked on the card, and the observation is checked for the pointer
+    check(f'{tag} part 1: the support card, 3,000 conversations, 95%; the observation points to the task card',
+          '3,000' in card and '95%' in card and Z(lang, 'The task card in the chart', '图里的任务卡') in o, (o[:300], card[:300]))
     check(f'{tag} part 1: Show the math computes nothing that is not on the stage (SF-2)', 'GB' not in pg.evaluate("()=>document.getElementById('pcap-mathbody').innerText"))
     check(f'{tag} part 1: the full task card, not folded', not pg.evaluate("()=>!!document.querySelector('#pcap-card details')"))
     every(pg, f'{tag} part 1', lang, f'{tag}_p1')
@@ -337,12 +343,12 @@ def run_guided(b, w, h, lang, dark=False):
     badges = pg.evaluate("()=>[...document.querySelectorAll('#pcap-metrics .d')].map(e=>e.textContent).filter(Boolean)")
     check(f'{tag} part 1: another task card shows no change badge (its budget and target are not a change, SF-1)', not badges, badges)
     o = obs(pg); card = text(pg, '#pcap-card')
-    check(f'{tag} part 1: the preference card, 20,000 pairs, 8 H100s, 60%', '20,000' in o and '60%' in o and '8' in card and '3.00' in card, (o[:200], card[:200]))
+    check(f'{tag} part 1: the preference card, 20,000 pairs, 8 H100s, 60%', '20,000' in card and '60%' in card and '8' in card and '3.00' in card, (o[:200], card[:200]))
     check(f'{tag} part 1: the 8-GPU card says its budget counts all 8 GPUs together and how long they run (item 1)', Z(lang, 'all 8 GPUs together', '8 张卡加起来算') in card and Z(lang, 'about 23 minutes', '约 23 分钟') in card, card[-200:])
     check(f'{tag} part 1: no red on the stage before any method is chosen', not pg.evaluate("()=>!!document.querySelector('#pcap-stage .pcap-bad, #pcap-stage .status.bad')"))
     lever(pg, 'pcap-ic-lv1', 'math')
-    o = obs(pg)
-    check(f'{tag} part 1: the math card, 7,473 problems, 39.7% → 70%', '7,473' in o and '70%' in o and '39.7%' in text(pg, '#pcap-card'), o[:200])
+    card = text(pg, '#pcap-card')
+    check(f'{tag} part 1: the math card, 7,473 problems, 39.7% → 70%', '7,473' in card and '70%' in card and '39.7%' in card, card[:200])
     # ---- part 2: start from the data
     nav(pg, 'next')
     rail = text(pg, '#pcap-rail .step.current') or text(pg, '#pcap-rail')
@@ -498,7 +504,9 @@ def run_modes(b, w, h, lang):
         mem = f"{r['mem'] / 1e9:.1f} GB"; met = f"{r['metric']:.1f}%"
         check(f'{tag} scenario {i + 1}: pressed alone, {mem}, {met} on the cards, one conclusion in the box (SF-18)', pressed() == ['true' if j == i else 'false' for j in range(5)] and mem in mt and met in mt and ins.strip() != '' and ' GB' not in ins, (pressed(), mt, ins[:160]))
         every(pg, f'{tag} scenario {i + 1}', lang, f'{tag}_scenario{i + 1}')
-    seglines(pg, f'{tag} settings', want_wrap=w > 760)
+    # since Settings sit in the 400 px column (2026-10-11), the Chinese option names fit one row, so only English wraps at 1440; the
+    # line between the buttons is checked in both, the line between the rows wherever a group wraps (English here, both at 900)
+    seglines(pg, f'{tag} settings', want_wrap=w > 760 and lang == 'en')
     b9v6(pg, f'{tag} scenario 5', Z(lang, ['From the data to the result', 'Memory', 'GPU hours and budget', 'Result'], ['从数据到结果', '显存', 'GPU 小时和预算', '结果']))
     # the lab's own text (the kit's next-lab row, nav.next-lab, names a lab that is not built yet by a run-time check, which H4 allows)
     html = pg.evaluate("()=>[...document.querySelectorAll('#pcap-rail, #pcap-stage, #pcap-controls, #pcap-app .connect')].map(e=>{const c=e.cloneNode(true); c.querySelectorAll('.next-lab').forEach(x=>x.remove()); return c.outerHTML}).join('')")
@@ -696,8 +704,35 @@ for pat in ('2^(', '√(', 'm∞', 'm₀', '^(−', '1.96√', 'σ(', 'Σ'):
     check(f'source: no plain-text formula “{pat}” left in the lab (H1)', pat not in SRC_JS)
 check('source: the converted formulas are typeset (A.ui.math)', SRC_JS.count('A.ui.math(') >= 2 and "EQ('m(x)'" in SRC_JS and '\\\\sqrt{\\\\frac{p(1 - p)}{n}}' in SRC_JS)
 
+# B4 (polish r4, reviews/r4-fit-post-b.md): entering parts 4–6 at 1440 × 900 as the polish probe stage.py does (Next when it is
+# enabled, else the part's heading), the stage needs no scrolling inside: Chinese with at least 30 px to spare, English with none.
+# Part 7 shows all five blocks and cannot fit without hiding one; it scrolls no more than the layout of 2026-10-16 needs (Chinese
+# 146 px, English 182 px; 501 px in Chinese before it).
+FIT = """()=>{const s=document.getElementById('pcap-stage'); return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight}}"""
+
+
+def fit_entry(b, lang, parts=(4, 5, 6, 7)):
+    pg = page(b, 1440, 900, lang)
+    for k in range(2, max(parts) + 1):
+        nb = pg.locator('.pbar [data-nav="next"]:visible:not([disabled])')
+        if nb.count(): nb.first.click()
+        else: pg.evaluate(f"()=>document.querySelector('#pcap-rail .steps>.step:nth-child({k}) .step-h').click()")
+        pg.wait_for_timeout(900)
+        if k not in parts: continue
+        f = pg.evaluate(FIT); f['step'] = state(pg)['step'] + 1
+        if k == 7:
+            cap = 160 if lang == 'zh' else 200
+            check(f'{lang}-1440 part 7: entering it, the stage scrolls inside itself at most {cap} px (B4)', f['step'] == k and f['scroll'] <= cap, f)
+        else:
+            check(f'{lang}-1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""} (B4, R7.12)',
+                  f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0), f)
+    pg.close()
+
+
 with sync_playwright() as p:
     b = p.chromium.launch()
+    if (1440, 900) in SIZES and 'guided' in PARTS:
+        for lang in LANGS: fit_entry(b, lang)
     if RUN900:
         for lang in LANGS: run_900(b, lang)
     for (w, h) in SIZES:

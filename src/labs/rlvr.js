@@ -250,14 +250,14 @@ const STEPS=[
   obs:()=>obsLoose()},
  {id:'format',title:{en:'Format reward',zh:'格式奖励'},lead:()=>tx('Start from a base model that rarely writes “####”.','从很少写 “####” 的 base 模型开始。'),
   enter:()=>({...BASE,start:'base',fmt:lv6}),
-  body:()=>tx(`<p>This part starts from a ${DEF('base model',TIP.base())}, the way DeepSeek‑R1‑Zero started RL with no SFT first. Only ${pc(sig(PHI0.base))} of its answers end with a “####” line, so the strict checker gives almost everything 0.</p><p>A ${DEF('format reward',TIP.fmt())} gives a wrong answer on a “####” line 0.1 point instead of 0. Train with and without it.</p>`,
-              `<p>这一部分从 ${DEF('base 模型',TIP.base())}开始，就像 DeepSeek‑R1‑Zero 不做 SFT、直接开始 RL。它只有 ${pc(sig(PHI0.base))} 的回答用 “####” 这一行收尾，所以严格判分几乎全给 0 分。</p><p>${DEF('格式奖励',TIP.fmt())}给写在 “####” 后面、但答错的回答 0.1 分，而不是 0 分。加和不加各训练一次。</p>`)+lv6Ctl(),
+  body:()=>tx(`<p>Like DeepSeek‑R1‑Zero, this part skips SFT and trains straight from a ${DEF('base model',TIP.base())}. Only ${pc(sig(PHI0.base))} of the base model’s answers end with a “####” line, so the strict checker gives almost everything 0. A group of all 0s teaches nothing, so learning starts slowly.</p><p>A ${DEF('format reward',TIP.fmt())} gives a wrong answer on a “####” line 0.1 point. Click “With format reward” too, and compare step 10.</p>`,
+              `<p>像 DeepSeek‑R1‑Zero 那样，不做 SFT，直接训练 ${DEF('base 模型',TIP.base())}。base 模型只有 ${pc(sig(PHI0.base))} 的回答用 “####” 收尾，严格判分几乎全给 0 分。全是 0 分的一组什么也学不到，所以开头学得很慢。</p><p>${DEF('格式奖励',TIP.fmt())}给写了 “####”、但答错的回答 0.1 分。再点“加格式奖励”，比一比第 10 步。</p>`)+lv6Ctl(),
   expect:()=>lv6T.has(1)&&RUNSEEN.has(cfgKey({...BASE,start:'base',fmt:1})),
   obs:()=>obsFormat()},
  {id:'passk',title:{en:'pass@1 and pass@k',zh:'pass@1 和 pass@k'},lead:()=>tx('More right in one try. But more problems solved at all?','一次答对的多了。能解出的题也多了吗？'),
   enter:()=>({...BASE,start:'sft',fmt:0,chk:'strict'}),
-  body:()=>tx(`<p>${DEF('pass@k',TIP.passk())} is the share of problems the model solves at least once when it gets k tries (the lab ${labLink('pass-k')} explains it). The chart compares the model before training with the one after ${T} steps of training with the strict checker.</p>`,
-              `<p>${DEF('pass@k',TIP.passk())} 是给 k 次机会时，至少答对一次的题占多少（${labLink('pass-k')} 这个 Lab 专门讲它）。图里比较训练前的模型，和用严格的判分程序训练 ${T} 步之后的模型。</p>`),
+  body:()=>tx(`<p>${DEF('pass@k',TIP.passk())} is the share of problems the model solves at least once when it gets k tries (see the lab ${labLink('pass-k')}). The chart compares the SFT model before training with the one after ${T} steps of training with the strict checker.</p>`,
+              `<p>${DEF('pass@k',TIP.passk())} 是给 k 次机会时，至少答对一次的题占多少（见 ${labLink('pass-k')} 这个 Lab）。图里比较训练前的 SFT 模型，和用严格的判分程序训练 ${T} 步之后的模型。</p>`),
   obs:()=>obsPassK(),always:true},
  {id:'remember',title:{en:'What to remember',zh:'要记住的'},lead:()=>tx('Three things to take away, three common misconceptions.','三条要点，三个常见误解。'),
   enter:()=>({...BASE}),
@@ -346,15 +346,17 @@ function lv6Ctl(){const r0=run({...BASE,start:'base'}), r1=run({...BASE,start:'b
    {v:'0',title:tx('No format reward','不加格式奖励'),desc:tx('Only right answers on a “####” line score: 1 point.','只有写在 “####” 后面又答对的回答得 1 分。'),result:lv6T.has(0)&&RUNSEEN.has(cfgKey({...BASE,start:'base'}))?tx(`right in one try at step ${K}: ${pc(r0[K].p1)}`,`第 ${K} 步一次答对 ${pc(r0[K].p1)}`):''},
    {v:'1',title:tx('With format reward','加格式奖励'),desc:tx('A wrong answer on a “####” line also scores 0.1.','写在 “####” 后面、但答错，也得 0.1 分。'),result:lv6T.has(1)&&RUNSEEN.has(cfgKey({...BASE,start:'base',fmt:1}))?tx(`right in one try at step ${K}: ${pc(r1[K].p1)}`,`第 ${K} 步一次答对 ${pc(r1[K].p1)}`):''}]})+`</div>`;}
 function obsFormat(){
-  const r0=run({...BASE,start:'base'}), r1=run({...BASE,start:'base',fmt:1}), K=10, r=S.fmt?r1:r0;
-  const head=S.fmt?tx(`<p>With the format reward, after ${K} steps ${pc(r1[K].pf)} of the answers end with “####”, and ${pc(r1[K].p1)} are right in one try. Without it: ${pc(r0[K].pf)} and ${pc(r0[K].p1)}.</p>`,`<p>加了格式奖励，第 ${K} 步时 ${pc(r1[K].pf)} 的回答用 “####” 收尾，一次答对的比例是 ${pc(r1[K].p1)}。不加时分别是 ${pc(r0[K].pf)} 和 ${pc(r0[K].p1)}。</p>`)
-    :tx(`<p>Without a format reward, after ${K} steps ${pc(r0[K].pf)} of the answers end with “####”, and ${pc(r0[K].p1)} are right in one try. Most groups are all 0 at first, so they teach nothing.</p>`,`<p>不加格式奖励，第 ${K} 步时只有 ${pc(r0[K].pf)} 的回答用 “####” 收尾，一次答对的比例是 ${pc(r0[K].p1)}。一开始大多数组全是 0 分，什么也教不了。</p>`);
+  const r0=run({...BASE,start:'base'}), r1=run({...BASE,start:'base',fmt:1}), K=10;
+  const head=S.fmt?tx(`<p>With the format reward, after ${K} steps ${pc(r1[K].pf)} of the answers end with “####”, and ${pc(r1[K].p1)} are right in one try. Without it: ${pc(r0[K].pf)} and ${pc(r0[K].p1)}.</p>`,`<p>加了格式奖励，第 ${K} 步时 ${pc(r1[K].pf)} 的回答用 “####” 收尾，一次答对 ${pc(r1[K].p1)}；不加时是 ${pc(r0[K].pf)} 和 ${pc(r0[K].p1)}。</p>`)
+    :tx(`<p>Without a format reward, after ${K} steps ${pc(r0[K].pf)} of the answers end with “####”, and ${pc(r0[K].p1)} are right in one try.</p>`,`<p>不加格式奖励，第 ${K} 步时 ${pc(r0[K].pf)} 的回答用 “####” 收尾，一次答对 ${pc(r0[K].p1)}。</p>`);
+  /* polish r4: why the format reward helps, and how the two runs end, only once the run with it is on the stage (the grey line is drawn once watched) */
+  if(!S.fmt&&!RUNSEEN.has(cfgKey({...BASE,start:'base',fmt:1}))) return head;
   const same=pc(r0[T].p1)===pc(r1[T].p1);
   const end=same?tx(`By step ${T}, right in one try is ${pc(r1[T].p1)} with or without the format reward.`,`到第 ${T} 步，加不加格式奖励，一次答对都是 ${pc(r1[T].p1)}。`)
     :tx(`By step ${T}, right in one try is ${pc(r0[T].p1)} without the format reward and ${pc(r1[T].p1)} with it.`,`到第 ${T} 步，不加格式奖励一次答对 ${pc(r0[T].p1)}，加了是 ${pc(r1[T].p1)}。`);
   const afx=`<div class="fx">${A.ui.math('A_i = \\frac{r_i - \\text{mean}(r)}{\\text{std}(r) + 0.0001}')}</div>`;
-  return head+tx(`<p>Why: a group with a few “####” answers and no right one now has different rewards, so it has a signal again. Each answer’s advantage is its reward minus the group’s mean, divided by the group’s standard deviation:</p>${afx}<p>Multiply every reward in a group by 10, and 0 and 0.1 become 0 and 1. The difference on top and the standard deviation below both grow 10 times, so the advantages stay the same. That is why, inside a group, 0.1 against 0 pushes as hard as 1 against 0 (open-instruct: “the scale of the rewards is not relevant”).</p><p>${end} The format reward teaches the format, not the solving. open-instruct also warns that a direct additive format reward can push up a long wrong answer just for its format (${cite(SRC.oiG,'open-instruct GRPO docs')}).</p>`,
-    `<p>原因：一组里只要有几个回答写了 “####”，即使没有一个答对，奖励也有高有低，又有了信号。每个回答的优势，是它的奖励减去这一组的平均值，再除以这一组的标准差：</p>${afx}<p>把一组的奖励都乘以 10，0 和 0.1 就变成 0 和 1。分子里的差和分母里的标准差也都变成 10 倍，相除以后优势不变。所以在一组里，0.1 分对 0 分和 1 分对 0 分，推的力度一样大（open-instruct 的文档说“奖励的大小无关紧要”）。</p><p>${end}可见格式奖励教会的是格式，不是解题。open-instruct 还提醒，直接加格式分，一个格式对但答错的长回答也会被加强（${cite(SRC.oiG,'open-instruct 的 GRPO 文档')}）。</p>`);
+  return head+tx(`<p>Why: a group with a few “####” answers and no right one now has different rewards, so it has a signal again. The advantage uses the group’s mean and standard deviation:</p>${afx}<p>Multiply every reward in a group by 10, and 0 and 0.1 become 0 and 1; the top and the bottom both grow 10 times, so the advantages stay the same. So in a group with only 0.1s and 0s, the push is as strong as 1 against 0.</p><p>${end} The format reward teaches the format, not the solving.</p>`,
+    `<p>原因：一组里只要有几个回答写了 “####”，哪怕都答错，奖励也有高有低，有了信号。优势按组内的平均分和标准差算：</p>${afx}<p>把一组的奖励都乘以 10，0 和 0.1 就成了 0 和 1，分子和分母都变成 10 倍，优势不变。所以一组里只有 0.1 分和 0 分时，推力和 1 分对 0 分一样大。</p><p>${end}格式奖励教会的是格式，不是解题。</p>`);
 }
 function obsPassK(){
   const m=mainRuns(), w=SETS.main, b=passK(m.s0.pk,w), a=passK(m.sT.pk,w), n=KS.length-1;
@@ -571,13 +573,13 @@ function connectHTML(){
    `<article class="panel c-card"><h3>${A.t('cMin')}</h3><p>${tx('A strict and a loose checker, and GRPO’s group advantage. The third answer games the loose checker.','一个严格、一个宽松的判分程序，加上 GRPO 的组内优势。第三个回答钻了宽松判分的空子。')}</p><pre class="code" id="rlvr-code">${esc(CODE+'\n'+CODE_OUT)}</pre><button class="btn ghost sm" type="button" data-act="copy">${A.t('copyCode')}</button></article>`+
    `<article class="panel c-card"><h3>${A.t('cProd')}</h3><ul class="rlvr-prod">`+
    tx(`<li>Tülu 3 (open-instruct) calls the method RLVR. Its 8B model starts from the DPO model and trains on GSM8K, MATH and instruction-following prompts, with only the verifier’s reward (the reward model’s weight is 0). That run used ${labLink('ppo','PPO')}, with β = 0.05 and a learning rate of 3e‑7: the commands use the legacy PPO script <code>ppo_vllm_thread_ray_gtrl.py</code> (${cite(SRC.oiT,'<code>docs/tulu3.md</code>')}).</li>`+
-      `<li>open-instruct now also has GRPO. A verified answer earns 10 by default, and under GRPO the scale of the reward does not matter (${cite(SRC.oiG,'<code>docs/algorithms/grpo.md</code>')}).</li>`+
+      `<li>open-instruct now also has GRPO. A verified answer earns 10 by default, and under GRPO the scale of the reward does not matter. The same docs warn that a direct additive format reward can push up a long wrong answer just for its format (${cite(SRC.oiG,'<code>docs/algorithms/grpo.md</code>')}).</li>`+
       `<li>open-instruct’s checkers are in ${cite(SRC.oiV,'<code>open_instruct/ground_truth_utils.py</code>')}: for GSM8K the last number in the output against the label; for MATH several ways to extract the answer, then an equivalence test.</li>`+
       `<li>open-r1’s ${cite(SRC.orw,'<code>src/open_r1/rewards.py</code>')} has the accuracy reward (Math-Verify, 1 or 0) and the format reward (a regex for the think and answer tags, 1 or 0). ${cite(SRC.mv,'Math-Verify')}’s README shows why parsing answers is hard: on the same MATH outputs, changing the checker moves the score from about ${pc(Math.min(...MV_SCORES))} to about ${pc(Math.max(...MV_SCORES))}.</li>`+
       `<li>DeepSeek‑R1‑Zero ran large-scale RL on DeepSeek‑V3‑Base with no SFT first. Its problems, “endless repetition, poor readability, and language mixing”, led to DeepSeek‑R1, which adds cold-start data before RL (${cite(SRC.r1,'README')}).</li>`+
       `<li>verl’s DAPO recipe drops groups whose answers are all right or all wrong and samples again until the batch is full (<code>filter_groups</code>, ${cite(SRC.dapo,'<code>docs/algo/dapo.md</code>')}); TRL logs the share of such groups as <code>frac_reward_zero_std</code> (${cite(SRC.trl,'GRPO docs')}).</li>`,
       `<li>Tülu 3（open-instruct）把这种方法叫作 RLVR。它的 8B 模型从 DPO 模型开始训练，题目来自 GSM8K、MATH 和遵循指令的数据，只用判分程序给的奖励（奖励模型的权重是 0）。这次训练用的是 ${labLink('ppo','PPO')}，β = 0.05，学习率 3e‑7。文档里的命令用的是旧的 PPO 脚本 <code>ppo_vllm_thread_ray_gtrl.py</code>（${cite(SRC.oiT,'<code>docs/tulu3.md</code>')}）。</li>`+
-      `<li>open-instruct 现在也有 GRPO。答案通过验证时，默认给 10 分。不过在 GRPO 里，分数的大小无关紧要（${cite(SRC.oiG,'<code>docs/algorithms/grpo.md</code>')}）。</li>`+
+      `<li>open-instruct 现在也有 GRPO。答案通过验证时，默认给 10 分。不过在 GRPO 里，分数的大小无关紧要。同一份文档还提醒，直接加格式分，一个格式对、但答错的长回答也会被加强（${cite(SRC.oiG,'<code>docs/algorithms/grpo.md</code>')}）。</li>`+
       `<li>open-instruct 的判分程序在 ${cite(SRC.oiV,'<code>open_instruct/ground_truth_utils.py</code>')}：GSM8K 取输出里最后一个数和标准答案比；MATH 先用几种办法提取答案，再判断是否等价。</li>`+
       `<li>open-r1 的 ${cite(SRC.orw,'<code>src/open_r1/rewards.py</code>')} 里有答对奖励（用 Math-Verify 判，1 或 0）和格式奖励（用正则检查 think 和 answer 标签，1 或 0）。${cite(SRC.mv,'Math-Verify')} 的 README 说明了解析答案为什么难。同一批 MATH 输出，换一个判分程序，得分可以从约 ${pc(Math.min(...MV_SCORES))} 变成约 ${pc(Math.max(...MV_SCORES))}。</li>`+
       `<li>DeepSeek‑R1‑Zero 在 DeepSeek‑V3‑Base 上不做 SFT、直接做大规模 RL。它出现了无休止的重复、可读性差、语言混杂这些问题，于是有了 DeepSeek‑R1：在 RL 之前先加入冷启动数据（${cite(SRC.r1,'README')}）。</li>`+
@@ -636,7 +638,8 @@ function updateRail(){
   if(mode==='guided'){
     const s=STEPS[step], box=$('[data-obs]',rail);
     if(s.expect&&s.expect()) observed[step]=true;
-    const show=!!s.obs&&(!!s.always||!!observed[step]||(s.id==='checker'&&ex2!=null)||(s.id==='loose'&&observed[step])||(s.id==='format'&&RUNSEEN.has(cfgKey(S))));
+    /* polish r4 (reader, B1): part 3's observation names the group's advantages, so it waits until all 8 answers are written */
+    const show=!!s.obs&&!(s.id==='group'&&GP.on)&&(!!s.always||!!observed[step]||(s.id==='checker'&&ex2!=null)||(s.id==='loose'&&observed[step])||(s.id==='format'&&RUNSEEN.has(cfgKey(S))));
     if(s.id==='checker'){const h=ex2Ctl(), el=$('#rlvr-ic-ex',rail); if(el&&el._h!==h){el.outerHTML=h; const n=$('#rlvr-ic-ex',rail); if(n) n._h=h;}}
     if(s.id==='loose'){const el=$('#rlvr-ic-chk',rail), h=lv5Ctl(); if(el&&el._h!==h){el.outerHTML=h; const n=$('#rlvr-ic-chk',rail); if(n) n._h=h;}}
     if(s.id==='format'){const el=$('#rlvr-ic-fmt',rail), h=lv6Ctl(); if(el&&el._h!==h){el.outerHTML=h; const n=$('#rlvr-ic-fmt',rail); if(n) n._h=h;}}

@@ -29,6 +29,9 @@ The owner's review of batch 9 (2026-10-08) and its site-wide rules:
 - G6: a run the reader starts in a guided part plays where it can be seen (390, and a 1280 × 720 window); a guided run that starts
   out of view waits at its first token until it is scrolled into view (390, parts 1 and 4); in Scenarios and Settings a new run ends within
   about 1.5 s.
+Polish round 4 (2026-10-17, the owner's B4, R7.12): at 1440 × 900, on entering parts 5 and 7 the stage needs no scrolling inside itself,
+with at least 30 px to spare in Chinese, its top below the top bar and its blocks on the screen; part 5 keeps its height when the end token
+becomes the pad token (R7.9).
 Screenshots: shots/sft/.
 Run: python3 tests/sft_flow.py [en|zh] [1440|390]  (filters for a partial run)"""
 import pathlib, subprocess, sys, re
@@ -254,6 +257,30 @@ GENIN = """()=>{const r=document.querySelector('#sft-gen').getBoundingClientRect
   if(getComputedStyle(st).position==='sticky'){const sr=st.getBoundingClientRect(); v0=Math.max(v0,sr.top); v1=Math.min(v1,sr.bottom);} return r.top<v1-16&&r.bottom>v0+16;}"""
 
 
+# polish round 4 (2026-10-17, R7.12, the owner's B4; as tests/data-pipeline_flow.py part 4 and tests/admission_flow.py): on entering
+# part 5 or part 7 at 1440 × 900 the stage needs no scrolling inside itself and could still grow by 30 px in Chinese (its max-height minus
+# the height its content and borders need; in English it only needs no scrolling); its top is not under the top bar, and its blocks (the
+# strip with the batch, the model's writing, the share bar) lie inside it and on the screen
+FIT = """([st,sels])=>{const s=document.querySelector(st), r=s.getBoundingClientRect(), tb=document.querySelector('.topbar'), dk=document.querySelector('#dock');
+ const top=Math.max(tb?tb.getBoundingClientRect().bottom:0, dk&&!dk.hidden&&getComputedStyle(dk).display!=='none'?dk.getBoundingClientRect().bottom:0);
+ const figs=[]; for(const x of sels) for(const e of document.querySelectorAll(x)){if(!e.getClientRects().length) continue; const q=e.getBoundingClientRect(); figs.push([x,Math.round(q.top),Math.round(q.bottom)]);}
+ return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, content:s.scrollHeight, top:Math.round(r.top), bar:Math.round(top), figs,
+   inside:figs.length>0&&figs.every(q=>q[1]>=r.top-1&&q[2]<=r.bottom+1), shown:r.top>=top-1&&figs.length>0&&figs.every(q=>q[1]>=top-1&&q[2]<=innerHeight+1)};}"""
+FIGS = ['#sft-strip', '#sft-batch', '#sft-gen', '#sft-sharebar']
+
+
+def fits(pg, tag, part, lang):
+    pg.wait_for_timeout(300); last, same = None, 0
+    for _ in range(30):   # the page has stopped scrolling for 0.6 s (the kit brings the card up after Next; the lab then puts the stage back)
+        y = pg.evaluate('()=>scrollY'); same = same + 1 if y == last else 0; last = y
+        if same >= 3: break
+        pg.wait_for_timeout(200)
+    f = pg.evaluate(FIT, ['#sft-stage', FIGS])
+    check(f'{tag} part {part}: the stage fits without scrolling inside' + (', 30 px to spare' if lang == 'zh' else '') + ', its top below the top bar, its blocks inside it and on the screen (R7.12, B4)',
+          f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['inside'] and f['shown'], f)
+    return f
+
+
 def shot(pg, name):
     pg.evaluate("()=>{const s=document.querySelector('#sft-stage'); if(s) s.scrollIntoView({block:'start'});}"); pg.wait_for_timeout(200)
     pg.screenshot(path=str(SH / f'{name}.png'))
@@ -381,6 +408,7 @@ with sync_playwright() as p:
             # ---------- part 5: the pad token is the end token
             nxt(pg); s = st(pg)
             check(f'{tag} part 5: enters on a run already watched: no replay; Next waits', s['step'] == 4 and done(s) and next_off(pg), s)
+            f5 = fits(pg, tag, 5, lang) if w == 1440 else None
             card = text(pg, '#sft-rail .step.current')
             i_why, i_eot = card.find(Z('stacked into one matrix', '叠成一个矩阵')), card.find(Z('pad with the end token instead', '拿结束 token 来补'))
             check(f'{tag} part 5: why a batch is padded comes before padding with the end token (the owner’s item 4, G4)', 0 <= i_why < i_eot, (i_why, i_eot))
@@ -396,6 +424,9 @@ with sync_playwright() as p:
             to_end(pg)
             bt = pg.evaluate(BATCH)
             check(f'{tag} part 5: the pad token is the end token: every row’s real end token red in the batch picture', bool(bt) and bt['red'] == 3, bt)
+            if f5:   # R7.9: the red end token added to the strip's legend does not change the stage's height
+                f = pg.evaluate(FIT, ['#sft-stage', FIGS])
+                check(f'{tag} part 5: with the end token as pad the stage keeps its height (R7.9) and still fits', f['content'] == f5['content'] and f['scroll'] <= 0, (f5['content'], f))
             check(f'{tag} part 5: red where it should have stopped (R5.11), red end token in the strip', pg.evaluate("()=>document.querySelectorAll('#sft-gen .sft-red').length") == 1 and pg.evaluate("()=>document.querySelectorAll('#sft-strip .sft-bad').length") == 1)
             obs = text(pg, '#sft-rail [data-obs]')
             check(f'{tag} part 5: the observation names the fixes; Next open', '<|finetune_right_pad_id|>' in obs and not next_off(pg), obs[:160])
@@ -437,6 +468,7 @@ with sync_playwright() as p:
             rules(pg, f'{tag} part 6', lang); shot(pg, f'{lang}-{w}-6-dpo')
             # ---------- part 7
             nxt(pg)
+            if w == 1440: fits(pg, tag, 7, lang)
             check(f'{tag} part 7: three points, three misconceptions, the way to Scenarios', pg.evaluate("()=>document.querySelectorAll('#sft-rail .sft-rem li').length") == 3
                   and pg.evaluate("()=>[...document.querySelectorAll('#sft-rail .obs p')].filter(p=>p.textContent.startsWith('✗')).length") == 3
                   and pg.evaluate("()=>!!document.querySelector('#sft-rail [data-mode-go=\"sandbox\"]')"))
