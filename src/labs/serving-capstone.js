@@ -522,13 +522,15 @@ function costLine(o,b,lead){const ef=effects(b,o).cost.sort((x,y)=>y.rel-x.rel);
   const why=k==='peak'&&o.cfg.cache?tx(', because idle cached prompts stay in memory','，因为空闲的缓存 prompt 一直占着显存'):'';
   const body=tx(`${core}: from about ${A} to about ${Y}${why}.`,`${core}，从约 ${A} 变成约 ${Y}${why}。`);
   const t=lead?tx(`The cost is that ${body}`,`代价是${body}`):tx(cap1(body),body);
-  return t+(more?tx(' The table below the stage shows how the other numbers change.','其他指标的变化见舞台下方的表格。'):'');}
+  /* the table is folded under its button on a desktop (runOpen), so its name opens it; phones have no table */
+  const tb=tx('whole-run table','整次运行的表格'), tl=innerWidth>760?J('table',tb):tb;
+  return t+(more?tx(` The ${tl} below the stage shows how the other numbers change.`,`其他指标的变化见舞台下方${tl}。`):'');}
 
 /* =====================================================================
    module state (survives re-mounts and language switches)
    ===================================================================== */
 let S={load:'stall',...BASE}, mode='guided', step=0, pred=null, sel=null, root=null, app=null, speed=null, runTok=0;
-let sbState=null, sbTouched=false, chCfg={...BASE}, chRunKey=null, chSubmitted=false, chReveal=false, chTier=null, drillSeed=1, drillOpen=false, whyOpen=false;
+let sbState=null, sbTouched=false, chCfg={...BASE}, chRunKey=null, chSubmitted=false, chReveal=false, chTier=null, drillSeed=1, drillOpen=false, whyOpen=false, runOpen=false;
 const tried={}, seen=new Set(), shownKey={v:null};
 const play={t:0,playing:false,raf:0,last:0,rate:0,k:-2,dk:''};
 const cur=()=>getRun(S.load,S);
@@ -1059,7 +1061,9 @@ const playLabel=()=>play.playing?tx('❚❚ Pause','❚❚ 暂停'):(play.t!=nul
 const playBtn=id=>`<button type="button" class="btn sm sc-pbtn"${id?` id="${id}"`:''} data-act="play">${playLabel()}</button>`;
 function stageHTML(){
   return `<div class="panel stage sc-stage" id="sc-stage">`+
-   `<div class="stage-head"><div><div class="meter-title" id="sc-st-title"></div><div class="meter-sub" id="sc-st-sub"></div></div>`+
+   /* on a desktop the trace hint sits in the head, under the subtitle, beside the status and the two-line comparison (phones hide the
+      head and keep it under the stage, where the trace itself shows) */
+   `<div class="stage-head"><div class="sc-hl"><div class="meter-title" id="sc-st-title"></div><div class="meter-sub" id="sc-st-sub"></div><div class="sc-hint">${traceHint()}</div></div>`+
    `<div class="stage-actions"><span class="status" id="sc-status" tabindex="0"></span><div class="sc-m2d" id="sc-m2d" aria-live="off"></div></div></div>`+
    `<div class="sc-cfgrow"><div class="sc-pills" id="sc-pills"></div><div class="sc-kinds" id="sc-kinds"></div></div>`+
    `<div class="stage-graph graph sc-graph" id="sc-graph">`+
@@ -1080,9 +1084,13 @@ function stageHTML(){
     `<div class="sc-mem" id="sc-mem"><div class="sc-memh"><span class="sc-cap" id="sc-memt"></span><span class="mono sc-memv" id="sc-memv"></span></div><div class="sc-mlab" id="sc-mlab"></div><div class="sc-mbar" id="sc-mbar"></div><div class="sc-axis sc-maxis mono" id="sc-maxis" aria-hidden="true"></div><div class="legend-row sc-mleg" id="sc-mleg"></div></div>`+
    `</div>`+
    `<div class="sc-m2" id="sc-m2"></div>`+
-   `<div class="sc-low"><div class="sc-trace" id="sc-trace"></div><div class="sc-mtw"><div class="sc-cap" id="sc-mtcap"></div><div id="sc-mt"></div></div></div>`+
-   `<p class="sc-scope small muted" id="sc-scope" tabindex="0"></p>`+
-   `<details class="math" id="sc-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="sc-mathbody"></div></details></div>`;
+   `<div class="sc-low"><div class="sc-trace" id="sc-trace"></div></div>`+
+   /* the stage's foot: Show the math, the whole-run table's button and the scope note share one row on a desktop; the table opens below
+      it (the owner, 2026-10-22: fold the table so the stage fits the window). Phones keep the note above Show the math, and no table */
+   `<div class="sc-foot"><details class="math" id="sc-math"><summary>${A.t('showMath')}</summary><div class="mathbody" id="sc-mathbody"></div></details>`+
+    `<button type="button" class="sc-rtbtn" id="sc-rtbtn" data-act="runtab" aria-expanded="false" aria-controls="sc-mtw">${tx('Show the whole-run table','展开整次运行的表格')}</button>`+
+    `<p class="sc-scope small muted" id="sc-scope" tabindex="0"></p></div>`+
+   `<div class="sc-mtw" id="sc-mtw" hidden><div class="sc-cap" id="sc-mtcap"></div><div id="sc-mt"></div></div></div>`;
 }
 const segCtl=(key,label,opts,val,note)=>A.ui.seg({id:'sc-ctl-'+key,key,label,options:opts,value:String(val),note});
 function controlsHTML(){
@@ -1995,6 +2003,7 @@ const termTipHTML=k=>TERM[k]?`<div>${esc(TERM[k]())}</div><div class="act">${jum
 function jumpAct(k){
   if(k==='controls') return mode==='sandbox'?tx('Click to jump to Settings.','点击跳到“自由调参”。'):tx('Click to jump to Settings; in this mode it explains where the settings are.','点击跳到“自由调参”；这个模式下那里说明了设置在哪。');
   if(k==='math') return tx('Click to open “Show the math”.','点击展开“展开公式”。');
+  if(k==='table') return tx('Click to open the whole-run table.','点击展开整次运行的表格。');
   if(k==='stall') return tx('Click to put the playhead in the step behind the longest gap.','点击把播放头放到最长间隔的那一步。');
   if(k==='tl') return tx('Click to scroll to the timeline.','点击滚到时间线。');
   if(k==='code') return tx('Click to scroll to the code on the stage.','点击滚到舞台上的代码。');
@@ -2004,6 +2013,7 @@ function jumpAct(k){
 function jump(k,src){
   if(!app) return;
   if(k==='math'){const d=$('#sc-math',app); d.open=true; A.tip.hide(); d.scrollIntoView({block:'center',behavior:RM()?'auto':'smooth'}); A.ui.flash(d); return;}
+  if(k==='table'){runOpen=true; syncRunTab(); A.tip.hide(); const w=showRunTab(); if(w&&w.offsetParent) A.ui.flash(w); return;}
   if(k==='stall'){A.tip.hide(); if(mode==='guided'&&STEPS[step].id!=='predict'&&STEPS[step].id!=='mission'){} toStall(); const el=$('#sc-strip',app); if(el&&innerWidth<=760) el.scrollIntoView({block:'center',behavior:RM()?'auto':'smooth'}); return;}
   if(k==='tl'){const el=$('#sc-tlw',app); A.tip.hide(); el.scrollIntoView({block:'center',behavior:RM()?'auto':'smooth'}); A.ui.flash(el); return;}
   if(k==='code'){const el=$('#sc-wc',app); A.tip.hide(); if(el&&!el.hidden) showCode(true); return;}
@@ -2075,7 +2085,25 @@ function flashBtn(b,txt,back){b.textContent=txt; clearTimeout(b._t); b._t=setTim
 function copyText(txt,btn,back){const done=()=>flashBtn(btn,tx('Copied','已复制'),back);
   const fb=()=>{const ta=document.createElement('textarea'); ta.value=txt; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); let ok=false; try{ok=document.execCommand('copy');}catch(e){} ta.remove(); if(ok) done(); else flashBtn(btn,tx('Select the text and press Ctrl+C','选中文字后按 Ctrl+C'),back);};
   try{if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done,fb); else fb();}catch(e){fb();}}
+/* the whole-run table, folded by default: the learner's choice holds across parts, modes, a language switch and a reload */
+function syncRunTab(){if(!app) return; const w=$('#sc-mtw',app), b=$('#sc-rtbtn',app); if(w) w.hidden=!runOpen; if(b) b.setAttribute('aria-expanded',String(runOpen));}
+/* the table opens at the stage's foot: as fitFocus, the page scrolls until the stage sticks (never past the head of the part's card), then
+   the stage scrolls inside until the table's foot shows (its top, if it is taller than the room). scrollIntoView moved the page 327 px, past
+   the sticky line: the stage's head went under the top bar and the page below the stage filled the window's foot */
+function showRunTab(){const w=$('#sc-mtw',app), st=$('#sc-stage',app); if(!w||!w.offsetParent) return w;
+  const beh=RM()?'auto':'smooth';
+  if(!st||innerWidth<=760||getComputedStyle(st).position!=='sticky'){w.scrollIntoView({block:'nearest',behavior:beh}); return w;}
+  const bar=document.querySelector('.topbar'), barB=bar?bar.getBoundingClientRect().bottom:58, card=$('#sc-rail .step.current',app);
+  const sr=st.getBoundingClientRect(), r=w.getBoundingClientRect(), stick=parseFloat(getComputedStyle(st).top)||70, bw=st.clientTop||0;
+  const hiAt=py=>Math.min(sr.bottom-py-bw,innerHeight)-8, loAt=py=>Math.max(sr.top-py+bw,barB)+6;
+  let py=0; if(r.bottom>hiAt(0)){py=Math.max(0,sr.top-stick); if(card&&card.getClientRects().length) py=Math.max(0,Math.min(py,card.getBoundingClientRect().top-(barB+8)));}
+  let sy=r.bottom-py-hiAt(py); if(r.top-py-sy<loAt(py)) sy=r.top-py-loAt(py);
+  sy=Math.max(-st.scrollTop,Math.min(sy,st.scrollHeight-st.clientHeight-st.scrollTop));
+  if(py>2) window.scrollBy({top:py,behavior:beh});
+  if(Math.abs(sy)>2) st.scrollBy({top:sy,behavior:beh});
+  return w;}
 function act(a,btn){
+  if(a==='runtab'){runOpen=!runOpen; syncRunTab(); if(runOpen) showRunTab(); return;}
   if(a==='play'){if(btn&&btn.closest('#sc-rail')&&innerWidth>760){} startPlay(false); return;}
   if(a==='replay'){bump(); startPlay(true); return;}
   /* ▸ and ◂ are pressed again and again: their tooltips stay away until the pointer moves (review A, finding 11), and nothing scrolls,
@@ -2153,7 +2181,7 @@ A.registerLab({
   id:ID,
   // round 3 #6: what the learner did here, saved by the kit and put back once per page load before the first mount (CONTRACT.md)
   snap:()=>({v:1,mode,step,S:sOf(S),pred,sel,speed,sbState:sbState?sOf(sbState):null,sbTouched,tried:{...tried},seen:[...seen].slice(-200),codeM,codeSeen:[...codeSeen],codeTouched,
-    chCfg:{policy:chCfg.policy,cap:chCfg.cap,budget:chCfg.budget,cache:chCfg.cache,cb:chCfg.cb},chRunKey,chSubmitted,chReveal,chTier:chTier?{...chTier}:null,whyOpen,drillSeed,drillOpen,
+    chCfg:{policy:chCfg.policy,cap:chCfg.cap,budget:chCfg.budget,cache:chCfg.cache,cb:chCfg.cb},chRunKey,chSubmitted,chReveal,chTier:chTier?{...chTier}:null,whyOpen,runOpen,drillSeed,drillOpen,
     passed:mode==='challenge'&&chSubmitted&&!!chTier&&chTier.tier!==3}),
   restore(o){if(!o||o.v!==1) return; const p=sCheck(o.S); if(!p) return;
     const md=['guided','sandbox','challenge'].includes(o.mode)?o.mode:'guided'; if((md==='challenge')!==(p.load==='challenge')) return;
@@ -2165,7 +2193,7 @@ A.registerLab({
     const cc=sCheck({load:'challenge',...(o.chCfg||{})}); chCfg=cc?{policy:cc.policy,cap:cc.cap,budget:cc.budget,cache:cc.cache,cb:cc.cb}:{...BASE};
     chRunKey=mode==='challenge'&&keyCheck(o.chRunKey)&&o.chRunKey.indexOf('challenge_')===0?o.chRunKey:null; chSubmitted=!!chRunKey&&o.chSubmitted===true;
     const t=o.chTier; chTier=chSubmitted&&t&&typeof t==='object'&&[1,2,3].includes(t.tier)?(t.tier===2?(sCheck({load:'challenge',...(t.alt||{})})?{tier:2,alt:{policy:t.alt.policy,cap:t.alt.cap,budget:t.alt.budget,cache:t.alt.cache,cb:t.alt.cb}}:null):{tier:t.tier}):null;
-    chReveal=chSubmitted&&o.chReveal===true; whyOpen=o.whyOpen===true;
+    chReveal=chSubmitted&&o.chReveal===true; whyOpen=o.whyOpen===true; runOpen=o.runOpen===true;
     if(Number.isInteger(o.drillSeed)&&o.drillSeed>=0&&o.drillSeed<1e6) drillSeed=o.drillSeed; drillOpen=o.drillOpen===true;
     // the playhead, as enterStep() and setMode() leave it: part 7 at the moment picked last; a run watched to the end whole; any other at its start
     stopPlay(); bump(); const sid=mode==='guided'?STEPS[step].id:'', m=sid==='code'&&codeM?momentOf(codeM):null;
@@ -2182,7 +2210,7 @@ A.registerLab({
     for(const k in RC){} bump(); stopPlay();
     const o=cur(); if(p){play.t=null; seen.add(o.key);} else if(play.t!=null&&!seen.has(o.key)&&play.t>0) play.t=Math.min(play.t,o.end);
     const rail=$('#sc-rail',app); rail.innerHTML=railFull(); A.ui.initRanges(rail);
-    render(); watchStage();
+    render(); syncRunTab(); watchStage();
     if(p&&!RM()){play.t=0; startPlay(true);}
   },
   leave(){bump(); clearTimeout(annT); stageStop(); unwatchStage(); stopPlay(); root=null; app=null;},
@@ -2314,7 +2342,7 @@ window.__scTz=Object.freeze({
    ===================================================================== */
 const deep=o=>JSON.parse(JSON.stringify(o));
 const hook={
-  get state(){return {part:step,partId:STEPS[step].id,mode,load:S.load,cfg:cfgOf(S),settings:{...S},playhead:play.t,playing:play.playing,selected:sel,pred,speed:spd(),speedPicked:speed,runTok,seen:[...seen],chCfg:{...chCfg},chRunKey,chSubmitted,chReveal,chTier:chTier?{...chTier}:null,stageBusy:stageT!==0};},
+  get state(){return {part:step,partId:STEPS[step].id,mode,load:S.load,cfg:cfgOf(S),settings:{...S},playhead:play.t,playing:play.playing,selected:sel,pred,speed:spd(),speedPicked:speed,runTok,seen:[...seen],chCfg:{...chCfg},chRunKey,chSubmitted,chReveal,chTier:chTier?{...chTier}:null,runOpen,stageBusy:stageT!==0};},
   get run(){return deep(cur().m);},
   get base(){return deep(baseOf(S.load).m);},
   engine:E, loads:LOADS.slice(),

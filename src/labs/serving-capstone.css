@@ -158,6 +158,12 @@
 .sc-tr li.sc-tr-w::before{background:var(--surface);border:1.5px solid var(--ink-3);width:5px;height:5px}
 .sc-trt{color:var(--ink-3);font-size:11.5px}
 .sc-scope{margin:8px 0 0;cursor:help}
+/* the whole-run table's button reads as Show the math's summary does (the kit's details.math summary: a boxed + that turns to −) */
+.sc-rtbtn{display:inline-flex;align-items:center;gap:8px;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-size:14px;font-weight:650;cursor:pointer;text-align:left}
+.sc-rtbtn::before{content:"+";font-family:var(--font-mono);font-weight:650;width:18px;height:18px;flex:0 0 18px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-size:12px}
+.sc-rtbtn[aria-expanded="true"]::before{content:"−"}
+.sc-stage>.sc-mtw{margin-top:8px}
+.sc-hint{display:none}
 .sc-simpl ul{margin:4px 0 0;padding-left:18px}
 .sc-simpl li{margin-bottom:3px}
 
@@ -224,8 +230,9 @@
   .sc-stage>.sc-graph{order:3}
   .sc-stage>.sc-m2{order:4}
   .sc-stage>.sc-low{order:5}
-  .sc-stage>.sc-scope{order:6}
-  .sc-stage>details.math{order:7}
+  .sc-stage>.sc-foot{order:6;display:flex;flex-direction:column}
+  .sc-foot>.sc-scope{order:-1}
+  .sc-rtbtn{display:none}
   .sc-graph{padding:8px 0 10px;gap:7px}
   .sc-graph>.sc-strip{order:1}.sc-graph>.sc-play{order:2}.sc-graph>.sc-tlw{order:3}.sc-graph>.sc-mem{order:4}.sc-graph>.sc-clock{order:5}
   .sc-stage{padding:10px 10px 12px}
@@ -482,7 +489,8 @@
    rest of the stage (the table of the whole run, Show the math) still scrolls. Every height here is fixed, so nothing moves while a run
    plays (R7.9); phones keep their layout */
 @media (min-width:761px){
-  .sc-app{--sc-tlh:240}   /* rows of 6 px for the 37 requests of parts 1-3, 7, 8; 5 px for the 48 of parts 4-6 (8 and 6 before); the challenge's 66 keep 4 */
+  .sc-app{--sc-tlh:200}   /* rows of 5 px for the 37 requests of parts 1-3, 7, 8; 4 px for the 48 of parts 4-6 (8 and 6 before round 5, 6 and 5 before
+                             the table folded); the challenge's 66 keep 4 */
   .sc-stage .stage-actions{gap:2px}
   .sc-m2d{line-height:1.25}
   .sc-cfgrow{margin:4px 0 0}
@@ -498,6 +506,21 @@
   .sc-low{margin-top:8px;gap:6px}
   .sc-tab th,.sc-tab td{padding-block:1.5px;line-height:1.25}
   .sc-tab tr.sc-grp th{padding-top:5px}
-  .sc-scope{margin-top:6px}
-  .sc-stage>details.math{margin-top:8px}
+  /* the owner, 2026-10-22 ("收起来"): the whole-run table (about 350 px) folds under a button, and the button and the scope note sit in
+     Show the math's row, its line above them all; an open Show the math takes the whole row and the other two go under its body. It may
+     shrink to the stage (min-width:0): as a flex item it kept its widest formula row, 127 px past the stage at 900 px */
+  .sc-foot{display:flex;flex-wrap:wrap;align-items:center;column-gap:20px;row-gap:8px;margin-top:6px;border-top:1px solid var(--line-2);padding-top:8px}
+  .sc-foot>details.math{margin:0;border-top:0;padding-top:0;min-width:0}
+  .sc-foot>details.math[open]{flex:1 0 100%}
+  .sc-foot>.sc-scope{margin:0 0 0 auto}
+  /* on a wide stage the trace hint moves from its own row under the stage into the head, under the subtitle, where the head had room
+     beside the status and the two-line comparison; a narrower stage (a 900 px window) keeps it under the stage */
+  @container (min-width:736px){
+    .sc-stage>.stage-head{flex-wrap:nowrap}
+    .sc-stage>.stage-head>.sc-hl{flex:1 1 0;min-width:0}
+    .sc-stage .stage-actions{flex:0 0 auto}
+    .sc-hint{display:block}
+    .sc-hint .sc-trhint{margin:4px 0 0;line-height:1.4}
+    .sc-stage>.sc-low{display:none}
+  }
 }
