@@ -22,6 +22,9 @@
   puts the plan on the clipboard; the capability card.
 - Scenarios: three presets, pressed state follows the load; a Settings change does not move the page (R3.2); the URL carries the setup
   and a fresh page opens it (hash round-trip). A language switch keeps the part, the prediction and the settings.
+- The stage fits a 1440 × 900 window in every guided part but part 7 (the owner, 2026-10-22): the whole-run table is folded under a
+  button in Show the math's row; the button and the cost sentence's link open it whole on the screen; the choice holds across Next, a
+  language switch and a reload; phones have neither the button nor the table.
 Screenshots: out/sc_shots/ (the ones the task lists) and shots/serving-capstone/.
 Run: python3 tests/serving-capstone_flow.py"""
 import pathlib, re, subprocess, sys, json, time
@@ -721,69 +724,133 @@ with sync_playwright() as _p:
     _b.close()
 
 
-# polish round 5 (2026-10-17, R3.2, R9.7, R7.9, R7.12, the owner's B4; as tests/rlvr_flow.py does for parts that cannot fit): the stage is
-# taller than the window in every part on a desktop (the strip, the timeline and the KV pool, the table of the whole run and Show the
-# math need about 1,160 px at 1440 × 900, with the spacing tightened and the timeline drawn shorter; the stage has 814), so the block each
-# part's card talks about is whole on the screen when the part is entered (the timeline in parts 1–3, the KV pool in 4–5, the strip in 6,
-# the code panel in 7), and what is left below scrolls inside the stage, under a ceiling. Before, at 1440 × 900 the stage scrolled 598 px
-# inside in Chinese (536 at parts 4–6, 1,059 at part 7) and 622–684 px in English (1,145 at part 7), and the timeline's lower part was
-# below the window in parts 1–6. The ceilings are this standard-mode page's numbers plus about 20 px. The walk is on the whole site
-# (built into out/ and wrapped with a doctype; the one-lab page lacks the “Read first” line, which moves every card 28 px), in the lab's
-# real layout (window.__aspPrimer, as tests/kit_flow.py), entering each part as the polish probe stage.py does: Next when it is on, else
-# the part's title; Chinese with reduced motion, English with motion (its scrolls are smooth). The timeline's rows are 6 px for the 37
-# requests and 5 px for the 48 (8 and 6 before), drawn for the timeline's width; a phone keeps its rows.
+# polish round 5 (2026-10-17, R3.2, R9.7, R7.9, R7.12, the owner's B4) and the table's fold (the owner, 2026-10-22, on a decision card:
+# "收起来"): at 1440 × 900 the stage of every guided part but part 7 fits the window. Round 5 tightened the spacing and drew the timeline
+# shorter, but the strip, the timeline and the KV pool, the whole-run table and Show the math still needed about 1,160 px (the stage has
+# 814), so the stage scrolled 350–390 px inside (830–850 at part 7) and only the block each part's card talks about was brought whole on
+# the screen. The whole-run table (about 350 px) now opens from a button in Show the math's row, the scope note sits in that row too, and
+# on a wide stage the trace hint moves into the head; the timeline's rows are 5 px for the 37 requests and 4 px for the 48 (6 and 5 in
+# round 5). Part 7's code panel still needs the stage to scroll inside, under a ceiling (this page's numbers plus about 20 px). The walk is
+# on the whole site (built into out/ and wrapped with a doctype; the one-lab page lacks the “Read first” line, which moves every card
+# 28 px), in the lab's real layout (window.__aspPrimer, as tests/kit_flow.py), entering each part as the polish probe stage.py does: Next
+# when it is on, else the part's title; Chinese with reduced motion, English with motion (its scrolls are smooth). A phone keeps its rows.
 subprocess.run([sys.executable, str(P / 'build.py'), 'out/site-serving-capstone.html'], check=True, cwd=P, capture_output=True)
 (P / 'out' / 'wrapped-site-serving-capstone.html').write_text('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>'
                                                           + (P / 'out' / 'site-serving-capstone.html').read_text() + '</body></html>')
 SITE = 'file://' + str(P / 'out' / 'wrapped-site-serving-capstone.html')
 FOCUS = {'mission': '#sc-tlw', 'predict': '#sc-tlw', 'budget': '#sc-tlw', 'cache': '#sc-mem', 'cbudget': '#sc-mem', 'cap': '#sc-strip', 'code': '#sc-wc', 'remember': None}
-CEIL = {'zh': [370, 370, 370, 350, 350, 350, 830, 370], 'en': [390, 390, 390, 370, 390, 370, 850, 390]}
+CEIL7 = {'zh': 420, 'en': 440}
 WALK5 = """q=>{const s=document.getElementById('sc-stage'), r=s.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
   lo=Math.max(r.top+s.clientTop,bar), hi=Math.min(r.bottom-s.clientTop,innerHeight), h=s.querySelector('.stage-head').getBoundingClientRect(), R=e=>{const b=e.getBoundingClientRect(); return [Math.round(b.top),Math.round(b.bottom)]};
   const st=window.__sc.state, f=q[st.partId], fe=f&&document.querySelector(f), cv=document.getElementById('sc-tl'), b0=window.__sc.rowBox(0);
   return {part:st.part+1, id:st.partId, top:Math.round(r.top), head:Math.round(h.top), bar:Math.round(bar), lo:Math.round(lo), hi:Math.round(hi), scroll:s.scrollHeight-s.clientHeight,
     focus:fe?R(fe):null, tl:R(cv), rh:b0?Math.round(b0.bottom-b0.top):null, drawn:Math.round(cv.width/Math.min(2,devicePixelRatio||1)), boxW:document.getElementById('sc-tlbox').clientWidth}}"""
+# the fold: what the stage's foot shows, where the table is, and whether it is whole on the screen (inside the stage's visible part)
+FOLD = """()=>{const s=document.getElementById('sc-stage'), w=document.getElementById('sc-mtw'), b=document.getElementById('sc-rtbtn'), m=document.querySelector('#sc-math>summary'), sc=document.getElementById('sc-scope'),
+  ft=document.querySelector('#sc-stage>.sc-foot'), hn=document.querySelector('#sc-stage .sc-hint'), bar=document.querySelector('.topbar').getBoundingClientRect().bottom, sr=s.getBoundingClientRect(), r=w.getBoundingClientRect(),
+  shown=e=>!!e&&e.getClientRects().length>0, mid=e=>{const q=e.getBoundingClientRect(); return Math.round((q.top+q.bottom)/2)}, card=document.querySelector('#sc-rail .step.current');
+  const lo=Math.max(sr.top+s.clientTop,bar), hi=Math.min(sr.bottom-s.clientTop,innerHeight);
+  return {open:window.__sc.state.runOpen, hidden:w.hidden, table:shown(w), btn:shown(b), exp:b.getAttribute('aria-expanded'), mark:getComputedStyle(b,'::before').content, btnText:b.textContent.trim(),
+    whole:shown(w)&&r.top>=lo-1&&r.bottom<=hi+1, gap:shown(w)?Math.round(r.top-ft.getBoundingClientRect().bottom):null, row:shown(b)?[mid(m),mid(b),mid(sc)]:null,
+    top:Math.round(sr.top), bar:Math.round(bar), hint:shown(hn)&&!!hn.closest('.stage-head'), low:shown(document.querySelector('#sc-stage>.sc-low')),
+    xs:shown(b)?[m,b,sc].map(e=>Math.round(e.getBoundingClientRect().left)):null, scopeAbove:sc.getBoundingClientRect().bottom<=m.getBoundingClientRect().top+1,
+    card:card?Math.round(card.getBoundingClientRect().top):null, part:window.__sc.state.part+1}}"""
+TIP = "()=>{const t=document.querySelector('#tip'); return t&&!t.hidden?t.innerText.trim():null}"
+LINKS = "()=>[...document.querySelectorAll('#sc-rail [data-jump=table]')].filter(e=>e.offsetParent).length"
+
+
+def enter(pg, i, rm):
+    """Next when it is on, else the part's title (as the polish probe stage.py); i is the 0-based part"""
+    nb = pg.locator('.pbar [data-nav=next]:visible:not([disabled])')
+    if nb.count(): nb.first.click()
+    else: pg.evaluate(f"()=>document.querySelector('#sc-rail .steps>.step:nth-child({i + 1}) .step-h').click()")
+    pg.wait_for_timeout(1500 if rm == 'reduce' else 2500)
+
+
+def site(b, w, h, lang, rm='reduce', resume=False):
+    pg = b.new_page(viewport={'width': w, 'height': h}, reduced_motion=rm); pg.add_init_script('window.__aspPrimer=true' + ('; window.__aspResume=true' if resume else ''))
+    pg.on('pageerror', lambda e: errs.append(f'{w} {lang} site: {e}'))
+    pg.goto(SITE); pg.wait_for_timeout(600); pg.click(f'.langsw button[data-lang="{lang}"]'); pg.wait_for_timeout(80)
+    pg.evaluate("()=>{location.hash='serving-capstone'}"); pg.wait_for_timeout(500)
+    g = pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
+    if g.count(): g.first.click(); pg.wait_for_timeout(700)
+    return pg
+
+
 with sync_playwright() as _p:
     _b = _p.chromium.launch()
     for _lang, _rm in (('zh', 'reduce'), ('en', 'no-preference')):
-        _pg = _b.new_page(viewport={'width': 1440, 'height': 900}, reduced_motion=_rm); _pg.add_init_script('window.__aspPrimer=true')
-        _pg.on('pageerror', lambda e: errs.append(f'1440 walk: {e}'))
-        _pg.goto(SITE); _pg.wait_for_timeout(600); _pg.click(f'.langsw button[data-lang="{_lang}"]'); _pg.wait_for_timeout(80)
-        _pg.evaluate("()=>{location.hash='serving-capstone'}"); _pg.wait_for_timeout(500)
-        _g = _pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
-        if _g.count(): _g.first.click(); _pg.wait_for_timeout(700)
+        _pg = site(_b, 1440, 900, _lang, _rm)
         _n = _pg.evaluate("()=>document.querySelectorAll('#sc-rail .steps>.step').length"); _rows = [_pg.evaluate(WALK5, FOCUS)]
         if _rm != 'reduce':   # R7.9: playing the run leaves every block's height alone (the stage's content keeps its height)
             _pg.evaluate("()=>{window.__H5=[]; const s=document.getElementById('sc-stage'), f=()=>{window.__H5.push(s.scrollHeight); if(window.__H5.length<240) requestAnimationFrame(f);}; document.querySelector('#sc-play [data-act=play]').click(); f();}")
             _pg.wait_for_timeout(4500); _hs = _pg.evaluate("()=>window.__H5"); _pg.evaluate("()=>{const b=document.querySelector('#sc-play [data-act=play]'); if(window.__sc.state.playing) b.click();}")
             check(f'1440 {_lang} part 1: playing the run leaves the stage’s content height alone (R7.9)', len(_hs) > 30 and max(_hs) - min(_hs) <= 1, (len(_hs), min(_hs or [0]), max(_hs or [0])))
         for _i in range(1, _n):
-            _nb = _pg.locator('.pbar [data-nav=next]:visible:not([disabled])')
-            if _nb.count(): _nb.first.click()
-            else: _pg.evaluate(f"()=>document.querySelector('#sc-rail .steps>.step:nth-child({_i + 1}) .step-h').click()")
-            _pg.wait_for_timeout(1500 if _rm == 'reduce' else 2500); _rows.append(_pg.evaluate(WALK5, FOCUS))
+            enter(_pg, _i, _rm); _rows.append(_pg.evaluate(WALK5, FOCUS))
         check(f'1440 {_lang} walk: entering every part, the stage’s top at its sticky line (70 px) or lower and its head below the top bar (R3.2, R9.7, B4)',
               len(_rows) == _n == 8 and all(r['part'] == i + 1 and r['top'] >= max(68, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
         for _r in _rows:
-            _c = CEIL[_lang][_r['part'] - 1]
-            check(f'1440 {_lang} walk part {_r["part"]}: what the stage cannot hold scrolls inside it, at most {_c} px (B4; it was 536–1,145 px)', _r['scroll'] <= _c, _r)
+            if _r['id'] == 'code':   # part 7: the code panel stands above the timeline (DOM order), the panel is the part's figure
+                check(f'1440 {_lang} walk part 7: what the stage cannot hold scrolls inside it, at most {CEIL7[_lang]} px (B4; 830–850 px before the fold)', _r['scroll'] <= CEIL7[_lang], _r)
+            else:
+                check(f'1440 {_lang} walk part {_r["part"]}: the whole stage fits the window, nothing scrolls inside it (the owner, 2026-10-22; 350–390 px before the fold)', _r['scroll'] <= 0, _r)
+                check(f'1440 {_lang} walk part {_r["part"]}: the timeline (the main figure) is whole on the screen when the part is entered (B4, R7.12)',
+                      _r['tl'][0] >= _r['lo'] - 1 and _r['tl'][1] <= _r['hi'] + 1, _r)
             if _r['focus']:
                 check(f'1440 {_lang} walk part {_r["part"]}: the block the card talks about ({FOCUS[_r["id"]]}) is whole on the screen when the part is entered (B4, R7.12)',
                       _r['focus'][0] >= _r['lo'] - 1 and _r['focus'][1] <= _r['hi'] + 1, _r)
-            if _r['id'] != 'code':   # part 7: the code panel stands above the timeline (DOM order), the panel is the part's figure
-                check(f'1440 {_lang} walk part {_r["part"]}: the timeline (the main figure) is whole on the screen when the part is entered (B4, R7.12)',
-                      _r['tl'][0] >= _r['lo'] - 1 and _r['tl'][1] <= _r['hi'] + 1, _r)
-            check(f'1440 {_lang} walk part {_r["part"]}: the timeline is drawn for its width, its rows {6 if _r["part"] not in (4, 5, 6) else 5} px (37 or 48 requests)',
-                  _r['drawn'] == _r['boxW'] and _r['rh'] == (5 if _r['part'] in (4, 5, 6) else 6), _r)
+            check(f'1440 {_lang} walk part {_r["part"]}: the timeline is drawn for its width, its rows {4 if _r["part"] in (4, 5, 6) else 5} px (37 or 48 requests)',
+                  _r['drawn'] == _r['boxW'] and _r['rh'] == (4 if _r['part'] in (4, 5, 6) else 5), _r)
         _pg.close()
-    # a phone keeps its rows (the layout at 390 is unchanged): 4 px for the 37 requests
-    _pg = _b.new_page(viewport={'width': 390, 'height': 844}, reduced_motion='reduce'); _pg.add_init_script('window.__aspPrimer=true')
-    _pg.goto(SITE); _pg.wait_for_timeout(600); _pg.evaluate("()=>{location.hash='serving-capstone'}"); _pg.wait_for_timeout(600)
-    _g = _pg.locator('[data-flow-nav] button[data-flow=guided]:visible')
-    if _g.count(): _g.first.click(); _pg.wait_for_timeout(700)
-    _r = _pg.evaluate(WALK5, FOCUS)
-    check('390 part 1: a phone keeps its timeline rows (4 px for 37 requests)', _r['rh'] == 4 and _r['drawn'] == _r['boxW'], _r)
+
+    # the fold (the owner, 2026-10-22): the table hides until its button is pressed; the button, or the card's sentence that names the
+    # table, opens it whole on the screen with the stage at its sticky line; the choice holds across Next, a language switch and a reload
+    for _lang in ('zh', 'en'):
+        T = f'1440 {_lang} fold'
+        _pg = site(_b, 1440, 900, _lang, resume=True)
+        _f = _pg.evaluate(FOLD)
+        check(f'{T}: the table is folded at first, its button reads “{Z(_lang, "Show the whole-run table", "展开整次运行的表格")}” with a + (as Show the math)',
+              not _f['open'] and _f['hidden'] and not _f['table'] and _f['btn'] and _f['exp'] == 'false' and _f['mark'] == '"+"' and _f['btnText'] == Z(_lang, 'Show the whole-run table', '展开整次运行的表格'), _f)
+        check(f'{T}: Show the math, the table’s button and the scope note share one row under the stage, in that order', _f['row'] and max(_f['row']) - min(_f['row']) <= 6 and _f['xs'][0] < _f['xs'][1] < _f['xs'][2], _f)
+        check(f'{T}: on a wide stage the trace hint sits in the head and the row under the stage that held it is gone', _f['hint'] and not _f['low'], _f)
+        _pg.evaluate("()=>document.getElementById('sc-rtbtn').click()"); _pg.wait_for_timeout(700); _f = _pg.evaluate(FOLD)
+        check(f'{T}: pressed at the page’s top, the button opens the table (−) right under its row, whole on the screen, the stage at its sticky line',
+              _f['open'] and _f['table'] and _f['exp'] == 'true' and _f['mark'] == '"−"' and 0 <= _f['gap'] <= 12 and _f['whole'] and _f['top'] >= 68, _f)
+        rules(_pg, f'{T} open table', _lang)
+        enter(_pg, 1, 'reduce'); _f = _pg.evaluate(FOLD)
+        check(f'{T}: Next keeps the table open', _f['part'] == 2 and _f['open'] and _f['table'], _f)
+        _o = 'en' if _lang == 'zh' else 'zh'
+        _pg.click(f'.langsw button[data-lang="{_o}"]'); _pg.wait_for_timeout(700); _f = _pg.evaluate(FOLD)
+        check(f'{T}: a language switch keeps it open', _f['open'] and _f['table'] and _f['btnText'] == Z(_o, 'Show the whole-run table', '展开整次运行的表格'), _f)
+        _pg.click(f'.langsw button[data-lang="{_lang}"]'); _pg.wait_for_timeout(700)
+        _pg.reload(); _pg.wait_for_timeout(1500); _f = _pg.evaluate(FOLD)
+        check(f'{T}: a reload keeps it open (the lab’s saved state)', _f['part'] == 2 and _f['open'] and _f['table'] and _f['exp'] == 'true', _f)
+        _pg.locator('#sc-rtbtn').click(); _pg.wait_for_timeout(500); _f = _pg.evaluate(FOLD)
+        check(f'{T}: pressed again, the button folds the table (+)', not _f['open'] and not _f['table'] and _f['exp'] == 'false' and _f['mark'] == '"+"', _f)
+        # part 3: a budget's cost sentence names the table, as a link while it is folded on a desktop
+        enter(_pg, 2, 'reduce'); _pg.evaluate("()=>document.querySelectorAll('#sc-rail .step.current .levers button')[1].click()"); _pg.wait_for_timeout(500); end(_pg); _pg.wait_for_timeout(400)
+        check(f'{T}: part 3, a budget’s cost sentence names the whole-run table as a link', _pg.evaluate(LINKS) == 1, _pg.evaluate("()=>document.querySelector('#sc-rail [data-obs]').innerText"))
+        if _pg.evaluate(LINKS):
+            _l = _pg.locator('#sc-rail [data-jump=table]:visible').first; _l.hover(); _pg.wait_for_timeout(500); _tp = _pg.evaluate(TIP)
+            check(f'{T}: the link’s tooltip says what a click does (R1.1)', _tp is not None and Z(_lang, 'Click to open the whole-run table.', '点击展开整次运行的表格。') in _tp, _tp)
+            _c0 = _pg.evaluate(FOLD)['card']; _l.click(); _pg.wait_for_timeout(900); _f = _pg.evaluate(FOLD)
+            check(f'{T}: the link opens the table whole on the screen, the stage at its sticky line, the card’s head never pushed under the top bar', _f['open'] and _f['whole'] and _f['top'] >= 68 and _f['card'] >= min(_c0, _f['bar'] + 8) - 1, (_c0, _f))
+        _pg.close()
+    # a 900 px window: the stage is narrower, so the trace hint keeps its row under the stage; the button still opens the table in view
+    _pg = site(_b, 900, 900, 'en'); _f = _pg.evaluate(FOLD)
+    check('900 en fold: the trace hint keeps its row under the stage; the table is folded', not _f['hint'] and _f['low'] and not _f['table'] and _f['btn'], _f)
+    _pg.evaluate("()=>document.getElementById('sc-rtbtn').click()"); _pg.wait_for_timeout(700); _f = _pg.evaluate(FOLD)
+    check('900 en fold: the button opens the table whole on the screen, the stage at its sticky line', _f['open'] and _f['whole'] and _f['top'] >= 68, _f)
     _pg.close()
+    # a phone keeps its layout: no button and no table (the scope note above Show the math, as before), its timeline rows 4 px for 37 requests
+    for _lang in ('zh', 'en'):
+        _pg = site(_b, 390, 844, _lang); _r = _pg.evaluate(WALK5, FOCUS); _f = _pg.evaluate(FOLD)
+        if _lang == 'zh': check('390 part 1: a phone keeps its timeline rows (4 px for 37 requests)', _r['rh'] == 4 and _r['drawn'] == _r['boxW'], _r)
+        _pg.evaluate("()=>document.getElementById('sc-rtbtn').click()"); _pg.wait_for_timeout(400); _g = _pg.evaluate(FOLD)
+        check(f'390 {_lang} fold: a phone shows no table and no button, even with the table open, and the scope note stands above Show the math',
+              not _f['btn'] and not _f['table'] and _f['scopeAbove'] and _g['open'] and not _g['table'], (_f, _g))
+        _pg.close()
     _b.close()
 
 
