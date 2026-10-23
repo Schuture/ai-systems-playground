@@ -166,3 +166,5 @@
    made each paragraph scroll 2–6 px up and down as well (the stage's inner scroll in part 7); the 6 px between paragraphs are now inside
    each paragraph, so they read as before */
 @media (min-width:761px){.op-app .mathbody p{margin:0;padding-bottom:6px}.op-app .mathbody p:first-child{margin-top:6px}}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+#op-bars-cap,#op-metrics .k{font-variant-numeric:tabular-nums}

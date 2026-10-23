@@ -243,3 +243,5 @@
 .mp-allb{padding-top:4px}
 .mp-pass{margin:4px 0 8px;padding-left:18px;font-size:13px}
 .mp-pass li{margin-bottom:4px}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+#mp-metrics .sub{font-variant-numeric:tabular-nums}

@@ -240,3 +240,5 @@
   .dpo-wcap{line-height:1.4}
   .dpo-wire.dpo-held{visibility:hidden}
 }}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.dpo-st-title,#dpo-metrics .sub,.dpo-runl{font-variant-numeric:tabular-nums}

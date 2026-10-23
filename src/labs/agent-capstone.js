@@ -299,7 +299,7 @@ function verdict(){
 }
 function obsMission(){
   if(!pred) return '';
-  if(!runsSeen){const t=doneNow(); return tx(`<p>The suite is running: ${t.n} of ${t.N} runs done.</p>`,`<p>评测正在跑：${t.N} 次运行里跑完了 ${t.n} 次。</p>`);}
+  if(!runsSeen){const t=doneNow(); return tx(`<p class="acp-runl">The suite is running: ${t.n} of ${t.N} runs done.</p>`,`<p class="acp-runl">评测正在跑：${t.N} 次运行里跑完了 ${t.n} 次。</p>`);}
   const e=evaluate('shop',INIT), rows=PRED.map(o=>({o,e:evaluate('shop',{...INIT,...PRED_H[o.v]})})).sort((a,b)=>b.e.succ-a.e.succ), best=predRight();
   const li=rows.map(x=>`<li${x.o.v===best?' class="acp-best"':''}>${esc(L(x.o.t))}${tx(': ','：')}<b>${fP(x.e.succ)}</b></li>`).join('');
   return tx(`<p><b>Initial setup: ${fP(e.succ)} of the runs succeed (95% interval ${fI(e)}). The goal is missed.</b></p>`,`<p><b>初始设置：${fP(e.succ)} 的运行成功（95% 区间 ${fI(e)}）。没达到要求。</b></p>`)+verdict()+
@@ -366,7 +366,7 @@ function obsProve(){
 /* B1: how much narrower the interval got, from the widths as shown (one decimal) */
 function narrowOf(a,b){const w=x=>r1(Math.min(1,x.hi)*100)-r1(Math.max(0,x.lo)*100), f=1-w(b)/w(a);
   return {f,en:f<0.15?'only a little':(f<0.25?'only about a fifth':'about a third'),zh:f<0.15?'一点':(f<0.25?'约五分之一':'约三分之一')};}
-function runningLine(){const t=doneNow(); return tx(`<p>The suite is running: ${t.n} of ${t.N} runs done. The result shows when they finish.</p>`,`<p>评测正在跑：${t.N} 次运行里跑完了 ${t.n} 次。跑完后显示结果。</p>`);}
+function runningLine(){const t=doneNow(); return tx(`<p class="acp-runl">The suite is running: ${t.n} of ${t.N} runs done. The result shows when they finish.</p>`,`<p class="acp-runl">评测正在跑：${t.N} 次运行里跑完了 ${t.n} 次。跑完后显示结果。</p>`);}
 function customLine(e){return tx(`<p><b>${esc(hName(hNow()))}: ${fP(e.succ)} succeed.</b> This matches none of the options; the chart shows the result.</p>`,`<p><b>${esc(hName(hNow()))}：成功率 ${fP(e.succ)}。</b>这组设置不是上面的任何一个选项；结果见图。</p>`);}
 const REMS={
  one:{s:{...INIT},t:{en:'Show the initial setup',zh:'在图里看初始设置'}},

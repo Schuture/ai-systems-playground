@@ -363,3 +363,5 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
   #px-app:has(#px-rail [data-preset]) .px-graph[data-lead="rows"] .px-strip-foot .muted{min-height:2.9em}
   .px-stage>details.math{margin-top:8px;padding-top:8px}
 }}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+#px-sum,#px-strip-cap,#px-tl-cap,#px-metrics .sub,#px-mathbody .px-mlead{font-variant-numeric:tabular-nums}

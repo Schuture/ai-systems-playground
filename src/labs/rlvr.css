@@ -254,3 +254,5 @@
     .rlvr-sel{padding-top:6px}
   }
 }
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+#rlvr-st-sub,#rlvr-mix .rlvr-ct,#rlvr-mix b,#rlvr-p1 span,#rlvr-len span{font-variant-numeric:tabular-nums}

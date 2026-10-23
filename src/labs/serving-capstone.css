@@ -520,3 +520,5 @@
     .sc-stage>.sc-low{display:none}
   }
 }
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.sc-clock,.sc-onote,.sc-gdur,#sc-wct,.sc-runl{font-variant-numeric:tabular-nums}

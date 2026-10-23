@@ -104,7 +104,8 @@ GEOM = """el=>{const s=el.querySelector('svg.tz-kvc-vis'); const vb=s.viewBox.ba
     tokens:Object.fromEntries(['weights','overhead','kv','oom'].map(c=>[c,getComputedStyle(document.documentElement).getPropertyValue('--c-'+c).trim()])),
     tag:(()=>{const e=s.querySelector('.tz-kvc-tag'); if(!e) return null; const cs=getComputedStyle(e), cv=document.createElement('canvas').getContext('2d');
       cv.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`; const m=cv.measureText(e.textContent);
-      return {t:e.textContent,x:+e.getAttribute('x'),y:+e.getAttribute('y'),w:m.width,asc:m.actualBoundingBoxAscent,desc:m.actualBoundingBoxDescent,fill:cs.fill}})()}}"""
+      const a=e.getAttribute('text-anchor')||cs.textAnchor, x=+e.getAttribute('x')-(a==='end'?m.width:a==='middle'?m.width/2:0);   // x: the glyphs' left end, wherever the anchor puts them
+      return {t:e.textContent,x,y:+e.getAttribute('y'),w:m.width,asc:m.actualBoundingBoxAscent,desc:m.actualBoundingBoxDescent,fill:cs.fill}})()}}"""
 def rgb(h):
     h = h.lstrip('#'); return f'rgb({int(h[0:2], 16)}, {int(h[2:4], 16)}, {int(h[4:6], 16)})'
 

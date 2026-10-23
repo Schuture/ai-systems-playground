@@ -207,8 +207,8 @@ html[lang^="zh"] .ck-row{grid-template-columns:64px minmax(0,1fr) 72px}
 .obs details.ck-why summary::before{content:"+";flex:none;font-family:var(--font-mono);width:18px;height:18px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-size:12px}
 .obs details.ck-why[open] summary::before{content:"−"}
 .obs details.ck-why p{margin:8px 0 0}
-/* eight chunk sizes: each button as wide as its label and never broken into a column (R7.8) */
-.ck-app .seg-ctl[data-key="C"] button{flex:1 1 auto;white-space:nowrap;padding-inline:3px}
+/* eight chunk sizes: each button as wide as its label and never broken into a column (R7.8); 2 px sides fit the eight keys in the 220 px rail card on the refit's key tray */
+.ck-app .seg-ctl[data-key="C"] button{flex:1 1 auto;white-space:nowrap;padding-inline:2px}
 /* H1/H2 (the owner, 2026-10-09): Show the math in short blocks with a hairline between them; in each block the name and the typeset
    formula, then this run's numbers under the terms they replace, the "=" signs lined up; a table wider than its box is set again by fitMath (below), so nothing scrolls sideways */
 .ck-mb{padding:8px 0 10px}
@@ -278,3 +278,5 @@ html[lang^="zh"] .ck-row{grid-template-columns:64px minmax(0,1fr) 72px}
   .ck-metrics{margin-top:8px}
   .ck-stage>details.math{margin-top:8px;padding-top:8px}
 }}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.ck-clock,#ck-lim .ck-ph-d,#ck-lim b{font-variant-numeric:tabular-nums}

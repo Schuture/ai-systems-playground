@@ -2030,12 +2030,12 @@ const kvTzCfg=k=>({...DEFAULT,users:KVTZ.users,ctx:k*1024});
 let kvTzK=KVTZ.k0, kvTzRO=null;   // the learner's context (module scope: a re-render keeps it); the tile's ResizeObserver
 /* the axis caption, in HTML over the chart's top margin: its GiB carries the site's definition (R6.12) */
 const kvTzCap=()=>{const g=DEF('GiB',TERMS.gib()); return tx(`Memory per GPU (${g})`,`每张 GPU 的显存（${g}）`);};
-const kvTzTW=s=>{let n=0; for(const ch of s) n+=ch.codePointAt(0)>=0x2e80?10:6.1; return n;};   // width of 10 px mono text; CJK about 1 em
+const kvTzTW=s=>{let n=0; for(const ch of s) n+=ch.codePointAt(0)>=0x2e80?10:6.1; return n;};   // width of 10 px text, at most (exact in the old monospace font; Figtree is narrower); CJK about 1 em
 /* the chart in real pixels for a tile W px wide, with the marker at k (K tokens per user) */
 function kvTzSVG(W,k){
   const z=compute(kvTzCfg(1)), wG=z.wPerGpu/GiB, base=(z.wPerGpu+z.oh)/GiB, per=z.kvPerGpu/GiB, use=z.usable/GiB;   // GiB per GPU; per: 1K of context
   const xM=KVTZ.max, need=c=>base+per*c, yM=Math.ceil(need(xM)/50)*50, kc=(use-base)/per;   // kc: where the line passes the usable limit
-  const H=126, L=24, R=10, T=16, PH=94, PW=W-L-R, B0=T+PH;
+  const H=126, L=24, R=10, T=20, PH=90, PW=W-L-R, B0=T+PH;   // T: the caption's 13 px line and the top label's 13 px box (2026-10-22 refit fonts) stay apart
   const X=c=>L+c/xM*PW, Y=g=>T+PH*(1-g/yM), f=v=>Math.round(v*10)/10;
   const P=(cls,pts)=>`<path class="${cls}" d="${pts.map(([x,y],i)=>(i?'L':'M')+f(x)+' '+f(y)).join('')}Z"/>`;   // points in px
   const Ln=(cls,x1,y1,x2,y2)=>`<line class="${cls}" x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}"/>`;
@@ -2058,7 +2058,7 @@ function kvTzSVG(W,k){
   let xt=Math.max(xd+5,xFit); if(xt+tw>x1-2) xt=xd-5-tw;
   const gap=xt>xd?xt-xd:xd-xt-tw;
   h+=Ln('tz-kvc-mkh',xd,B0,xd,yd)+Ln('tz-kvc-mk',xd,B0,xd,yd)+`<circle class="tz-kvc-dot" cx="${f(xd)}" cy="${f(yd)}" r="4"/>`;
-  if(xt>=xFit-0.05&&gap<=14) h+=Tx('tz-kvc-tag',xt,yb,tag);
+  if(xt>=xFit-0.05&&gap<=14) h+=xt>xd?Tx('tz-kvc-tag',xt,yb,tag):Tx('tz-kvc-tag',xd-5,yb,tag,'end');   // on the left its end sits 5 px from the line, however wide the font sets it
   return {h,H};
 }
 /* the tile's "Assumptions & sources": four short sentences, each the answer to one question a reader would ask (R11.5): what the

@@ -149,3 +149,5 @@
 .cte-eq-l{text-align:right}
 /* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
 @media (max-width:560px){.cte-eqs-nm{grid-template-columns:max-content max-content}.cte-eqs-nm>.cte-eq-l{grid-column:1/-1;text-align:left}.cte-eqs-nm>.cte-eq-l:empty{display:none}}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.cte-cap,#cte-metrics .sub,.cte-runl{font-variant-numeric:tabular-nums}

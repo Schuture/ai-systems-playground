@@ -148,3 +148,5 @@ circle.vix-k-flat{fill:var(--ink)}
 /* review b10r1: a formula on its own line inside an exit answer; the challenge's short "why" lines */
 .vix-mblk{display:block}
 .vix-why p{margin:4px 0}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.vix-cap{font-variant-numeric:tabular-nums}

@@ -93,7 +93,7 @@
 .sft-rem{padding-left:18px}
 .sft-rem li{margin:6px 0}
 .sft-prod li{margin:6px 0}
-.sft-tbl{border-collapse:collapse;width:100%;margin:8px 0;font-size:12.5px}
+.sft-tbl{border-collapse:collapse;width:100%;margin:8px 0;font-size:12.5px;line-height:1.55}   /* the stage's line height, said here too: a page without a doctype (the flow test's) resets a table's to normal, and Figtree's normal line is shorter than a Chinese font's, so rows with Chinese tokens came out 3 px taller */
 .sft-tbl th,.sft-tbl td{padding:3px 8px 3px 0;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 .sft-tbl th:first-child,.sft-tbl td:first-child{text-align:left;white-space:normal}
 .sft-tbl th{font-weight:600;color:var(--ink-2);font-size:11.5px}
