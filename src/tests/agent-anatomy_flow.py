@@ -421,11 +421,13 @@ def run_modes(b, w, h, lang):
     check(f'{tag} challenge: the chart’s labels are readable (≥ 10 px), both axes named, 0 not 0K (R7.4, R5.3)', ct['h'] >= 10 and Z(lang, 'model call', '第几次调用') in ct['txt'] and Z(lang, 'tokens read so far', '累计读入的 token') in ct['txt']
           and not any(x.endswith('K') for x in ct['txt']) and '0' in ct['txt'], ct)
     check(f'{tag} challenge: plain statement and the assumptions', Z(lang, 'Set a call limit and a token budget', '请设一个调用次数上限和一个 token 预算') in text(pg, '#ana-rail') and pg.evaluate("()=>document.querySelectorAll('#ana-rail .ana-asm li').length") == 2)
-    # the owner (2026-10-14): when the token budget wraps to a second row, a 1px line divides the rows (the buttons sit 1px apart on the line colour)
-    sep = pg.evaluate("""()=>{const out={}; for(const k of ['chl','chb']){const g=document.querySelector('#ana-rail .seg-ctl[data-key="'+k+'"]'); const r=[...g.querySelectorAll('button')].map(b=>b.getBoundingClientRect());
-      const rows=[...new Set(r.map(x=>Math.round(x.top)))].sort((a,b)=>a-b), i=document.createElement('i'); i.style.color='var(--line)'; g.appendChild(i); const line=getComputedStyle(i).color; i.remove();
-      out[k]={rows:rows.length, gaps:rows.slice(1).map((t,j)=>+(Math.min(...r.filter(x=>Math.round(x.top)===t).map(x=>x.top))-Math.max(...r.filter(x=>Math.round(x.top)===rows[j]).map(x=>x.bottom))).toFixed(2)), bg:getComputedStyle(g).backgroundColor, line};} return out;}""")
-    check(f'{tag} challenge: a line divides the rows of the call limit and the token budget when they wrap', all(v['bg'] == v['line'] and all(0.9 <= x <= 1.6 for x in v['gaps']) for v in sep.values()), sep)
+    # the owner (2026-10-14): when the token budget wraps to a second row, something divides the rows. Since the 2026-10-22 refit an option
+    # group is a tray of keys (R7.13): the keys sit 3px apart and the tray's colour, unlike the keys', shows between the rows
+    sep = pg.evaluate("""()=>{const out={}; for(const k of ['chl','chb']){const g=document.querySelector('#ana-rail .seg-ctl[data-key="'+k+'"]'); const bs=[...g.querySelectorAll('button')], r=bs.map(b=>b.getBoundingClientRect());
+      const rows=[...new Set(r.map(x=>Math.round(x.top)))].sort((a,b)=>a-b), bg=getComputedStyle(g).backgroundColor, key=getComputedStyle(bs.find(b=>b.getAttribute('aria-pressed')!=='true')||bs[0]).backgroundColor;
+      out[k]={rows:rows.length, gaps:rows.slice(1).map((t,j)=>+(Math.min(...r.filter(x=>Math.round(x.top)===t).map(x=>x.top))-Math.max(...r.filter(x=>Math.round(x.top)===rows[j]).map(x=>x.bottom))).toFixed(2)), bg, key,
+        tray:!/rgba\\(.*,\\s*0\\)$|transparent/.test(bg)&&bg!==key};} return out;}""")
+    check(f'{tag} challenge: the rows of the call limit and the token budget stay apart when they wrap (keys on a tray)', all(v['tray'] and all(2 <= x <= 4.5 for x in v['gaps']) for v in sep.values()), sep)
     every(pg, f'{tag} challenge start', lang, f'{tag}_challenge_start')
     click(pg, '#ana-rail .seg-ctl[data-key="chb"] button[data-v="100000"]')
     click(pg, '#ana-rail [data-act="submit"]')
@@ -451,9 +453,10 @@ def run_modes(b, w, h, lang):
     bf = brief(pg)
     check(f'{tag} challenge tier 1: the chart still holds the 6 settings that let the normal run finish, 10 left out', brief_ok(lang, bf, 6, 10), bf)
     check(f'{tag} challenge: the capability card', vis(pg, '#ana-rail [data-exits]'))
-    xt = pg.evaluate("""()=>{const g=document.querySelector('#ana-rail .ex-tabs'); if(!g) return null; const i=document.createElement('i'); i.style.color='var(--line)'; g.appendChild(i); const line=getComputedStyle(i).color; i.remove();
-      return {bg:getComputedStyle(g).backgroundColor, line, gap:getComputedStyle(g).rowGap, br:[...g.querySelectorAll('button')].map(x=>getComputedStyle(x).borderRightWidth)};}""")
-    check(f'{tag} challenge: the capability card’s tabs keep a line between rows when they wrap (1px gaps on the line colour)', xt is not None and xt['bg'] == xt['line'] and xt['gap'] == '1px' and set(xt['br']) == {'0px'}, xt)
+    xt = pg.evaluate("""()=>{const g=document.querySelector('#ana-rail .ex-tabs'); if(!g) return null; const bs=[...g.querySelectorAll('button')];
+      return {bg:getComputedStyle(g).backgroundColor, key:getComputedStyle(bs.find(b=>b.getAttribute('aria-pressed')!=='true')||bs[0]).backgroundColor, gap:getComputedStyle(g).rowGap, br:bs.map(x=>getComputedStyle(x).borderRightWidth)};}""")
+    check(f'{tag} challenge: the capability card’s tabs keep their rows apart when they wrap (keys 2–4px apart on a tray of another colour, no lines drawn in the keys)',
+          xt is not None and xt['bg'] != xt['key'] and 2 <= float(xt['gap'].rstrip('px') or 0) <= 4 and set(xt['br']) == {'0px'}, xt)
     every(pg, f'{tag} challenge solved', lang, f'{tag}_challenge_solved')
     other = 'zh' if lang == 'en' else 'en'
     pg.click(f'.langsw button[data-lang="{other}"]'); pg.wait_for_timeout(400)

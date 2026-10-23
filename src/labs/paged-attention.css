@@ -116,8 +116,7 @@ html[lang^="zh"] .pa-host .meter-title{text-transform:none}
 .pa-host #pa-status{white-space:normal;max-width:100%}
 /* the three allocation strategies keep their full names, so they stack as a single-choice list instead of one row */
 .pa-host .seg-ctl[data-key="strat"]{flex-direction:column}
-.pa-host .seg-ctl[data-key="strat"] button{border-right:0;border-bottom:1px solid var(--line);text-align:left;padding:7px 10px;line-height:1.3}
-.pa-host .seg-ctl[data-key="strat"] button:last-child{border-bottom:0}
+.pa-host .seg-ctl[data-key="strat"] button{text-align:left;padding:7px 10px;line-height:1.3}
 /* the scenario result sits right under the list and reads as the result of the click */
 .pa-host .pa-sbnote{margin:8px 0 12px;padding:8px 10px;border-left:2px solid var(--ink-3);background:var(--surface-2);border-radius:3px;line-height:1.45;color:var(--ink)}
 .pa-host .pa-sbnote:empty{display:none}

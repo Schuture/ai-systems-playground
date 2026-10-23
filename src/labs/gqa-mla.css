@@ -67,9 +67,6 @@
 
 /* settings: six design buttons in two rows of three */
 .gm-seg6 .seg-ctl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
-.gm-seg6 .seg-ctl button{border-right:1px solid var(--line)}
-.gm-seg6 .seg-ctl button:nth-child(3n){border-right:0}
-.gm-seg6 .seg-ctl button:nth-child(-n+3){border-bottom:1px solid var(--line)}
 .gm-host .inline-ctl .seg-ctl button{white-space:normal;line-height:1.3}
 .gm-fx{margin-top:10px}
 .gm-fx b{color:var(--ink-2);font-weight:650}

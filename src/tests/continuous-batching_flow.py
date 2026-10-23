@@ -645,8 +645,9 @@ subprocess.run([sys.executable, str(P / 'build.py'), 'out/site-continuous-batchi
                                                            + (P / 'out/site-continuous-batching.html').read_text() + '</body></html>')
 SITE = 'file://' + str(P / 'out/wrapped-site-continuous-batching.html')
 WALK = """()=>{const s=document.querySelector('#cb-stage'), r=s.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
-  cur=document.querySelector('#cb-rail .steps>.step.current'), h=s.querySelector('.stage-head').getBoundingClientRect();
+  cur=document.querySelector('#cb-rail .steps>.step.current'), h=s.querySelector('.stage-head').getBoundingClientRect(), g=(document.querySelector('#cb-gantt')||s).getBoundingClientRect();
   return {part:cur?[...cur.parentNode.children].indexOf(cur)+1:0, top:Math.round(r.top), head:Math.round(h.top), bar:Math.round(bar), scroll:s.scrollHeight-s.clientHeight,
+    chart:[Math.round(g.top),Math.round(g.bottom)], vh:innerHeight,
     spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight))};}"""
 with sync_playwright() as _p:
     _b = _p.chromium.launch()
@@ -669,9 +670,13 @@ with sync_playwright() as _p:
             _r = _rows[_k - 1] if len(_rows) >= _k else {}
             check(f'1440 {_lang} walk part {_k}: the stage is not pushed above its sticky line (its top at 70 px or lower), needs no scrolling inside' + (', 30 px to spare' if _lang == 'zh' else '') + ' (B4, R7.12)',
                   bool(_r) and _r['top'] >= 68 and _r['scroll'] <= 0 and _r['spare'] >= (30 if _lang == 'zh' else 0), _r)
-        for _k in {'en': (6, 7), 'zh': (7,)}[_lang]:   # the parts whose stage the bench's end pushed up before (or that sit there): back at 70 px
+        # the parts whose stage the bench's end pushed up before (or that sit there): keepStage brings it back, the Gantt chart whole on
+        # screen. Since the 2026-10-22 refit's shorter lab head the reveal often has no need to scroll here, so the stage may stay lower
+        # than its sticky line; the chart must still be whole on screen and the stage never above its sticky line
+        for _k in {'en': (6, 7), 'zh': (7,)}[_lang]:
             _r = _rows[_k - 1] if len(_rows) >= _k else {}
-            check(f'1440 {_lang} walk part {_k}: the stage’s top at its sticky line, 70 px (it was at ' + {('en', 6): '−285', ('en', 7): '70', ('zh', 7): '61'}[(_lang, _k)] + ' px)', bool(_r) and abs(_r['top'] - 70) <= 2, _r)
+            check(f'1440 {_lang} walk part {_k}: the stage’s top at its sticky line (70 px) or lower and the Gantt chart whole on screen (the stage was at ' + {('en', 6): '−285', ('en', 7): '70', ('zh', 7): '61'}[(_lang, _k)] + ' px before keepStage)',
+                  bool(_r) and _r['top'] >= 68 and _r['chart'][0] >= _r['bar'] - 1 and _r['chart'][1] <= _r['vh'], _r)
         _pg.close()
     _b.close()
 

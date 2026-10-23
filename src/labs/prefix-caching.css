@@ -101,7 +101,7 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 .px-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
 .px-grp .ctl>.lbl{display:block}
 .px-app .seg-ctl[data-key="change"],.px-app .seg-ctl[data-key="mem"]{flex-wrap:wrap}
-.px-app .seg-ctl[data-key="change"] button,.px-app .seg-ctl[data-key="mem"] button{flex:1 1 30%;border-bottom:1px solid var(--line)}
+.px-app .seg-ctl[data-key="change"] button,.px-app .seg-ctl[data-key="mem"] button{flex:1 1 30%}
 .px-app .ctl output{white-space:nowrap}
 
 /* ---------- connect ---------- */

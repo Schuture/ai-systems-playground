@@ -136,7 +136,7 @@
 .rgf-ch b{font-weight:650}
 .rgf-kd{font-size:12px;line-height:1.35;color:var(--ink-3)}
 .rgf-tri .choice[aria-pressed="true"] .rgf-kd{color:inherit;opacity:.8}
-.rgf-tri .choice.right{box-shadow:inset 0 0 0 2px var(--c-ok)}
+.rgf-tri .choice.right{border-color:var(--line);box-shadow:inset 0 0 0 2px var(--c-ok)}
 .rgf-verd{margin-top:8px}
 .rgf-fxs{display:flex;flex-direction:column;gap:6px;margin:8px 0}
 .rgf-fxb{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer}
@@ -154,7 +154,7 @@
 .rgf-keep{text-transform:none}
 /* the four checks in one card: two per row when the card is narrow */
 .rgf-app .rail .seg-ctl[data-key="met"]{flex-wrap:wrap}
-.rgf-app .rail .seg-ctl[data-key="met"] button{flex:1 1 45%;min-width:0;border-bottom:1px solid var(--line)}
+.rgf-app .rail .seg-ctl[data-key="met"] button{flex:1 1 45%;min-width:0}
 .rgf-ln{display:block}
 .rgf-do{border-bottom:1px dotted var(--ink-3);cursor:help}
 .lever[aria-pressed="true"] .rgf-do{border-bottom-color:currentColor}

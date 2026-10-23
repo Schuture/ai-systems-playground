@@ -826,7 +826,7 @@ with sync_playwright() as p:
     pg.goto(URL); pg.wait_for_timeout(300); pg.evaluate("()=>{location.hash='gqa-mla'}"); pg.wait_for_timeout(600)
     go_part(pg, 5); rail_click(pg, '#gm-ic-mla button[data-v="mla"]')
     bg = pg.evaluate("()=>getComputedStyle(document.body).backgroundColor")
-    check('dark: dark background', bg in ('rgb(10, 15, 21)',), bg)
+    check('dark: dark background', bg in ('rgb(15, 21, 18)',), bg)
     fills = pg.evaluate("()=>[getComputedStyle(document.querySelector('#gm-diag .gm-q')).fill, getComputedStyle(document.querySelector('#gm-diag .gm-k')).fill]")
     check('dark: query heads light gray, compressed vector amber', fills[0] != 'rgb(60, 72, 88)' and fills[1] == 'rgb(239, 174, 54)', fills)
     pg.screenshot(path=str(SHOTS / 'dark_1440_en_p6.png'))

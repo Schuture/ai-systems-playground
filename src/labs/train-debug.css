@@ -40,7 +40,7 @@
 .td-cl-tr{fill:var(--ink);font-weight:650}
 .td-cl-cmp{fill:var(--ink-3)}
 .td-lnl{cursor:help}
-.td-regkey{max-width:250px;margin:6px auto 0;font-size:12px;line-height:1.35;color:var(--ink-2)}
+.td-regkey{max-width:258px;margin:6px auto 0;font-size:12px;line-height:1.35;color:var(--ink-2)}   /* as wide as the picture above it, less 2 px: in Figtree (2026-10-22 refit) the key keeps its two lines */
 .td-regkey p{margin:0 0 4px}
 .td-rks{display:flex;flex-wrap:wrap;gap:4px 12px}
 .td-rk{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
@@ -113,9 +113,6 @@
 .td-dk .td-spark{height:26px}
 /* Settings: the four bugs as a 2 × 2 block, so “no zero_grad()” never overflows the panel */
 #td-controls .seg-ctl[data-key="bug"]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
-#td-controls .seg-ctl[data-key="bug"] button{border-bottom:1px solid var(--line)}
-#td-controls .seg-ctl[data-key="bug"] button:nth-child(2n){border-right:0}
-#td-controls .seg-ctl[data-key="bug"] button:nth-child(n+3){border-bottom:0}
 /* chart notes and the ln C label keep a halo in the panel's colour, so a curve passing under them never hides them (R7.8) */
 .td-mk,.td-lnl,.td-cl{paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
 /* the mini result bar's sparkline keeps clear of the text next to it */

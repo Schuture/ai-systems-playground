@@ -50,7 +50,7 @@
 .mgs-run .btn{min-height:30px}
 .mgs-speed{display:inline-flex;align-items:center;gap:6px;flex:none}
 .mgs-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
-.mgs-app .mgs-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;min-height:30px}
+.mgs-app .mgs-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;min-height:26px}   /* the kit's tray adds 3 px above and below its keys (2026-10-22 refit), so a 26 px key keeps the control 32 px tall, as before */
 .mgs-prog{flex:1 1 120px;min-width:80px}
 .mgs-sum{margin:2px 0 0;font-size:13.5px}
 /* the TP sweep */

@@ -456,8 +456,10 @@ def b4_top(b, lang='zh', part=5):
         if y2 == y: break
         y = y2; pg.wait_for_timeout(200)
     f = pg.evaluate(B4_FIT, 'pak-stage'); f['want'] = pg.evaluate("()=>parseFloat(getComputedStyle(document.getElementById('pak-stage')).top)")
-    check(f'{lang}-1280x800 part {part}: after Next the stage\'s top is back under the top bar, at its sticky place (B4, keepStage)',
-          f['part'] == part and abs(f['top'] - f['want']) <= 2, f)
+    # since the 2026-10-22 refit's shorter lab head, Next often has no need to scroll the page here, so the stage may stay below its
+    # sticky place; it must never be above it, and its main picture must be whole on the screen
+    check(f'{lang}-1280x800 part {part}: after Next the stage\'s top is under the top bar, at its sticky place or lower, and its main picture whole on the screen (B4, keepStage)',
+          f['part'] == part and f['top'] >= f['want'] - 2 and f['figOn'], f)
     pg.close()
 
 

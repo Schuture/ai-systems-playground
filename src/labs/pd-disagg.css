@@ -28,7 +28,7 @@
 .pdd-svg .pdd-wlab{fill:var(--c-weights);font-weight:600}
 .pdd-svg .pdd-on{fill:var(--c-weights);font-weight:700}
 .pdd-sw.wr{background:transparent;box-shadow:inset 0 0 0 2px var(--c-weights)}
-.pdd-wcap{margin:0 0 6px;font-size:12px;line-height:1.5;color:var(--ink-2)}
+.pdd-wcap{margin:0 0 6px;font-size:11.75px;line-height:1.5;color:var(--ink-2)}   /* 11.75 px: Figtree (2026-10-22 refit) is about 2% wider, and at this size the caption keeps the one line it was fitted to */
 .pdd-svg .pdd-wl.bad{fill:var(--c-oom)}
 .pdd-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:2px 0 4px;font-size:12px}
 .pdd-legend>span{display:inline-flex;align-items:center;gap:6px;cursor:help}
@@ -41,7 +41,7 @@
 .pdd-run .btn{min-height:30px}
 .pdd-speed{display:inline-flex;align-items:center;gap:6px;flex:none}
 .pdd-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
-.pdd-app .pdd-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;min-height:30px}
+.pdd-app .pdd-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;min-height:26px}   /* the kit's tray adds 3 px above and below its keys (2026-10-22 refit), so a 26 px key keeps the control 32 px tall, as before */
 /* the progress bar sits under the time axis: drawTimeline sets its left padding and width so the thumb's centre is the playhead */
 .pdd-scrub{padding:0}
 .pdd-app input[type=range].pdd-prog{display:block;width:100%;margin:0;padding:0;border:0}
@@ -74,7 +74,7 @@
 @container (max-width:560px){.pdd-eqs{grid-template-columns:max-content minmax(0,1fr)}.pdd-eqs>.pdd-eq-l{grid-column:1/-1;text-align:left}.pdd-eqs>.pdd-eq-l:empty{display:none}.pdd-eq-r{min-width:0;overflow-x:auto}}
 .pdd-app .seg-ctl[data-key="p7"]{flex-wrap:wrap}
 .pdd-app .seg-ctl[data-key="p7"] button{flex:1 0 auto;white-space:nowrap;padding:7px 4px}
-.pdd-app .seg-ctl[data-key="p7"] button[data-v="0"]{flex-basis:100%;border-right:0;border-bottom:1px solid var(--line)}
+.pdd-app .seg-ctl[data-key="p7"] button[data-v="0"]{flex-basis:100%}
 /* part 7's goodput bars: on a wide screen each label sits left of its bar, so all nine rows fit on the first screen under the timeline
    (a first-time reader, 2026-10-14: at 1440x900 the last three needed scrolling) */
 @media (min-width:900px){

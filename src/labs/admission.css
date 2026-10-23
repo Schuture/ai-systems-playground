@@ -41,7 +41,7 @@
 .adm-run .btn{min-height:30px}
 .adm-speed{display:inline-flex;align-items:center;gap:6px;flex:none}
 .adm-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
-.adm-app .adm-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;min-height:30px}
+.adm-app .adm-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;min-height:26px}   /* the kit's tray adds 3 px above and below its keys (2026-10-22 refit), so a 26 px key keeps the control 32 px tall, as before */
 .adm-prog{flex:1 1 140px;min-width:120px}
 .adm-goals{display:flex;flex-direction:column;gap:6px}
 .adm-gr{display:grid;grid-template-columns:minmax(96px,150px) minmax(60px,1fr) max-content;align-items:center;gap:4px 10px;font-size:13px}
@@ -69,12 +69,9 @@
 .adm-eq-l{text-align:right}
 .adm-app .mathbody{container-type:inline-size}
 @container (max-width:560px){.adm-eqs{grid-template-columns:max-content minmax(0,1fr)}.adm-eqs>.adm-eq-l{grid-column:1/-1;text-align:left}.adm-eqs>.adm-eq-l:empty{display:none}.adm-eq-r{min-width:0;overflow-x:auto}}
-/* a group that wraps keeps a 1px line between its rows: the buttons sit 1px apart on the line colour instead of drawing right borders */
-.adm-app .inline-ctl .seg-ctl{flex-wrap:wrap;gap:1px;background:var(--line)}
-.adm-app .inline-ctl .seg-ctl button{flex:1 0 auto;white-space:nowrap;border-right:0}
-/* the kit's tabs of “Can you use it on a new case?” wrap too (English, up to 1280 px wide): the same line between their rows */
-.adm-app .exits .ex-tabs{gap:1px;background:var(--line)}
-.adm-app .exits .ex-tabs button{border-right:0}
+/* a group that wraps: each option is a chip of its own on the kit's tray, so the rows stay apart (R7.13) */
+.adm-app .inline-ctl .seg-ctl{flex-wrap:wrap}
+.adm-app .inline-ctl .seg-ctl button{flex:1 0 auto;white-space:nowrap}
 .adm-blk[hidden]+.adm-blk{border-top:0}
 .adm-prod code,.adm-app .small code{overflow-wrap:anywhere;word-break:break-word}
 .adm-gnote{margin:2px 0 0;padding-left:8px;border-left:3px solid var(--c-oom);font-size:12.5px;line-height:1.45;color:var(--ink-2)}

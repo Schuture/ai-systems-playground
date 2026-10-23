@@ -86,8 +86,6 @@ mark.ctm-m{color:inherit;background:color-mix(in srgb,var(--ink) 16%,transparent
 .ctm-lv .levers{margin-top:6px}
 @container (max-width:460px){.ctm-gr{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ctm-gr .ctm-gsvg{grid-column:1 / -1;grid-row:2}.ctm-gv{text-align:right}}
 .ctm-app .seg-ctl[data-key="s"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
-.ctm-app .seg-ctl[data-key="s"] button:nth-child(-n+3){border-bottom:1px solid var(--line)}
-.ctm-app .seg-ctl[data-key="s"] button:nth-child(3n){border-right:0}
 .ctm-why,.ctm-rules{margin:4px 0 8px;padding-left:18px}
 .ctm-why li,.ctm-rules li{margin:2px 0}
 /* B4 (the owner: "the panel was pushed down, I did not see there was more below"): on a wide desktop stage (>= 736 px) part 7 (the

@@ -157,12 +157,14 @@ H6_LEGEND = """()=>{const miss=[], has=s=>!!document.querySelector(s), shown=s=>
  if(shown('#pcap-cost .pcap-overb')&&!has('#pcap-cost-list .pcap-sw.overb')) miss.push('over-budget ring');
  for(const [m,s] of [['.pcap-mfill','mf'],['.pcap-mband','mb'],['.pcap-m0','m0'],['.pcap-mt','dash'],['.pcap-zdot','zdot'],['.pcap-zbad','zbad']]) if(shown('#pcap-met '+m)&&!has('#pcap-met-list .pcap-sw.'+s)) miss.push('metric '+s);
  return miss}"""
-# item 5: a wrapped option group keeps a line between its rows and between its buttons (the group's line-coloured background in a 1 px gap)
+# item 5: a wrapped option group keeps its rows and its buttons apart: since the 2026-10-22 refit the keys sit on a tray (R7.13) whose
+# colour, unlike the keys', shows in the gaps
 SEGLINES = """(line)=>[...document.querySelectorAll('#pcap-app .seg-ctl, .tz-pcap .seg-ctl')].filter(g=>g.getClientRects().length).map(g=>{
  const bs=[...g.querySelectorAll('button')].map(b=>b.getBoundingClientRect()), tops=[...new Set(bs.map(r=>Math.round(r.top)))].sort((a,b)=>a-b); let row=9, col=9;
  for(let i=1;i<tops.length;i++){const up=bs.filter(r=>Math.round(r.top)===tops[i-1]), lo=bs.filter(r=>Math.round(r.top)===tops[i]); row=Math.min(row,Math.min(...lo.map(r=>r.top))-Math.max(...up.map(r=>r.bottom)));}
  for(const t of tops){const rs=bs.filter(r=>Math.round(r.top)===t).sort((a,b)=>a.left-b.left); for(let i=1;i<rs.length;i++) col=Math.min(col,rs[i].left-rs[i-1].right);}
- return {key:g.dataset.key||'tile', rows:tops.length, row:tops.length>1?row:null, col, bg:getComputedStyle(g).backgroundColor===line}})"""
+ const gbg=getComputedStyle(g).backgroundColor, kb=[...g.querySelectorAll('button')].find(b=>b.getAttribute('aria-pressed')!=='true');
+ return {key:g.dataset.key||'tile', rows:tops.length, row:tops.length>1?row:null, col, bg:!/rgba\\(.*,\\s*0\\)$|transparent/.test(gbg)&&(!kb||getComputedStyle(kb).backgroundColor!==gbg)}})"""
 SRC_JS = (P / 'labs' / 'post-capstone.js').read_text()
 
 
@@ -186,7 +188,7 @@ def b9v6(pg, where, labels=None):
 def seglines(pg, where, want_wrap=False):
     sl = pg.evaluate(SEGLINES, pg.evaluate(LINE))
     multi = [s for s in sl if s['rows'] > 1]
-    check(f'{where}: every option group keeps a line between its rows and its buttons (item 5)', sl and all(s['bg'] and s['col'] >= 0.9 and (s['row'] is None or s['row'] >= 0.9) for s in sl)
+    check(f'{where}: every option group keeps its rows and its buttons apart, keys on a tray (item 5)', sl and all(s['bg'] and s['col'] >= 0.9 and (s['row'] is None or s['row'] >= 0.9) for s in sl)
           and (not want_wrap or multi), sl)
 
 

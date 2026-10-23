@@ -134,7 +134,7 @@
    and the speed buttons share one height and one centre line, and the label 速度 sits beside its buttons */
 #rm-app .ctl:has(>.seg-ctl[data-key$="pd"]),#rm-app .ctl:has(.seg-ctl[data-key$="pd"]){display:flex;align-items:center;gap:6px;margin:0}
 #rm-app .ctl:has(.seg-ctl[data-key$="pd"])>.lbl{margin:0}
-#rm-app .seg-ctl[data-key$="pd"] button{height:30px;padding-top:0;padding-bottom:0}
+#rm-app .seg-ctl[data-key$="pd"] button{height:26px;padding-top:0;padding-bottom:0}   /* the kit's tray adds 3 px above and below its keys (2026-10-22 refit): 26 px keys keep the control 32 px tall, as tall as the button beside it */
 #rm-app :has(>.ctl .seg-ctl[data-key$="pd"])>.btn{height:32px;padding-top:0;padding-bottom:0}
 /* H5 (the owner, 2026-10-09: “信息过多，需要分割线”): the stage's blocks (the example pair, the σ curve, the weights, the training curves
    with their player, best-of-n) each keep their bold heading and are separated by a hairline in the kit's line colour; the framed pair

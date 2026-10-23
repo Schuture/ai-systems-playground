@@ -647,10 +647,12 @@ function chartSVG(){
         else if(lh&&la&&fP(r.at[k0])!==fP(r.hat[k0])) s+=`<text class="pak-vl" x="${(X(k0)+(right?6:-6)).toFixed(1)}" y="${(Y(r.hat[k0])+12).toFixed(1)}" text-anchor="${right?'start':'end'}">${esc(fP(r.hat[k0]))}</text>`;}
     }
   }
-  /* line names at their ends, pushed apart so they never overlap */
-  ends.sort((a,b)=>a.y-b.y); const gap=12; for(let i=1;i<ends.length;i++) if(ends[i].y<ends[i-1].y+gap) ends[i].y=ends[i-1].y+gap;
-  const over=ends.length?ends[ends.length-1].y-(H-PB-4):0; if(over>0) ends.forEach(e=>{e.y-=over;});
-  if(ends.length&&ends[0].y<PT+2){const d=PT+2-ends[0].y; ends.forEach(e=>{e.y+=d;});}
+  /* line names at their ends, pushed apart so they never overlap: 13 px apart (a 10.5 px name's box is 13 px tall in Figtree), the
+     lowest kept above the k under the axis and the highest inside the top, each moved only as far as it has to */
+  ends.sort((a,b)=>a.y-b.y); const gap=13;
+  for(let i=1;i<ends.length;i++) ends[i].y=Math.max(ends[i].y,ends[i-1].y+gap);
+  for(let i=ends.length-1;i>=0;i--) ends[i].y=Math.min(ends[i].y,i===ends.length-1?H-PB-4:ends[i+1].y-gap);
+  for(let i=0;i<ends.length;i++) ends[i].y=Math.max(ends[i].y,i?ends[i-1].y+gap:PT+2);
   ends.forEach(e=>{s+=`<text class="pak-end ${e.c}" x="${(e.x!=null?e.x+8:W-PR+6).toFixed(1)}" y="${(e.y+3.5).toFixed(1)}">${esc(e.t)}</text>`;});
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.setAttribute('width',W); svg.setAttribute('height',H); svg.innerHTML=s;
   svg.setAttribute('aria-label',chartAria());

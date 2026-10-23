@@ -1,7 +1,7 @@
 <header class="topbar">
   <div class="wrap">
     <a class="brand" href="#top" data-i18n-aria="brandAria" aria-label="AI Systems Playground, home">
-      <svg viewBox="0 0 30 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="20" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="15" cy="3.5" r="1.9" fill="currentColor"/><circle cx="15" cy="16.5" r="1.9" fill="currentColor"/></svg>
+      <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path class="lg-t" d="M12 22V11"/><path class="lg-b" d="M12 15.5C9 13.6 6.6 11.2 6.1 7.4"/><path class="lg-u" d="M12 13.4c3-1.6 5.3-3.6 5.9-7.2"/><path class="lg-e" d="M12 11V5"/><circle class="lg-bd" cx="6.1" cy="6.3" r="2.3"/><circle class="lg-ud" cx="17.9" cy="5.2" r="2.3"/><circle class="lg-ed" cx="12" cy="3.6" r="2"/></svg>
       <span>AI Systems Playground</span>
     </a>
     <nav class="nav" data-i18n-aria="navAria" aria-label="Primary">
@@ -18,7 +18,7 @@
 <section id="view-home">
   <div class="wrap hero" id="top">
     <div>
-      <div class="hero-h"><h1 data-i18n="heroTitle">Learn AI systems by operating them.</h1>
+      <div class="hero-h"><p class="kicker" id="heroKicker"><i aria-hidden="true"><b></b><b></b><b></b><b></b></i><span></span></p><h1 data-i18n="heroTitle">Learn AI systems by operating them.</h1>
       <p class="hero-sub" data-i18n="heroSub">Start with the first lesson: follow one sentence and see how a large language model writes its next word. No AI background needed.</p></div>
       <div class="cta-row">
         <a class="btn resume" id="heroResume" href="#top" hidden></a>
@@ -70,9 +70,11 @@
   <div class="wrap labhead">
     <div class="crumbs"><a href="#map" data-i18n="crumbMap" data-tipfn="crumbTree">← Tree</a><span>/</span><a href="#map~models" id="kvCrumbWorld" data-i18n="crumbWorld">How LLMs work</a><span>/</span><span data-i18n="crumbKV">KV cache memory</span><span class="crumb-pn" id="kvCrumbNav"></span></div>
     <h1 class="labtitle" data-i18n="labTitle">Why does a 70B model run out of memory at long context?</h1>
-    <p class="lab-outcome" data-i18n-html="kvOutcome"></p>
-    <div class="labmeta">
-      <span class="tag" data-i18n="tagMin">15 min</span>
+    <div class="lab-sub">
+      <p class="lab-outcome" data-i18n-html="kvOutcome"></p>
+      <div class="labmeta">
+        <span class="tag" data-i18n="tagMin">15 min</span>
+      </div>
     </div>
   </div>
 
@@ -175,7 +177,8 @@ print(kv_cache_bytes(llama_70b, 131072, 100) / GiB)  # 4000.0</pre>
 
 <footer class="foot">
   <div class="wrap">
-    <p data-i18n-html="foot2"></p>
+    <div class="ft-grid" id="ftGrid"></div>
+    <div class="ft-end"><p data-i18n-html="foot2"></p><p><span>© 2026 AI Systems Playground</span> · <span data-i18n="ftLegal"></span></p></div>
   </div>
 </footer>
 

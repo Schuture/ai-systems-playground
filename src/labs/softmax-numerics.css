@@ -209,8 +209,3 @@
   .sm-nm>.sm-mn:not(:empty){grid-column:1/-1;justify-self:start}
   .sm-nm>.sm-mn:empty{display:none}
 }
-
-/* option groups that wrap keep a 1px line between their rows as well as their columns: the buttons sit 1px apart on the line colour
-   instead of drawing right borders (owner 2026-10-14, R7.13; tests/kit_seg_rows.py) */
-.sm-app .seg-ctl{gap:1px;background:var(--line)}
-.sm-app .seg-ctl button,.sm-app .seg-ctl button:last-child{border-right:0}

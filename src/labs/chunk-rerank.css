@@ -157,7 +157,6 @@ mark.ckr-m.bad{background:color-mix(in srgb,var(--c-oom) 22%,transparent)}
   .ckr-qrow{margin:6px 0 6px}
   .ckr-transport{margin:2px 0 4px}
   .ckr-transport #ckr-speed{grid-template-columns:auto auto;align-items:center;column-gap:8px}
-  .ckr-transport .seg-ctl button{padding-bottom:2.5px}
   .ckr-transport #ckr-tr-p{grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:10px}
   .ckr-transport #ckr-tr-p output{display:inline-block;min-width:4ch;text-align:right}
   .ckr-cols[data-n="1"] .ckr-sn,.ckr-cols[data-n="1"] .ckr-src{display:inline-block;max-width:100%;margin-left:10px;vertical-align:bottom;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

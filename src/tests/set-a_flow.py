@@ -211,7 +211,7 @@ with sync_playwright() as pw:
         ctx = browser.new_context(viewport={'width': w, 'height': h}, color_scheme='dark', device_scale_factor=2 if w < 800 else 1); pg = ctx.new_page()
         pg.goto(URL + '#map'); pg.wait_for_timeout(300)
         if lang == 'zh': pg.click('.langsw button[data-lang="zh"]'); pg.wait_for_timeout(150)
-        check(pg.evaluate("()=>getComputedStyle(document.body).backgroundColor") == 'rgb(10, 15, 21)', 'dark mode is active')
+        check(pg.evaluate("()=>getComputedStyle(document.body).backgroundColor") == 'rgb(15, 21, 18)', 'dark mode is active')
         layout_ok(pg, f'dark {w} {lang}'); notes_hidden(pg, f'dark {w} {lang}')
         shots(pg, f'{w}_{lang}_dark')
         ctx.close()
