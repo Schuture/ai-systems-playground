@@ -257,8 +257,9 @@ def run_flow(b, w, h, lang, dark=False):
     check(f'{tag} part 6: Next enabled after a change; stage names the option', not disabled(pg, '#tf-rail [data-nav="next"]') and Z('twice as deep', '深一倍') in txt(pg, '#tf-st-title'), txt(pg, '#tf-st-title'))
     pg.click('#tf-rail [data-lever="1"]'); pg.wait_for_timeout(400)
     if w >= 1000:
-        box = pg.evaluate("()=>{const r=document.querySelector('#tf-rail [data-obs]').getBoundingClientRect(); return [Math.round(r.top),Math.round(r.bottom),innerHeight]}")
-        check(f'{tag} part 6: after the click the result box is on screen (R3.10)', box[0] >= 50 and box[0] < box[2] - 100, box)
+        box = pg.evaluate("()=>{const r=document.querySelector('#tf-rail [data-obs]').getBoundingClientRect(), tb=document.querySelector('.topbar'); return [Math.round(r.top),Math.round(r.bottom),innerHeight,tb?Math.max(0,Math.round(tb.getBoundingClientRect().bottom)):0]}")
+        # below the top bar: 50 px while it stays on top, what is left of it on the screen once it has scrolled away (a desktop lab page)
+        check(f'{tag} part 6: after the click the result box is on screen (R3.10)', box[0] >= min(50, box[3]) and box[0] < box[2] - 100, box)
     rules(pg, f'{tag} part 6'); shot(pg, f'{tag}_6_config')
     # part 7
     pg.click('#tf-rail [data-nav="next"]'); pg.wait_for_timeout(250)

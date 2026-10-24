@@ -316,8 +316,9 @@ def walk(b, w, h, lang):
     onscreen = []
     for k in range(4):
         click(pg, f'#cb-rail [data-preset="{k}"]'); pg.wait_for_timeout(250)
-        onscreen.append(ev(pg, "()=>{const r=document.getElementById('cb-sb-res').getBoundingClientRect(); return [Math.round(r.top), Math.round(r.bottom), innerHeight]}"))
-    check(f'{tag}: after a scenario click the result box is on screen (it sits above the list)', all(55 <= t_ and t_ < h_ - 100 for t_, b_, h_ in onscreen), str(onscreen))
+        onscreen.append(ev(pg, "()=>{const r=document.getElementById('cb-sb-res').getBoundingClientRect(), tb=document.querySelector('.topbar'); return [Math.round(r.top), Math.round(r.bottom), innerHeight, tb?Math.max(0,Math.round(tb.getBoundingClientRect().bottom)):0]}"))
+    # below the top bar: 55 px while the bar stays on top (phones), its visible bottom once it has scrolled away (a desktop lab page)
+    check(f'{tag}: after a scenario click the result box is on screen (it sits above the list)', all(min(55, bb_) <= t_ and t_ < h_ - 100 for t_, b_, h_, bb_ in onscreen), str(onscreen))
     click(pg, '#cb-rail [data-preset="1"]')
     click(pg, '#cb-rail [data-preset="2"]')
     rs2 = pg.inner_text('#cb-sb-res')
