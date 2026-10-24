@@ -1082,7 +1082,7 @@ function stepFwd(){
   drawPlay(); drawLim(); legendSync(); void sp;
 }
 function playFrom(b,rate){const gr=$('#ck-tl',app);
-  if(!play.playing&&b&&b.closest('#ck-rail')&&gr){const rc=gr.getBoundingClientRect(); if(rc.top<60||rc.bottom>window.innerHeight) gr.scrollIntoView({block:'start',behavior:A.reduceMotion()?'auto':'smooth'});}
+  if(!play.playing&&b&&b.closest('#ck-rail')&&gr){const rc=gr.getBoundingClientRect(); if(rc.top<A.ui.barB()||rc.bottom>window.innerHeight) gr.scrollIntoView({block:'start',behavior:A.reduceMotion()?'auto':'smooth'});}
   startPlay(rate);}
 
 /* =====================================================================
