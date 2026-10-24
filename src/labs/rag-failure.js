@@ -728,7 +728,7 @@ function tick(ts){raf=0; if(!anim||anim.paused||!app) return;
    dock stays away. Wider screens, in Scenarios: the stage scrolls inside itself to the record, and the page follows when the record's
    end is below the window */
 function revealRun(){if(!app) return; const fl=$('#rgf-flow',app), st=$('#rgf-stage',app); if(!fl||!st||!fl.getClientRects().length) return;
-  const beh=A.reduceMotion()?'auto':'smooth', bar=document.querySelector('.topbar'), tb=(bar?bar.getBoundingClientRect().bottom:56)+8;
+  const beh=A.reduceMotion()?'auto':'smooth', bar=document.querySelector('.topbar'), tb=(bar?A.ui.barB():56)+8;
   if(phone()){const fb=fl.getBoundingClientRect().bottom, room=innerHeight-tb-4, nt=$('#rgf-rnote',app);
     const t=[mode==='guided'?$('#rgf-stage .rgf-head',app):null,$('#rgf-pan-run .rgf-ctl',app),nt&&!nt.hidden?nt:null].find(e=>e&&e.getClientRects().length&&fb-e.getBoundingClientRect().top<=room)||fl;
     const d=t.getBoundingClientRect().top-tb; if(Math.abs(d)>4) window.scrollBy({top:d,behavior:beh}); return;}
@@ -753,7 +753,7 @@ function revealStep(){A.ui.reveal($('#rgf-rail .step.current',app)||$('#rgf-rail
 function revealBox(box,keep){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, rc=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, rc=box.getBoundingClientRect();
   if(rc.bottom<=innerHeight-8) return;
   let dy=Math.min(rc.bottom-innerHeight+16,rc.top-top); if(keep&&keep.getClientRects().length) dy=Math.min(dy,keep.getBoundingClientRect().top-top);
   if(dy>0) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
@@ -781,7 +781,7 @@ function pinEl(el){if(!phone()||!el) return; const y0=el.getBoundingClientRect()
    dock stays away while the breakdown is on the screen; and in Settings it would bring up the drawer, which is under the stage */
 function revealMode(){if(!(mode==='sandbox'&&phone())){A.ui.reveal($('#rgf-rail',app)); return;}
   const bn=$('.bench',app), bar=document.querySelector('.topbar'); if(!bn) return; A.tip.hide();
-  const d=bn.getBoundingClientRect().top-((bar?bar.getBoundingClientRect().bottom:56)+6); if(Math.abs(d)>4) window.scrollBy({top:d,behavior:A.reduceMotion()?'auto':'smooth'});}
+  const d=bn.getBoundingClientRect().top-((bar?A.ui.barB():56)+6); if(Math.abs(d)>4) window.scrollBy({top:d,behavior:A.reduceMotion()?'auto':'smooth'});}
 const token=()=>'f'+FIXES.map(f=>S.fx.includes(f)?1:0).join('')+'_r'+S.run;
 function parse(tok){const mm=/^f([01]{5})_r(\d)$/.exec(String(tok||'')); if(!mm) return null; const r=+mm[2]; if(r>=RUNS.length) return null;
   return {fx:FIXES.filter((f,i)=>mm[1][i]==='1'),run:r};}

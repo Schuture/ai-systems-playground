@@ -1034,7 +1034,7 @@ function enterStep(i){stopPL(); obsReveal=false; step=Math.max(0,Math.min(STEPS.
    push the stage up past the header (N4). The card's top stays on screen */
 function revealStep(){const card=$('#pdz-rail .step.current',app)||$('#pdz-rail',app), st=$('#pdz-stage',app), bn=$('.bench',app);
   if(!card||!st||!bn||innerWidth<=760||getComputedStyle(st).position!=='sticky'){A.ui.reveal(card); return;}
-  const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:0)+12;
+  const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:0)+12;
   const c=card.getBoundingClientRect(), vh=innerHeight, T=parseFloat(getComputedStyle(st).top)||70, y0=scrollY;
   const end=bn.getBoundingClientRect().bottom-(parseFloat(getComputedStyle(bn).paddingBottom)||0), yMax=y0+end-T-st.offsetHeight;
   let y=c.top>=top&&c.top<=vh-160?y0:y0+c.top-top;
@@ -1044,7 +1044,7 @@ function revealStep(){const card=$('#pdz-rail .step.current',app)||$('#pdz-rail'
 /* desktop only (the stage stays in view beside the card): below the fold, the observation's top comes under the header; when only its end
    is cut off, a short scroll shows the end and keeps its first line on screen */
 function revealObs(){const box=app&&$('#pdz-rail [data-obs]',app); if(!box||box.hidden||innerWidth<=760) return;
-  const q=box.getBoundingClientRect(), vh=innerHeight, bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:0)+12;
+  const q=box.getBoundingClientRect(), vh=innerHeight, bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:0)+12;
   if(q.top>vh-160) A.ui.reveal(box); else if(q.bottom>vh) window.scrollBy({top:Math.max(0,Math.min(q.bottom-vh+12,q.top-top)),behavior:A.reduceMotion()?'auto':'smooth'});}
 /* keepStage (R9.7), as labs/llm-judge.js */
 function stageStop(){if(stageT){clearTimeout(stageT); stageT=0;}}

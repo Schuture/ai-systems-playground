@@ -777,7 +777,7 @@ function revealStep(){A.ui.reveal($('#tls-rail .step.current',app)||$('#tls-rail
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, rc=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, rc=box.getBoundingClientRect();
   if(rc.bottom<=innerHeight-8) return;
   const dy=Math.min(rc.bottom-innerHeight+16,rc.top-top); if(dy>0) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
 const revealObs=()=>requestAnimationFrame(()=>{if(!app) return; if(mode==='guided') revealBox($('#tls-rail [data-obs]',app)); else if(mode==='sandbox') revealBox($('#tls-insight',app)); else revealBox($('#tls-ch-res',app));});
@@ -785,7 +785,7 @@ const revealObs=()=>requestAnimationFrame(()=>{if(!app) return; if(mode==='guide
    top right below the top bar, unless it is already whole on the screen (R7.12, R3.2; T1, T2) */
 const phone=()=>innerWidth<=760;
 const revealPic=sel=>requestAnimationFrame(()=>{const el=app&&$(sel,app); if(!el||el.hidden) return;
-  const bar=document.querySelector('.topbar'), top=(bar?bar.offsetHeight:56)+8, r=el.getBoundingClientRect();
+  const bar=document.querySelector('.topbar'), top=(bar?A.ui.barB():56)+8, r=el.getBoundingClientRect();
   if(r.top>=top-2&&r.bottom<=innerHeight-8) return;
   window.scrollBy({top:r.top-top,behavior:A.reduceMotion()?'auto':'smooth'});});
 function setMode(m){

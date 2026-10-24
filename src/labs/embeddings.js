@@ -950,14 +950,14 @@ function enterStep(i){
    already in view), so that keepStage can tell the reveal's own scroll from a later one it must not undo */
 function revealStep(){const el=$('#emb-rail .step.current',app)||$('#emb-rail',app); if(!el) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), r=el.getBoundingClientRect();
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12;
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12;
   const stay=innerWidth<=760?Math.abs(r.top-top)<8:(r.top>=top&&r.top<=innerHeight-160);
   stageGoal=stay?scrollY:Math.min(Math.max(0,scrollY+r.top-top),document.documentElement.scrollHeight-innerHeight);
   A.ui.reveal(el);}
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, rc=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, rc=box.getBoundingClientRect();
   if(rc.bottom<=innerHeight-8) return;
   const dy=Math.min(rc.bottom-innerHeight+16,rc.top-top); if(dy>0) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
 const revealObs=()=>requestAnimationFrame(()=>{if(!app) return; if(mode==='guided') revealBox($('#emb-rail [data-obs]',app)); else if(mode==='sandbox') revealBox($('#emb-insight',app)); else revealBox($('#emb-ch-res',app));});

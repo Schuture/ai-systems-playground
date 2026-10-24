@@ -65,10 +65,12 @@ dock = lambda pg: pg.evaluate("()=>({hidden:document.getElementById('dock').hidd
 
 
 def in_view(pg, sel, name, h):
-    """after a reveal: the element's top edge is on screen, below the top bar (and the mini bar), not far down"""
+    """after a reveal: the element's top edge is on screen, below the top bar (and the mini bar), not far down. On a desktop lab page the
+    top bar scrolls away (refit step 2): there the bound is what is left of the bar on the screen, wherever that is less than 40 px"""
     pg.wait_for_timeout(900)
     y = top_of(pg, sel)
-    check(name, y is not None and 40 <= y <= h * 0.6, str(y))
+    bar = pg.evaluate("()=>{const b=document.querySelector('.topbar'); return b?Math.max(0,Math.round(b.getBoundingClientRect().bottom)):0}")
+    check(name, y is not None and min(40, bar) <= y <= h * 0.6, f'{y} (top bar {bar})')
 
 
 def shot(pg, name, full=False):
@@ -876,7 +878,8 @@ with sync_playwright() as _p:
 # in the lab's real layout (window.__aspPrimer, as tests/kit_flow.py), entering each part as the polish probe stage.py does: Next when it
 # is on, else the part's title. Before, at 1440 × 900 the stage scrolled inside in English at parts 2–7 (35, 35, 68, 68, 29, 29 px) and
 # had 18 px to spare in Chinese at parts 4–7; entering part 7 in Chinese pushed it up to −91 px. Now, at every part in both languages:
-# the stage's top at its sticky line (70 px) or lower, its head below the top bar, no scrolling inside, at least 30 px to spare in Chinese
+# the stage's top at its sticky line (70 px then; 12 px since refit step 2, where the top bar scrolls away on a desktop lab page) or
+# lower, its head below the top bar, no scrolling inside, at least 30 px to spare in Chinese
 # (none needed in English), and the pool (the main figure) whole on the screen. Spare = the stage's max-height minus what its content
 # and borders need. Part 1: the pool is drawn for the stage's width as it is entered (it was drawn for a 554 px stage and stretched,
 # then grew 69 px at the first hover: R7.9), so hovering it leaves the stage's height alone; on this wide stage a cell is 0.8 as tall
@@ -885,10 +888,11 @@ subprocess.run([sys.executable, str(P / 'build.py'), 'out/site-paged-attention.h
 (P / 'out' / 'wrapped-site-paged-attention.html').write_text('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>'
                                                        + (P / 'out' / 'site-paged-attention.html').read_text() + '</body></html>')
 SITE = 'file://' + str(P / 'out' / 'wrapped-site-paged-attention.html')
-WALK = """()=>{const s=document.querySelector('#pa-stage'), r=s.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
+WALK = """()=>{const s=document.querySelector('#pa-stage'), r=s.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom, cs=getComputedStyle(s),
   cur=document.querySelector('#pa-rail .steps>.step.current'), h=s.querySelector('.stage-head').getBoundingClientRect(), f=document.getElementById('pa-cv').getBoundingClientRect();
   return {part:cur?[...cur.parentNode.children].indexOf(cur)+1:0, top:Math.round(r.top), head:Math.round(h.top), bar:Math.round(bar), scroll:s.scrollHeight-s.clientHeight,
-    spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), fig:[Math.round(f.top),Math.round(f.bottom)], vh:innerHeight};}"""
+    spare:Math.round(parseFloat(cs.maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), fig:[Math.round(f.top),Math.round(f.bottom)], vh:innerHeight,
+    stick:cs.position==='sticky'?Math.round(parseFloat(cs.top)):70};}"""
 POOL = """()=>{const c=document.getElementById('pa-cv'), s=document.getElementById('pa-stage'); return {drawn:Math.round(c.width/(devicePixelRatio||1)), w:c.clientWidth, h:c.clientHeight, stage:s.offsetHeight}}"""
 with sync_playwright() as _p:
     _b = _p.chromium.launch()
@@ -910,8 +914,8 @@ with sync_playwright() as _p:
             if _nb.count(): _nb.first.click()
             else: _pg.evaluate(f"()=>document.querySelector('#pa-rail .steps>.step:nth-child({_i + 1}) .step-h').click()")
             _pg.wait_for_timeout(1500); _rows.append(_pg.evaluate(WALK))
-        check(f'1440 {_lang} walk: entering every part, the stage’s top at its sticky line (70 px) or lower and its head below the top bar (R3.2, R9.7, B4)',
-              len(_rows) == _n == 7 and all(r['part'] == i + 1 and r['top'] >= max(68, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
+        check(f'1440 {_lang} walk: entering every part, the stage’s top at its sticky line or lower and its head below the top bar (R3.2, R9.7, B4)',
+              len(_rows) == _n == 7 and all(r['part'] == i + 1 and r['top'] >= max(r['stick'] - 2, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
         for _r in _rows:
             check(f'1440 {_lang} walk part {_r["part"]}: the stage needs no scrolling inside' + (', 30 px to spare' if _lang == 'zh' else '') + ', the pool whole on the screen (B4, R7.12)',
                   _r['scroll'] <= 0 and _r['spare'] >= (30 if _lang == 'zh' else 0) and _r['fig'][0] >= _r['bar'] - 1 and _r['fig'][1] <= _r['vh'] + 1, _r)
@@ -919,8 +923,8 @@ with sync_playwright() as _p:
         # 2026-10-22 refit's shorter lab head the reveal often has no need to scroll here, so the stage may stay below its sticky line;
         # it must never be above it, and the pool must be whole on the screen
         _r = _rows[6] if len(_rows) >= 7 else {}
-        check(f'1440 {_lang} walk part 7: the stage’s top at its sticky line (70 px) or lower and the pool whole on the screen (it was at ' + ('−91' if _lang == 'zh' else '65') + ' px before keepStage)',
-              bool(_r) and _r['top'] >= 68 and _r['fig'][0] >= _r['bar'] - 1 and _r['fig'][1] <= _r['vh'] + 1, _r)
+        check(f'1440 {_lang} walk part 7: the stage’s top at its sticky line or lower and the pool whole on the screen (it was at ' + ('−91' if _lang == 'zh' else '65') + ' px before keepStage)',
+              bool(_r) and _r['top'] >= _r['stick'] - 2 and _r['fig'][0] >= _r['bar'] - 1 and _r['fig'][1] <= _r['vh'] + 1, _r)
         _pg.close()
     # a phone keeps square cells (the layout at 390 is unchanged)
     _pg = _b.new_page(viewport={'width': 390, 'height': 844}, reduced_motion='reduce'); _pg.add_init_script('window.__aspPrimer=true')

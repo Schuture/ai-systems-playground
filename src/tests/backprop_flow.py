@@ -558,10 +558,11 @@ def math_scroll(b, w, h, lang):
 # (spare = the stage's max-height minus what its content and borders need; before this round parts 1, 3 and 4–7 scrolled 224, 153
 # and 200 px in Chinese, parts 4–7 223 px in English), the graph and the column beside it (the metric cards, the formula box, the
 # check or the error) are whole on the screen (part 1 used to put the metric cards above the graph, its lower half off the screen),
-# and the stage's top is never under the top bar.
-FIT = """()=>{const s=document.getElementById('bp-stage'), r=s.getBoundingClientRect(), top=Math.max(59,r.top), bot=Math.min(innerHeight,r.bottom);
+# and the stage's top is never under the top bar (since 精装修 step 2 the bar scrolls away with a lab page on a desktop: what of it is still
+# on the screen, its bottom edge, not its height).
+FIT = """()=>{const s=document.getElementById('bp-stage'), r=s.getBoundingClientRect(), tb=document.querySelector('.topbar'), bar=tb?Math.max(0,tb.getBoundingClientRect().bottom):0, top=Math.max(bar,r.top), bot=Math.min(innerHeight,r.bottom);
  const on=id=>{const e=document.getElementById(id); if(!e||!e.getClientRects().length) return null; const q=e.getBoundingClientRect(); return q.top>=top-1&&q.bottom<=bot+1;};
- return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top), graph:on('bp-svg'), side:on('bp-side')}}"""
+ return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top), bar:Math.round(bar), graph:on('bp-svg'), side:on('bp-side')}}"""
 
 
 def fit_page(b, lang):
@@ -587,7 +588,7 @@ def fit_entry(b, lang):
             pg.wait_for_timeout(900); settle(pg)
         f = pg.evaluate(FIT); f['step'] = state(pg)['step'] + 1
         check(f'{lang}-1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""}, the graph and the column beside it on the screen, the top below the top bar (B4, R7.12)',
-              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['graph'] and f['side'] is not False and f['top'] >= 59, f)
+              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['graph'] and f['side'] is not False and f['top'] >= f['bar'] - 1, f)
     pg.close()
 
 

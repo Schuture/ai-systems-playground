@@ -1120,7 +1120,7 @@ function revealStep(){A.ui.reveal($('#tcap-rail .step.current',app)||$('#tcap-ra
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
   if(r.height>innerHeight-top-16){if(r.top>=top&&r.top<=innerHeight-200) return; A.ui.reveal(box); return;}
   if(r.top>=top&&r.bottom<=innerHeight-8) return;
   const dy=r.bottom>innerHeight-8?r.bottom-innerHeight+16:r.top-top;
@@ -1142,7 +1142,7 @@ const revealSoon=()=>requestAnimationFrame(revealObs);
 /* after Submit or “Show the recommended plan” (应修 5): a result taller than the space under the bars starts right under them, so the
    verdict, the main gap and the next step share one screen in both languages; a shorter one is brought into view as before */
 function revealRes(){const box=app&&$('#tcap-ch-res',app); if(!box||box.hidden) return; const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
   if(r.height>innerHeight-top-16&&Math.abs(r.top-top)>=8){window.scrollBy({top:r.top-top,behavior:A.reduceMotion()?'auto':'smooth'}); return;}
   revealBox(box);}
 function setMode(m){

@@ -523,7 +523,8 @@ B9V6 = {'lab': 'roofline', 'math': '#rf-mathbody', 'block': '.rf-mb', 'sep_extra
 # B4 (polish round 5, reviews/r5-fit-roots.md): entering part 5 at 1440 × 900 as the polish probe stage.py does (Next when it
 # is enabled, else the part's heading), the stage needs no scrolling inside: Chinese with at least 30 px to spare, English with none
 # (33 px in Chinese and 49 px in English before this round). Spare = the stage's max-height minus what its content and borders need.
-FIT_ENTRY = """()=>{const s=document.getElementById('rf-stage'), r=s.getBoundingClientRect(); return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top)}}"""
+# Its top below the top bar: below what is left of the bar on the screen (on a desktop lab page it scrolls away since refit step 2).
+FIT_ENTRY = """()=>{const s=document.getElementById('rf-stage'), r=s.getBoundingClientRect(), tb=document.querySelector('.topbar'); return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, top:Math.round(r.top), bar:tb?Math.max(0,Math.round(tb.getBoundingClientRect().bottom)):0}}"""
 
 
 def fit_page(b, lang):
@@ -549,7 +550,7 @@ def fit_entry(b, lang, parts=(5,)):
         if k not in parts: continue
         f = pg.evaluate(FIT_ENTRY); f['step'] = state(pg)['step'] + 1
         check(f'{lang}-1440 part {k}: entering it, the stage fits without scrolling inside{", 30 px to spare" if lang == "zh" else ""}, its top below the top bar (B4, R7.12)',
-              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['top'] >= 59, f)
+              f['step'] == k and f['scroll'] <= 0 and f['spare'] >= (30 if lang == 'zh' else 0) and f['top'] >= min(59, f['bar']), f)
     pg.close()
 
 

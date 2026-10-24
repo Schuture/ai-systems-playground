@@ -1234,7 +1234,7 @@ function revealStep(){A.ui.reveal($('#pd-rail .step.current',app)||$('#pd-rail',
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
   if(r.height>innerHeight-top-16){if(r.top>=top&&r.top<=innerHeight-200) return; A.ui.reveal(box); return;}
   if(r.top>=top&&r.bottom<=innerHeight-8) return;
   const dy=r.bottom>innerHeight-8?r.bottom-innerHeight+16:r.top-top;
@@ -1257,7 +1257,7 @@ const revealSoon=()=>requestAnimationFrame(revealObs);
 /* part 6: after a pick in the card, bring its result into view on a wide screen, never so far that the option just clicked leaves the
    screen; on a phone the page does not move (the three timelines and the rows that pick a GPU are on the first screen) */
 function xKeep(ctl){requestAnimationFrame(()=>{if(!app||innerWidth<=760) return; const ob=$('#pd-rail [data-obs]',app), box=$('#pd-rail .step.current .stepnav',app)||ob; if(!ob||ob.hidden||!box||!ctl.isConnected) return;   // the result and the card's Next (review A8)
-  const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), safe=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:52)+8;
+  const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), safe=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:52)+8;
   const r=box.getBoundingClientRect(), c=ctl.getBoundingClientRect(); if(r.bottom<=innerHeight-8) return;
   const dy=Math.min(r.bottom-innerHeight+16,c.top-safe); if(dy>=2) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});});}
 function setMode(m){

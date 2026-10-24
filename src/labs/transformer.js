@@ -713,7 +713,7 @@ let lastClick=null;
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, q=box.getBoundingClientRect(), vh=innerHeight;
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, q=box.getBoundingClientRect(), vh=innerHeight;
   if(q.bottom<=vh-8&&q.top>=top) return;
   let dy=q.bottom-vh+16;
   const c=lastClick&&lastClick.isConnected?lastClick.getBoundingClientRect():null;
@@ -727,7 +727,7 @@ function revealBox(box){
 function revealVerdict(){
   const res=$('#tf-ch-res',app), v=res&&res.firstElementChild, sl=$('#tf-ic-L',app); if(!v) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+Math.max(dk&&!dk.hidden?dk.offsetHeight:0,50)+8;   // room for the mini result bar even before it shows
+  const top=(bar?A.ui.barB():56)+Math.max(dk&&!dk.hidden?dk.offsetHeight:0,50)+8;   // room for the mini result bar even before it shows
   const lo=v.getBoundingClientRect().bottom-(innerHeight-16), hi=sl?sl.getBoundingClientRect().top-top:Infinity;
   const dy=lo>hi?lo:Math.min(Math.max(0,lo),hi);
   if(Math.abs(dy)>=1) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});

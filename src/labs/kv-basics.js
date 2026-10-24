@@ -971,7 +971,7 @@ function revealStep(){A.ui.reveal($('#kvb-rail .step.current',app)||$('#kvb-rail
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
   /* taller than the screen: a top already on screen stays put, so the control just used stays put too (r12 N7: on a phone the
      challenge's slider left the screen at every release); otherwise its top comes first */
   if(r.height>innerHeight-top-16){if(r.top>=top&&r.top<=innerHeight-200) return; A.ui.reveal(box); return;}

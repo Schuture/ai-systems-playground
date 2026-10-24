@@ -1051,7 +1051,7 @@ function revealStep(){A.ui.reveal($('#rp-rail .step.current',app)||$('#rp-rail',
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
   if(r.height>innerHeight-top-16){if(r.top>=top&&r.top<=innerHeight-200) return; A.ui.reveal(box); return;}
   if(r.top>=top&&r.bottom<=innerHeight-8) return;
   const dy=r.bottom>innerHeight-8?r.bottom-innerHeight+16:r.top-top;
@@ -1213,7 +1213,7 @@ const PHONE_SHOW=['hv','rope3','l5','b5','l6','s6'];
 function phoneShow(k){
   if(innerWidth>760||!PHONE_SHOW.includes(k)||!app) return false;
   requestAnimationFrame(()=>{const g=$('#rp-graph',app); if(!g) return; const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-    const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:0)+8, r=g.getBoundingClientRect();
+    const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:0)+8, r=g.getBoundingClientRect();
     if(r.top>=top&&r.bottom<=innerHeight) return;
     window.scrollBy({top:r.top-top,behavior:A.reduceMotion()?'auto':'smooth'});});
   return true;

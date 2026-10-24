@@ -36,11 +36,20 @@
   --font-mono:"Figtree Tab","Figtree",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC","Source Han Sans SC",monospace;
   --font-code:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC","Source Han Sans SC",monospace;
   --r:8px;
+  /* the type scale (精装修 step 2): a lab takes every size from these eight. mark: ticks, axis numbers and marks on a chart, the
+     smallest text on the site; label: labels, notes, table heads; cap: captions and the titles of a figure's parts; ui: text in a
+     panel; stage: the stage's own text; body: reading text; lead: large numbers and lead lines; big: the largest numbers in a lab.
+     --fs-math is the formula panel's text (.mathbody), so a lab's lines in that panel match it. */
+  --fs-mark:11px; --fs-label:12px; --fs-cap:13px; --fs-ui:14px; --fs-stage:15px; --fs-body:16px; --fs-lead:18px; --fs-big:22px;
+  --fs-math:13.5px;
 }
 /* the branch colour as the lab page uses it: the tree's own hue, a little deeper where it carries small text (wood and teal reach 4.5:1) */
 [data-limb="root"]{--branch:#7E644B} [data-limb="trunk"]{--branch:var(--tr-trunk)} [data-limb="build"]{--branch:var(--tr-build)}
 [data-limb="eval"]{--branch:var(--tr-eval)} [data-limb="use"]{--branch:#0B7380}
-:root,[data-limb]{--branch-soft:color-mix(in srgb,var(--branch) 11%,var(--surface))}
+:root,[data-limb]{--branch-soft:color-mix(in srgb,var(--branch) 11%,var(--surface));
+  /* the dashed frame a guided part draws round the part of the figure it talks about (R3.14): the branch colour, a little lighter
+     than its text (3.3:1 or more on the stage and the figure, light and dark) */
+  --focus-frame:color-mix(in srgb,var(--branch) 80%,var(--surface))}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
@@ -380,6 +389,17 @@ button.tag:hover{border-color:var(--ink);color:var(--ink)}
 @media (max-width:1180px){.bench{grid-template-columns:280px minmax(0,1fr)}.rail{grid-column:1;grid-row:1}.controls{grid-column:1;grid-row:2}.stage{grid-column:2;grid-row:1 / span 2}}
 @media (max-width:760px){.bench{grid-template-columns:minmax(0,1fr)}.rail,.stage,.controls{grid-column:auto;grid-row:auto}.rail{order:1}.stage{order:2}.controls{order:3}}
 @media (min-width:761px) and (min-height:600px){.stage{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);max-height:calc(100vh - 86px);overflow-y:auto}}
+/* a lab page on a desktop (精装修 step 2): the top bar scrolls away with the page instead of staying on top, so the sticky stage sits 12 px
+   from the top and is 58 px taller (at 1440×800 almost every part's stage now fits without scrolling inside). Scroll back to the top and
+   the bar is there. On short windows (820 px and less) the stage sits 8 px from the top and its own spacing is a little tighter (below,
+   after the stage's own rules). Phones keep the bar on top. */
+@media (min-width:761px) and (min-height:600px){
+  html[data-limb] .topbar{position:relative}
+  html[data-limb] .stage{top:calc(env(safe-area-inset-top,0px) + 12px);max-height:calc(100vh - 24px)}
+  html[data-limb] .dock{top:env(safe-area-inset-top,0px)}
+  html[data-limb] :is(#view-dyn,#view-lab) .bench.flowed[data-flow="primer"]>[data-flow-nav]{top:calc(env(safe-area-inset-top,0px) + 12px)}
+}
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){html[data-limb] .stage{top:calc(env(safe-area-inset-top,0px) + 8px);max-height:calc(100vh - 16px)}}
 /* the stage is a figure, not running text: its own text keeps the compact size and spacing it was laid out with, so every stage still fits
    the window it fitted before (the reading text in the rail and the primer is 16 px with looser lines) */
 .stage{padding:16px;container-type:inline-size;font-size:15px;line-height:1.55}
@@ -412,6 +432,29 @@ details.math summary::before,details.adv summary::before{content:"+";font-family
 details.math[open] summary::before,details.adv[open] summary::before{content:"−"}
 .mathbody{font-family:var(--font-mono);font-size:13.5px;line-height:1.6;overflow-x:auto}   /* a line as tall as the old 12.5 px / 1.7 one (21.6 px for 21.25), so an open panel inside a stage keeps its height */
 .mathbody math.tex{font-size:1.04em}   /* the formulas keep the size they were reviewed at (1.12 × the old 12.5 px = 14 px), so a table that fitted a phone still fits; only the words around them grew */
+/* a short desktop window (精装修 step 2: 820 px tall or less, e.g. 1536 × 730, a 15-inch laptop's browser): the stage's own spacing is a
+   little tighter, and a metric card's value takes a 1.25 line (22.5 px for 28: one line of digits). Each rule has the weight of one class
+   (:where), and lab stylesheets come after this one, so a lab's own spacing wins */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){
+  :where(html[data-limb]) .stage{padding:12px 14px}
+  :where(html[data-limb] .stage) .stage-graph{margin-top:10px;padding:10px 12px}
+  :where(html[data-limb] .stage) .legend-row{margin-top:8px}
+  :where(html[data-limb] .stage) .metrics{margin-top:8px;gap:6px}
+  :where(html[data-limb] .stage) .metric{padding:7px 6px}
+  :where(html[data-limb] .stage) .metric .v{line-height:1.25}
+  :where(html[data-limb] .stage) details.math{margin-top:8px;padding-top:7px}
+}
+/* 700 px tall or less (1366 × 650: a 1366 × 768 laptop's browser): the stage sits 6 px from the top and its spacing is one step tighter
+   again (a metric card's padding 5 px); no text is smaller. Same weight as above */
+@media (min-width:761px) and (min-height:600px) and (max-height:700px){
+  html[data-limb] .stage{top:calc(env(safe-area-inset-top,0px) + 6px);max-height:calc(100vh - 12px)}
+  :where(html[data-limb]) .stage{padding:10px 12px}
+  :where(html[data-limb] .stage) .stage-graph{margin-top:8px;padding:8px 10px}
+  :where(html[data-limb] .stage) .legend-row{margin-top:6px}
+  :where(html[data-limb] .stage) .metrics{margin-top:6px}
+  :where(html[data-limb] .stage) .metric{padding:5px 6px}
+  :where(html[data-limb] .stage) details.math{margin-top:6px;padding-top:5px}
+}
 /* the owner's review of batch 9 (2026-10-08): in SFT's Show the math the top of a tall fraction (120 over 1919) was cut off. A box
    with overflow-x:auto clips vertically too, so every formula box gets room above and below; a lab's own padding wins (:where
    has zero specificity). LAB_UX_GUIDE R6.33 */

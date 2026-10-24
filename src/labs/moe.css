@@ -3,19 +3,19 @@
    an outlined one is not); KV cache amber; tokens, the router, lines and times in grayscale; green and red only for success and failure. */
 .moe-stage .stage-head{align-items:center}
 .moe-graph{padding:12px 14px 14px;display:grid;gap:14px}
-.moe-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
-.moe-cap2{font-size:12px;color:var(--ink-2);line-height:1.35}
+.moe-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;text-wrap:balance}
+.moe-cap2{font-size:var(--fs-label);color:var(--ink-2);line-height:1.35}
 .moe-cap-row{display:flex;align-items:flex-start;justify-content:space-between;gap:6px 10px;flex-wrap:wrap}
 .moe-cap-row .moe-cap{flex:1 1 240px;min-width:0}
-.moe-badge{font-family:var(--font-mono);font-size:10.5px;line-height:1.5;padding:0 7px;border-radius:999px;border:1px dashed var(--ink-3);color:var(--ink-2);white-space:nowrap;cursor:help}
+.moe-badge{font-family:var(--font-mono);font-size:var(--fs-mark);line-height:1.5;padding:0 7px;border-radius:999px;border:1px dashed var(--ink-3);color:var(--ink-2);white-space:nowrap;cursor:help}
 /* R3.20: the routing dots play once per new picture; this replays them. Same height as the badge, so showing it moves nothing */
 .moe-cap-side{display:inline-flex;align-items:center;gap:6px;flex:none}
-.moe-replay{font:inherit;font-family:var(--font-mono);font-size:10.5px;line-height:1.5;padding:0 7px;margin:0;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);white-space:nowrap;cursor:pointer}
+.moe-replay{font:inherit;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:1.5;padding:0 7px;margin:0;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);white-space:nowrap;cursor:pointer}
 .moe-replay:hover{border-color:var(--ink-3);color:var(--ink)}
 .moe-replay:focus-visible{outline:2px solid var(--accent,var(--ink-2));outline-offset:1px}
 .moe-replay[hidden]{display:none}
 /* the part's focus lights up on the chart (R3.14) */
-.moe-graph[data-focus="flow"] .moe-flow,.moe-graph[data-focus="par"] .moe-par,.moe-graph[data-focus="read"] .moe-read,.moe-graph[data-focus="ep"] .moe-ep{outline:2px dashed var(--ink-3);outline-offset:3px;border-radius:4px}
+.moe-graph[data-focus="flow"] .moe-flow,.moe-graph[data-focus="par"] .moe-par,.moe-graph[data-focus="read"] .moe-read,.moe-graph[data-focus="ep"] .moe-ep{outline:2px dashed var(--focus-frame);outline-offset:3px;border-radius:4px}
 .moe-flow,.moe-par,.moe-read,.moe-ep{display:grid;gap:6px;min-width:0}
 .moe-svgbox{min-width:0;cursor:help}
 .moe-svg{width:100%;height:auto;display:block;overflow:visible}
@@ -23,22 +23,22 @@
 .moe-ln{stroke:var(--line-2);stroke-width:1.2;fill:none}
 .moe-ln-cur{stroke:var(--ink-2)}
 .moe-chip rect{fill:var(--surface-2);stroke:var(--ink-3);stroke-width:1}
-.moe-chip text{font-family:var(--font-mono);font-size:11px;fill:var(--ink)}
+.moe-chip text{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink)}
 .moe-chip-cur rect{fill:var(--ink-3);stroke:var(--ink)}
 .moe-chip-cur text{fill:var(--bg);font-weight:600}
 .moe-chip-wait rect{fill:transparent;stroke-dasharray:3 3}
 .moe-chip-wait text{fill:var(--ink-3)}
 .moe-chip-more rect{fill:transparent;stroke-dasharray:2 2}
 .moe-router rect:first-child{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.5}
-.moe-rname{font-family:var(--font-mono);font-size:11.5px;fill:var(--ink);font-weight:600}
-.moe-rlabel{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-2)}
+.moe-rname{font-family:var(--font-mono);font-size:var(--fs-label);fill:var(--ink);font-weight:600}
+.moe-rlabel{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-2)}
 .moe-sh{fill:var(--ink-3);opacity:.55}
 .moe-sh.on{fill:var(--ink);opacity:1}
 .moe-ex rect:first-child{fill:transparent;stroke:var(--c-weights);stroke-width:1.5}
 .moe-ex.on rect:first-child{fill:var(--c-weights)}
-.moe-exname{font-family:var(--font-mono);font-size:11px;fill:var(--ink-2)}
+.moe-exname{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-2)}
 .moe-ex.on .moe-exname{fill:var(--on-weights,#fff);font-weight:600}
-.moe-excnt{font-family:var(--font-mono);font-size:11px;fill:var(--ink);font-weight:600}
+.moe-excnt{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink);font-weight:600}
 .moe-ex.on .moe-excnt{fill:var(--on-weights,#fff)}
 .moe-ex.past rect:first-child{fill:var(--c-weights);fill-opacity:.35}
 .moe-ex.past .moe-exname{fill:var(--ink);font-weight:600}
@@ -47,8 +47,8 @@
 .moe-prows{display:grid;gap:6px}
 .moe-prow{display:grid;grid-template-columns:118px minmax(0,1fr) 58px;align-items:center;gap:8px}
 html[lang^="zh"] .moe-prow{grid-template-columns:104px minmax(0,1fr) 58px}
-.moe-pl{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);line-height:1.2;overflow-wrap:anywhere}
-.moe-pv{font-size:12px;color:var(--ink);text-align:right;white-space:nowrap}
+.moe-pl{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2);line-height:1.2;overflow-wrap:anywhere}
+.moe-pv{font-size:var(--fs-label);color:var(--ink);text-align:right;white-space:nowrap}
 .moe-pbar{position:relative;height:20px;background:var(--surface-2);border-radius:2px}
 .moe-pbar i{position:absolute;top:0;bottom:0;cursor:help}
 .moe-pw{background:var(--c-weights)}
@@ -65,9 +65,9 @@ html[lang^="zh"] .moe-prow{grid-template-columns:104px minmax(0,1fr) 58px}
 .moe-re{box-shadow:inset 1px 0 0 var(--surface)}
 .moe-ro{border:1.5px dashed var(--c-weights);border-left:0;background:transparent;opacity:.7}
 .moe-rk{background:var(--c-kv)}
-.moe-rlab{font-size:11.5px;color:var(--ink-2);line-height:1.35}
+.moe-rlab{font-size:var(--fs-label);color:var(--ink-2);line-height:1.35;text-wrap:balance}   /* a caption or a note that takes two lines splits them evenly (精装修 step 2: at 12 px a unit no longer sits alone on the last line) */
 .moe-cg{stroke:var(--line-2);stroke-width:1}
-.moe-ct{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-3)}
+.moe-ct{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-3)}
 .moe-cax{fill:var(--ink-2)}
 .moe-cref{stroke:var(--ink-3);stroke-width:1.5;stroke-dasharray:1.5 3;fill:none}
 .moe-cmoe{stroke:var(--ink);stroke-width:2.5;fill:none}
@@ -83,8 +83,8 @@ html[lang^="zh"] .moe-prow{grid-template-columns:104px minmax(0,1fr) 58px}
 /* part 6: each GPU's time */
 .moe-eprows{display:grid;gap:4px}
 .moe-eprow{display:grid;grid-template-columns:48px minmax(0,1fr) 62px;align-items:center;gap:8px;cursor:help;border-radius:3px;outline-offset:2px}
-.moe-epl{font-size:11px;color:var(--ink-2);white-space:nowrap}
-.moe-epv{font-size:11.5px;color:var(--ink);text-align:right;white-space:nowrap}
+.moe-epl{font-size:var(--fs-mark);color:var(--ink-2);white-space:nowrap}
+.moe-epv{font-size:var(--fs-label);color:var(--ink);text-align:right;white-space:nowrap}
 .moe-eptrack{position:relative;height:14px;background:var(--surface-2);border-radius:2px}
 .moe-eptrack i{position:absolute;top:0;bottom:0}
 .moe-epbusy{left:0;background:var(--ink-2);border-radius:2px 0 0 2px}
@@ -94,25 +94,25 @@ html[lang^="zh"] .moe-prow{grid-template-columns:104px minmax(0,1fr) 58px}
 .moe-cmp{display:grid;gap:8px;min-width:0}
 #moe-cmp-body{display:grid;gap:12px;min-width:0}
 .moe-cm-blk{display:grid;gap:4px;min-width:0}
-.moe-cm-h{font-size:12px;font-weight:650;color:var(--ink-2);line-height:1.35}
+.moe-cm-h{font-size:var(--fs-label);font-weight:650;color:var(--ink-2);line-height:1.35}
 .moe-cm-blk .ctl{margin:0 0 2px}
 .moe-cm-blk .seg-ctl{flex-wrap:wrap}
 .moe-cm-row{display:grid;grid-template-columns:112px minmax(0,1fr) 116px;align-items:center;gap:8px;cursor:help;border-radius:3px;outline-offset:2px;opacity:.38}
 .moe-cm-row.on{opacity:1}
-.moe-cm-n{font-family:var(--font-mono);font-size:11px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.moe-cm-n{font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .moe-cm-row.on .moe-cm-n{color:var(--ink);font-weight:650}
 .moe-cm-bar{position:relative;height:14px;background:var(--surface-2);border-radius:2px;min-width:0}
 .moe-cm-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:2px 0 0 2px}
-.moe-cm-bar em{position:absolute;left:6px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);white-space:nowrap}
+.moe-cm-bar em{position:absolute;left:6px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-3);white-space:nowrap}
 .moe-cm-q,.moe-cm-f{background:var(--ink-2)}
 .moe-cm-row.mx .moe-cm-q,.moe-cm-row.mx .moe-cm-f{background:var(--ink)}
 .moe-cm-w{background:var(--c-weights)}
 .moe-cm-bar i.moe-cm-b2{background:transparent;border:1.5px solid var(--c-weights);border-radius:2px}
-.moe-cm-v{font-size:11.5px;color:var(--ink);text-align:right;white-space:nowrap;line-height:1.3}
-.moe-cm-v small{display:block;font-size:10.5px;color:var(--ink-2);font-weight:400}
+.moe-cm-v{font-size:var(--fs-label);color:var(--ink);text-align:right;white-space:nowrap;line-height:1.3}
+.moe-cm-v small{display:block;font-size:var(--fs-mark);color:var(--ink-2);font-weight:400}
 .moe-cm-row.m7{opacity:.55}
 .moe-cm-row.m7 .moe-cm-n{font-style:italic}
-.moe-cm-note{margin:2px 0 0;font-size:11.5px;line-height:1.4;color:var(--ink-3)}
+.moe-cm-note{margin:2px 0 0;font-size:var(--fs-label);line-height:1.4;color:var(--ink-3);text-wrap:pretty}
 .moe-app .sw.moe-sw-q{background:var(--ink-2);border-color:transparent}
 .moe-app .sw.moe-sw-pair{background:var(--ink-2);opacity:.38;border-color:transparent}
 .moe-app .sw.moe-sw-mx{background:var(--ink);border-color:transparent}
@@ -132,14 +132,14 @@ html[lang^="zh"] .moe-prow{grid-template-columns:104px minmax(0,1fr) 58px}
 .moe-app .sw.moe-sw-busy{background:var(--ink-2);border-color:transparent}
 .moe-app .sw.moe-sw-idle{background:repeating-linear-gradient(135deg,transparent 0 2px,var(--ink-3) 2px 3px)}
 .moe-app .sw.moe-sw-70{width:18px;height:1.5px;border:0;border-radius:0;vertical-align:3px;background:linear-gradient(90deg,var(--ink-2) 0 7px,transparent 7px 9px,var(--ink-2) 9px 10.5px,transparent 10.5px 12px,var(--ink-2) 12px 18px)}
-.moe-lgx{font-size:11px;font-weight:650;color:var(--ink);margin-right:5px}
+.moe-lgx{font-size:var(--fs-mark);font-weight:650;color:var(--ink);margin-right:5px}
 /* rail pieces */
 .moe-rt{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin:6px 0 2px}
 .moe-bctl .moe-brow{display:flex;align-items:center;gap:8px}
 .moe-bctl .moe-brow input{flex:1 1 auto;min-width:0}
 .moe-bstep{min-width:30px;padding-left:0;padding-right:0}
 .moe-grp{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}
-.moe-gh{font-size:12px;font-weight:650;color:var(--ink-2);margin-bottom:6px}
+.moe-gh{font-size:var(--fs-label);font-weight:650;color:var(--ink-2);margin-bottom:6px}
 /* H5 (the owner, 2026-10-09: information runs together): each assumed value is its own block, spaced from the one before */
 .moe-grp .ctl+.ctl{margin-top:12px}
 .moe-metrics .metric.moe-hid .v{color:var(--ink-3)}
@@ -153,7 +153,7 @@ html[lang^="zh"] .moe-prow{grid-template-columns:104px minmax(0,1fr) 58px}
 /* round 1 */
 .moe-nw{white-space:nowrap}
 /* why Next is greyed out (R2.4): under the buttons and on the phone's part bar */
-.moe-why{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.moe-why{margin:8px 0 0;font-size:var(--fs-label);line-height:1.4;color:var(--ink-2)}
 .pbar .moe-why{margin-top:6px}
 .moe-why-off{display:none}
 /* the options: the result stays on the title row when it fits and moves under the title when it does not, so the title never wraps
@@ -169,7 +169,7 @@ html[lang^="zh"] .moe-prow{grid-template-columns:104px minmax(0,1fr) 58px}
 .moe-rm li{display:flow-root;margin:0}
 .moe-rm-t{min-width:0}
 .moe-rm-pic{float:left;width:66px;box-sizing:border-box;display:grid;gap:3px;padding:5px;margin:3px 10px 4px 0;border:1px solid var(--line);border-radius:4px;background:var(--surface);cursor:help}
-.moe-rm-cap{font-size:10px;color:var(--ink-2);text-align:center;line-height:1.2;white-space:nowrap}
+.moe-rm-cap{font-size:var(--fs-mark);color:var(--ink-2);text-align:center;line-height:1.2;white-space:nowrap}
 .moe-rm-bar{position:relative;display:block;height:10px;margin:2px 0;background:var(--surface-2);border-radius:2px}
 .moe-rm-bar i{position:absolute;top:0;bottom:0}
 .moe-rm-bar i.moe-rm-w{left:0;background:var(--c-weights);border-radius:2px 0 0 2px}
@@ -177,7 +177,7 @@ html[lang^="zh"] .moe-prow{grid-template-columns:104px minmax(0,1fr) 58px}
 .moe-rm-bar b{position:absolute;top:-2px;bottom:-2px;width:0;border-left:1.5px dashed var(--ink)}
 .moe-rm-bar u{position:absolute;top:-2px;bottom:-2px;width:0;border-left:1px solid var(--ink-2)}
 .moe-rm-row{display:flex;align-items:center;gap:4px}
-.moe-rm-row em{font-style:normal;font-size:9.5px;color:var(--ink-2);min-width:14px;text-align:right}
+.moe-rm-row em{font-style:normal;font-size:var(--fs-mark);color:var(--ink-2);min-width:14px;text-align:right}
 .moe-rm-ex{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:1.5px;flex:1}
 .moe-rm-ex i{height:8px;border:1px solid var(--c-weights);border-radius:1px;box-sizing:border-box}
 .moe-rm-ex i.on{background:var(--c-weights)}
@@ -203,18 +203,18 @@ html[lang^="zh"] .moe-prow{grid-template-columns:104px minmax(0,1fr) 58px}
   .moe-stage>details.math{order:6}
   .moe-prow{grid-template-columns:86px minmax(0,1fr) 50px;gap:6px}
   html[lang^="zh"] .moe-prow{grid-template-columns:78px minmax(0,1fr) 50px}
-  .moe-pl{font-size:10.5px;white-space:normal;line-height:1.2}
+  .moe-pl{font-size:var(--fs-mark);white-space:normal;line-height:1.2}
   .moe-eprow{grid-template-columns:42px minmax(0,1fr) 56px;gap:6px}
   .moe-cm-row{grid-template-columns:86px minmax(0,1fr) 92px;gap:6px}
-  .moe-cm-n{font-size:10px}
-  .moe-cm-v{font-size:10.5px}
+  .moe-cm-n{font-size:var(--fs-mark)}
+  .moe-cm-v{font-size:var(--fs-mark)}
 }
 /* Show the math as short blocks (H2, 2026-10-09): a lead line, then the formula's rows in a grid; blocks are split by a hairline */
 .moe-mb{padding:10px 0}
 .moe-mb:first-child{padding-top:2px}
 .moe-mb+.moe-mb{border-top:1px solid var(--line)}
-.mathbody .moe-ml{margin:0 0 6px;font-family:var(--font-ui);font-size:13.5px;line-height:1.55;color:var(--ink-2)}
-.moe-mg{display:grid;justify-content:start;justify-items:center;align-items:center;column-gap:.35em;row-gap:.45em;overflow-x:auto;padding-block:.3em;margin-bottom:6px;font-size:13.5px}
+.mathbody .moe-ml{margin:0 0 6px;font-family:var(--font-ui);font-size:var(--fs-math);line-height:1.55;color:var(--ink-2)}
+.moe-mg{display:grid;justify-content:start;justify-items:center;align-items:center;column-gap:.35em;row-gap:.45em;overflow-x:auto;padding-block:.3em;margin-bottom:6px;font-size:var(--fs-cap)}
 .moe-mg .moe-mn{justify-self:end}
 .moe-mg .moe-mw{justify-self:start}
 /* a cell never shrinks under its text: a formula with Chinese words in it would otherwise be squeezed and run into the next
@@ -266,4 +266,15 @@ html[lang^="zh"] .moe-prow{grid-template-columns:104px minmax(0,1fr) 58px}
   #moe-cmp-body{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:20px;row-gap:12px;align-items:start}
   .moe-cm-row{grid-template-columns:84px minmax(0,1fr) 104px}
   #moe-bench{grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:10px}
+}}
+
+/* 精装修 step 2: a short desktop window (820 px tall or less; 1536 × 730 is a 15-inch laptop's browser). With the top bar scrolled away
+   the stage gains 58 px, and parts 5 and 8 still ran 39 px past it at 1536 × 730; the batch curve is drawn 116 px tall instead of 136
+   (its labels keep their size) and a few gaps are tighter */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .moe-stage>.legend-row{margin-top:6px}
+  .moe-graph{gap:6px}
+  .moe-flow,.moe-par,.moe-read,.moe-ep{gap:3px}
+  #moe-curve{--moe-ch:116}
+  .moe-stage>.moe-scope{margin-top:6px;margin-bottom:4px}
 }}
