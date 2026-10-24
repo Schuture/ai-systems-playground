@@ -25,6 +25,9 @@ const STR={
   mapTitle:'Start with the path that suits you best',
   pathsAria:'Learning paths', chipAll:'No path, by branch',
   foot2:'Two more visual explainers of what happens inside a transformer: <a href="https://poloclub.github.io/transformer-explainer/" target="_blank" rel="noopener">Transformer Explainer</a> (GPT-2) and <a href="https://bbycroft.net/llm" target="_blank" rel="noopener">LLM Visualization</a>.',
+  ftBlurb:'Hands-on labs on how modern AI systems work: how a model writes its next word, then training, serving, post-training, evaluation, RAG and agents. Everything runs in your browser.',
+  ftPaths:'Learning paths', ftTree:'Knowledge tree', ftProject:'Project', ftSource:'Source code on GitHub', ftIssue:'Report a problem',
+  ftLegal:'The code is under the Apache 2.0 license; the fonts are under the SIL Open Font License.',
   crumbMap:'← Tree', crumbWorld:'How LLMs work', crumbKV:'KV cache memory', labTitle:'Why does a 70B model run out of memory at long context?',
   tagMin:'15 min', tagLevel:'Core', fidBtn:'Fidelity: Formula ▾', priBtn:'Primer: what the KV cache is ▾',
   flowAria:'The steps of this lab', modesAria:'Lab mode', modeGuided:'Guided', modeSandbox:'Scenarios', modeChallenge:'Challenge', share:'Copy setup link',
@@ -75,6 +78,9 @@ const STR={
   mapTitle:'从最适合你的路线开始',
   pathsAria:'学习路线', chipAll:'不选路线，按枝看',
   foot2:'另外两个讲 Transformer 内部的可视化：<a href="https://poloclub.github.io/transformer-explainer/" target="_blank" rel="noopener">Transformer Explainer</a>（GPT-2）和 <a href="https://bbycroft.net/llm" target="_blank" rel="noopener">LLM Visualization</a>。',
+  ftBlurb:'亲手操作，看懂现代 AI 系统：从模型怎样写出下一个词，到训练、推理服务、后训练、评测、RAG 和 Agent。全部在你的浏览器里运行。',
+  ftPaths:'学习路线', ftTree:'知识树', ftProject:'项目', ftSource:'源码（GitHub）', ftIssue:'报告问题',
+  ftLegal:'代码采用 Apache 2.0 许可，字体采用 SIL Open Font License。',
   crumbMap:'← 知识树', crumbWorld:'LLM 怎么工作', crumbKV:'KV cache 显存', labTitle:'为什么 70B 模型一到长上下文就爆显存？',
   tagMin:'15 分钟', tagLevel:'核心', fidBtn:'保真度：公式计算 ▾', priBtn:'前置知识：KV cache 是什么 ▾',
   flowAria:'这个 Lab 的流程', modesAria:'Lab 模式', modeGuided:'分步引导', modeSandbox:'应用场景', modeChallenge:'挑战题', share:'复制配置链接',
@@ -128,8 +134,17 @@ function applyStatic(){
   $$('.langsw button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===lang)));
   const cw=$('#kvCrumbWorld'); if(cw) cw.dataset.tipx=crumbWorldTip('models');   // on the trunk since 2026-10-12 (owner)
   const en=$('#fidPop'); if(en) en.innerHTML=endnotesHead('kv')+`<div class="en-body">${endnotesInner(t('fidPop'))}</div>`;
-  kvCrumbs();
+  const hk=$('#heroKicker span'); if(hk){const n=LABS.filter(l=>labStatus(l)==='live').length; hk.textContent=tx(`One knowledge tree, ${n} hands-on labs`,`一棵知识树，${n} 个可以亲手操作的实验`);}
+  kvCrumbs(); renderFoot();
 }
+/* the page's footer: what the site is, the learning paths and the tree's branches (the same links as the home page's), the project */
+const REPO='https://github.com/Schuture/ai-systems-playground';
+function renderFoot(){const g=$('#ftGrid'); if(!g) return; const mark=($('.brand svg')||{}).outerHTML||'';
+  const col=(h,items)=>`<div class="ft-col"><h2 class="ft-h">${esc(h)}</h2><ul>${items.map(([href,txt,ext])=>`<li><a href="${esc(href)}"${ext?' target="_blank" rel="noopener"':''}>${esc(txt)}</a></li>`).join('')}</ul></div>`;
+  g.innerHTML=`<div class="ft-about"><a class="ft-brand" href="#top">${mark}<span>AI Systems Playground</span></a><p>${esc(t('ftBlurb'))}</p></div>`+
+    col(t('ftPaths'),Object.entries(PATHS).map(([k,p])=>['#map~route:'+k,L(p.name)]))+
+    col(t('ftTree'),Object.entries(WORLDS).map(([k,w])=>['#map~'+k,L(w.name)]))+
+    col(t('ftProject'),[[REPO,t('ftSource'),1],[REPO+'/issues',t('ftIssue'),1]]);}
 // the KV lab's breadcrumb row (body.html): the previous and next lab of the learner's path, filled again on every visit and language switch
 function kvCrumbs(){const nc=$('#kvCrumbNav'); if(nc) nc.innerHTML=crumbPairHTML('kv-cache');}
 
@@ -776,7 +791,7 @@ const worldClickTip=id=>{const c=worldCounts(id), n=L(WORLDS[id].name);
 const TILE_OWN='a[href],button,input,select,textarea,label,summary,[role=button],[role=slider],[role=radio],[role=radiogroup],[role=tab],[role=switch],[role=checkbox],[role=option],.seg-ctl,[tabindex="0"][data-tipx],[tabindex="0"][data-tip]';
 function tileHTML(l,num){
   const st=labStatus(l), f=TZF[(TEASERS[l.id]&&TEASERS[l.id].fid)||TZKIND[l.id]];
-  return `<article class="tile${st==='live'?' is-live':''}" id="tile-${l.id}" data-lab="${l.id}">`+
+  return `<article class="tile${st==='live'?' is-live':''}" id="tile-${l.id}" data-lab="${l.id}" data-limb="${WORLDS[l.w].limb}">`+
     `<div class="tile-meta">${num?`<span class="tile-num mono">${num}</span>`:''}${PRIMERS[l.id]?`<span class="tile-pr" tabindex="0" role="img" aria-label="${esc(tx('Has a primer','有知识梳理'))}" data-tipx="${esc(tx(`This lab starts with a primer (${PRIMERS[l.id].min} min): the ideas and formulas it rests on, before the hands-on parts.`,`这个 Lab 前有知识梳理（${PRIMERS[l.id].min} 分钟）：先讲它用到的概念和公式，再动手。`))}">${BOOK_ICON}</span>`:''}<span class="tile-at">${esc(tx('Tree: ','知识树：')+treeAt(l))}</span><span class="mono muted">${minsTxt(l.min)}</span>`+
     (f?`<span class="chip tz-kind" tabindex="0" data-tipx="${esc(L(f.d))}">${esc(L(f))}</span>`:'')+`<span class="tile-mark" data-mark="${l.id}">${markHTML(l.id)}</span></div>`+
     `<h3 class="tile-q">${st==='live'?`<a href="#${l.id}">${esc(L(l.q))}</a>`:esc(L(l.q))}</h3>`+
@@ -788,8 +803,9 @@ function renderTiles(){
   if(sel.type==='path'){const p=PATHS[sel.id], labs=p.labs.map(id=>LAB[id]), mins=labs.reduce((a,l)=>a+l.min,0), first=labs[0]; ids=p.labs; num=true;
     // the path's start, as on its entry above the tree (owner round 3 #1): an explicit choice of this path
     const go=`<p class="th-go"><a class="btn sm" href="#${first.id}" data-path="${sel.id}" data-route-start="${sel.id}">${esc(tx(`Stop 1: ${labShort(first)}`,`进入第一站：${labShort(first)}`))} <span aria-hidden="true">→</span></a></p>`;
+    delete head.dataset.limb;
     head.innerHTML=`<div class="th-icon">${iconSVG('path',26)}</div><div class="th-text"><div class="th-meta">${tx('Learning path','学习路线')} · ${tx(`${labs.length} labs, about ${mins} min`,`${labs.length} 个 Lab，约 ${mins} 分钟`)}</div><h3 class="th-name">${esc(L(p.name))}</h3><p class="th-who">${esc(pathWho(sel.id))}</p><p class="th-desc">${tx('Afterwards you can: ','学完你能：')}${esc(L((PATH_INFO[sel.id]||p).can||p.out))}</p>${go}</div>`;}
-  else {const w=WORLDS[sel.id]; ids=LABS.filter(l=>l.w===sel.id).map(l=>l.id);
+  else {const w=WORLDS[sel.id]; ids=LABS.filter(l=>l.w===sel.id).map(l=>l.id); head.dataset.limb=w.limb;
     head.innerHTML=`<div class="th-icon">${iconSVG(sel.id,26)}</div><div class="th-text"><div class="th-meta">${tx('Branch','枝')} · ${worldSubHTML(sel.id)}</div><h3 class="th-name">${esc(L(w.name))}</h3><p class="th-desc">${esc(L(w.desc))}</p></div>`;}
   grid.innerHTML=ids.map((id,i)=>tileHTML(LAB[id],num?i+1:0)).join('');
   $$('[data-teaser]',grid).forEach(el=>{const tz=TEASERS[el.dataset.teaser];
@@ -807,7 +823,7 @@ function renderDomGrid(){const el=$('#domGrid'); if(!el) return;
   el.innerHTML=`<p class="dg-lead">${tx('The screen is too narrow to draw the whole knowledge tree, so its branches are listed here from the top of the tree down: the two big branches, “Using models” and “Building models”, then evaluation, the trunk and the roots.','屏幕太窄，画不下整棵知识树，这里按树的样子从上往下列出它的各枝：最上面是“用模型”和“造模型”两大枝，往下是评测、主干和根。')}</p>`+G.map(([name,ids])=>`<div class="dg-group" data-limb="${WORLDS[ids[0]].limb}"><div class="dg-h">${esc(name)}</div><div class="dg-items">${ids.map(id=>`<button type="button" class="dg-btn" data-world="${id}" data-limb="${WORLDS[id].limb}" aria-pressed="false"><span class="dg-ico">${iconSVG(id,20)}</span><span class="dg-t"><b>${esc(L(WORLDS[id].name))}</b><span>${worldSubHTML(id)}</span></span></button>`).join('')}</div></div>`).join('');}
 /* above the tiles: every branch one click away while you read the tiles; it sticks under the top bar */
 function renderStrip(){const el=$('#domStrip'); if(!el) return;
-  el.innerHTML=`<div class="ds-worlds" role="group" aria-label="${esc(tx('Branches','各枝'))}">${Object.keys(WORLDS).map(id=>`<button type="button" class="ds-btn" data-world="${id}" aria-pressed="false" aria-label="${esc(worldTip(id))}" data-tipx="${esc(worldTip(id))}">${iconSVG(id,18)}<span>${esc(L(WORLDS[id].name))}</span></button>`).join('')}</div>`+
+  el.innerHTML=`<div class="ds-worlds" role="group" aria-label="${esc(tx('Branches','各枝'))}">${Object.keys(WORLDS).map(id=>`<button type="button" class="ds-btn" data-world="${id}" data-limb="${WORLDS[id].limb}" aria-pressed="false" aria-label="${esc(worldTip(id))}" data-tipx="${esc(worldTip(id))}">${iconSVG(id,18)}<span>${esc(L(WORLDS[id].name))}</span></button>`).join('')}</div>`+
    `<label class="ds-path"><span>${tx('Path','路线')}</span><select id="pathSel"><option value="" title="${esc(tx('No path: the labs of the branch you pick.','不选路线：列出你选的那一枝的 Lab。'))}">${tx('No path','不选路线')}</option>${Object.entries(PATHS).map(([k,p])=>`<option value="${k}" title="${esc(pathWho(k))}">${esc(L(p.name))}</option>`).join('')}</select></label>`;
   fitStrip();}
 /* the strip shows every branch's name when they all fit in one row; otherwise icons with tooltips, and the chosen one keeps its name
@@ -1891,7 +1907,7 @@ function setLang(l){
   renderHome();
   heroRefresh();
   if(view==='dyn'&&dyn&&dyn.onLang){dyn.onLang(); flowDecorate($('#view-dyn'));}
-  placeEndFooter();
+  placeEndFooter(); pageMeta();
   renderDrillQ(); if(!$('#drillA').hidden) revealDrill();
   if(labInit){renderRail(); render();}
 }
@@ -1940,6 +1956,10 @@ function flowResume(id){if(FRES.has(id)) return; FRES.add(id); const r=PROG.get(
 window.__prog={snap:()=>{const lab=view==='lab'?KVLAB:(view==='dyn'?dyn:null); try{return lab&&lab.snap?lab.snap():null;}catch(e){return null;}},get:id=>PROG.get(id),last:()=>PROG.last(),save:progSave,clear:()=>PROG.clear()};
 let dyn=null;
 function showView(v){view=v; $('#view-home').hidden=v!=='home'; $('#view-lab').hidden=v!=='lab'; $('#view-dyn').hidden=v!=='dyn'; hideTip(); $('#dock').hidden=true; dockSoon();}
+/* the tab's title names the lab, and the page wears the colour of the lab's part of the tree (html[data-limb], styles.css: --branch) */
+function pageMeta(){const id=view==='lab'?'kv-cache':(view==='dyn'&&dyn?dyn.id:null), l=id&&LAB[id], root=document.documentElement;
+  document.title=l?`${L(l.s||l.q)} · AI Systems Playground`:'AI Systems Playground';
+  if(l&&WORLDS[l.w]) root.dataset.limb=WORLDS[l.w].limb; else delete root.dataset.limb;}
 function leaveDyn(){if(dyn&&dyn.leave) dyn.leave(); dyn=null; $('#view-dyn').innerHTML='';}
 let crumbJump=false;   // the address changed because a lab's branch crumb was clicked (not Back)
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.crumbs a[href^="#map~"]')) crumbJump=true;},true);
@@ -1959,16 +1979,16 @@ function route(){
       else if(p){Object.assign(S,p); mode='sandbox'; renderModes(); renderRail(); render();}
       else {mode='guided'; renderModes(); enterStep(0);}
     } else {renderRail(); render(); cueTargets();}
-    kvCrumbs(); flowDecorate($('#view-lab')); placeEndFooter(); window.scrollTo(0,0); progSoon();
+    kvCrumbs(); flowDecorate($('#view-lab')); placeEndFooter(); pageMeta(); window.scrollTo(0,0); progSoon();
   } else if(DYN[id]){
     lastTile=id; quietTips(); if(!(HERO&&id===HERO.id)) heroEntry=false;
     const lab=DYN[id]; if(dyn!==lab) leaveDyn(); else $('#view-dyn').innerHTML='';
     dyn=lab; showView('dyn'); const holder=document.createElement('div'); holder.className='dyn-root'; $('#view-dyn').appendChild(holder);
     const back=progRestore(id,lab,tok); if(tok&&FLOW[id]===undefined) FLOW[id]='free';   // a link with settings opens on 自由调参
     try{lab.mount(holder,tok);}catch(e){if(back){PROG.drop(id); location.reload(); return;} throw e;}   // a saved state the lab can no longer show: forget it
-    flowDecorate(holder); placeEndFooter(); window.scrollTo(0,0); flowResume(id); dockSoon(); progSoon();
+    flowDecorate(holder); placeEndFooter(); pageMeta(); window.scrollTo(0,0); flowResume(id); dockSoon(); progSoon();
   } else {
-    leaveDyn(); const wasLab=view!=='home'; showView('home'); heroRefresh(); renderProgress();
+    leaveDyn(); const wasLab=view!=='home'; showView('home'); pageMeta(); heroRefresh(); renderProgress();
     // #map~<domain> (the domain in a lab's breadcrumb) or #map~route:<path> (the end of a path): select it and put its tiles in view
     const pk=tok&&tok.indexOf('route:')===0?tok.slice(6):null;
     if(id==='map'&&tok&&(WORLDS[tok]||(pk&&PATHS[pk]))){const lt=wasLab&&!cj?lastTile:null; lastTile=null; quietTips(); if(pk) selectPath(pk); else selectWorld(tok); refitTree(); fitStrip();
@@ -2010,12 +2030,12 @@ const kvTzCfg=k=>({...DEFAULT,users:KVTZ.users,ctx:k*1024});
 let kvTzK=KVTZ.k0, kvTzRO=null;   // the learner's context (module scope: a re-render keeps it); the tile's ResizeObserver
 /* the axis caption, in HTML over the chart's top margin: its GiB carries the site's definition (R6.12) */
 const kvTzCap=()=>{const g=DEF('GiB',TERMS.gib()); return tx(`Memory per GPU (${g})`,`每张 GPU 的显存（${g}）`);};
-const kvTzTW=s=>{let n=0; for(const ch of s) n+=ch.codePointAt(0)>=0x2e80?10:6.1; return n;};   // width of 10 px mono text; CJK about 1 em
+const kvTzTW=s=>{let n=0; for(const ch of s) n+=ch.codePointAt(0)>=0x2e80?10:6.1; return n;};   // width of 10 px text, at most (exact in the old monospace font; Figtree is narrower); CJK about 1 em
 /* the chart in real pixels for a tile W px wide, with the marker at k (K tokens per user) */
 function kvTzSVG(W,k){
   const z=compute(kvTzCfg(1)), wG=z.wPerGpu/GiB, base=(z.wPerGpu+z.oh)/GiB, per=z.kvPerGpu/GiB, use=z.usable/GiB;   // GiB per GPU; per: 1K of context
   const xM=KVTZ.max, need=c=>base+per*c, yM=Math.ceil(need(xM)/50)*50, kc=(use-base)/per;   // kc: where the line passes the usable limit
-  const H=126, L=24, R=10, T=16, PH=94, PW=W-L-R, B0=T+PH;
+  const H=126, L=24, R=10, T=20, PH=90, PW=W-L-R, B0=T+PH;   // T: the caption's 13 px line and the top label's 13 px box (2026-10-22 refit fonts) stay apart
   const X=c=>L+c/xM*PW, Y=g=>T+PH*(1-g/yM), f=v=>Math.round(v*10)/10;
   const P=(cls,pts)=>`<path class="${cls}" d="${pts.map(([x,y],i)=>(i?'L':'M')+f(x)+' '+f(y)).join('')}Z"/>`;   // points in px
   const Ln=(cls,x1,y1,x2,y2)=>`<line class="${cls}" x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}"/>`;
@@ -2038,7 +2058,7 @@ function kvTzSVG(W,k){
   let xt=Math.max(xd+5,xFit); if(xt+tw>x1-2) xt=xd-5-tw;
   const gap=xt>xd?xt-xd:xd-xt-tw;
   h+=Ln('tz-kvc-mkh',xd,B0,xd,yd)+Ln('tz-kvc-mk',xd,B0,xd,yd)+`<circle class="tz-kvc-dot" cx="${f(xd)}" cy="${f(yd)}" r="4"/>`;
-  if(xt>=xFit-0.05&&gap<=14) h+=Tx('tz-kvc-tag',xt,yb,tag);
+  if(xt>=xFit-0.05&&gap<=14) h+=xt>xd?Tx('tz-kvc-tag',xt,yb,tag):Tx('tz-kvc-tag',xd-5,yb,tag,'end');   // on the left its end sits 5 px from the line, however wide the font sets it
   return {h,H};
 }
 /* the tile's "Assumptions & sources": four short sentences, each the answer to one question a reader would ask (R11.5): what the
@@ -2574,7 +2594,7 @@ document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest
 const SHELL={
   header:o=>{const w=WORLDS[o.world]||{name:{en:'',zh:''}}, P=o.id;
     return `<div class="wrap labhead"><div class="crumbs"><a href="#map" data-tipfn="crumbTree">${t('crumbMap')}</a><span>/</span><a href="#map~${esc(o.world)}" data-tipx="${esc(crumbWorldTip(o.world))}">${esc(L(w.name))}</a><span>/</span><span>${esc(o.short)}</span>${crumbNavHTML(P)}</div>`+
-      `<h1 class="labtitle">${esc(o.title)}</h1>${o.outcome?outcomeHTML(o.outcome):''}<div class="labmeta"><span class="tag">${minsTxt(o.minutes)}</span></div>`+
+      `<h1 class="labtitle">${esc(o.title)}</h1><div class="lab-sub">${o.outcome?outcomeHTML(o.outcome):''}<div class="labmeta"><span class="tag">${minsTxt(o.minutes)}</span></div></div>`+
       flowNavHTML(P,o.mode,o.descs)+`</div>`+endnotesHTML(P,o.fidPop);},   // o.primer, o.primerPop: no longer shown (the lab's primer replaces them)
   bindHeader:(root,o)=>{if(o.token) TOKFN[o.id]=o.token; root.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b||!root.contains(b)) return;
       if(b.dataset.pop){const pop=document.getElementById(b.dataset.pop), open=pop.hidden; pop.hidden=!open; b.setAttribute('aria-expanded',String(open)); return;}

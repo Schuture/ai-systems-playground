@@ -477,10 +477,6 @@
 .sc-mc0{display:flex;align-items:center;justify-content:center;height:1.9em;white-space:nowrap}
 .sc-mtall .sc-mc0{height:3.1em}
 
-/* option groups that wrap keep a 1px line between their rows as well as their columns: the buttons sit 1px apart on the line colour
-   instead of drawing right borders (owner 2026-10-14, R7.13; tests/kit_seg_rows.py) */
-.sc-app .seg-ctl{gap:1px;background:var(--line)}
-.sc-app .seg-ctl button,.sc-app .seg-ctl button:last-child{border-right:0}
 
 /* review r5 (B4; the owner: "the playback panel was pushed down, at first I did not see there was more below"): on a desktop the stage is
    taller than the window in every part. Its spacing is tightened, the table's rows set closer (CONTRACT §19's line heights, the same
@@ -524,3 +520,5 @@
     .sc-stage>.sc-low{display:none}
   }
 }
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.sc-clock,.sc-onote,.sc-gdur,#sc-wct,.sc-runl{font-variant-numeric:tabular-nums}

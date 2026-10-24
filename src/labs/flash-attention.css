@@ -85,7 +85,7 @@
 .fa-brow.fa-ghost .fa-btrk{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line-2)}
 .fa-brow.fa-ghost .fa-bv{color:var(--ink-3);font-size:11px;white-space:normal;line-height:1.2}
 .fa-brow.fa-ghost .fa-bl{color:var(--ink-3)}
-.fa-room{margin:0;font-size:12.5px;color:var(--ink-2);line-height:1.45}
+.fa-room{margin:0;font-size:12.5px;color:var(--ink-2);line-height:1.45;letter-spacing:-.01em}   /* a hair tighter: in Figtree (2026-10-22 refit) the line keeps to one line, as it did */
 .fa-room b{color:var(--ink)}
 
 /* part 5: traffic against context length */
@@ -277,3 +277,5 @@
   .fa-metrics .metric .d{min-height:13px;line-height:1.1}
   .fa-stage>details.math{margin-top:8px;padding-top:8px}
 }}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.fa-runl{font-variant-numeric:tabular-nums}

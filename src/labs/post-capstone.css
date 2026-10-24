@@ -209,11 +209,6 @@ li.pcap-zbadl span{color:var(--c-oom)}
 /* Settings: four task names do not fit one row of the 254 px panel; let the buttons wrap (R7.8) */
 .pcap-app .controls .seg-ctl{flex-wrap:wrap}
 .pcap-app .controls .seg-ctl button{flex:1 1 auto}
-/* item 5 (the owner, 2026-10-09): a wrapped option group keeps a line between its rows. The kit draws only the line on each button's
-   right; here the group's background is the line colour and the buttons sit 1 px apart, so every row and column gets a line at every
-   width */
-.pcap-app .seg-ctl{gap:1px;background:var(--line)}
-.pcap-app .seg-ctl button,.pcap-app .seg-ctl button:last-child{border-right:0}
 
 /* ---------- polish r4 (B4, R7.12): parts 4–6 fit a 1440 × 900 screen. The blocks were stacked one under the other, full width: the
    task card 166 px, the decision strip 102, memory 183, GPU hours 219–262, the result 227, so the stage scrolled 218–282 px inside
@@ -247,7 +242,7 @@ li.pcap-zbadl span{color:var(--c-oom)}
   .pcap-graph .pcap-hw{margin-top:6px;padding-top:6px}
   .pcap-graph .pcap-hh{margin-bottom:3px}
   .pcap-graph .pcap-how{gap:3px;line-height:1.35}
-  .pcap-graph .pcap-how>div{grid-template-columns:120px minmax(0,1fr)}
+  .pcap-graph .pcap-how>div{grid-template-columns:122px minmax(0,1fr);column-gap:5px}   /* Figtree (2026-10-22 refit) is a little wider: “训练一个 token 的计算” needs 120.3 px and the first value 309.9 px, so each keeps one line */
   .pcap-graph .pcap-zoom{margin-top:8px;padding-top:6px}
   /* the task card: a narrower names column */
   .pcap-graph>#pcap-card{padding:8px 12px}

@@ -65,9 +65,7 @@
 .goal.cte-over b{color:var(--c-oom)}
 .cte-app .inline-ctl .seg-ctl{flex-wrap:wrap}
 /* B3: the challenge's choices are chips that wrap whole; a label never breaks one character per line (R7.8) */
-.cte-app .railcard .inline-ctl .seg-ctl{gap:6px;border:0;border-radius:0;overflow:visible}
-.cte-app .railcard .inline-ctl .seg-ctl button{flex:1 0 auto;white-space:nowrap;border:1px solid var(--line);border-radius:4px;padding:5px 9px}
-.cte-app .railcard .inline-ctl .seg-ctl button:last-child{border-right:1px solid var(--line)}
+.cte-app .railcard .inline-ctl .seg-ctl button{flex:1 0 auto;white-space:nowrap;padding:5px 9px}
 .cte-remlist li{margin-bottom:8px}
 .cte-rem{font-size:12.5px;white-space:nowrap}
 .cte-rem[aria-pressed="true"]{font-weight:650;text-decoration:none}
@@ -151,3 +149,5 @@
 .cte-eq-l{text-align:right}
 /* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
 @media (max-width:560px){.cte-eqs-nm{grid-template-columns:max-content max-content}.cte-eqs-nm>.cte-eq-l{grid-column:1/-1;text-align:left}.cte-eqs-nm>.cte-eq-l:empty{display:none}}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.cte-cap,#cte-metrics .sub,.cte-runl{font-variant-numeric:tabular-nums}

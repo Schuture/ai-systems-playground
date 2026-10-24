@@ -17,8 +17,7 @@ Builds out/architecture-layout-build.html with this lab only (--only architectur
     empty rectangle of each pop-up diagram and of the hero's open stage (flagged above 30% of the area and a third of each side),
     a phone pop-up whose lower part is empty, and a settings column much shorter than the stage beside it; the pop-up controls
     (every token of steps 5 and 6, the SiLU probe and the temperature at both ends) are set before the checks.
-Fonts: the page asks Google Fonts for Archivo and IBM Plex Mono; set AR_FONTS to a local fonts.css (default:
-../qa-v11/fonts/fonts.css next to the project, if present) so the widths match production. Without it the fallback fonts are used.
+Fonts: the page loads the site's own fonts from static/fonts, which build.py copies next to it into out/, so the widths match production.
 Prints the hits (grouped) and their count; exits 1 if there are any."""
 import os, pathlib, subprocess, sys, json
 from collections import defaultdict
@@ -32,9 +31,6 @@ PAGE = P / 'out' / f'architecture-layout-{os.getpid()}.html'
 PAGE.write_text('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>'
                 + (P / 'out' / 'architecture-layout-build.html').read_text() + '</body></html>')
 URL = 'file://' + str(PAGE)
-FONTS = pathlib.Path(os.environ.get('AR_FONTS', str(P.parent / 'qa-v11' / 'fonts' / 'fonts.css')))
-FONT_CSS = FONTS.read_text() if FONTS.exists() else None
-print('fonts:', FONTS if FONT_CSS else 'fallback (set AR_FONTS for production widths)', flush=True)
 VIEWPORTS = [(1440, 900), (390, 844)] if QUICK else [(1440, 900), (1280, 800), (900, 900), (761, 900), (390, 844)]
 THEMES = ['light'] if QUICK else ['light', 'dark']
 for a in sys.argv[1:]:
@@ -174,9 +170,6 @@ def add(cfg, state, items):
 
 def page(b, w, h, lang, theme):
     ctx = b.new_context(viewport={'width': w, 'height': h}, color_scheme='dark' if theme == 'dark' else 'light')
-    if FONT_CSS:
-        ctx.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(status=200, content_type='text/css', body=FONT_CSS, headers={'Access-Control-Allow-Origin': '*'}))
-        ctx.route('https://fonts.gstatic.com/**', lambda r: r.abort())
     pg = ctx.new_page()
     errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))

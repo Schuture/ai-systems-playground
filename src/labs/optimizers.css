@@ -130,10 +130,6 @@
    sizes and the loss curve; static, so the stage keeps its height while it plays (R7.9) */
 #op-bars-cap,#op-loss-cap{border-top:1px solid var(--line);padding-top:8px}
 
-/* option groups that wrap keep a 1px line between their rows as well as their columns: the buttons sit 1px apart on the line colour
-   instead of drawing right borders (owner 2026-10-14, R7.13; tests/kit_seg_rows.py) */
-.op-app .seg-ctl{gap:1px;background:var(--line)}
-.op-app .seg-ctl button,.op-app .seg-ctl button:last-child{border-right:0}
 
 /* polish round 5 (fit): on a wide stage (at least 736 px: the desktop at 1440 and 1280) the stage ran 137–194 px past the screen at
    1440 × 900 in parts 1–6 and 8: the valley 253 px, the player in two rows 71, the step sizes 40–96 and the loss chart 190 under one
@@ -170,3 +166,5 @@
    made each paragraph scroll 2–6 px up and down as well (the stage's inner scroll in part 7); the 6 px between paragraphs are now inside
    each paragraph, so they read as before */
 @media (min-width:761px){.op-app .mathbody p{margin:0;padding-bottom:6px}.op-app .mathbody p:first-child{margin-top:6px}}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+#op-bars-cap,#op-metrics .k{font-variant-numeric:tabular-nums}

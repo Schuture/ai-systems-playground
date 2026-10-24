@@ -190,8 +190,3 @@
 .primer .evc-prfx.one{column-gap:.35em}
 .primer .evc-prfx>span{min-width:0;max-width:100%}
 @media (max-width:760px){.primer .evc-prfx{padding-left:.4em;column-gap:1.6em}.primer .evc-prfx.one{column-gap:.35em}}
-
-/* option groups that wrap keep a 1px line between their rows as well as their columns: the buttons sit 1px apart on the line colour
-   instead of drawing right borders (owner 2026-10-14, R7.13; tests/kit_seg_rows.py) */
-.evc-app .seg-ctl{gap:1px;background:var(--line)}
-.evc-app .seg-ctl button,.evc-app .seg-ctl button:last-child{border-right:0}

@@ -243,7 +243,7 @@
    and the speed buttons share one height and one centre line, and the label 速度 sits beside its buttons */
 #ppo-app .ctl:has(>.seg-ctl[data-key$="pd"]),#ppo-app .ctl:has(.seg-ctl[data-key$="pd"]){display:flex;align-items:center;gap:6px;margin:0}
 #ppo-app .ctl:has(.seg-ctl[data-key$="pd"])>.lbl{margin:0}
-#ppo-app .seg-ctl[data-key$="pd"] button{height:30px;padding-top:0;padding-bottom:0}
+#ppo-app .seg-ctl[data-key$="pd"] button{height:26px;padding-top:0;padding-bottom:0}   /* the kit's tray adds 3 px above and below its keys (2026-10-22 refit): 26 px keys keep the control 32 px tall, as tall as the button beside it */
 #ppo-app :has(>.ctl .seg-ctl[data-key$="pd"])>.btn{height:32px;padding-top:0;padding-bottom:0}
 
 /* ---------- 知识梳理: a formula on its own line; its pieces stay close and wrap only between them, so nothing scrolls sideways ---------- */
@@ -304,3 +304,5 @@
   #ppo-rail .ppo-eq-n{grid-column:1 / -1;max-width:none}
   #ppo-rail .ppo-eq-n:empty{display:none}
 }
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.ppo-st-title{font-variant-numeric:tabular-nums}

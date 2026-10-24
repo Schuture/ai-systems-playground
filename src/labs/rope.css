@@ -136,8 +136,6 @@
   .rp-stage>.rp-metrics{order:5}
   .rp-stage>.math{order:6}
 }
-#rp-ctl-base .seg-ctl button:nth-child(2n){border-right:0}
-#rp-ctl-base .seg-ctl button:nth-child(-n+2){border-bottom:1px solid var(--line)}
 .rp-lk{display:inline;white-space:normal;text-align:inherit}
 .rp-lk:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 /* Show the math as a few blocks (the owner, 2026-10-09, H1/H2): a lead line in words, the formula typeset, then the numbers; a hairline

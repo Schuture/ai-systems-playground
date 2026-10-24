@@ -340,11 +340,11 @@ const SIX=id=>STEPS.findIndex(s=>s.id===id);
 
 function obsSteps(r){
   const T=r.T, t=r.t, p0=T.pi[0], p=r.pi;
-  if(t===0) return tx(`<p><b>Step 0: nothing trained yet.</b> The four answers still have the SFT model’s probabilities.</p>`,
+  if(t===0) return tx(`<p class="dpo-runl"><b>Step 0: nothing trained yet.</b> The four answers still have the SFT model’s probabilities.</p>`,
                       `<p><b>第 0 步：还没训练。</b>四个回答还是 SFT 模型给的概率。</p>`);
   /* the result: A's change is the one number (the bars and the cards have the rest), B's in words (R6.20) */
-  let h=tx(`<p><b>After ${stepsTxt(t)}, π(A) (how often the model gives A) ${chg(p0[0],p[0])}, and π(B) ${moveW(p0[1],p[1])}.</b></p>`,
-           `<p><b>训练 ${t} 步后，π(A)（模型给出 A 的概率）${chg(p0[0],p[0])}，π(B) ${moveW(p0[1],p[1])}。</b></p>`);
+  let h=tx(`<p class="dpo-runl"><b>After ${stepsTxt(t)}, π(A) (how often the model gives A) ${chg(p0[0],p[0])}, and π(B) ${moveW(p0[1],p[1])}.</b></p>`,
+           `<p class="dpo-runl"><b>训练 ${t} 步后，π(A)（模型给出 A 的概率）${chg(p0[0],p[0])}，π(B) ${moveW(p0[1],p[1])}。</b></p>`);
   if(S.ds!=='one'||S.mode!=='sep') return h;   // the rest of this part is about C and D outside the one pair, with separate logits
   const pk=peakOf(T,2,t), up=p[2]>p0[2]+5e-4, dn=p[2]<p0[2]-5e-4, still=pk.k===t;
   const q=p[2]/p0[2];   // C and D keep their logits, so the softmax scales both by the same factor
@@ -385,7 +385,7 @@ function obsBeta(r){
   const tried=bs.length<3||t===0?'':(ks.every(k=>k===ks[0])?tx(`<p class="small">The β values you tried, each after ${stepsTxt(t)}: ${t===1?'they all give the same model':'so far they all give almost the same model'}.</p>`,`<p class="small">已试过的 β（都训练 ${t} 步）：${t===1?'模型都一样':'到目前为止，模型都几乎一样'}。</p>`)
     :(!falls(q.map(x=>x.kl))?'':(falls(q.map(x=>x.pi[0]))?tx(`<p class="small">The β values you tried, each after ${stepsTxt(t)}: the larger β, the lower the KL and the lower π(A).</p>`,`<p class="small">已试过的 β（都训练 ${t} 步）：β 越大，KL 越小，π(A) 也越低。</p>`)
       :tx(`<p class="small">The β values you tried, each after ${stepsTxt(t)}: the larger β, the lower the KL.</p>`,`<p class="small">已试过的 β（都训练 ${t} 步）：β 越大，KL 越小。</p>`))));
-  if(t===0) return tx(`<p><b>Step 0: nothing trained yet</b>, so every β still shows the SFT model.</p>`,`<p><b>第 0 步：还没训练</b>，所以任何 β 下都还是 SFT 模型。</p>`);
+  if(t===0) return tx(`<p class="dpo-runl"><b>Step 0: nothing trained yet</b>, so every β still shows the SFT model.</p>`,`<p class="dpo-runl"><b>第 0 步：还没训练</b>，所以任何 β 下都还是 SFT 模型。</p>`);
   const k=klS(r.kl), k0=klS(base.kl);
   if(b===0.1) return tx(`<p><b>β = 0.1 is the initial setup:</b> after ${stepsTxt(t)}, the KL from the SFT model is ${k} nats. Pick another β to compare.</p>`,`<p><b>β = 0.1 是初始设置：</b>训练 ${t} 步后，离 SFT 模型的 KL 是 ${k} nats。换一个 β 来对比。</p>`)+tried;
   /* the result: the KL against the initial setup's is the one key number (a pair); π(A) in words */
@@ -403,8 +403,8 @@ function obsBeta(r){
 }
 function obsShared(r){
   const t=r.t, p0=r.T.pi[0], sep=compute({...S,mode:'sep'});
-  if(S.mode!=='shared') return tx(`<p><b>Separate logits: after ${stepsTxt(t)}, π(A) ${chg(p0[0],r.pi[0])}.</b> Switch to the shared weight to compare.</p>`,`<p><b>各自的 logit：训练 ${t} 步后，π(A) ${chg(p0[0],r.pi[0])}。</b>切换到共享权重来对比。</p>`);
-  if(t===0) return tx(`<p><b>Step 0: nothing trained yet.</b> The shared weight w is 0, so every logit is still its logit before training.</p>`,`<p><b>第 0 步：还没训练。</b>共享权重 w 是 0，每个 logit 都还是训练前的值。</p>`);
+  if(S.mode!=='shared') return tx(`<p class="dpo-runl"><b>Separate logits: after ${stepsTxt(t)}, π(A) ${chg(p0[0],r.pi[0])}.</b> Switch to the shared weight to compare.</p>`,`<p class="dpo-runl"><b>各自的 logit：训练 ${t} 步后，π(A) ${chg(p0[0],r.pi[0])}。</b>切换到共享权重来对比。</p>`);
+  if(t===0) return tx(`<p class="dpo-runl"><b>Step 0: nothing trained yet.</b> The shared weight w is 0, so every logit is still its logit before training.</p>`,`<p class="dpo-runl"><b>第 0 步：还没训练。</b>共享权重 w 是 0，每个 logit 都还是训练前的值。</p>`);
   const pk=peakOf(r.T,0,t), below=r.pi[0]<p0[0], falling=pk.k<t;   // before A's peak it is still rising (R6.10)
   /* the result: A's change is the one number; separate logits, A's peak, D's rise and the loss in words. The logit rises (w × detail
      level) are on the bars, w in Show the math, the loss on its card (R6.20) */
@@ -599,10 +599,10 @@ function sandboxHTML(){
 }
 function insightHTML(r){
   const i=presetNow(), t=r.t, p0=r.T.pi[0], p=r.pi;
-  if(t===0) return tx('<p><b>Step 0: nothing trained yet</b>; the model is still the SFT model.</p>','<p><b>第 0 步：还没训练</b>，模型还是 SFT 模型。</p>');
+  if(t===0) return tx('<p class="dpo-runl"><b>Step 0: nothing trained yet</b>; the model is still the SFT model.</p>','<p class="dpo-runl"><b>第 0 步：还没训练</b>，模型还是 SFT 模型。</p>');
   /* the result: A's change is the one number, B's in words; the KL and the rest are on the metric cards (R6.20) */
-  let h=tx(`<p><b>After ${stepsTxt(t)}, π(A) ${chg(p0[0],p[0])}, and π(B) ${moveW(p0[1],p[1])}.</b></p>`,
-           `<p><b>训练 ${t} 步后，π(A) ${chg(p0[0],p[0])}，π(B) ${moveW(p0[1],p[1])}。</b></p>`);
+  let h=tx(`<p class="dpo-runl"><b>After ${stepsTxt(t)}, π(A) ${chg(p0[0],p[0])}, and π(B) ${moveW(p0[1],p[1])}.</b></p>`,
+           `<p class="dpo-runl"><b>训练 ${t} 步后，π(A) ${chg(p0[0],p[0])}，π(B) ${moveW(p0[1],p[1])}。</b></p>`);
   if(i<0) return h+tx('<p class="small">The current settings match none of these scenarios.</p>','<p class="small">现在的设置和这几个场景都不一样。</p>');
   const pw=r.wAB;
   if(S.mode==='shared'){const pk=peakOf(r.T,0,t), most=p[3]>0.5;

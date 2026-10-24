@@ -1,118 +1,173 @@
+/* ---------- the site's look (全站精装修, 2026-10-22, the owner chose 方向一 知识树) ----------
+   Fonts come with the site (static/fonts, SIL Open Font License 1.1, see OFL-*.txt there): Figtree for text and labels, Bricolage
+   Grotesque for headings and large numbers, JetBrains Mono only for code. Chinese uses the system's own font (苹方, 微软雅黑, 思源黑体).
+   Each file holds one script's letters; the browser fetches a file only when the page shows one of them. The second address serves a
+   page one folder down (the tests wrap a build in out/<lab>/); on the site and in the Artifact the first one loads. */
+@font-face{font-family:"Figtree";font-style:normal;font-weight:300 900;font-display:swap;src:url(static/fonts/figtree-latin.woff2) format("woff2"),url(../static/fonts/figtree-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Figtree";font-style:normal;font-weight:300 900;font-display:swap;src:url(static/fonts/figtree-latin-ext.woff2) format("woff2"),url(../static/fonts/figtree-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Figtree";font-style:italic;font-weight:300 900;font-display:swap;src:url(static/fonts/figtree-italic-latin.woff2) format("woff2"),url(../static/fonts/figtree-italic-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Figtree";font-style:italic;font-weight:300 900;font-display:swap;src:url(static/fonts/figtree-italic-latin-ext.woff2) format("woff2"),url(../static/fonts/figtree-italic-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Figtree's digits in their even-width form (tools/tab_digits.py): --font-mono puts them first, so labels and numbers keep figures of one width as IBM Plex Mono gave them */
+@font-face{font-family:"Figtree Tab";font-style:normal;font-weight:300 900;font-display:swap;src:url(static/fonts/figtree-tab-digits.woff2) format("woff2"),url(../static/fonts/figtree-tab-digits.woff2) format("woff2");unicode-range:U+0030-0039}
+@font-face{font-family:"Bricolage Grotesque";font-style:normal;font-weight:400 800;font-display:swap;src:url(static/fonts/bricolage-grotesque-latin.woff2) format("woff2"),url(../static/fonts/bricolage-grotesque-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Bricolage Grotesque";font-style:normal;font-weight:400 800;font-display:swap;src:url(static/fonts/bricolage-grotesque-latin-ext.woff2) format("woff2"),url(../static/fonts/bricolage-grotesque-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:400 700;font-display:swap;src:url(static/fonts/jetbrains-mono-latin.woff2) format("woff2"),url(../static/fonts/jetbrains-mono-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:400 700;font-display:swap;src:url(static/fonts/jetbrains-mono-latin-ext.woff2) format("woff2"),url(../static/fonts/jetbrains-mono-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:400 700;font-display:swap;src:url(static/fonts/jetbrains-mono-greek.woff2) format("woff2"),url(../static/fonts/jetbrains-mono-greek.woff2) format("woff2");unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF}
+/* colours: a white page, leaf-grey fills, ink with a touch of green. The tree's colours (--tr-*) name the parts of the knowledge tree, and a
+   lab page wears its branch's colour (--branch, from html[data-limb], set by the router): the branch crumb, the step numbers, the slider
+   fill, the selected option and the Next button. On the home page a tile or a branch button carries its own data-limb. The data colours
+   (--c-*) are unchanged and keep their meaning in every lab. */
 :root{
-  --bg:#F2F4F7; --surface:#FFFFFF; --surface-2:#E9EDF2; --sunken:#E3E8EE;
-  --ink:#0D141E; --ink-2:#3C4858; --ink-3:#687485; --line:#CBD3DD; --line-2:#DDE3EA;
-  --grid:rgba(13,20,30,.05);
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F3F6F2; --sunken:#E9EEE7; --raised:#FFFFFF;
+  --ink:#16201B; --ink-2:#47534C; --ink-3:#66726B; --line:#D9E0D6; --line-2:#E7ECE4;
+  --grid:transparent;
   --c-weights:#2855C5; --c-kv:#D38700; --c-overhead:#7153E6; --c-oom:#CF2F2A; --c-ok:#0F7F59;
   --tr-wood:#8E7358; --tr-bark:#D8C6AC; --tr-trunk:#6A5341; --tr-build:#B03F74; --tr-eval:#3D4A5C; --tr-use:#0D7A86; --tr-on:#FFFFFF;
   --c-oom-soft:rgba(207,47,42,.10); --c-ok-soft:rgba(15,127,89,.10);
   --on-weights:#FFFFFF; --on-kv:#1A1200; --kv-tick:rgba(26,18,0,.32);
-  --shadow:0 1px 0 rgba(13,20,30,.04),0 10px 28px -14px rgba(13,20,30,.22);
-  --font-ui:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC",sans-serif;
-  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono","PingFang SC","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC",monospace;
-  --r:4px;
+  --shadow:0 1px 2px rgba(22,32,27,.06),0 12px 32px -18px rgba(22,32,27,.30);
+  --shadow-sm:0 1px 2px rgba(22,32,27,.08);
+  --branch:var(--ink); --branch-ink:#FFFFFF;
+  --font-disp:"Bricolage Grotesque","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC","Source Han Sans SC",system-ui,sans-serif;
+  --font-ui:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC","Source Han Sans SC",sans-serif;
+  /* labels and numbers: the text font with even-width figures (it was IBM Plex Mono); a mark the text font lacks (✓ ⊘ → ₂) comes from the
+     same monospace fonts as before, one character wide, so a legend or a log line keeps the width it was fitted to */
+  --font-mono:"Figtree Tab","Figtree",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC","Source Han Sans SC",monospace;
+  --font-code:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC","Source Han Sans SC",monospace;
+  --r:8px;
 }
+/* the branch colour as the lab page uses it: the tree's own hue, a little deeper where it carries small text (wood and teal reach 4.5:1) */
+[data-limb="root"]{--branch:#7E644B} [data-limb="trunk"]{--branch:var(--tr-trunk)} [data-limb="build"]{--branch:var(--tr-build)}
+[data-limb="eval"]{--branch:var(--tr-eval)} [data-limb="use"]{--branch:#0B7380}
+:root,[data-limb]{--branch-soft:color-mix(in srgb,var(--branch) 11%,var(--surface))}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --bg:#0A0F15; --surface:#10171F; --surface-2:#18212B; --sunken:#0C1218;
-    --ink:#E6EBF1; --ink-2:#AAB5C3; --ink-3:#778496; --line:#2A3544; --line-2:#1D2732;
-    --grid:rgba(230,235,241,.045);
+    --bg:#0F1512; --surface:#151D19; --surface-2:#1B2520; --sunken:#222D27; --raised:#2C3832;
+    --ink:#E7EEE9; --ink-2:#B1BFB6; --ink-3:#808F86; --line:#2E3B34; --line-2:#24302A;
     --c-weights:#5A8AFF; --c-kv:#EFAE36; --c-overhead:#9B85FF; --c-oom:#FF5D52; --c-ok:#2EC38C;
-    --tr-wood:#A88E72; --tr-bark:#3E342B; --tr-trunk:#D2BA9E; --tr-build:#E6819F; --tr-eval:#B3BECC; --tr-use:#4CC4CB; --tr-on:#0A0F15;
+    --tr-wood:#A88E72; --tr-bark:#3E342B; --tr-trunk:#D2BA9E; --tr-build:#E6819F; --tr-eval:#B3BECC; --tr-use:#4CC4CB; --tr-on:#0F1512;
     --c-oom-soft:rgba(255,93,82,.14); --c-ok-soft:rgba(46,195,140,.13);
     --on-weights:#06101F; --on-kv:#1A1200; --kv-tick:rgba(26,18,0,.34);
-    --shadow:0 1px 0 rgba(0,0,0,.35),0 12px 30px -14px rgba(0,0,0,.7);
+    --shadow:0 1px 1px rgba(0,0,0,.35),0 14px 30px -16px rgba(0,0,0,.8); --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --branch-ink:#0F1512;
   }
+  :root:not([data-theme="light"]) :is([data-limb="root"]),:root:not([data-theme="light"])[data-limb="root"]{--branch:var(--tr-wood)}
+  :root:not([data-theme="light"]) :is([data-limb="use"]),:root:not([data-theme="light"])[data-limb="use"]{--branch:var(--tr-use)}
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#0A0F15; --surface:#10171F; --surface-2:#18212B; --sunken:#0C1218;
-  --ink:#E6EBF1; --ink-2:#AAB5C3; --ink-3:#778496; --line:#2A3544; --line-2:#1D2732;
-  --grid:rgba(230,235,241,.045);
+  --bg:#0F1512; --surface:#151D19; --surface-2:#1B2520; --sunken:#222D27; --raised:#2C3832;
+  --ink:#E7EEE9; --ink-2:#B1BFB6; --ink-3:#808F86; --line:#2E3B34; --line-2:#24302A;
   --c-weights:#5A8AFF; --c-kv:#EFAE36; --c-overhead:#9B85FF; --c-oom:#FF5D52; --c-ok:#2EC38C;
-  --tr-wood:#A88E72; --tr-bark:#3E342B; --tr-trunk:#D2BA9E; --tr-build:#E6819F; --tr-eval:#B3BECC; --tr-use:#4CC4CB; --tr-on:#0A0F15;
+  --tr-wood:#A88E72; --tr-bark:#3E342B; --tr-trunk:#D2BA9E; --tr-build:#E6819F; --tr-eval:#B3BECC; --tr-use:#4CC4CB; --tr-on:#0F1512;
   --c-oom-soft:rgba(255,93,82,.14); --c-ok-soft:rgba(46,195,140,.13);
   --on-weights:#06101F; --on-kv:#1A1200; --kv-tick:rgba(26,18,0,.34);
-  --shadow:0 1px 0 rgba(0,0,0,.35),0 12px 30px -14px rgba(0,0,0,.7);
+  --shadow:0 1px 1px rgba(0,0,0,.35),0 14px 30px -16px rgba(0,0,0,.8); --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --branch-ink:#0F1512;
 }
+:root[data-theme="dark"] :is([data-limb="root"]),:root[data-theme="dark"][data-limb="root"]{--branch:var(--tr-wood)}
+:root[data-theme="dark"] :is([data-limb="use"]),:root[data-theme="dark"][data-limb="use"]{--branch:var(--tr-use)}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:15px;line-height:1.55}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
 button,input,select{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+:focus-visible{outline:2px solid var(--branch);outline-offset:2px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .wrap{max-width:1320px;margin-inline:auto;padding-inline:clamp(16px,3.5vw,40px)}
 .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
-.eyebrow{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+code,pre,kbd,samp{font-family:var(--font-code)}
+.eyebrow{font-family:var(--font-mono);font-size:13px;font-weight:650;letter-spacing:.01em;line-height:1.37;color:var(--ink-3)}   /* a 13 px line as tall as the old 11.5 px one (17.8 px), so what was fitted around it keeps its height */
 .muted{color:var(--ink-3)}
 .small{font-size:13px}
 h1,h2,h3{text-wrap:balance}
-h2{font-size:clamp(26px,3.2vw,36px);font-stretch:112%;font-weight:720;line-height:1.08;letter-spacing:-.01em;margin:8px 0 10px}
+h1,h2,h3,.labtitle,.pr-h,.tile-q,.pe-name,.th-name,.ph,.rh{font-family:var(--font-disp)}
+h2{font-size:clamp(26px,3vw,36px);font-weight:700;line-height:1.15;letter-spacing:-.015em;margin:8px 0 10px}
+html[lang^="zh"] :is(h1,h2,h3,.labtitle,.pr-h,.tile-q,.pe-name,.th-name,.ph,.rh){font-weight:700;letter-spacing:0}
 
 /* top bar */
 .topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);border-bottom:1px solid var(--line-2)}
-@supports (backdrop-filter:blur(8px)){.topbar{background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(10px)}}
+@supports (backdrop-filter:blur(8px)){.topbar{background:color-mix(in srgb,var(--bg) 95%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(16px);backdrop-filter:saturate(1.4) blur(16px)}}
 .topbar .wrap{display:flex;align-items:center;gap:16px;height:58px}
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:720;font-stretch:112%;white-space:nowrap;font-size:16px;min-width:0}
+/* the brand: a small tree in the tree's colours (body.html), the name in the heading face */
+.brand{display:flex;align-items:center;gap:9px;text-decoration:none;font-family:var(--font-disp);font-weight:700;letter-spacing:-.012em;white-space:nowrap;font-size:18px;line-height:1.1;min-width:0}
 .brand span{overflow:hidden;text-overflow:ellipsis}
-.brand svg{width:30px;height:20px;flex:none}
+.brand svg{width:26px;height:26px;flex:none}
+/* the logo: the knowledge tree itself, a wood trunk with the two big branches (building models, using models) and evaluation between them */
+.logo path{fill:none;stroke-linecap:round}
+.logo .lg-t{stroke:var(--tr-trunk);stroke-width:2.8}
+.logo .lg-b{stroke:var(--tr-build);stroke-width:2.4}.logo .lg-bd{fill:var(--tr-build)}
+.logo .lg-u{stroke:var(--tr-use);stroke-width:2.4}.logo .lg-ud{fill:var(--tr-use)}
+.logo .lg-e{stroke:var(--tr-eval);stroke-width:2.2}.logo .lg-ed{fill:var(--tr-eval)}
 .nav{display:flex;gap:2px;margin-left:auto;align-items:center;flex:none}
-.nav a{padding:6px 10px;border-radius:var(--r);text-decoration:none;color:var(--ink-2);font-size:14px;white-space:nowrap}
+.nav a{padding:6px 11px;border-radius:var(--r);text-decoration:none;color:var(--ink-2);font-size:14.5px;font-weight:600;white-space:nowrap}
 .nav a:hover{background:var(--surface-2);color:var(--ink)}
-.icon-btn{width:34px;height:34px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:5px;background:var(--surface);cursor:pointer;margin-left:6px;flex:none}
-@media (max-width:680px){.nav a.hide-sm{display:none}.brand span{font-size:15px}}
-@media (max-width:440px){.nav a.hide-xs{display:none}.brand span{font-size:14px}}
-.langsw{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden;margin-left:6px;flex:none}
-.langsw button{border:0;background:var(--surface);padding:5px 9px;font-size:12.5px;font-weight:620;color:var(--ink-2);cursor:pointer;line-height:1.2}
+.icon-btn{width:34px;height:34px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;margin-left:6px;flex:none}
+.icon-btn:hover{background:var(--surface-2)}
+@media (max-width:680px){.nav a.hide-sm{display:none}}
+/* phones: the name takes two short lines rather than losing its end to “…” */
+@media (max-width:560px){.brand span{white-space:normal;max-width:6.3em;font-size:15px;line-height:1.05}}
+@media (max-width:440px){.nav a.hide-xs{display:none}}
+.langsw{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-left:6px;flex:none}
+.langsw button{border:0;background:var(--surface);padding:5px 10px;font-size:13px;font-weight:650;color:var(--ink-2);cursor:pointer;line-height:1.2}
 .langsw button+button{border-left:1px solid var(--line)}
 .langsw button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-html[lang^="zh"] .hero h1{line-height:1.12;letter-spacing:0}
+html[lang^="zh"] .hero h1{line-height:1.15;letter-spacing:0}
 html[lang^="zh"] h2,html[lang^="zh"] .labtitle{line-height:1.2;letter-spacing:0}
-html[lang^="zh"] .eyebrow,html[lang^="zh"] .meter-title{letter-spacing:.04em}
+html[lang^="zh"] .eyebrow{letter-spacing:.02em}
+html[lang^="zh"] .meter-title{letter-spacing:0}   /* untracked, so a long figure title still leaves room for the status pill beside it */
 html[lang^="zh"] .eyebrow,html[lang^="zh"] .metric .k{text-transform:none}
 
-/* buttons */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:5px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);font-weight:650;font-size:14.5px;text-decoration:none;cursor:pointer;line-height:1.2}
+/* buttons: ink, rounded; inside a lab the guided cards' own buttons wear the branch colour (below, with the cards) */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:12px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);font-weight:650;font-size:14.5px;text-decoration:none;cursor:pointer;line-height:1.2;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 6px 14px -8px rgba(22,32,27,.55);transition:background-color .15s,border-color .15s,box-shadow .15s}
 .btn:hover{background:var(--ink-2);border-color:var(--ink-2)}
-.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
-.btn.ghost:hover{border-color:var(--ink);background:var(--surface)}
-.btn.sm{padding:7px 11px;font-size:13px}
+.btn.ghost{background:var(--surface);color:var(--ink);border-color:var(--line);box-shadow:none}
+.btn.ghost:hover{border-color:var(--ink-3);background:var(--surface-2)}
+.btn.sm{padding:7px 11px;font-size:13px;border-radius:10px}   /* buttons keep the sizes the labs were laid out with: a row of keys and buttons that fitted on one line still does */
 .btn:disabled{opacity:.45;cursor:not-allowed}
-.linkbtn{background:none;border:0;padding:0;color:var(--ink-2);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:13px}
+.linkbtn{background:none;border:0;padding:0;color:var(--ink-2);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:13.5px}
+.linkbtn:hover{color:var(--ink)}
 .cta-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px}
-.graph{background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:14px 14px;background-position:-1px -1px}
-.status{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11.5px;font-weight:600;letter-spacing:.02em;padding:5px 9px;border-radius:3px;border:1px solid currentColor;white-space:nowrap}
+/* a panel: white, a hairline and a soft shadow, round corners (no graph paper behind the figures any more) */
+.panel{background:var(--surface);border:1px solid var(--line-2);border-radius:18px;box-shadow:var(--shadow)}
+.status{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:0;padding:4px 11px;border-radius:999px;border:1.5px solid currentColor;white-space:nowrap}
 .status.ok{color:var(--c-ok);background:var(--c-ok-soft)}
 .status.bad{color:var(--c-oom);background:var(--c-oom-soft)}
 
-/* sliders: fader caps */
+/* sliders: a rounded track filled in the branch colour up to a round thumb */
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;margin:0;cursor:pointer}
 input[type=range]:disabled{cursor:not-allowed;opacity:.45}
-input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--ink) 0 var(--fill,0%),var(--line) var(--fill,0%) 100%)}
-input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--line)}
-input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--ink)}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:24px;margin-top:-10px;border-radius:3px;background-color:var(--ink);background-image:linear-gradient(transparent 44%,var(--surface) 44% 56%,transparent 56%);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--ink)}
-input[type=range]::-moz-range-thumb{width:10px;height:20px;border-radius:3px;background-color:var(--ink);background-image:linear-gradient(transparent 44%,var(--surface) 44% 56%,transparent 56%);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--ink)}
-input[type=range]:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:2px}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:6px;background:linear-gradient(90deg,var(--branch) 0 var(--fill,0%),var(--sunken) var(--fill,0%) 100%)}
+input[type=range]::-moz-range-track{height:6px;border-radius:6px;background:var(--sunken)}
+input[type=range]::-moz-range-progress{height:6px;border-radius:6px;background:var(--branch)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;margin-top:-7px;border-radius:50%;background:var(--raised);border:2px solid var(--branch);box-shadow:0 1px 4px rgba(22,32,27,.28)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--raised);border:2px solid var(--branch);box-shadow:0 1px 4px rgba(22,32,27,.28)}
+input[type=range]:hover::-webkit-slider-thumb{box-shadow:0 0 0 5px var(--branch-soft),0 1px 4px rgba(22,32,27,.28)}
+input[type=range]:focus-visible{outline:2px solid var(--branch);outline-offset:4px;border-radius:6px}
 
 /* hero */
 .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:center;padding-block:clamp(32px,5vw,64px) clamp(24px,3vw,40px)}
 @media (max-width:920px){.hero{grid-template-columns:minmax(0,1fr)}}
 .hero>*,.map-wrap>*,.why-grid>*,.bench>*,.connect-grid>*{min-width:0}
-.hero h1{font-size:clamp(38px,5.4vw,66px);line-height:.98;font-weight:780;font-stretch:118%;letter-spacing:-.018em;margin:14px 0 18px}
+.hero h1{font-size:clamp(40px,5.2vw,68px);line-height:1.04;font-weight:750;letter-spacing:-.022em;margin:14px 0 18px}
+/* the line above the title: the tree's four colours and what the site holds */
+.kicker{display:flex;align-items:center;gap:10px;margin:0 0 14px;font:650 14px/1.35 var(--font-ui);color:var(--ink-2)}
+.kicker i{display:inline-flex;gap:4px;flex:none}
+.kicker b{width:9px;height:9px;border-radius:50%;background:var(--tr-trunk)}
+.kicker b:nth-child(2){background:var(--tr-build)} .kicker b:nth-child(3){background:var(--tr-use)} .kicker b:nth-child(4){background:var(--tr-eval)}
 .lede{font-size:clamp(16px,1.45vw,18px);color:var(--ink-2);max-width:32em;margin:0 0 26px}
 .meter{padding:18px 18px 16px}
 .meter-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
-.meter-title{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.03em;color:var(--ink-3)}
-.meter-sub{font-weight:650;margin-top:2px;font-size:15px}
-.ctl-label{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;font-weight:600;color:var(--ink-2)}
-.ctl-label output,.ctl output{font-family:var(--font-mono);font-weight:500;color:var(--ink);font-size:13px}
-.ticks{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);margin:-2px 3px 0}
-.meter-read{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-2);margin:12px 0 0;line-height:1.6}
-.hint{font-size:13px;color:var(--ink-3);margin:6px 0 0}
+.meter-title{font-family:var(--font-mono);font-size:13px;font-weight:650;letter-spacing:.01em;line-height:1.37;color:var(--ink-3)}   /* 17.8 px a line, as before */
+.meter-sub{font-weight:650;margin-top:2px;font-size:15px;line-height:1.45;letter-spacing:-.01em}   /* a hair tighter: a headline that filled its line in the old font still fits it in Figtree */
+.ctl-label{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13.5px;font-weight:650;color:var(--ink-2)}
+.ctl-label output,.ctl output{font-family:var(--font-mono);font-weight:700;color:var(--ink);font-size:13.5px}
+.ticks{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin:-2px 3px 0}
+.meter-read{font-family:var(--font-mono);font-size:13.5px;color:var(--ink-2);margin:12px 0 0;line-height:1.6}
+.hint{font-size:13.5px;color:var(--ink-3);margin:6px 0 0}
 
 /* resource bars */
 .bar{position:relative;height:46px;margin-top:22px}
@@ -136,8 +191,9 @@ input[type=range]:focus-visible{outline:2px solid var(--ink);outline-offset:4px;
 .axis{position:relative;height:16px;margin-top:6px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3)}
 .axis span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 .axis span:first-child{transform:none}
-.legend-row{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--font-mono);font-size:11px;color:var(--ink-2);margin-top:12px}
-.sw{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:6px;border:1px solid var(--line)}
+.legend-row{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--font-mono);font-size:12.5px;line-height:1.36;color:var(--ink-2);margin-top:12px}   /* a line as tall as the old 11 px one (17 px), so a legend that wraps takes the room the stages were fitted to */
+:where(html[lang^="zh"]) .legend-row{font-size:11.5px;line-height:1.48}   /* Chinese characters are 1 em wide in any font: at 12 px and up, 20 legends in 6 labs would wrap onto another line; :where so a lab's own legend size still wins */
+.sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:6px;border:1px solid var(--line)}
 .sw.w{background:var(--c-weights);border-color:transparent}.sw.kv{background:var(--c-kv);border-color:transparent}.sw.oh{background:var(--c-overhead);border-color:transparent}
 .sw.free{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line) 3px 4px)}
 .sw.res{background:repeating-linear-gradient(135deg,var(--surface-2) 0 2px,var(--line) 2px 3px)}
@@ -160,20 +216,20 @@ input[type=range]:focus-visible{outline:2px solid var(--ink);outline-offset:4px;
 .paths{margin-top:14px}
 .pl-lead{margin:0 0 12px;font-size:14px;color:var(--ink-2);max-width:62em}
 .plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.pentry{position:relative;display:grid;gap:6px 16px;padding:11px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0}
-.pentry.sel{border-color:var(--ink);box-shadow:inset 3px 0 0 var(--ink)}
+.pentry{position:relative;display:grid;gap:6px 16px;padding:14px 14px;border:1px solid var(--line-2);border-radius:16px;background:var(--surface);box-shadow:var(--shadow-sm);min-width:0;transition:border-color .15s,box-shadow .15s}
+.pentry.sel{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 /* the whole entry is one button (it shows the path on the tree); the start link and the progress note sit above it */
-.pathchip.pe-hit,.pathchip.pe-hit[aria-pressed="true"]{position:absolute;inset:0;z-index:1;margin:0;padding:0;border:0;border-radius:8px;background:transparent;cursor:pointer}
-.pentry:has(.pe-hit:hover){border-color:var(--ink-2)}
+.pathchip.pe-hit,.pathchip.pe-hit[aria-pressed="true"]{position:absolute;inset:0;z-index:1;margin:0;padding:0;border:0;border-radius:16px;background:transparent;cursor:pointer}
+.pentry:has(.pe-hit:hover){border-color:var(--ink-3);box-shadow:var(--shadow)}
 .pentry.sel:has(.pe-hit:hover){border-color:var(--ink)}
 .pe-hit:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .pe-go .btn,.pe-prog{position:relative;z-index:2}
 .pentry>*{min-width:0}
 .pe-head{display:flex;flex-direction:column;gap:2px}
-.pe-name{margin:0;font-size:16px;font-weight:700;font-stretch:104%;line-height:1.25}
-.pe-size{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3)}
+.pe-name{margin:0;font-size:18px;font-weight:700;line-height:1.25}
+.pe-size{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-3)}
 .pe-prog{font-size:12.5px;font-weight:600;color:var(--c-ok)}
-.pe-f{margin:0;font-size:13.5px;line-height:1.45;color:var(--ink-2)}
+.pe-f{margin:0;font-size:14px;line-height:1.5;color:var(--ink-2)}
 .pe-k{font-weight:650;color:var(--ink)}
 .pe-go{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 .pe-go .btn{white-space:nowrap}
@@ -181,7 +237,7 @@ input[type=range]:focus-visible{outline:2px solid var(--ink);outline-offset:4px;
 .pl-rec{margin:10px 0 0;font-size:13px;color:var(--ink-3)}
 @media (min-width:1180px){
   .pl-cols,.pentry{grid-template-columns:10.5rem minmax(0,.9fr) minmax(0,1.15fr) minmax(0,.85fr) 15rem;column-gap:16px}
-  .pl-cols{display:grid;padding:0 15px 4px;font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3)}
+  .pl-cols{display:grid;padding:0 15px 6px;font-family:var(--font-mono);font-size:12.5px;font-weight:650;color:var(--ink-3)}
   .pentry .pe-k{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 }
 @media (max-width:1179px){
@@ -198,7 +254,7 @@ input[type=range]:focus-visible{outline:2px solid var(--ink);outline-offset:4px;
 .map-canvas{padding:8px 8px 10px;position:relative}
 .map-scroll{overflow-x:auto}
 #mapSvg{display:block;width:100%;min-width:660px;height:auto}
-.map-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-family:var(--font-mono);font-size:11px;color:var(--ink-2);padding:4px 8px 0}
+.map-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-2);padding:4px 8px 0}
 .map-legend span{display:inline-flex;align-items:center;gap:6px}
 .map-panel{padding:16px 16px 18px;min-height:200px}
 .ph{font-size:20px;font-stretch:108%;font-weight:700;line-height:1.2;margin:6px 0 6px}
@@ -249,8 +305,8 @@ a.lrow:hover .lq{text-decoration:underline}
 .bnum{font-family:var(--font-mono);font-size:10.5px;font-weight:600;fill:var(--ink)}
 .way{fill:var(--ink-3)}
 .wayt{font-family:var(--font-mono);font-size:11px;fill:var(--ink-3);font-style:italic}
-.tip{position:fixed;z-index:60;max-width:280px;background:var(--ink);color:var(--bg);padding:9px 11px;border-radius:5px;font-size:13px;line-height:1.4;pointer-events:none;transform:translate(-50%,calc(-100% - 12px));box-shadow:var(--shadow)}
-.tip .m{font-family:var(--font-mono);font-size:11px;opacity:.75;margin-top:4px}
+.tip{position:fixed;z-index:60;max-width:280px;background:var(--ink);color:var(--bg);padding:9px 12px;border-radius:10px;font-size:13.5px;line-height:1.45;pointer-events:none;transform:translate(-50%,calc(-100% - 12px));box-shadow:var(--shadow)}
+.tip .m{font-family:var(--font-mono);font-size:12px;opacity:.75;margin-top:4px}
 
 /* approach */
 .why-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px}
@@ -258,14 +314,17 @@ a.lrow:hover .lq{text-decoration:underline}
 .why{padding:18px}
 .why h3{font-size:18px;font-stretch:108%;margin:0 0 6px}
 .why p{color:var(--ink-2);margin:0;font-size:14.5px}
-.mini{background:var(--sunken);border:1px solid var(--line-2);border-radius:4px;padding:10px 12px;font-family:var(--font-mono);font-size:12.5px;margin:12px 0 0;white-space:pre;overflow-x:auto;line-height:1.55}
+.mini{background:var(--sunken);border:0;border-radius:12px;padding:10px 12px;font-family:var(--font-code);font-size:12.5px;margin:12px 0 0;white-space:pre;overflow-x:auto;line-height:1.55}
 .fid-list{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:7px;font-size:13.5px;color:var(--ink-2)}
 .fid{display:inline-block;min-width:96px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border:1px solid var(--line);border-radius:3px;margin-right:8px;color:var(--ink);background:var(--surface)}
 
 /* lab */
-.labhead{padding-block:18px 14px}
-.crumbs{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-family:var(--font-mono);font-size:12px;color:var(--ink-3)}
-.crumbs a{color:var(--ink-2);text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px}
+.labhead{padding-block:16px}
+.crumbs{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-family:var(--font-mono);font-size:13px;line-height:1.35;color:var(--ink-3)}
+.crumbs a{color:var(--ink-2);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+/* the branch in the breadcrumbs names where the lab grows on the tree, in its colour */
+.crumbs>a[href^="#map~"]{color:var(--branch);font-weight:700;text-decoration:none;background:var(--branch-soft);border-radius:999px;padding:1px 10px}
+.crumbs>a[href^="#map~"]:hover{background:color-mix(in srgb,var(--branch) 18%,var(--surface))}
 .crumbs a:hover{text-decoration-color:currentColor}
 .crumbs>.crumb-next{margin-left:auto}
 /* the previous and the next lab at the right end of the row (the owner, 2026-10-09): “← Previous lab: X   Next lab: Y →”. When the row
@@ -279,6 +338,7 @@ a.lrow:hover .lq{text-decoration:underline}
 /* phones (≤ 480 px): the row is no taller than before the previous link (v6; R7.3, the first screen): short labels on one line,
    “← 上一个  下一个 →”; the lab's name and its stop are in the hover, and in the link's text for screen readers (kept at font-size 0) */
 @media (max-width:480px){
+  .crumbs>a[href^="#map~"]{padding:0 8px}
   .crumbs .crumb-pn{flex-wrap:nowrap;gap:0 16px}
   .crumbs .crumb-pn>a{font-size:0;white-space:nowrap;overflow-wrap:normal}
   .crumbs .crumb-pn>a>span,.crumbs .crumb-pn>a::before,.crumbs .crumb-pn>a::after{font-size:12px}
@@ -288,10 +348,10 @@ a.lrow:hover .lq{text-decoration:underline}
   html[lang^="zh"] .crumbs .crumb-pn>.crumb-next::before{content:'下一个';content:'下一个'/''}
 }
 /* the next lab, below the rail card in every mode (R3.11) */
-.next-lab{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:var(--surface);display:flex;flex-direction:column;gap:4px}
-.next-lab .nl-k,.next-lab .nl-last{font-family:var(--font-mono);font-size:12px;color:var(--ink-3)}
+.next-lab{margin-top:12px;padding:12px 16px;border:1px solid var(--line-2);border-radius:14px;background:var(--surface);display:flex;flex-direction:column;gap:4px}
+.next-lab .nl-k,.next-lab .nl-last{font-family:var(--font-mono);font-size:12.5px;font-weight:650;color:var(--ink-3)}
 .next-lab .nl-go{font-weight:600;color:var(--ink);text-decoration:none;line-height:1.35}
-.next-lab .nl-done{font-family:var(--font-mono);font-size:12px;color:var(--ink)}
+.next-lab .nl-done{font-family:var(--font-mono);font-size:12.5px;font-weight:650;color:var(--ink)}
 .next-lab .nl-skip,.next-lab .nl-note{font-size:12px;color:var(--ink-3);line-height:1.4}
 /* at a branch's end: the button that joins the path of the suggested next step (round 3, item 4) */
 .next-lab .nl-join{align-self:flex-start;margin-top:4px}
@@ -301,10 +361,10 @@ a.lrow:hover .lq{text-decoration:underline}
 .next-lab-end{display:none}
 /* on phones the rail's footer moves after the bench; it shows only where the rail shows one (not before the last guided part, R3.11) */
 @media (max-width:760px){.rail .next-lab{display:none}.bench:has(.rail .next-lab)+.next-lab-end{display:block;margin-top:14px}.next-lab-end .next-lab{margin-top:0}}
-.labtitle{font-size:clamp(26px,3.3vw,40px);font-stretch:112%;font-weight:740;line-height:1.06;letter-spacing:-.01em;margin:10px 0 12px;max-width:26em}
+.labtitle{font-size:clamp(28px,3vw,40px);font-weight:700;line-height:1.1;letter-spacing:-.018em;margin:10px 0 8px;max-width:28em}
 .labmeta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .labmeta .spacer{flex:1 1 0}
-.tag{font-family:var(--font-mono);font-size:12px;padding:5px 9px;border:1px solid var(--line);border-radius:3px;color:var(--ink-2);background:var(--surface);line-height:1.3}
+.tag{font-family:var(--font-mono);font-size:13px;font-weight:600;padding:3px 10px;border:1px solid var(--line);border-radius:999px;color:var(--ink-2);background:transparent;line-height:1.3}
 button.tag{cursor:pointer}
 button.tag:hover{border-color:var(--ink);color:var(--ink)}
 .modes{display:inline-flex;border:1px solid var(--line);border-radius:5px;padding:3px;background:var(--surface);gap:2px}
@@ -315,37 +375,43 @@ button.tag:hover{border-color:var(--ink);color:var(--ink)}
 .pop ul{margin:6px 0 0;padding-left:18px;font-size:13.5px;color:var(--ink-2)}
 .pop p{margin:0 0 8px;font-size:14px;color:var(--ink-2);max-width:62em}
 .sharebox{margin-top:10px;display:grid;gap:6px;max-width:640px}
-.sharebox input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface);font-family:var(--font-mono);font-size:12px}
+.sharebox input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-family:var(--font-code);font-size:12px}
 .bench{display:grid;grid-template-columns:300px minmax(0,1fr) 290px;gap:16px;padding-block:6px 30px;align-items:start}
 @media (max-width:1180px){.bench{grid-template-columns:280px minmax(0,1fr)}.rail{grid-column:1;grid-row:1}.controls{grid-column:1;grid-row:2}.stage{grid-column:2;grid-row:1 / span 2}}
 @media (max-width:760px){.bench{grid-template-columns:minmax(0,1fr)}.rail,.stage,.controls{grid-column:auto;grid-row:auto}.rail{order:1}.stage{order:2}.controls{order:3}}
 @media (min-width:761px) and (min-height:600px){.stage{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);max-height:calc(100vh - 86px);overflow-y:auto}}
-.stage{padding:16px;container-type:inline-size}
+/* the stage is a figure, not running text: its own text keeps the compact size and spacing it was laid out with, so every stage still fits
+   the window it fitted before (the reading text in the rail and the primer is 16 px with looser lines) */
+.stage{padding:16px;container-type:inline-size;font-size:15px;line-height:1.55}
 .stage-head{display:flex;justify-content:space-between;gap:10px 14px;align-items:flex-start;flex-wrap:wrap}
 .stage-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.stage-graph{margin-top:14px;padding:12px 14px 12px;border:1px solid var(--line-2);border-radius:4px}
-.bar-label{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);margin:12px 0 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* one frame per figure: the stage panel is the frame, the figure inside it has none of its own */
+.stage-graph{margin-top:14px;padding:12px 14px 12px;border:0;border-radius:14px}
+.bar-label{font-family:var(--font-mono);font-size:12.5px;font-weight:600;color:var(--ink-2);margin:12px 0 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .bar-label:first-child{margin-top:0}
-.stage-note{font-size:13px;color:var(--ink-2);margin:12px 0 0}
+.stage-note{font-size:13.5px;color:var(--ink-2);margin:12px 0 0}
 .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
 @container (min-width:560px){.metrics{grid-template-columns:repeat(5,minmax(0,1fr))}}
 /* a card's name (.k) and its change line (.d) are 12 px in the text's font (kit polish r2, M1; they were 10.5 and 11 px in the numbers'
    font): in the numbers' font 12 px is a seventh wider, and over every lab, part and size it put about 1,100 more names on a second line.
    The value keeps the numbers' font; the colours are as before. The side padding is 7 px (was 9 px), so a name of 7 Chinese characters
    (12 px each) still fits on one line in a phone's three-column card (103 px wide at 390 px). Each line keeps its height (a name line
-   16.2 px, a change line 15 px), so a card is no taller unless its text wraps more. A lab sets nothing smaller (CONTRACT §19). */
-.metric{border:1px solid var(--line-2);border-radius:4px;padding:9px 7px;background:var(--surface);min-width:0}
-.metric .k{font-family:var(--font-ui);font-size:12px;line-height:1.35;color:var(--ink-3)}
-.metric .v{font-size:clamp(15px,4cqi,18px);font-weight:500;margin-top:1px;white-space:nowrap}
-.metric .sub{font-size:12px;color:var(--ink-3);line-height:1.35}
+   16.2 px, a change line 15 px), so a card is no taller unless its text wraps more. A lab sets nothing smaller (CONTRACT §19).
+   Refit (2026-10-22): a card is a leaf-grey tile without a border; its value is in the heading face, bold; wider sides above 760 px. */
+.metric{border:0;border-radius:12px;padding:9px 7px;background:var(--surface-2);min-width:0}
+@media (min-width:761px){.metric{padding:10px 6px}}   /* Figtree runs about 2% wider than the old font, so the text box is 4 px wider than before (6 px padding, no 1 px frame): a change line that fitted on one line still does (dpo's “▲ 2.8 times the last value” takes 139 of the 140 px) */
+.metric .k{font-family:var(--font-ui);font-size:12px;line-height:1.35;color:var(--ink-3);text-wrap:balance}
+.metric .v{font-family:var(--font-disp);font-size:clamp(15px,4cqi,18px);font-weight:700;letter-spacing:-.005em;margin-top:1px;white-space:nowrap}
+.metric .sub{font-size:12px;color:var(--ink-3);line-height:1.35;letter-spacing:-.01em;text-wrap:balance}   /* a hair tighter (0.12 px a letter): a note that filled its line in the old font still fits one line in Figtree */
 .metric .d{font-family:var(--font-ui);font-size:12px;color:var(--ink-2);height:15px;opacity:0;transition:opacity .35s}
 .metric .d.on{opacity:1}
 details.math{margin-top:12px;border-top:1px solid var(--line-2);padding-top:10px}
-details.math summary,details.adv summary{cursor:pointer;font-weight:650;list-style:none;display:flex;align-items:center;gap:8px;font-size:14px}
+details.math summary,details.adv summary{cursor:pointer;font-weight:700;list-style:none;display:flex;align-items:center;gap:8px;font-size:14.5px;line-height:1.5}   /* 21.75 px, as tall as the old 14 px line */
 details.math summary::-webkit-details-marker,details.adv summary::-webkit-details-marker{display:none}
-details.math summary::before,details.adv summary::before{content:"+";font-family:var(--font-mono);width:18px;height:18px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-size:12px}
+details.math summary::before,details.adv summary::before{content:"+";font-family:var(--font-ui);font-weight:700;width:20px;height:20px;display:inline-grid;place-items:center;border:0;border-radius:6px;background:var(--sunken);color:var(--ink-2);font-size:14px;line-height:1}
 details.math[open] summary::before,details.adv[open] summary::before{content:"−"}
-.mathbody{font-family:var(--font-mono);font-size:12.5px;line-height:1.7;overflow-x:auto}
+.mathbody{font-family:var(--font-mono);font-size:13.5px;line-height:1.6;overflow-x:auto}   /* a line as tall as the old 12.5 px / 1.7 one (21.6 px for 21.25), so an open panel inside a stage keeps its height */
+.mathbody math.tex{font-size:1.04em}   /* the formulas keep the size they were reviewed at (1.12 × the old 12.5 px = 14 px), so a table that fitted a phone still fits; only the words around them grew */
 /* the owner's review of batch 9 (2026-10-08): in SFT's Show the math the top of a tall fraction (120 over 1919) was cut off. A box
    with overflow-x:auto clips vertically too, so every formula box gets room above and below; a lab's own padding wins (:where
    has zero specificity). LAB_UX_GUIDE R6.33 */
@@ -357,86 +423,99 @@ details.math[open] summary::before,details.adv[open] summary::before{content:"�
 .t{border-bottom:1px dotted var(--ink-3);cursor:pointer;border-radius:2px}
 .t:hover,.t:focus{background:var(--surface-2);border-bottom:1px solid var(--ink);outline:none}
 .okc{color:var(--c-ok)}.badc{color:var(--c-oom)}
-.controls{padding:14px 16px 16px;display:grid;gap:15px}
+.controls{padding:16px 16px 18px;display:grid;gap:15px}
 .controls .eyebrow{margin-bottom:-6px}
 .ctl{display:grid;gap:6px;border-radius:4px}
-.ctl > label,.ctl > .lbl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;font-weight:620;color:var(--ink-2)}
-select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface);font-size:14px;cursor:pointer}
+.ctl > label,.ctl > .lbl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13.5px;font-weight:650;color:var(--ink-2)}
+select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:14px;cursor:pointer}
 select:disabled{opacity:.5;cursor:not-allowed}
-.seg-ctl{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
-.seg-ctl button{flex:1;padding:7px 6px;border:0;border-right:1px solid var(--line);background:var(--surface);cursor:pointer;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-2)}
-.seg-ctl button:last-child{border-right:0}
-.seg-ctl button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+/* options: keys on a tray. Each key is a light chip, so keys that wrap to a second row stay apart (R7.13); the chosen one is ink */
+.seg-ctl{display:flex;gap:3px;padding:3px;border:0;border-radius:12px;background:var(--sunken)}
+.seg-ctl button{flex:1;padding:6px 6px;border:0;border-radius:9px;background:color-mix(in srgb,var(--raised) 55%,transparent);cursor:pointer;font-family:var(--font-mono);font-size:13px;font-weight:600;line-height:1.3;color:var(--ink-2);text-wrap:balance}   /* a label that takes two lines splits evenly */
+.seg-ctl button:hover:not(:disabled):not([aria-pressed="true"]){background:var(--raised);color:var(--ink)}
+.seg-ctl button[aria-pressed="true"]{background:var(--ink);color:var(--bg);box-shadow:0 1px 2px rgba(22,32,27,.22)}   /* same weight as the other keys: a label never gets wider, or wraps, when it is picked */
 .seg-ctl button:disabled{opacity:.4;cursor:not-allowed}
+/* seven keys or more: a tighter tray, so the group still fits the width the old 1 px-border group took (model-parallel's 9 keys in a 269 px panel). :where keeps a lab's own key rules stronger */
+.seg-ctl:where(:has(>button:nth-child(7))){gap:2px}
+.seg-ctl:where(:has(>button:nth-child(7)))>button{padding-inline:4px;font-size:12.5px}
 .ctl-note{font-size:12px;color:var(--ink-3);line-height:1.4}
 .ctl-note.warn{color:var(--c-oom)}
 details.adv{border-top:1px solid var(--line-2);padding-top:10px}
 details.adv .ctl{margin-top:12px}
-.cue{outline:2px dashed var(--ink);outline-offset:5px;animation:cue 1.5s ease-in-out 3}
+.cue{outline:2px dashed var(--branch);outline-offset:5px;animation:cue 1.5s ease-in-out 3}
 @keyframes cue{50%{outline-color:transparent}}
-.linked{outline:2px solid var(--ink);outline-offset:5px}
+.linked{outline:2px solid var(--branch);outline-offset:5px}
 /* rail */
 .rail-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+/* the guided parts: only the current one is a raised white card; the others are flat leaf-grey rows. Numbers in the branch colour:
+   filled for the current part, a ring on a light tint for a part done */
 .steps{list-style:none;margin:0;padding:0;display:grid;gap:6px}
-.step{border:1px solid var(--line);border-radius:6px;background:var(--surface)}
-.step.current{border-color:var(--ink);box-shadow:var(--shadow)}
-.step-h{display:flex;gap:10px;align-items:center;width:100%;padding:9px 12px;background:none;border:0;text-align:left;cursor:pointer;font-weight:640;font-size:14px}
-.step .num{display:inline-grid;place-items:center;width:22px;height:22px;border:1px solid var(--line);border-radius:50%;font-family:var(--font-mono);font-size:11px;flex:none}
-.step.done .num{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.step.current .num{border-color:var(--ink);border-width:2px}
+.step{border:1px solid transparent;border-radius:16px;background:var(--surface-2);transition:background-color .2s,border-color .2s,box-shadow .2s}
+.step.current{border-color:var(--line-2);background:var(--surface);box-shadow:var(--shadow)}
+.step-h{display:flex;gap:10px;align-items:center;width:100%;padding:9px 14px;background:none;border:0;text-align:left;cursor:pointer;font-weight:700;font-size:14.5px;line-height:1.35}
+.step.current .step-h{padding-block:11px 9px}
+.step .num{display:inline-grid;place-items:center;width:24px;height:24px;border:1.5px solid var(--line);border-radius:50%;font-family:var(--font-mono);font-size:12px;font-weight:800;flex:none;background:var(--surface)}
+.step.done .num{background:var(--branch-soft);color:var(--branch);border-color:var(--branch)}
+.step.current .num{background:var(--branch);color:var(--branch-ink);border-color:var(--branch)}
 .step.todo .step-h{color:var(--ink-3)}
 /* round 3, R08: a part left behind without its answer keeps its number in a dashed ring, with "skipped" at the row's end */
 .step.skipped .num{border-style:dashed;border-color:var(--ink-3);color:var(--ink-2)}
-.step-h .sk-tag{margin-left:auto;flex:none;font:500 11.5px/1.2 var(--font-mono);color:var(--ink-3)}
-.step-b{padding:0 14px 14px;font-size:14.5px}
+.step-h .sk-tag{margin-left:auto;flex:none;font:600 12px/1.2 var(--font-mono);color:var(--ink-3)}
+/* the cards keep the text size they were reviewed at (14.5 px), with a little more line height: at 16 px a card ran a median 30 % longer
+   and eval-capstone's three answers left the first screen at 1440 × 900 (todo 6); the owner widened this column so cards run in fewer lines */
+.step-b{padding:0 15px 14px;font-size:14.5px;line-height:1.6}
+/* the card's own forward buttons wear the branch colour */
+.step-b .btn:not(.ghost),.pbar .btn:not(.ghost){background:var(--branch);border-color:var(--branch);color:var(--branch-ink)}
+.step-b .btn:not(.ghost):hover:not(:disabled),.pbar .btn:not(.ghost):hover:not(:disabled){background:color-mix(in srgb,var(--branch) 82%,var(--ink));border-color:color-mix(in srgb,var(--branch) 82%,var(--ink))}
 .step-b p{margin:0 0 10px}
 .step-b ul{margin:0 0 10px;padding-left:18px}
 .step-b li{margin-bottom:6px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-.obs{margin:10px 0 0;padding:10px 12px;background:var(--surface-2);border-radius:4px;font-size:14px}
+.obs{margin:10px 0 0;padding:11px 14px;background:var(--surface-2);border-radius:12px;font-size:14px;line-height:1.55}
 .obs p{margin:4px 0 8px}
 .obs p:last-child{margin-bottom:0}
-.obs .eyebrow{font-size:10.5px}
+.obs .eyebrow{font-size:12px}
 .eyebrow.keepcase{text-transform:none;letter-spacing:.02em}
 .choices{display:grid;gap:6px;margin:8px 0}
-.choice{text-align:left;padding:9px 12px;border:1px solid var(--line);border-radius:4px;background:var(--surface);cursor:pointer;font-size:14px}
-.choice:hover{border-color:var(--ink)}
-.choice[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.choice{text-align:left;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;font-size:14px;line-height:1.45}
+.choice:hover{border-color:var(--ink-3);background:var(--surface-2)}
+/* a chosen answer or case: tinted in the branch's colour, with a filled dot (not inverted, so a long answer stays easy to read) */
+.choice[aria-pressed="true"]{border-color:var(--branch);background:var(--branch-soft);box-shadow:inset 0 0 0 1px var(--branch)}
 .stepnav{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
 .tries{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
 .okline{color:var(--c-ok)}
 .badline{color:var(--c-oom)}
-.railcard{padding:16px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
-.rh{font-size:18px;font-stretch:108%;margin:6px 0 8px;line-height:1.25}
-.railcard p{font-size:14px;margin:0 0 10px}
+.railcard{padding:16px;border:1px solid var(--line-2);border-radius:16px;background:var(--surface);box-shadow:var(--shadow)}
+.rh{font-size:19px;font-weight:700;letter-spacing:-.01em;margin:6px 0 8px;line-height:1.3}
+.railcard p{font-size:14.5px;margin:0 0 10px}
 .goal{font-size:13px;display:flex;justify-content:space-between;gap:8px;margin-top:6px}
-.progress{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin:6px 0 12px}
-.progress i{display:block;height:100%;width:0;background:var(--ink);transition:width .3s}
+.progress{height:6px;background:var(--sunken);border-radius:6px;overflow:hidden;margin:6px 0 12px}
+.progress i{display:block;height:100%;width:0;background:var(--branch);transition:width .3s}
 .presets{display:grid;gap:6px;margin:0 0 12px}
-.preset{display:grid;gap:2px;text-align:left;padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:var(--surface);cursor:pointer}
-.preset:hover{border-color:var(--ink)}
-.preset b{font-size:14px}
-.preset span{font-size:11.5px;color:var(--ink-3)}
+.preset{display:grid;gap:2px;text-align:left;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer}
+.preset:hover{border-color:var(--ink-3);background:var(--surface-2)}
+.preset b{font-size:14.5px}
+.preset span{font-size:12.5px;color:var(--ink-3)}
 /* tooltips and term jumps */
 .tip.below{transform:translate(-50%,12px)}
 .tip .act{font-size:12px;opacity:.78;margin-top:5px}
 [data-tip]:not(button){cursor:help}
 .flash{animation:flash 1.6s ease-out}
-@keyframes flash{0%,35%{outline:2px solid var(--ink);outline-offset:4px;background-color:var(--surface-2)}100%{outline:2px solid transparent;outline-offset:4px}}
+@keyframes flash{0%,35%{outline:2px solid var(--branch);outline-offset:4px;background-color:var(--surface-2)}100%{outline:2px solid transparent;outline-offset:4px}}
 /* mode description */
 .mode-desc{margin:10px 0 0;font-size:14px;color:var(--ink-2);max-width:62em}
 .mode-desc b{color:var(--ink);font-weight:650}
 /* controls: hint and challenge lock */
-.ctl-hint{margin:0;font-size:12.5px;line-height:1.45;color:var(--ink-3)}
-.ctl-lock{margin:0;padding:9px 11px;border-radius:4px;background:var(--surface-2);font-size:13px;line-height:1.45;color:var(--ink-2)}
+.ctl-hint{margin:0;font-size:13px;line-height:1.45;color:var(--ink-3)}
+.ctl-lock{margin:0;padding:10px 12px;border-radius:12px;background:var(--surface-2);font-size:13.5px;line-height:1.45;color:var(--ink-2)}
 .controls.locked .lockable{display:none}
 /* the control a step asks for, inside the step card */
-.inline-ctl{display:grid;gap:6px;margin:2px 0 12px;padding:10px 12px 11px;border:1px dashed var(--ink-3);border-radius:5px;background:var(--surface)}
-.inline-ctl>label,.inline-ctl>.lbl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;font-weight:620;color:var(--ink-2)}
-.inline-ctl output{font-family:var(--font-mono);font-weight:500;color:var(--ink);font-size:13px}
+.inline-ctl{display:grid;gap:6px;margin:2px 0 12px;padding:10px 12px 11px;border:1.5px dashed color-mix(in srgb,var(--branch) 50%,var(--line));border-radius:12px;background:var(--surface)}
+.inline-ctl>label,.inline-ctl>.lbl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13.5px;font-weight:650;color:var(--ink-2)}
+.inline-ctl output{font-family:var(--font-mono);font-weight:700;color:var(--ink);font-size:13.5px}
 /* mini chart under the top bar */
 .stage-graph{scroll-margin-top:80px}
-.dock{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 59px);z-index:29;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 10px 24px -18px rgba(13,20,30,.5);cursor:pointer;animation:dockin .18s ease-out}
+.dock{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 59px);z-index:29;background:var(--surface);border-bottom:1px solid var(--line-2);box-shadow:0 10px 24px -18px rgba(22,32,27,.5);cursor:pointer;animation:dockin .18s ease-out}
 @keyframes dockin{from{opacity:0;transform:translateY(-6px)}}
 .dock-in{display:flex;align-items:center;gap:12px;min-height:48px}
 .dk-bar{flex:1 1 auto;min-width:64px}
@@ -455,13 +534,13 @@ details.adv .ctl{margin-top:12px}
 .cmp-row{margin-top:9px}
 .cmp-lab{display:flex;flex-wrap:wrap;align-items:center;gap:3px 6px;font-size:12.5px;line-height:1.3;color:var(--ink-2)}
 .cmp-row.me .cmp-lab{color:var(--ink);font-weight:650}
-.cmp-track{position:relative;height:14px;margin:4px 28px 0 0;background:var(--surface-2);border-radius:2px}
-.cmp-track i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px}
+.cmp-track{position:relative;height:14px;margin:4px 28px 0 0;background:var(--surface-2);border-radius:4px}
+.cmp-track i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:4px}
 .cmp-row.ok .cmp-track i{background:var(--ink)}
 .cmp-row.me .cmp-track{box-shadow:0 0 0 1.5px var(--ink)}
 .cmp-track .g{position:absolute;top:-3px;bottom:-3px;width:0;border-left:1.5px dashed var(--ink-2)}
 .cmp-val{position:absolute;top:50%;transform:translateY(-50%);margin-left:6px;font-size:11.5px;line-height:1;color:var(--ink)}
-.cmp-tag,.cmp-you{font-family:var(--font-mono);font-size:10.5px;line-height:1.5;border-radius:999px;padding:0 6px;font-weight:500}
+.cmp-tag,.cmp-you{font-family:var(--font-mono);font-size:11.5px;line-height:1.5;border-radius:999px;padding:0 7px;font-weight:650}
 .cmp-tag{border:1px solid var(--line);color:var(--ink-3)}
 .cmp-you{background:var(--ink);color:var(--bg)}
 .cmp-axis{position:relative;height:16px;margin:5px 28px 0 0;font-family:var(--font-mono);font-size:11px;color:var(--ink-2)}
@@ -487,9 +566,9 @@ details.adv .ctl{margin-top:12px}
 .preset{grid-template-columns:14px minmax(0,1fr);column-gap:10px;align-items:center}
 .preset::before{content:"";grid-row:1 / span 2;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink-3);box-sizing:border-box}
 .preset>*{grid-column:2}
-.preset[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
-.preset[aria-pressed="true"]::before{border-color:currentColor;background:radial-gradient(circle,currentColor 0 3px,transparent 3.5px)}
-.preset[aria-pressed="true"] span{color:inherit;opacity:.78}
+.preset[aria-pressed="true"]{background:var(--branch-soft);border-color:var(--branch);box-shadow:inset 0 0 0 1px var(--branch)}
+.preset[aria-pressed="true"]::before{border-color:var(--branch);background:radial-gradient(circle,var(--branch) 0 3px,transparent 3.5px)}
+.preset[aria-pressed="true"] span{color:var(--ink-2)}
 .step-b .linkbtn,.railcard .linkbtn,.pop .linkbtn{font-size:inherit}
 /* connect */
 .connect{padding-block:10px 20px}
@@ -502,30 +581,45 @@ details.adv .ctl{margin-top:12px}
 /* a wide hero (HERO.wide): title and buttons in one row, the card full width below */
 .hero.hero-wide{grid-template-columns:minmax(0,1fr);gap:18px;padding-block:clamp(20px,3vw,36px) clamp(16px,2vw,28px)}
 .hero.hero-wide>div:first-child{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 28px}
-.hero.hero-wide h1{font-size:clamp(32px,4.2vw,54px);margin:0}
+.hero.hero-wide h1{font-size:clamp(34px,4.4vw,58px);line-height:1.08;margin:0}
 .hero.hero-wide .cta-row{margin:0}
-.hero-lab{padding:18px 18px 16px}
+.hero-lab{padding:18px 18px 16px;border-radius:22px}
 /* the hero lab's button, bottom right of its card, under the animation: the dashed loop back to the start runs along the animation's bottom edge (the owner, 2026-10-11 and 10-12) */
 .hero-lab{position:relative}
 .hero-foot{display:flex;justify-content:flex-end;margin-top:10px}
 .hero-foot .btn{padding:7px 12px;font-size:13.5px}
 .c-card{padding:16px}
-.c-card h3{font-size:16px;margin:0 0 8px;font-stretch:106%}
-.c-card p{font-size:14px;color:var(--ink-2);margin:0 0 10px}
-.code{background:var(--sunken);border:1px solid var(--line-2);border-radius:4px;padding:12px;font-family:var(--font-mono);font-size:12px;line-height:1.55;overflow-x:auto;margin:0 0 10px;white-space:pre}
+.c-card h3{font-size:17px;font-weight:700;letter-spacing:-.005em;margin:0 0 8px}
+.c-card p{font-size:14.5px;color:var(--ink-2);margin:0 0 10px}
+.c-card li code{overflow-wrap:anywhere}   /* a source's file path breaks at the card's edge: at the 16 px body text (2026-10-22 refit) a long path no longer fits a phone's card on one line */
+.code{background:var(--sunken);border:0;border-radius:12px;padding:12px 14px;font-family:var(--font-code);font-size:12px;line-height:1.6;overflow-x:auto;margin:0 0 10px;white-space:pre}
 .refs{list-style:none;padding:0;margin:0;display:grid;gap:10px;font-size:14px}
-.refs span{display:block;font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3)}
-.drill-a{margin-top:12px;font-family:var(--font-mono);font-size:12.5px;background:var(--surface-2);border-radius:4px;padding:10px 12px}
+.refs span{display:block;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-3)}
+.drill-a{margin-top:12px;font-family:var(--font-mono);font-size:14px;background:var(--surface-2);border-radius:12px;padding:11px 12px}
+.drill-a math.tex{font-size:1em}   /* a worked answer's formulas keep the 14 px they were reviewed at (1.12 × the old 12.5 px) and its box the old 12 px sides, so a formula that fitted a phone still does */
 .drill-a p{margin:3px 0}
-code{font-family:var(--font-mono);font-size:.92em;background:var(--surface-2);padding:1px 4px;border-radius:3px}
-.foot{margin-top:56px;border-top:1px solid var(--line-2);padding-block:22px 40px;color:var(--ink-2);font-size:13.5px}
-.foot .wrap{display:grid;gap:6px}
+code{font-family:var(--font-code);font-size:.88em;background:var(--surface-2);padding:1px 4px;border-radius:5px}
+/* the footer: what the site is, the learning paths, the tree's branches and the project; the other explainers and the licences at the end */
+.foot{margin-top:72px;background:var(--surface-2);padding-block:44px 40px;color:var(--ink-2);font-size:14px}
+.foot .wrap{display:grid;gap:30px}
 .foot p{margin:0}
+.ft-grid{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));gap:28px 32px}
+.ft-brand{display:inline-flex;align-items:center;gap:9px;font:700 18px/1.1 var(--font-disp);letter-spacing:-.012em;color:var(--ink);text-decoration:none;margin-bottom:12px}
+.ft-brand svg{width:26px;height:26px;flex:none}
+.ft-about p{max-width:30em;line-height:1.65}
+.foot .ft-h{font:700 14px/1.3 var(--font-ui);letter-spacing:.01em;color:var(--ink);margin:4px 0 12px}
+.ft-col ul{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.ft-col a{color:var(--ink-2);text-decoration:none}
+.ft-col a:hover{color:var(--ink);text-decoration:underline}
+.ft-end{display:grid;gap:6px;padding-top:18px;border-top:1px solid var(--line);font-size:13px;line-height:1.6;color:var(--ink-3)}
+.ft-end a{color:var(--ink-2)}
+@media (max-width:900px){.ft-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ft-about{grid-column:1/-1}}
+@media (max-width:480px){.foot{padding-block:36px 32px}.ft-grid{gap:24px 20px}}
 @media (prefers-reduced-motion:reduce){
   .flow{animation:none}
   .seg,.usable,.progress i{transition:none}
   .cue{animation:none}
-  .flash{animation:none;outline:2px solid var(--ink);outline-offset:4px}
+  .flash{animation:none;outline:2px solid var(--branch);outline-offset:4px}
   .dock,.dock.pulse .dock-in{animation:none}
   .obs.bump{animation:none}
   *{scroll-behavior:auto}
@@ -540,23 +634,23 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--surface-2);pa
 .world.sel .wico{color:var(--surface)}
 .world:hover .wnode,.world:focus-visible .wnode{stroke-width:3.2}
 .tiles-head{display:flex;gap:14px;align-items:flex-start;margin:28px 0 14px;scroll-margin-top:72px}
-.th-icon{width:50px;height:50px;border-radius:50%;border:1.8px solid var(--ink);display:grid;place-items:center;flex:none;background:var(--surface);color:var(--ink)}
+.th-icon{width:50px;height:50px;border-radius:50%;border:1.8px solid var(--branch);display:grid;place-items:center;flex:none;background:var(--branch-soft);color:var(--branch)}
 .th-text{min-width:0}
-.th-name{font-size:22px;font-stretch:108%;font-weight:720;line-height:1.2;margin:2px 0 3px}
+.th-name{font-size:24px;font-weight:700;line-height:1.2;margin:2px 0 4px}
 .th-desc{margin:0;color:var(--ink-2);font-size:14.5px;max-width:48em}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:14px}
-.tile{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:8px;min-width:0;scroll-margin-top:80px}
-.tile-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12px}
-.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-2);background:var(--surface)}
-.tile-at{font-size:12px;color:var(--ink-2)}
+.tile{background:var(--surface);border:1px solid var(--line-2);border-radius:18px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;min-width:0;scroll-margin-top:80px;box-shadow:var(--shadow-sm)}
+.tile-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12.5px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:12px;font-weight:600;padding:2px 9px;border:1px solid var(--line);border-radius:999px;color:var(--ink-2);background:var(--surface)}
+.tile-at{font-size:12.5px;font-weight:650;color:var(--branch)}
 /* what this browser remembers of the lab */
 .chip.tm{border-color:var(--ink-3);color:var(--ink)}
 .chip.tm-passed{border-color:var(--c-ok);color:var(--c-ok);background:var(--c-ok-soft)}
 /* the hero's "Continue": the lab's name, and under it where the learner was */
 .btn.resume{flex-direction:column;align-items:flex-start;gap:1px;padding:6px 14px;line-height:1.3}
 .btn.resume .rs-at{font-size:12px;font-weight:500;opacity:.8}
-.tile-num{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--ink);display:inline-grid;place-items:center;font-size:11px;font-weight:600}
-.tile-q{font-size:16px;line-height:1.32;margin:0;font-stretch:104%;font-weight:680}
+.tile-num{width:24px;height:24px;border-radius:50%;background:var(--branch);color:var(--branch-ink);display:inline-grid;place-items:center;font-size:12px;font-weight:800}
+.tile-q{font-size:18px;line-height:1.32;margin:0;font-weight:700}
 .tile-q a{text-decoration:none;color:inherit}   /* the title is part of the tile's one button, not a link of its own */
 .tile-tz{min-height:150px;border-top:1px solid var(--line-2);padding-top:10px}
 .tile-tz.tz-none{min-height:0}
@@ -581,10 +675,10 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--surface-2);pa
 /* single-choice prediction buttons show a radio dot, like levers and presets */
 .choices .choice{display:flex;align-items:center;gap:10px}
 .choices .choice::before{content:"";flex:none;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink-3);box-sizing:border-box}
-.choices .choice[aria-pressed="true"]::before{border-color:currentColor;background:radial-gradient(circle,currentColor 0 3px,transparent 3.5px)}
+.choices .choice[aria-pressed="true"]::before{border-color:var(--branch);background:radial-gradient(circle,var(--branch) 0 3px,transparent 3.5px)}
 /* comparison charts: green meets the goal, gray does not, and a legend says so */
 .cmp-row.ok .cmp-track i{background:var(--c-ok)}
-.cmp-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-family:var(--font-mono);font-size:11px;color:var(--ink-2)}
+.cmp-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-family:var(--font-mono);font-size:12px;color:var(--ink-2)}
 .cmp-leg span{display:inline-flex;align-items:center;gap:6px}
 .cmp-leg i{display:inline-block;width:14px;height:9px;border-radius:2px;background:var(--ink-3)}
 .cmp-leg i.ok{background:var(--c-ok)}
@@ -609,31 +703,34 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
 @media (max-width:1004px){
   .map-canvas{display:none}
   .domgrid{display:grid;gap:12px;margin-top:16px}
-  .dg-h{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin:0 0 6px}
+  .dg-h{font-family:var(--font-mono);font-size:13px;color:var(--ink-3);margin:0 0 6px}
   .dg-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr));gap:8px}
-  .dg-btn{display:flex;align-items:center;gap:10px;min-width:0;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);text-align:left;cursor:pointer}
+  .dg-btn{display:flex;align-items:center;gap:10px;min-width:0;padding:10px 11px;border:1px solid var(--line-2);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-sm);color:var(--ink);text-align:left;cursor:pointer}
   .dg-btn[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
   .dg-ico{width:38px;height:38px;flex:none;border-radius:50%;border:1.6px solid var(--ink);display:grid;place-items:center;background:var(--surface)}
   .dg-btn[aria-pressed="true"] .dg-ico{background:var(--ink);color:var(--surface)}
   .dg-t{display:grid;min-width:0}
-  .dg-t b{font-size:14px;font-weight:680;line-height:1.25}
-  .dg-t span{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);line-height:1.35}
+  .dg-t b{font-size:14.5px;font-weight:700;line-height:1.25}
+  .dg-t span{font-family:var(--font-mono);font-size:12px;color:var(--ink-3);line-height:1.35}
 }
 /* the domain strip above the tiles sticks under the top bar */
-.domstrip{position:sticky;top:calc(env(safe-area-inset-top,0px) + 58px);z-index:20;display:flex;align-items:center;gap:8px 14px;margin:22px 0 0;padding:8px 0;background:var(--bg);border-bottom:1px solid var(--line-2)}
+.domstrip{position:sticky;top:calc(env(safe-area-inset-top,0px) + 58px);z-index:20;display:flex;align-items:center;gap:8px 14px;margin:22px 0 0;padding:9px 0;background:var(--bg);border-bottom:1px solid var(--line-2)}
+@supports (backdrop-filter:blur(8px)){.domstrip{background:color-mix(in srgb,var(--bg) 95%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(16px);backdrop-filter:saturate(1.4) blur(16px)}}
 .ds-worlds{display:flex;gap:4px;min-width:0;flex:1 1 auto;overflow-x:auto;scrollbar-width:none}
 .ds-worlds::-webkit-scrollbar{display:none}
-.ds-btn{display:inline-flex;align-items:center;gap:6px;flex:none;padding:6px 10px 6px 7px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink-2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
-.ds-btn:hover{border-color:var(--ink);color:var(--ink)}
-.ds-btn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.ds-btn{display:inline-flex;align-items:center;gap:6px;flex:none;padding:6px 11px 6px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink-2);font-size:13.5px;font-weight:650;cursor:pointer;white-space:nowrap}
+.ds-btn svg{color:var(--branch)}
+.ds-btn:hover{border-color:var(--branch);color:var(--ink)}
+.ds-btn[aria-pressed="true"]{background:var(--branch);border-color:var(--branch);color:var(--branch-ink)}
+.ds-btn[aria-pressed="true"] svg{color:inherit}
 .ds-path{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:12.5px;color:var(--ink-3)}
-.ds-path select{max-width:190px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px}
+.ds-path select{max-width:190px;padding:6px 9px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;font-size:13.5px}
 /* when the branches' names do not all fit in one row (measured by fitStrip), icons with tooltips; the chosen branch keeps its name (H4) */
 .domstrip.ds-icons .ds-btn span{display:none}.domstrip.ds-icons .ds-btn{padding:6px}
 .domstrip.ds-icons .ds-btn[aria-pressed="true"] span{display:inline}.domstrip.ds-icons .ds-btn[aria-pressed="true"]{padding:6px 10px 6px 7px}
 @media (max-width:600px){.ds-path{display:none}.domstrip{margin-top:18px}}
 .tiles-head{margin-top:16px;scroll-margin-top:120px}
-.th-meta{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3)}
+.th-meta{font-family:var(--font-mono);font-size:13px;font-weight:650;color:var(--branch)}
 /* tiles: one sentence on the tile; the teaser's own notes stay on the lab page (owner 2026-10-13: no 假设和来源 on tiles) */
 .tile .tz-note{display:none}
 .chip.tz-kind{cursor:help}
@@ -660,15 +757,15 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
 @media (max-width:760px){.dk-read{white-space:normal;line-height:1.3;overflow:visible}}
 .dg-btn.dim,.ds-btn.dim{opacity:.42}
 .chip[data-tipx]{cursor:help}
-@media (max-width:400px){.brand span{font-size:13px;letter-spacing:-.005em}.topbar .wrap{gap:10px}}
+@media (max-width:400px){.brand span{font-size:14px}.topbar .wrap{gap:10px}}
 
 /* ---------- Batch 1 (Codex review 1): the phone template for labs with class m2, a two-column bench, the home page's paths ---------- */
 .pbar{display:none}
 .pb-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .pb-dots{display:flex;flex-wrap:wrap;gap:4px}
-.pb-dot{width:26px;height:26px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink-3);font:600 11.5px/1 var(--font-mono);display:grid;place-items:center;cursor:pointer}
+.pb-dot{width:26px;height:26px;padding:0;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-3);font:800 11.5px/1 var(--font-mono);display:grid;place-items:center;cursor:pointer}
 .pb-dot.done{color:var(--ink-2);border-color:var(--ink-3)}
-.pb-dot.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pb-dot.on{background:var(--branch);color:var(--branch-ink);border-color:var(--branch)}
 .pb-nav{display:flex;gap:6px;flex:0 0 auto}
 .pb-t{margin-top:8px;font-size:14px;line-height:1.4}
 .pb-t b{font-weight:650;margin-right:6px}
@@ -681,7 +778,7 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
   .m2 .bench>.stage,.m2 .bench>.controls,.m2 .bench>.rail>*{width:100%;min-width:0}
   .m2 .bench>.rail{display:contents}
   .m2 .bench>.rail>*{order:3}
-  .m2 .bench>.rail>.pbar{order:1;display:block;padding:8px 12px;border:1px solid var(--ink);border-radius:6px;background:var(--surface);box-shadow:var(--shadow)}
+  .m2 .bench>.rail>.pbar{order:1;display:block;padding:8px 12px;border:1px solid var(--line-2);border-radius:16px;background:var(--surface);box-shadow:var(--shadow);font-size:15px;line-height:1.5}
   .m2 .bench>.rail>.pbar .pb-t{margin-top:6px}   /* 10 px and 8 px before kit polish r2 (M2, the first screen) */
   .m2 .bench>.rail>.rail-top{display:none}
   .m2 .bench>.stage{order:2}
@@ -701,8 +798,16 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
 /* home: the paths that can be walked, first (R0.3) */
 
 /* ---------- Batch 2 (Codex review 1 #5): what you can do after the lab; three ways to show it transfers ---------- */
-.lab-outcome{margin:-4px 0 12px;font-size:14.5px;color:var(--ink-2);max-width:62em;line-height:1.45}
-.lab-outcome b{color:var(--ink);font-weight:650}
+.lab-outcome{margin:0 0 12px;font-size:15px;color:var(--ink-2);max-width:62em;line-height:1.5}
+.lab-outcome b{color:var(--ink);font-weight:700}
+/* the refit (2026-10-22; the plan: one line fewer in the lab head): on every width the minutes tag runs on at the end of “You will be
+   able to …”, as it already did on phones (below). .lab-sub holds the two, keeps the paragraph's 62em measure and sets its font size and
+   line height, so a line the tag shares is the paragraph's height (the tag, 20.9 px tall with 1 px padding, fits inside the 22.5 px line) */
+.lab-sub{max-width:62em;font-size:15px;line-height:1.5}
+.lab-sub>.lab-outcome{display:inline;margin:0;font-size:inherit;line-height:inherit}
+.lab-sub>.lab-outcome::after{content:" ";word-spacing:4px}
+.lab-sub>.labmeta{display:inline-flex;vertical-align:1px}
+.lab-sub>.labmeta>.tag{padding-block:1px}
 /* phones (≤ 760 px), the first screen (kit polish r2, M2): the header is set tighter so the stage and its figure come up (390×844 zh:
    the stage's top, median over the labs, from 496 to about 420 px). Nothing is removed and the order stays: the breadcrumbs, the title
    (22 px, the size of a path's name on the home page), “You will be able to …”, then the minutes tag, which runs on at the end of that
@@ -711,31 +816,26 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
    is the paragraph's height (the tag, 19.6 px tall with 1 px padding, fits inside the 21 px line); the breadcrumbs keep their line height,
    and the title keeps its 10 px top margin (the previous / next links' tap boxes reach into it). The paragraph and the tag are broken into
    lines the plain way (text-wrap-style auto): a lab's “pretty” wrapping (eval-capstone, English) would even out the lines of the paragraph
-   and the tag together and leave a short first line. Desktop (> 760 px) is unchanged. */
+   and the tag together and leave a short first line. Since the refit desktop runs the tag on too (.lab-sub, above). */
 @media (max-width:760px){
   .labhead:not(.ls-labhead){padding-block:12px 6px;font-size:14.5px;line-height:1.45;text-wrap-style:auto}
   .labhead:not(.ls-labhead)>.crumbs{line-height:1.55}
   .labhead>.labtitle{font-size:22px;margin-bottom:8px}
-  .labhead>.lab-outcome:has(+.labmeta){display:inline;margin:0}
-  .labhead>.lab-outcome:has(+.labmeta)::after{content:" ";word-spacing:4px}
-  .labhead>.lab-outcome+.labmeta{display:inline-flex;vertical-align:1px}
-  .labhead>.lab-outcome+.labmeta>.tag{padding-block:1px}
+  .labhead .lab-sub{font-size:inherit;line-height:inherit}
 }
 .exits{margin-top:12px}
+/* the tabs wrap to a second row (English, up to 1280 px); each tab is a chip of its own on the tray, so the rows stay apart (owner 2026-10-14:
+   agent-anatomy's token-budget rows lost their line; R7.13) */
 .exits .ex-tabs{margin:4px 0 12px;flex-wrap:wrap}
 .exits .ex-tabs button{flex:1 1 auto}
-/* the tabs wrap to a second row (English, up to 1280 px) and keep a 1px line between rows as well as columns: the buttons sit 1px apart on the line colour
-   instead of each drawing a right border (owner 2026-10-14: agent-anatomy's token-budget rows lost their line; R7.13) */
-.exits .ex-tabs{gap:1px;background:var(--line)}
-.exits .ex-tabs button{border-right:0}
 .ex-body p{margin:0 0 8px}
 .ex-qs{display:flex;gap:4px;margin:0 0 8px}
 .ex-opts{display:grid;gap:6px;margin:0 0 8px}
 .ex-opts .choice{align-items:flex-start;line-height:1.45}
 .ex-opts .choice::before{margin-top:2px}
-.ex-opts .choice.right{box-shadow:inset 0 0 0 2px var(--c-ok)}
-.ex-opts .choice.wrong{box-shadow:inset 0 0 0 2px var(--c-oom)}
-.ex-res{padding:10px 12px;border-radius:6px;background:var(--surface-2);margin:0 0 8px}
+.ex-opts .choice.right{border-color:var(--line);box-shadow:inset 0 0 0 2px var(--c-ok)}
+.ex-opts .choice.wrong{border-color:var(--line);box-shadow:inset 0 0 0 2px var(--c-oom)}
+.ex-res{padding:11px 14px;border-radius:12px;background:var(--surface-2);margin:0 0 8px}
 .ex-res.ok{border-left:3px solid var(--c-ok)}
 .ex-res.no{border-left:3px solid var(--c-oom)}
 .ex-res p{font-size:14px;line-height:1.45}
@@ -746,7 +846,7 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
 .ex-body .ex-drill{margin-top:14px}
 /* round 3, R07: the card is optional practice; once the challenge is passed it opens with that and the next lab */
 .exits .ex-opt{margin:2px 0 10px}
-.ex-passed{display:grid;gap:8px;justify-items:start;padding:10px 12px;margin:0 0 12px;border-radius:6px;border-left:3px solid var(--c-ok);background:var(--surface-2)}
+.ex-passed{display:grid;gap:8px;justify-items:start;padding:11px 14px;margin:0 0 12px;border-radius:12px;border-left:3px solid var(--c-ok);background:var(--surface-2)}
 .ex-passed p{margin:0;font-size:14px;line-height:1.45}
 
 /* ---------- home: the knowledge tree (batch 5; replaces the two loops). Roots and trunk in wood, each limb in its own hue (R11.10) ---------- */
@@ -848,7 +948,7 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
 .tz-kvc-vis text{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
 /* the axis caption is HTML over the chart's top margin (where the SVG text used to be), so its GiB can carry the definition */
 .tz-kvc-box{position:relative;min-width:0}
-.tz-kvc-cap{position:absolute;left:0;top:0;font-family:var(--font-mono);font-size:10px;line-height:11px;color:var(--ink-2);white-space:nowrap}
+.tz-kvc-cap{position:absolute;left:0;top:0;font-family:var(--font-mono);font-size:10px;line-height:13px;color:var(--ink-2);white-space:nowrap}   /* a line as tall as Figtree's text box, so the caption stays inside the chart */
 .tz-kvc-vis .tz-kvc-ylim{fill:var(--ink-2);font-weight:600}
 .tz-kvc-vis .tz-kvc-tag{fill:var(--on-kv);font-weight:600}
 .tz-kvc-w{fill:var(--c-weights)}
@@ -943,21 +1043,25 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
 /* ---------- the lab's flow (owner's decision 2026-10-11 19:28 UTC): the steps listed on the left, the stage or the primer on the right;
    the settings panel is the step 自由调参; the fidelity notes close the page ---------- */
 .flow.modes{display:block;border:0;padding:0;background:none;border-radius:0;gap:0}
-.flow .fl-list{list-style:none;margin:0;padding:6px;display:grid;gap:2px;border:1px solid var(--line);border-radius:6px;background:var(--surface);box-shadow:var(--shadow)}
-.flow .fl-i{margin:0}
-.flow .fl-i>button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 10px;border:0;border-radius:4px;background:transparent;font:inherit;font-weight:620;font-size:14.5px;line-height:1.3;color:var(--ink-2);cursor:pointer}
+/* the outline: no frame; the steps' numbers sit on one rail, the current step is a raised white row with its number in the branch colour */
+.flow .fl-list{position:relative;list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.flow .fl-list::before{content:"";position:absolute;left:23px;top:18px;bottom:18px;width:2px;border-radius:2px;background:var(--line)}
+.flow .fl-i{position:relative;margin:0}
+.flow .fl-i>button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:6px 12px;border:0;border-radius:14px;background:transparent;font:inherit;font-weight:700;font-size:15px;line-height:1.3;color:var(--ink-2);cursor:pointer;transition:background-color .15s,box-shadow .15s}
 .flow .fl-i>button:hover{background:var(--surface-2);color:var(--ink)}
-.flow .fl-i>button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.flow .fl-n{font-family:var(--font-mono);font-size:11.5px;font-weight:500;width:21px;height:21px;border-radius:50%;border:1px solid currentColor;display:inline-grid;place-items:center;flex:0 0 auto}
-.flow .fl-m{margin-left:auto;font-family:var(--font-mono);font-size:11.5px;font-weight:400;opacity:.8;white-space:nowrap}
-.flow .fl-sub{list-style:none;margin:4px 0 6px 20px;padding:0;display:none}
+.flow .fl-i>button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.flow .fl-n{position:relative;z-index:1;font-family:var(--font-mono);font-size:12px;font-weight:800;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line);background:var(--bg);color:var(--ink-3);display:inline-grid;place-items:center;flex:0 0 auto}
+.flow .fl-i>button:hover .fl-n{border-color:var(--ink-3)}
+.flow .fl-i>button[aria-pressed="true"] .fl-n{background:var(--branch);border-color:var(--branch);color:var(--branch-ink)}
+.flow .fl-m{margin-left:auto;font-family:var(--font-mono);font-size:12.5px;font-weight:500;color:var(--ink-3);white-space:nowrap}
+.flow .fl-sub{list-style:none;margin:4px 0 8px 48px;padding:0;display:none}
 .bench[data-flow="primer"]>.flow .fl-sub{display:grid}
-.flow .fl-sub a{display:block;padding:5px 8px 5px 12px;font-size:13px;line-height:1.4;color:var(--ink-2);text-decoration:none;border-left:2px solid var(--line-2)}
+.flow .fl-sub a{display:block;padding:5px 8px 5px 12px;font-size:13.5px;line-height:1.4;color:var(--ink-2);text-decoration:none;border-left:2px solid var(--line-2)}
 .flow .fl-sub a:hover{color:var(--ink)}
-.flow .fl-sub a.on{color:var(--ink);border-left-color:var(--ink);font-weight:620}
-.flow .fl-see{margin:8px 4px 0;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+.flow .fl-sub a.on{color:var(--ink);border-left-color:var(--branch);font-weight:650}
+.flow .fl-see{margin:8px 4px 0 12px;font-size:14px;line-height:1.5;color:var(--ink-2)}
 @media (max-width:760px){.flow .fl-see{margin-top:6px}}   /* phones: the first screen (kit polish r2, M2) */
-.flow .fl-see a{color:var(--ink);font-weight:620;text-underline-offset:2px}
+.flow .fl-see a{color:var(--ink);font-weight:650;text-underline-offset:2px}
 /* the outline column is wide so the guided cards' text runs in fewer lines (owner 2026-10-14; the stage gave up the room when Settings left the right rail) */
 :is(#view-dyn,#view-lab) .bench.flowed,:is(#view-dyn,#view-lab) .bench.flowed.no-ctl{grid-template-columns:400px minmax(0,1fr)}
 @media (max-width:1300px){:is(#view-dyn,#view-lab) .bench.flowed,:is(#view-dyn,#view-lab) .bench.flowed.no-ctl{grid-template-columns:360px minmax(0,1fr)}}
@@ -976,41 +1080,45 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
   :is(#view-dyn,#view-lab) .bench.flowed,:is(#view-dyn,#view-lab) .m2 .bench.flowed{display:flex;flex-direction:column;align-items:stretch;gap:12px}
   :is(#view-dyn,#view-lab) .bench.flowed>[data-flow-nav]{order:0;width:100%}
   :is(#view-dyn,#view-lab) .bench.flowed>.primer{order:2}
-  .flow .fl-list{display:flex;overflow-x:auto;padding:4px;gap:4px;scrollbar-width:none}
-  .flow .fl-i>button{white-space:nowrap;padding:7px 10px;font-size:13.5px;gap:7px}
+  /* phones: the steps as a strip of keys on a tray, the current one raised */
+  .flow .fl-list{display:flex;overflow-x:auto;padding:3px;gap:3px;scrollbar-width:none;background:var(--sunken);border-radius:12px}
+  .flow .fl-list::before{display:none}
+  .flow .fl-i>button{white-space:nowrap;padding:7px 10px;font-size:13.5px;line-height:1.3;gap:7px;border-radius:9px}
+  .flow .fl-i>button:hover{background:color-mix(in srgb,var(--raised) 55%,transparent)}
+  .flow .fl-i>button[aria-pressed="true"]{background:var(--raised);box-shadow:0 1px 3px rgba(22,32,27,.2)}
   .flow .fl-m,.bench[data-flow="primer"]>.flow .fl-sub{display:none}
 }
 /* the primer: read top to bottom; its pictures are the lab's own, shown as a display (inert), each picture's frames in turn */
 .primer{min-width:0;max-width:880px}
 .pr-sec{padding:2px 0 30px;margin-bottom:28px;border-bottom:1px solid var(--line-2);scroll-margin-top:84px}
-.pr-k{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-3)}
-.pr-h{font-size:clamp(21px,2.1vw,26px);line-height:1.3;margin:4px 0 12px;font-weight:700;letter-spacing:0}
-.pr-text{font-size:17px;line-height:1.75;max-width:740px}
+.pr-k{font-family:var(--font-mono);font-size:13.5px;font-weight:800;color:var(--branch)}
+.pr-h{font-size:clamp(23px,2.3vw,30px);line-height:1.28;margin:2px 0 14px;font-weight:700;letter-spacing:-.01em}
+.pr-text{font-size:18px;line-height:1.85;max-width:740px}
 .pr-text p{margin:0 0 12px}
 .pr-text ul{margin:0 0 12px;padding-left:22px}
-.pr-fig{margin:14px 0 20px;padding:16px 18px 14px;border:1px solid var(--line);border-radius:6px;background:var(--surface);box-shadow:var(--shadow)}
+.pr-fig{margin:16px 0 22px;padding:16px 18px 14px;border:1px solid var(--line-2);border-radius:20px;background:var(--surface);box-shadow:var(--shadow)}
 .pr-frames{display:grid}
 .pr-fr{grid-area:1 / 1;visibility:hidden;min-width:0}
 .pr-fr.on{visibility:visible}
 .pr-frames button,.pr-frames input,.pr-frames select,.pr-frames a{pointer-events:none}
 .pr-multi{touch-action:pan-y}
-.pr-cap{margin-top:10px;font-size:14.5px;color:var(--ink-2);line-height:1.55}
+.pr-cap{margin-top:10px;font-size:15px;color:var(--ink-2);line-height:1.6}
 .pr-nav{display:flex;align-items:center;gap:12px;margin-top:10px}
 .pr-prev,.pr-next{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
-.pr-prev:hover:not(:disabled),.pr-next:hover:not(:disabled){border-color:var(--ink)}
+.pr-prev:hover:not(:disabled),.pr-next:hover:not(:disabled){border-color:var(--ink-3);background:var(--surface-2)}
 .pr-prev:disabled,.pr-next:disabled{opacity:.35;cursor:default}
-.pr-num{font-family:var(--font-mono);font-size:12px;color:var(--ink-3)}
+.pr-num{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--ink-3)}
 .pr-dots{display:flex;gap:6px}
 .pr-dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
-.pr-dots i.on{background:var(--ink)}
+.pr-dots i.on{background:var(--branch)}
 @media (prefers-reduced-motion:reduce){.pr-fr{grid-area:auto;visibility:visible}.pr-frames{gap:18px}.pr-nav{display:none}}
 .pr-end{padding:0 0 24px}
-@media (max-width:760px){.pr-text{font-size:16px}.pr-fig{padding:12px}}
+@media (max-width:760px){.pr-text{font-size:17px;line-height:1.8}.pr-fig{padding:12px;border-radius:16px}}
 /* the fidelity notes, at the page's end like a paper's references */
-.endnotes{padding-block:22px 40px;margin-top:8px;border-top:1px solid var(--line)}
-.endnotes h2{font-size:18px;margin:0 0 12px}
-.en-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px 28px;font-size:13.5px;line-height:1.6;color:var(--ink-2)}
-.en-block h3{font-size:14px;margin:0 0 6px;color:var(--ink)}
+.endnotes{padding-block:28px 40px;margin-top:8px;border-top:1px solid var(--line-2)}
+.endnotes h2{font-size:22px;margin:0 0 14px}
+.en-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px 32px;font-size:14px;line-height:1.65;color:var(--ink-2)}
+.en-block h3{font-size:15px;margin:0 0 6px;color:var(--ink)}
 .en-block ul{margin:0;padding-left:18px}
 .en-block p{margin:0 0 8px}
 .en-block>.eyebrow{margin-top:4px}
@@ -1046,8 +1154,8 @@ math.tex{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sa
    (second reader, 2026-10-13: nobody saw the path cards could be clicked; the owner: the lab tiles work the same way) */
 .pentry{box-shadow:0 1px 2px rgba(13,20,30,.07);transition:border-color .15s,box-shadow .15s,transform .15s}
 .pentry:has(.pe-hit:hover){border-color:var(--ink);box-shadow:var(--shadow);transform:translateY(-1px)}
-.tile.is-live{border-color:var(--line);cursor:pointer;box-shadow:0 1px 2px rgba(13,20,30,.07);transition:border-color .15s,box-shadow .15s,transform .15s}
-.tile.is-live:hover:not(:has(:is(button,input,select,label,.seg-ctl,[role=slider],[tabindex="0"][data-tipx]):hover)){border-color:var(--ink);box-shadow:var(--shadow);transform:translateY(-1px)}
-.tile.is-live:has(.tile-q a:focus-visible){outline:2px solid var(--ink);outline-offset:2px}
+.tile.is-live{cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.tile.is-live:hover:not(:has(:is(button,input,select,label,.seg-ctl,[role=slider],[tabindex="0"][data-tipx]):hover)){border-color:var(--branch);box-shadow:var(--shadow);transform:translateY(-2px)}
+.tile.is-live:has(.tile-q a:focus-visible){outline:2px solid var(--branch);outline-offset:2px}
 .tile-q a:focus-visible{outline:none}
 @media (prefers-reduced-motion:reduce){.pentry,.tile.is-live{transition:none}.pentry:has(.pe-hit:hover),.tile.is-live:hover{transform:none!important}}

@@ -239,3 +239,5 @@
   .spd-metrics .metric .d{min-height:13px;line-height:1.1}
   .spd-stage>details.math{margin-top:8px;padding-top:8px}
 }}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.spd-st-title{font-variant-numeric:tabular-nums}

@@ -162,12 +162,8 @@ html[lang^="zh"] .zr-waitn{margin-left:0}
 
 /* the challenge's six token counts wrap in the narrow rail instead of running past it */
 #zr-rail .seg-ctl[data-key="cht"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
-#zr-rail .seg-ctl[data-key="cht"] button:nth-child(3n){border-right:0}
-#zr-rail .seg-ctl[data-key="cht"] button:nth-child(-n+3){border-bottom:1px solid var(--line)}
 /* the five ways to split, in two rows in the Settings panel (“Data parallel” is long in English) */
 #zr-controls .seg-ctl[data-key="st"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
-#zr-controls .seg-ctl[data-key="st"] button:nth-child(3n){border-right:0}
-#zr-controls .seg-ctl[data-key="st"] button:nth-child(-n+3){border-bottom:1px solid var(--line)}
 .zr-b-lg,.zr-sw-lg{background:repeating-linear-gradient(0deg,var(--ink-3) 0 1px,var(--sunken) 1px 4px)}
 .zr-netl{margin:4px 0 6px;padding-left:16px}
 .zr-netl li{margin:0 0 2px}
@@ -196,3 +192,5 @@ html[lang^="zh"] .zr-waitn{margin-left:0}
   .zr-metrics .metric .d{min-height:13px;line-height:1.1}
   .zr-stage>details.math{margin-top:8px;padding-top:8px}
 }}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.zr-nl{font-variant-numeric:tabular-nums}

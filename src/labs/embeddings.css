@@ -183,7 +183,6 @@
   .emb-transport .ctl,.emb-transport .inline-ctl{display:flex;align-items:center;gap:8px}
   .emb-transport .ctl>.lbl,.emb-transport .inline-ctl>label{flex:none}
   .emb-transport .inline-ctl>label{width:5.6em}
-  .emb-transport .seg-ctl button{padding-bottom:3px}   /* the speed buttons share the line with Train and Replay now; their mono text sat 1 px below the other two's, now within half a pixel of their baseline (R7.14) */
   .emb-body.l3{--emb-chart-h:118}
   .emb-body.l3 .emb-rows{gap:1px;margin:4px 0 2px}
   .emb-body.l3 .emb-rows li{line-height:17px}
@@ -198,3 +197,5 @@
   .emb-metrics .metric .d{min-height:13px;line-height:1.1}
   .emb-stage>details.math{margin-top:8px;padding-top:8px}
 }}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.emb-st-title,#emb-h-title,#emb-m-title,.emb-miss{font-variant-numeric:tabular-nums}

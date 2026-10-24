@@ -194,10 +194,6 @@
 #tcap-controls .seg-ctl{flex-wrap:wrap}
 .tcap-metrics .v{white-space:normal;overflow-wrap:anywhere}
 
-/* option groups that wrap keep a 1px line between their rows as well as their columns: the buttons sit 1px apart on the line colour
-   instead of drawing right borders (owner 2026-10-14, R7.13; tests/kit_seg_rows.py) */
-.tcap-app .seg-ctl{gap:1px;background:var(--line)}
-.tcap-app .seg-ctl button,.tcap-app .seg-ctl button:last-child{border-right:0}
 
 /* ---------- polish round 5 (B4, 2026-10-17): the stage fits 1440 × 900 ----------
    In English, parts 5 and 7 (the layout, one step and the whole run, five metric cards) ran 13 px past the stage's 814 px at

@@ -262,9 +262,9 @@ function verdict(){
 }
 function obsStd(){
   /* shown from step 0, so the rail does not grow under a sticky stage at the first ▸ (R7.9) */
-  if(!doneStd&&tstep===0) return tx('<p><b>Step 0 of 6: nothing has crossed between HBM and the chip yet.</b> Press ▸ to take the first step.</p>','<p><b>第 0 步（共 6 步）：HBM 和芯片之间还什么都没搬。</b>按 ▸ 走第一步。</p>');
-  if(!doneStd) return tx(`<p><b>Step ${tstep} of ${STD_STEPS.length-1}: ${fint(stdSoFar(tstep))} numbers have crossed between HBM and the chip so far.</b> Go on to the last step.</p>`,
-                         `<p><b>第 ${tstep} 步（共 ${STD_STEPS.length-1} 步）：到目前为止，在 HBM 和芯片之间搬了 ${fint(stdSoFar(tstep))} 个数值。</b>继续走到最后一步。</p>`);
+  if(!doneStd&&tstep===0) return tx('<p class="fa-runl"><b>Step 0 of 6: nothing has crossed between HBM and the chip yet.</b> Press ▸ to take the first step.</p>','<p class="fa-runl"><b>第 0 步（共 6 步）：HBM 和芯片之间还什么都没搬。</b>按 ▸ 走第一步。</p>');
+  if(!doneStd) return tx(`<p class="fa-runl"><b>Step ${tstep} of ${STD_STEPS.length-1}: ${fint(stdSoFar(tstep))} numbers have crossed between HBM and the chip so far.</b> Go on to the last step.</p>`,
+                         `<p class="fa-runl"><b>第 ${tstep} 步（共 ${STD_STEPS.length-1} 步）：到目前为止，在 HBM 和芯片之间搬了 ${fint(stdSoFar(tstep))} 个数值。</b>继续走到最后一步。</p>`);
   const t=times(8192,128);
   return tx(`<p><b>The 12-token example moved ${fint(STD_TOTAL)} numbers between HBM and the chip, and ${fint(SP_TOY)} of them were S and P going out and coming back.</b></p>`,
             `<p><b>这个 12 token 的例子在 HBM 和芯片之间搬了 ${fint(STD_TOTAL)} 个数值，其中 ${fint(SP_TOY)} 个是 S 和 P 写出去又读回来。</b></p>`)+verdict()+
@@ -273,9 +273,9 @@ function obsStd(){
 }
 function rowRise(){const st=TIL.steps.filter(s=>s.i===0), k=st.findIndex((s,j)=>j>0&&s.f[0]<1); return {j:k, from:st[k].mOld[0], to:st[k].m[0], f:st[k].f[0]};}
 function obsFa(){
-  if(!doneFa&&tstep===0) return tx('<p><b>Tile pair 0 of 9 (3 Q tiles, each paired with 3 K/V tiles): nothing has moved yet.</b></p>','<p><b>第 0 对 tile（3 个 Q tile 各配 3 个 K/V tile，共 9 对）：还什么都没搬。</b></p>');
-  if(!doneFa) return tx(`<p><b>Tile pair ${tstep} of ${TIL.steps.length}: ${fint(faSoFar(tstep))} numbers have crossed so far, and no score has left the chip.</b> Go on to the last tile pair.</p>`,
-                        `<p><b>第 ${tstep} 对 tile（共 ${TIL.steps.length} 对）：到目前为止搬了 ${fint(faSoFar(tstep))} 个数值，没有一个得分离开芯片。</b>继续走到最后一对。</p>`);
+  if(!doneFa&&tstep===0) return tx('<p class="fa-runl"><b>Tile pair 0 of 9 (3 Q tiles, each paired with 3 K/V tiles): nothing has moved yet.</b></p>','<p class="fa-runl"><b>第 0 对 tile（3 个 Q tile 各配 3 个 K/V tile，共 9 对）：还什么都没搬。</b></p>');
+  if(!doneFa) return tx(`<p class="fa-runl"><b>Tile pair ${tstep} of ${TIL.steps.length}: ${fint(faSoFar(tstep))} numbers have crossed so far, and no score has left the chip.</b> Go on to the last tile pair.</p>`,
+                        `<p class="fa-runl"><b>第 ${tstep} 对 tile（共 ${TIL.steps.length} 对）：到目前为止搬了 ${fint(faSoFar(tstep))} 个数值，没有一个得分离开芯片。</b>继续走到最后一对。</p>`);
   const r=rowRise();
   return tx(`<p><b>FlashAttention moved ${fint(FA_TOTAL)} numbers instead of ${fint(STD_TOTAL)}, and its output matches standard attention’s: the largest difference is ${sci(MAXDIFF)}, a rounding difference in the last bits.</b></p>`+
      `<p>Why: it reads Q once and writes O once, but reads K and V once for each of the 3 Q tiles; S and P never leave the chip. The rescale keeps the softmax exact: row 1’s max rose from ${f2(r.from)} to ${f2(r.to)} at K/V tile ${r.j+1}, so its running sum and partial output were multiplied by ${f2(r.f)} first, as ${J('row','the table under the chart')} shows. This is the online softmax at work.</p>`,

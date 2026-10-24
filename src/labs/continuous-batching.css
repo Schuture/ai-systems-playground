@@ -157,3 +157,5 @@
 .cb-mc{padding:1px 3px;white-space:normal;line-height:1.5;text-align:center}
 .cb-mc0{display:flex;align-items:center;justify-content:center;height:1.9em;white-space:nowrap}
 .cb-mtall .cb-mc0{height:3.1em}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.cb-clock{font-variant-numeric:tabular-nums}

@@ -6,6 +6,7 @@
 .pin-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
 .pin-sub{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin-bottom:4px}
 .pin-legend{margin-top:6px}
+:where(html[lang^="zh"]) #pin-log-leg{font-size:11px}   /* the log's key is 221 px wide: in Chinese its first line holds three marks only at the size it was fitted to */
 .pin-legend>span{cursor:help;display:inline-flex;align-items:center}
 
 /* ---------- the tools row ---------- */
@@ -208,9 +209,7 @@ mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;pad
 @media (prefers-reduced-motion:reduce){.pin-dk i{transition:none}.pin-blk.harm.pin-now,.pin-li.harm.pin-now,.pin-hx.pin-now,.pin-now mark.pin-hid{animation:none}}
 /* the four sending rules are long: two per row, so no label is clipped in the narrow Settings column or the task card */
 .pin-app .seg-ctl[data-key="rule"],.pin-app .seg-ctl[data-key="chR"]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
-.pin-app .seg-ctl[data-key="rule"] button,.pin-app .seg-ctl[data-key="chR"] button{border-right:0;border-bottom:1px solid var(--line);line-height:1.35;overflow-wrap:anywhere}
-.pin-app .seg-ctl[data-key="rule"] button:nth-child(odd),.pin-app .seg-ctl[data-key="chR"] button:nth-child(odd){border-right:1px solid var(--line)}
-.pin-app .seg-ctl[data-key="rule"] button:nth-child(n+3),.pin-app .seg-ctl[data-key="chR"] button:nth-child(n+3){border-bottom:0}
+.pin-app .seg-ctl[data-key="rule"] button,.pin-app .seg-ctl[data-key="chR"] button{line-height:1.35;overflow-wrap:anywhere}
 
 /* Show the math in short blocks (the owner, 2026-10-09): a hairline between blocks; a chain's “=” signs in one column */
 .pin-mb{padding:8px 0 10px}

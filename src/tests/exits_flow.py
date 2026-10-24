@@ -132,7 +132,9 @@ with sync_playwright() as p:
             for lang in ('en', 'zh'):
                 tag = f'{lab} {w} {lang}'
                 pg, errs = page(b, w, h, lang, lab)
-                oc = pg.evaluate("""()=>{const t=[...document.querySelectorAll('.labtitle')].find(e=>e.offsetParent!==null); if(!t) return null; const o=t.nextElementSibling;
+                # since the 2026-10-22 refit the outcome and the minutes tag share one line, .lab-sub, right under the title
+                oc = pg.evaluate("""()=>{const t=[...document.querySelectorAll('.labtitle')].find(e=>e.offsetParent!==null); if(!t) return null; let o=t.nextElementSibling;
+                   if(o&&o.classList.contains('lab-sub')) o=o.firstElementChild;
                    return o&&o.classList.contains('lab-outcome')?o.innerText:''}""")
                 check(f'{tag}: “You will be able to” sits right under the title', bool(oc) and oc.startswith('You will be able to:' if lang == 'en' else '学完你能：') and len(oc) > 30, oc)
                 check(f'{tag}: no exits card in the guided tour', pg.evaluate(CARD) is None)

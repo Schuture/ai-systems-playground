@@ -144,9 +144,9 @@
 
 /* ---------- mini result bar: each parameter's gradient size ---------- */
 .bp-dk{display:flex;gap:3px;width:100%;min-width:60px;cursor:help}
-.bp-dk span{position:relative;flex:1 1 0;min-width:0;height:13px;background:var(--surface-2);border-radius:2px;overflow:hidden}
-.bp-dk i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);opacity:.55}
-.bp-dk em{position:absolute;left:3px;top:0;font-style:normal;font-family:var(--font-mono);font-size:9.5px;line-height:13px;color:var(--ink)}
+.bp-dk span{position:relative;flex:1 1 0;min-width:0;height:13px;background:var(--surface-2);border-radius:2px}   /* not clipped: a 13 px bar on a phone still shows all of “w₂” */
+.bp-dk i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);opacity:.55;border-radius:inherit}
+.bp-dk em{position:absolute;left:2px;top:0;font-style:normal;font-family:var(--font-mono);font-size:9.5px;line-height:13px;color:var(--ink);white-space:nowrap}
 
 @media (max-width:760px){
   /* phones: the picture first, its legend right under it (R7.3) */

@@ -134,7 +134,7 @@
    and the speed buttons share one height and one centre line, and the label 速度 sits beside its buttons */
 #rm-app .ctl:has(>.seg-ctl[data-key$="pd"]),#rm-app .ctl:has(.seg-ctl[data-key$="pd"]){display:flex;align-items:center;gap:6px;margin:0}
 #rm-app .ctl:has(.seg-ctl[data-key$="pd"])>.lbl{margin:0}
-#rm-app .seg-ctl[data-key$="pd"] button{height:30px;padding-top:0;padding-bottom:0}
+#rm-app .seg-ctl[data-key$="pd"] button{height:26px;padding-top:0;padding-bottom:0}   /* the kit's tray adds 3 px above and below its keys (2026-10-22 refit): 26 px keys keep the control 32 px tall, as tall as the button beside it */
 #rm-app :has(>.ctl .seg-ctl[data-key$="pd"])>.btn{height:32px;padding-top:0;padding-bottom:0}
 /* H5 (the owner, 2026-10-09: “信息过多，需要分割线”): the stage's blocks (the example pair, the σ curve, the weights, the training curves
    with their player, best-of-n) each keep their bold heading and are separated by a hairline in the kit's line colour; the framed pair
@@ -146,6 +146,10 @@
 /* G5: the gradient step's \big brackets reached 1 px past its formula box in Chinese (the text 选中 / 落选 inside the formula); a little
    room above and below the formula keeps it whole */
 .rm-app .fx math{padding-block:2px}
+/* the same formula in the 13.5 px Show the math (2026-10-22 refit): the “←” comes from a fallback font whose text box, at the inherited
+   1.6 line height, reached past the bottom padding in Chinese, so the box scrolled by 1 px; an operator's text box is its glyph's height,
+   which changes nothing on screen */
+.rm-app .fx mo{line-height:1}
 /* 知识梳理 (2026-10-12): formulas on their own line, side by side, wrapping under each other in a narrow column (as eval-ci's primer
    sets them), with room above and below for the \big brackets around Chinese text */
 .primer .rm-prfx{display:flex;flex-wrap:wrap;align-items:center;column-gap:2.2em;row-gap:8px;margin:2px 0 14px;padding-left:1em;font-size:1.06em;line-height:1.3;min-width:0}
@@ -203,3 +207,5 @@
   .rm-metrics .metric .d{min-height:13px;line-height:1.1}
   .rm-stage>details.math{margin-top:8px;padding-top:8px}
 }}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+#rm-pair .rm-foot,.rm-cap,#rm-tr-charts figcaption,#rm-bon figcaption,#rm-metrics .sub{font-variant-numeric:tabular-nums}

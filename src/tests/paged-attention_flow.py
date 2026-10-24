@@ -915,8 +915,12 @@ with sync_playwright() as _p:
         for _r in _rows:
             check(f'1440 {_lang} walk part {_r["part"]}: the stage needs no scrolling inside' + (', 30 px to spare' if _lang == 'zh' else '') + ', the pool whole on the screen (B4, R7.12)',
                   _r['scroll'] <= 0 and _r['spare'] >= (30 if _lang == 'zh' else 0) and _r['fig'][0] >= _r['bar'] - 1 and _r['fig'][1] <= _r['vh'] + 1, _r)
-        _r = _rows[6] if len(_rows) >= 7 else {}   # part 7, whose stage the bench's end pushed up before (−91 px in Chinese, 65 in English): at 70 px
-        check(f'1440 {_lang} walk part 7: the stage’s top at its sticky line, 70 px (it was at ' + ('−91' if _lang == 'zh' else '65') + ' px)', bool(_r) and abs(_r['top'] - 70) <= 2, _r)
+        # part 7, whose stage the bench's end pushed up before (−91 px in Chinese, 65 in English): keepStage brings it back. Since the
+        # 2026-10-22 refit's shorter lab head the reveal often has no need to scroll here, so the stage may stay below its sticky line;
+        # it must never be above it, and the pool must be whole on the screen
+        _r = _rows[6] if len(_rows) >= 7 else {}
+        check(f'1440 {_lang} walk part 7: the stage’s top at its sticky line (70 px) or lower and the pool whole on the screen (it was at ' + ('−91' if _lang == 'zh' else '65') + ' px before keepStage)',
+              bool(_r) and _r['top'] >= 68 and _r['fig'][0] >= _r['bar'] - 1 and _r['fig'][1] <= _r['vh'] + 1, _r)
         _pg.close()
     # a phone keeps square cells (the layout at 390 is unchanged)
     _pg = _b.new_page(viewport={'width': 390, 'height': 844}, reduced_motion='reduce'); _pg.add_init_script('window.__aspPrimer=true')

@@ -105,9 +105,6 @@ html[lang^="zh"] .tk-crow{grid-template-columns:40px minmax(0,1fr) 86px}
 .tk-kstep{padding:2px 10px;font-size:13px;line-height:1.2;font-family:var(--font-mono)}
 .tk-app .seg-ctl button{line-height:1.25;white-space:normal}
 .tk-app .seg-ctl[data-key="mix"]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
-.tk-app .seg-ctl[data-key="mix"] button{border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
-.tk-app .seg-ctl[data-key="mix"] button:nth-child(2n){border-right:0}
-.tk-app .seg-ctl[data-key="mix"] button:nth-child(n+3){border-bottom:0}
 .tk-lv{margin-top:6px}
 .tk-lv-h{display:flex;justify-content:space-between;gap:10px;padding:0 13px 0 36px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.02em;color:var(--ink-3)}
 .tk-lv .levers{margin-top:3px}

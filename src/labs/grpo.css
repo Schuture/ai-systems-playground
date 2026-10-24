@@ -173,3 +173,5 @@
 }}
 /* four metric cards in one row of four on a wide stage, not four of five columns (desktop only: ≤ 760 px keeps its layout) */
 @media (min-width:761px){@container (min-width:560px){.grpo-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.grpo-st-title,#grpo-g-title,#grpo-p-title,#grpo-g-note,#grpo-mathbody .grpo-mb-sub{font-variant-numeric:tabular-nums}

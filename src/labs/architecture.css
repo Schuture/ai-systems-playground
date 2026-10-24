@@ -75,8 +75,8 @@
 .ar-chq p{margin:0 0 6px}
 .ar-cho{display:grid;gap:5px}
 .ar-cho .choice{text-align:left;font-size:13px}
-.ar-cho .choice.right{box-shadow:inset 0 0 0 2px var(--c-ok)}
-.ar-cho .choice.wrong{box-shadow:inset 0 0 0 2px var(--c-oom)}
+.ar-cho .choice.right{border-color:var(--line);box-shadow:inset 0 0 0 2px var(--c-ok)}
+.ar-cho .choice.wrong{border-color:var(--line);box-shadow:inset 0 0 0 2px var(--c-oom)}
 .ar-chr{margin-top:6px;padding:6px 8px;border-radius:6px;background:var(--surface-2)}
 .ar-chr.ok{border-left:3px solid var(--c-ok)}
 .ar-chr.no{border-left:3px solid var(--c-oom)}

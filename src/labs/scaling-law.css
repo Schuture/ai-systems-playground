@@ -185,8 +185,3 @@
 }
 @media (prefers-reduced-motion:reduce){.sl-ttr i{transition:none}}
 @media (max-width:760px){.mathbody .sl-fx{font-size:13.5px}}
-
-/* option groups that wrap keep a 1px line between their rows as well as their columns: the buttons sit 1px apart on the line colour
-   instead of drawing right borders (owner 2026-10-14, R7.13; tests/kit_seg_rows.py) */
-.sl-app .seg-ctl{gap:1px;background:var(--line)}
-.sl-app .seg-ctl button,.sl-app .seg-ctl button:last-child{border-right:0}

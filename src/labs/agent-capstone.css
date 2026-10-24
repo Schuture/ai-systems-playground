@@ -162,3 +162,5 @@
   .acp-metrics .metric .v{line-height:1.25}
   .acp-metrics .metric .d{min-height:13px;line-height:13px}
 }}
+/* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
+.acp-runl{font-variant-numeric:tabular-nums}

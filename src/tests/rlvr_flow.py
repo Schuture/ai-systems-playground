@@ -231,10 +231,12 @@ PLAYERS = """()=>[...document.querySelectorAll('#rlvr-stage .rlvr-pl')].filter(e
   const base=e=>{const t=[...e.childNodes].find(n=>n.nodeType===3&&n.textContent.trim()); if(!t) return NaN; const r=document.createRange(); r.selectNodeContents(t); return r.getBoundingClientRect().bottom;};
   const d={id:row.id, h:[+rb.height.toFixed(1), +rs.height.toFixed(1)], top:[+rb.top.toFixed(1), +rs.top.toFixed(1)], base:[+base(b).toFixed(1), +base(s.querySelector('button')).toFixed(1)]};
   d.ok=Math.abs(d.h[0]-d.h[1])<=0.5&&Math.abs(d.top[0]-d.top[1])<=0.5&&Math.abs(d.base[0]-d.base[1])<=1; return d;})"""
-# R7.9: sizes that must not change while a player runs, sampled every frame in the page
+# R7.9: sizes that must not change while a player runs, sampled every frame in the page. A frame in which the page is not as wide as the
+# window is skipped: the full-page screenshot taken mid-replay on a phone lays the page out 1 px wide for one frame (2026-10-23), and a
+# sample from it measured that, not the page a reader sees
 SAMPLE = """(what)=>{window.__rlvrH=[]; const sz=()=>{const q=s=>document.querySelector(s), h=s=>q(s)?Math.round(q(s).getBoundingClientRect().height):-1;
     return [h('#rlvr-st-title'), h('#rlvr-st-sub'), what==='grp'?h('#rlvr-sel'):h('#rlvr-run'), what==='grp'?Math.round(q('#rlvr-gplay').getBoundingClientRect().top-q('#rlvr-grp').getBoundingClientRect().top):h('#rlvr-grp')];};
-  const f=()=>{const s=window.__rlvr.state(); if(!(what==='grp'?s.grpPlaying:s.playing)) return; window.__rlvrH.push(sz()); requestAnimationFrame(f);}; f();}"""
+  const w0=innerWidth, f=()=>{const s=window.__rlvr.state(); if(!(what==='grp'?s.grpPlaying:s.playing)) return; if(innerWidth===w0) window.__rlvrH.push(sz()); requestAnimationFrame(f);}; f();}"""
 SAMPLED = "()=>{const a=window.__rlvrH||[]; const out=[]; for(let i=0;i<4;i++){const v=a.map(x=>x[i]); out.push(v.length?Math.max(...v)-Math.min(...v):-1);} return {n:a.length, spread:out}}"
 # H1: every formula is MathML and no TeX command shows as a word
 MATHOK = r"""()=>{const bad=[]; const words=/^(frac|sqrt|left|right|text|mathrm|operatorname|cdot|hat|big|Big|quad|rho|theta|beta|pi|sigma|sum)$/;
@@ -404,9 +406,12 @@ with sync_playwright() as pw:
             pl = pg.evaluate(PLAYERS)
             check(f'{tag} part 3: the group’s replay and speed buttons share one height and one baseline (H7)', pl and all(x['ok'] for x in pl), pl)
             pg.evaluate("()=>{const r=document.querySelectorAll('#rlvr-rows .rlvr-row')[2]; r.click();}"); pg.wait_for_timeout(200)
-            hl = pg.evaluate("""()=>{const g=getComputedStyle(document.getElementById('rlvr-grp')), s=getComputedStyle(document.getElementById('rlvr-stage'));
+            # since the 2026-10-22 refit every panel, the stage included, rests on a soft shadow: a ring is an outline, a shadow on the group,
+            # or a stage shadow other than the one a fresh panel of the same classes has
+            hl = pg.evaluate("""()=>{const g=getComputedStyle(document.getElementById('rlvr-grp')), st=document.getElementById('rlvr-stage'), s=getComputedStyle(st);
+              const t=document.createElement('div'); t.className=st.className; st.parentElement.appendChild(t); const rest=getComputedStyle(t).boxShadow; t.remove();
               return {on:[...document.querySelectorAll('#rlvr-rows .rlvr-row.on')].map(e=>e.dataset.row), focus:(document.activeElement||{}).dataset?document.activeElement.dataset.row:null,
-                      ring:[g.outlineStyle, g.boxShadow, s.outlineStyle, s.boxShadow].filter(v=>v!=='none').length}}""")
+                      ring:[g.outlineStyle, g.boxShadow, s.outlineStyle].filter(v=>v!=='none').length+(s.boxShadow===rest?0:1)}}""")
             check(f'{tag} part 3: a click on a row highlights that row only and keeps the focus on it; no ring around the panel (H7)', hl['on'] == ['2'] and hl['focus'] == '2' and hl['ring'] == 0, hl)
             bounds(pg, f'{tag} part 3')
             # ---- part 4

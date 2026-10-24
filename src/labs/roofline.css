@@ -151,8 +151,8 @@
 }
 @media (prefers-reduced-motion:reduce){.rf-trk i,.rf-svg .rf-dot circle:first-child{transition:none}}
 /* Settings: the five kernels wrap onto two or three rows instead of overflowing the column (R7.8) */
-#rf-ctl-k-wrap .seg-ctl{flex-wrap:wrap;gap:1px;background:var(--line)}
-#rf-ctl-k-wrap .seg-ctl button{flex:1 1 auto;min-width:max-content;border-right:0;white-space:nowrap}
+#rf-ctl-k-wrap .seg-ctl{flex-wrap:wrap}
+#rf-ctl-k-wrap .seg-ctl button{flex:1 1 auto;min-width:max-content;white-space:nowrap}
 /* phones: the status badge beside the stage's title, so the chart starts higher (R7.3) */
 @media (max-width:760px){
   .rf-stage>.stage-head{display:flex;flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:8px}

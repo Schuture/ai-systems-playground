@@ -321,7 +321,7 @@ function verdict(){
 function obsMission(){
   if(!pred) return '';
   const r=R_(), lv=liveOf(r,PL.pv);
-  if(!runsSeen) return tx(`<p>The agent is running: step ${lv.lastStep} of 60.</p>`,`<p>agent 正在跑：60 步里走到了第 ${lv.lastStep} 步。</p>`);
+  if(!runsSeen) return tx(`<p class="cte-runl">The agent is running: step ${lv.lastStep} of 60.</p>`,`<p class="cte-runl">agent 正在跑：60 步里走到了第 ${lv.lastStep} 步。</p>`);
   const c=r.calls[r.calls.length-1], f=missionFacts(), pg=f.pages;
   const fx=M(`\\frac{\\text{${fI(r.W)}} - \\text{${fI(f.H)}}}{\\text{${fI(f.avgR)}}} \\approx ${f.est}`);
   return tx(`<p><b>At step ${r.over} the context would be ${fI(c.ctx)} tokens, more than the ${fI(r.W)} of the window. The call fails and the task stops there, with ${60-r.over+1} steps not done.</b></p>`,

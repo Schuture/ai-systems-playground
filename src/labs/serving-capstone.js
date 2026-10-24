@@ -773,7 +773,7 @@ function feedbackHTML(o,b,same){
   return `<ul class="sc-fb"><li><b>${tx('What limits it','限制它的是')}</b>${tx(': ','：')}${lim}</li>`+(same?'':`<li><b>${tx('Who gained','谁受益')}</b>${tx(': ','：')}${gainLine(o,b)}</li><li><b>${tx('What it cost','代价')}</b>${tx(': ','：')}${costLine(o,b)}</li>`)+`</ul>`;}
 /* while a run plays: where it is (a live value, not the result: R3.8) */
 function runLine(o){const t=play.t==null?o.end:play.t, done=o.R.filter(r=>r.fin<=t+EPS).length;
-  return tx(`Running: ${fC(Math.min(t,o.end))} of ${fC(o.end)}, ${done} of ${o.R.length} requests done.`,`运行中：${fC(Math.min(t,o.end))} / ${fC(o.end)}，${o.R.length} 个请求完成了 ${done} 个。`)+
+  return `<span class="sc-runl">${tx(`Running: ${fC(Math.min(t,o.end))} of ${fC(o.end)}, ${done} of ${o.R.length} requests done.`,`运行中：${fC(Math.min(t,o.end))} / ${fC(o.end)}，${o.R.length} 个请求完成了 ${done} 个。`)}</span>`+
     (RM()?'':` <button type="button" class="linkbtn" data-act="toend">${tx('Skip to the end ⏭','直接看结果 ⏭')}</button>`);}
 
 /* =====================================================================

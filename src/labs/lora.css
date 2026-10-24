@@ -65,6 +65,7 @@
 /* ---------- the matrix picture ---------- */
 .lora-matp .ctl{margin:0 0 6px}
 .lora-matp .seg-ctl button{padding:5px 2px;font-size:12px}
+.lora-matp .seg-ctl{flex-wrap:wrap}   /* in the narrow column at 761 px the seven keys take two rows instead of running past the panel */
 .lora-w{fill:color-mix(in srgb,var(--c-weights) 30%,var(--surface));stroke:var(--c-weights);stroke-width:1;cursor:help;outline:none}
 .lora-w.tr{fill:var(--c-weights)}
 .lora-w.q4{fill:url(#lora-p-q)}
