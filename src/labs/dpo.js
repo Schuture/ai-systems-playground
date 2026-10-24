@@ -1025,7 +1025,7 @@ function unwatchStage(){if(stRO){stRO.disconnect(); stRO=null;}}
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
   if(r.bottom<=innerHeight-8) return;
   const dy=Math.min(r.bottom-innerHeight+16,r.top-top); if(dy>0) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
 function revealObs(){if(app&&mode==='guided') revealBox($('#dpo-rail [data-obs]',app));}

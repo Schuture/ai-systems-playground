@@ -843,7 +843,7 @@ function anchorEl(){
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), narrow=innerWidth<=760;
-  const safe=(bar?bar.getBoundingClientRect().bottom:56)+(dk&&!dk.hidden?dk.offsetHeight:(narrow?52:0))+10;
+  const safe=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(narrow?52:0))+10;
   const r=box.getBoundingClientRect(), anc=anchorEl(), a=anc&&anc.getBoundingClientRect(), ancIn=!!a&&a.bottom>0&&a.top<innerHeight;
   if(r.top>=safe&&r.bottom<=innerHeight-8&&!(ancIn&&a.top<safe)) return;   // the whole result is in view, the control clear of the bars
   const need=r.top+56-innerHeight;                                         // the least scroll that shows its first line

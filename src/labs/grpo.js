@@ -733,7 +733,7 @@ function revealStep(){A.ui.reveal($('#grpo-rail .step.current',app)||$('#grpo-ra
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
   if(r.bottom<=innerHeight-8) return;
   const dy=Math.min(r.bottom-innerHeight+16,r.top-top); if(dy>0) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
 const revealObs=()=>requestAnimationFrame(()=>{if(!app) return; if(mode==='guided') revealBox($('#grpo-rail [data-obs]',app)); else if(mode==='sandbox') revealBox($('#grpo-insight',app)); else revealBox($('#grpo-ch-res',app));});

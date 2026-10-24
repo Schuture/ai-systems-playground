@@ -613,15 +613,18 @@ def h_page(b, lang):
 # enabled, else the part's heading), neither the stage nor anything in it scrolls inside: Chinese with at least 30 px to spare, English
 # with none; the stage's top is never under the top bar. And in Chinese, part 6 entered from part 5 near the end of the bench: on the
 # site its card lands just below the zone the kit's reveal leaves alone, so the reveal scrolls it up under the top bar and that pushed
-# the stage up to −176 px; keepStage now brings the stage back to about 70 px with the card still on the screen. This test page holds
+# the stage up to −176 px; keepStage now brings the stage back to its sticky line (70 px then; 12 px on a desktop lab page since refit
+# step 2, where the top bar scrolls away) with the card still on the screen. This test page holds
 # the lab alone, so the “read first” line about backprop above the step list is missing, the cards sit 28 px higher and the card stays
 # put; the test reaches the same place another way (the page scrolled on past part 6's card, then its title: the reveal brings the card
 # back under the top bar with the stage pushed up). Spare = the stage's max-height minus what its content and borders need. Before this
 # round the stage scrolled 194 px inside in parts 1 and 8, 186 in part 4, 166 in part 5, 137 in parts 2, 3 and 6, and each formula's
-# paragraph in “Show the math” 2–6 px (part 7).
-FIT = """()=>{const s=document.getElementById('op-stage'), r=s.getBoundingClientRect(); let inner=0;
+# paragraph in “Show the math” 2–6 px (part 7). “Below the top bar” reads where the bar's bottom is on the screen now (it may have
+# scrolled away) and keeps the old 59 px bound wherever the bar is still there.
+FIT = """()=>{const s=document.getElementById('op-stage'), r=s.getBoundingClientRect(), cs=getComputedStyle(s), tb=document.querySelector('.topbar'); let inner=0;
  s.querySelectorAll('*').forEach(e=>{if(/(auto|scroll)/.test(getComputedStyle(e).overflowY)&&e.getClientRects().length) inner=Math.max(inner,e.scrollHeight-e.clientHeight);});
- return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, inner, top:Math.round(r.top)}}"""
+ return {spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), scroll:s.scrollHeight-s.clientHeight, inner, top:Math.round(r.top),
+ bar:tb?Math.max(0,Math.round(tb.getBoundingClientRect().bottom)):0, stick:cs.position==='sticky'?Math.round(parseFloat(cs.top)):70}}"""
 
 
 def fit_page(b, lang):
@@ -649,7 +652,7 @@ def fit_entry(b, lang):
             pg.wait_for_timeout(900); settle(pg)
         f = pg.evaluate(FIT); f['step'] = state(pg)['step'] + 1
         check(f'{lang}-1440 part {k}: entering it, neither the stage nor anything in it scrolls inside{", 30 px to spare" if lang == "zh" else ""}, its top below the top bar (B4, R7.12)',
-              f['step'] == k and f['scroll'] <= 0 and f['inner'] <= 2 and f['spare'] >= (30 if lang == 'zh' else 0) and f['top'] >= 59, f)
+              f['step'] == k and f['scroll'] <= 0 and f['inner'] <= 2 and f['spare'] >= (30 if lang == 'zh' else 0) and f['top'] >= min(59, f['bar']), f)
     if lang == 'zh':
         title(5); pg.wait_for_timeout(900); settle(pg)
         pg.evaluate("()=>{const c=document.querySelector('#op-rail .steps>.step.current').getBoundingClientRect(); window.scrollBy(0, c.top+48-71+60)}")
@@ -658,8 +661,8 @@ def fit_entry(b, lang):
         title(6); pg.wait_for_timeout(1200); settle(pg)
         f = pg.evaluate(FIT); f['step'] = state(pg)['step'] + 1; f['pushed'] = pushed
         f['card'] = pg.evaluate("()=>Math.round(document.querySelector('#op-rail .steps>.step.current').getBoundingClientRect().top)")
-        check('zh-1440 part 6, entered from part 5 near the end of the bench (the stage pushed up under the top bar): the stage is back at about 70 px, the card still on the screen (keepStage, R7.12)',
-              f['step'] == 6 and f['pushed'] < 59 and 66 <= f['top'] <= 74 and 59 <= f['card'] <= 742, f)
+        check('zh-1440 part 6, entered from part 5 near the end of the bench (the stage pushed up under the top bar): the stage is back at its sticky line, the card still on the screen (keepStage, R7.12)',
+              f['step'] == 6 and f['pushed'] < f['stick'] and abs(f['top'] - f['stick']) <= 4 and min(59, f['bar']) <= f['card'] <= 742, f)
     pg.close()
 
 

@@ -877,7 +877,7 @@ function showPasses(play,reveal){
   render();}
 /* G6: when the passes start after a click in the card, the picture is on screen (on phones the stage sits above the card) */
 function revealClip(){requestAnimationFrame(()=>{if(!app) return; const el=$('#ppo-clip',app); if(!el||el.hidden) return; const r=el.getBoundingClientRect();
-  if(innerWidth<=760||r.top<56||r.top>innerHeight-160) A.ui.reveal(el);});}
+  if(innerWidth<=760||r.top<A.ui.barB()||r.top>innerHeight-160) A.ui.reveal(el);});}
 function setState(p,src){
   stopRun(); stopLoop();
   const before=cfgKey();

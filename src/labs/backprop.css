@@ -4,7 +4,7 @@
 .bp-stage .stage-head{align-items:center}
 .bp-stage .stage-actions{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:flex-end}
 .bp-graph{padding:12px 14px 14px;display:grid;gap:12px;min-width:0}
-.bp-sub{font-size:12px;color:var(--ink-2);line-height:1.35}
+.bp-sub{font-size:var(--fs-label);color:var(--ink-2);line-height:1.35}
 
 /* ---------- the graph ---------- */
 .bp-gwrap{min-width:0;overflow:hidden}
@@ -21,14 +21,14 @@
 .bp-n.bp-on rect{stroke:var(--ink);stroke-width:2;stroke-dasharray:5 3}
 .bp-n.bp-errn rect{stroke:var(--c-oom);stroke-width:2.4;fill:var(--c-oom-soft)}
 .bp-n:focus-visible rect{stroke:var(--ink);stroke-width:2.6}
-.bp-svg .bp-t1{font-size:9.8px;font-weight:650;fill:var(--ink)}
-.bp-svg .bp-t2{font-size:10.5px;fill:var(--ink-2)}
-.bp-svg .bp-t3{font-size:10.5px;fill:var(--ink-3)}
+.bp-svg .bp-t1{font-size:var(--fs-mark);font-weight:650;fill:var(--ink)}
+.bp-svg .bp-t2{font-size:var(--fs-mark);fill:var(--ink-2)}
+.bp-svg .bp-t3{font-size:var(--fs-mark);fill:var(--ink-3)}
 .bp-n.bp-known .bp-t3{fill:var(--ink);font-weight:650}
-.bp-svg .bp-tag{font-size:10px;fill:var(--ink-3)}
+.bp-svg .bp-tag{font-size:var(--fs-mark);fill:var(--ink-3)}
 .bp-cl rect{fill:var(--surface);stroke:var(--ink);stroke-width:1.2}
-.bp-svg .bp-cl text{font-size:10.5px;font-weight:650;fill:var(--ink)}
-.bp-svg .bp-fant{font-size:10.5px;font-weight:650;fill:var(--ink)}
+.bp-svg .bp-cl text{font-size:var(--fs-mark);font-weight:650;fill:var(--ink)}
+.bp-svg .bp-fant{font-size:var(--fs-mark);font-weight:650;fill:var(--ink)}
 .bp-svg .bp-fan.bp-bad .bp-fant{fill:var(--c-oom)}
 
 /* ---------- the backward player ---------- */
@@ -38,10 +38,10 @@
 .bp-playbtn{min-width:86px}
 .bp-scrub{display:flex;align-items:center;gap:8px;flex:1 1 200px;max-width:100%}
 .bp-scrub input[type=range]{flex:1 1 auto;min-width:80px}
-.bp-scrub output{font-size:12px;white-space:nowrap;color:var(--ink-2);min-width:6.5em;flex:none}
-.bp-speed button{font-size:12px;padding:3px 9px}
-.bp-read{margin:0;font-size:13px;line-height:1.45;color:var(--ink-2);min-height:4.4em;overflow-wrap:anywhere}
-.bp-err{font-size:13px;line-height:1.45;color:var(--c-oom);background:var(--c-oom-soft);border:1px solid var(--c-oom);border-radius:4px;padding:8px 10px;overflow-wrap:anywhere}
+.bp-scrub output{font-size:var(--fs-label);white-space:nowrap;color:var(--ink-2);min-width:6.5em;flex:none}
+.bp-speed button{font-size:var(--fs-label);padding:3px 9px}
+.bp-read{margin:0;font-size:var(--fs-cap);line-height:1.45;color:var(--ink-2);min-height:4.4em;overflow-wrap:anywhere}
+.bp-err{font-size:var(--fs-cap);line-height:1.45;color:var(--c-oom);background:var(--c-oom-soft);border:1px solid var(--c-oom);border-radius:4px;padding:8px 10px;overflow-wrap:anywhere}
 .bp-player.bp-inline{margin-top:8px}
 .bp-player.bp-inline .bp-scrub{flex-basis:140px}
 
@@ -58,7 +58,7 @@
   .bp-side>.bp-metrics{grid-template-columns:minmax(0,1fr)!important;margin:0}
 }
 .bp-check{display:grid;gap:8px;min-width:0;border-bottom:1px solid var(--line-2);padding-bottom:10px}
-.bp-check .bp-sub{font-weight:650;color:var(--ink);font-size:12.5px}
+.bp-check .bp-sub{font-weight:650;color:var(--ink);font-size:var(--fs-cap)}
 .bp-ckrow{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;min-width:0}
 .bp-cksvg{display:block;max-width:100%;height:auto;flex:none;border-radius:3px;cursor:help;outline-offset:2px}
 .bp-ckbg{fill:var(--surface-2)}
@@ -68,15 +68,15 @@
 .bp-sec{fill:none;stroke:var(--ink-2);stroke-width:2;stroke-dasharray:6 4}
 .bp-dot{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.5}
 .bp-pt{fill:var(--ink)}
-.bp-cknum{display:grid;gap:4px;min-width:150px;flex:1 1 150px;font-size:12.5px;color:var(--ink-2)}
+.bp-cknum{display:grid;gap:4px;min-width:150px;flex:1 1 150px;font-size:var(--fs-label);color:var(--ink-2)}
 .bp-cknum>div{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
 .bp-cknum>div[data-tipx]{cursor:help}
-.bp-cknum b{color:var(--ink);font-size:13px;white-space:nowrap}
+.bp-cknum b{color:var(--ink);font-size:var(--fs-cap);white-space:nowrap}
 .bp-cknum .okc{color:var(--c-ok);font-weight:650}
 .bp-cknum .bp-bad{color:var(--c-oom);font-weight:650}
 .bp-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
 .bp-chips>.bp-sub{flex:1 1 100%}
-.bp-chip{font-family:var(--font-mono);font-size:12px;line-height:1.2;padding:4px 8px;border:1px solid var(--line);border-radius:3px;background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.bp-chip{font-family:var(--font-mono);font-size:var(--fs-label);line-height:1.2;padding:4px 8px;border:1px solid var(--line);border-radius:3px;background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
 .bp-chip:hover{border-color:var(--ink-3)}
 .bp-chip.bp-on{border:1.5px solid var(--ink);color:var(--ink);font-weight:650}
 .bp-chip.bp-ok{color:var(--c-ok)}
@@ -95,7 +95,7 @@
 .bp-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
 .bp-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
 @container (min-width:560px){.bp-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.bp-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;max-width:100%;cursor:help}
+.bp-scope{margin:10px 0 6px;font-size:var(--fs-label);line-height:1.45;max-width:100%;cursor:help}
 .bp-scope span{border-bottom:1px dotted var(--line-2)}
 
 /* ---------- rail ---------- */
@@ -109,11 +109,11 @@
 .bp-lv .lever .lv-r{grid-column:2 / 4;grid-row:2;padding-top:0}
 .bp-lv .lever .lv-d{grid-row:3}
 .bp-lv .lever .lv-r:empty{display:none}
-.bp-why{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.bp-why{margin:8px 0 0;font-size:var(--fs-label);line-height:1.4;color:var(--ink-2)}
 .pbar .bp-why{margin-top:6px}
 .bp-remlist{padding-left:18px}
 .bp-remlist li{margin-bottom:8px}
-.bp-rem{font-size:12.5px;white-space:nowrap}
+.bp-rem{font-size:var(--fs-label);white-space:nowrap}
 .bp-rem[aria-pressed="true"]{font-weight:650;text-decoration:none}
 .bp-app .goal.bp-goal{display:grid;grid-template-columns:minmax(0,1fr);gap:1px}
 .bp-app .goal.bp-goal span:last-child{white-space:normal}
@@ -121,16 +121,16 @@
 
 /* ---------- the challenge's checks ---------- */
 .bp-chks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}
-.bp-chk{display:grid;gap:2px;text-align:left;font:inherit;font-size:12.5px;line-height:1.3;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--ink);cursor:pointer;min-width:0}
+.bp-chk{display:grid;gap:2px;text-align:left;font:inherit;font-size:var(--fs-label);line-height:1.3;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--ink);cursor:pointer;min-width:0}
 .bp-chk:hover:not(:disabled){border-color:var(--ink-3)}
-.bp-chk .mono{font-size:11.5px;color:var(--ink-3);overflow-wrap:anywhere}
+.bp-chk .mono{font-size:var(--fs-label);color:var(--ink-3);overflow-wrap:anywhere}
 .bp-chk:disabled{cursor:default;opacity:1}
 .bp-chk.bp-ok{border-color:var(--c-ok)}
 .bp-chk.bp-ok .mono{color:var(--c-ok)}
 .bp-chk.bp-bad{border-color:var(--c-oom)}
 .bp-chk.bp-bad .mono{color:var(--c-oom)}
 .bp-sig{margin:12px 0;min-width:0;overflow-x:auto}
-.bp-sig table{width:100%;border-collapse:collapse;font-size:12px;line-height:1.35}
+.bp-sig table{width:100%;border-collapse:collapse;font-size:var(--fs-label);line-height:1.35}
 .bp-sig th,.bp-sig td{padding:4px 5px;border-bottom:1px solid var(--line-2);text-align:center;vertical-align:top}
 .bp-sig th:first-child,.bp-sig td:first-child{text-align:left}
 .bp-sig td.bp-x{color:var(--c-oom);font-weight:650}
@@ -138,7 +138,7 @@
 .bp-sig tr.bp-on td{background:var(--surface-2);font-weight:650}
 
 /* ---------- connect ---------- */
-.bp-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.bp-prod{margin:0 0 8px;padding-left:18px;font-size:var(--fs-ui);color:var(--ink-2)}
 .bp-prod li{margin-bottom:6px}
 .bp-prod code,.refs code{word-break:break-word}
 
@@ -146,7 +146,7 @@
 .bp-dk{display:flex;gap:3px;width:100%;min-width:60px;cursor:help}
 .bp-dk span{position:relative;flex:1 1 0;min-width:0;height:13px;background:var(--surface-2);border-radius:2px}   /* not clipped: a 13 px bar on a phone still shows all of “w₂” */
 .bp-dk i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);opacity:.55;border-radius:inherit}
-.bp-dk em{position:absolute;left:2px;top:0;font-style:normal;font-family:var(--font-mono);font-size:9.5px;line-height:13px;color:var(--ink);white-space:nowrap}
+.bp-dk em{position:absolute;left:2px;top:0;font-style:normal;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:13px;color:var(--ink);white-space:nowrap}
 
 @media (max-width:760px){
   /* phones: the picture first, its legend right under it (R7.3) */
@@ -166,37 +166,37 @@
 /* ---------- round 3 (review 2026-10-03): the formula of the current step, next to the graph ---------- */
 /* forward and backward of the operation the player is on: each formula on one line, its numbers on the next. Every line has a fixed
    height and the script gives the box the height of the tallest step, so nothing around it moves while stepping (R7.8) */
-.bp-fx{display:block;min-width:0;padding:8px 8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);box-sizing:border-box}
+.bp-fx{display:block;min-width:0;padding:8px 8px 10px;border:1px solid transparent;border-radius:8px;background:var(--surface-2);box-sizing:border-box}   /* a soft panel, no frame (精装修 step 2) */
 .bp-fx[hidden]{display:none}
-.bp-fxh{height:26px;font-size:12.5px;font-weight:650;color:var(--ink);line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bp-fxl{height:18px;font-size:11px;line-height:18px;color:var(--ink-3);border-top:1px solid var(--line-2)}
+.bp-fxh{height:26px;font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-fxl{height:18px;font-size:var(--fs-mark);line-height:18px;color:var(--ink-3);border-top:1px solid var(--line)}
 .bp-fxm,.bp-fxn,.bp-fxt{display:flex;align-items:center;min-width:0;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:thin}
 .bp-fxm{height:36px}
 .bp-fxm.bp-fxf{height:26px}
 .bp-fxn{height:24px;padding-left:4px}
-.bp-fxt{height:24px;font-size:12px;color:var(--ink-2)}
-.bp-fxm math{font-size:13.5px;color:var(--ink)}
-.bp-fxn math{font-size:12px;color:var(--ink-2)}
+.bp-fxt{height:24px;font-size:var(--fs-label);color:var(--ink-2)}
+.bp-fxm math{font-size:var(--fs-math);color:var(--ink)}
+.bp-fxn math{font-size:var(--fs-label);color:var(--ink-2)}
 .bp-top.bp-two{column-gap:8px}
 /* review v6: formulas the page needs, each on its own line (R6.29) */
 .bp-ml{margin:4px 0 8px;overflow-x:auto;overflow-y:hidden}
-.bp-ml math{font-size:15px}
+.bp-ml math{font-size:var(--fs-stage)}
 .bp-mls{margin:2px 0 8px}
 .bp-mls .bp-ml{margin:2px 0}
 /* H1 (2026-10-09): the formulas of the boxes, typeset in HTML under the graph (an SVG text keeps only the box's name) */
-.bp-ops{width:0;min-width:100%;box-sizing:border-box;margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.5;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;color:var(--ink-2)}
-.bp-ops-k{flex-basis:100%;font-size:11.5px;color:var(--ink-3)}
+.bp-ops{width:0;min-width:100%;box-sizing:border-box;margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line);font-size:var(--fs-label);line-height:1.5;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;color:var(--ink-2)}
+.bp-ops-k{flex-basis:100%;font-size:var(--fs-label);color:var(--ink-3)}
 .bp-op{white-space:nowrap}
-.bp-mname{font-family:var(--font-ui);font-size:13px;margin-right:.3em}
+.bp-mname{font-family:var(--font-ui);font-size:var(--fs-cap);margin-right:.3em}
 /* Show the math as short blocks (H2, 2026-10-09): a hairline between blocks, the "=" of a chain in one column, numbers in tables */
 .bp-mblk{padding:8px 0 6px;border-top:1px solid var(--line-2)}
 .bp-mblk:first-child{border-top:0;padding-top:0}
-.bp-mlead,.bp-msym,.bp-mblk>p{font-family:var(--font-ui);font-size:13px;line-height:1.55}
+.bp-mlead,.bp-msym,.bp-mblk>p{font-family:var(--font-ui);font-size:var(--fs-cap);line-height:1.55}
 .bp-mfx{display:flex;flex-wrap:wrap;align-items:center;gap:.2em .6em;overflow-x:auto;max-width:100%;margin:4px 0}
 .bp-eq{display:grid;grid-template-columns:max-content max-content;column-gap:.3em;row-gap:.6em;align-items:center;overflow-x:auto;max-width:100%;margin:4px 0}
 .bp-eq-l{justify-self:end}
 .bp-mtab-w{overflow-x:auto;max-width:100%;padding-block:.3em}
-.bp-mtab{border-collapse:collapse;font-size:12px;margin:2px 0}
+.bp-mtab{border-collapse:collapse;font-size:var(--fs-label);margin:2px 0}
 .bp-mtab th,.bp-mtab td{padding:3px 14px 3px 0;text-align:left;vertical-align:top;white-space:nowrap}
 .bp-mtab th{font-weight:500;color:var(--ink-3);border-bottom:1px solid var(--line)}
 .bp-mtab td>div+div{margin-top:4px}
@@ -219,12 +219,12 @@
 .primer .pr-bp .bp-gwrap{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:10px 28px;align-items:center;overflow:visible}
 .primer .pr-bp .bp-svg{width:380px;max-width:100%;margin:0}
 .primer .pr-bp .bp-n{cursor:default}
-.primer .pr-bp .bp-ops{width:auto;min-width:0;margin:0;padding:4px 0 4px 22px;border-top:0;border-left:1px solid var(--line);flex-direction:column;align-items:flex-start;gap:8px;font-size:14px}
-.primer .pr-bp .bp-ops-k{flex-basis:auto;font-size:12.5px}
+.primer .pr-bp .bp-ops{width:auto;min-width:0;margin:0;padding:4px 0 4px 22px;border-top:0;border-left:1px solid var(--line);flex-direction:column;align-items:flex-start;gap:8px;font-size:var(--fs-ui)}
+.primer .pr-bp .bp-ops-k{flex-basis:auto;font-size:var(--fs-label)}
 @media (max-width:760px){
   .primer .pr-bp .bp-gwrap{grid-template-columns:minmax(0,1fr)}
   .primer .pr-bp .bp-svg{margin:0 auto}
-  .primer .pr-bp .bp-ops{border-left:0;border-top:1px solid var(--line);padding:8px 0 0;flex-direction:row;flex-wrap:wrap;gap:4px 14px;font-size:12.5px}
+  .primer .pr-bp .bp-ops{border-left:0;border-top:1px solid var(--line);padding:8px 0 0;flex-direction:row;flex-wrap:wrap;gap:4px 14px;font-size:var(--fs-label)}
   .primer .pr-bp .bp-ops-k{flex-basis:100%}
 }
 
@@ -259,4 +259,21 @@
   .bp-stage .bp-metrics .metric .sub{line-height:1.25}
   .bp-stage .bp-metrics .metric .d{min-height:13px;line-height:1.1}
   .bp-stage>details.math{margin-top:4px;padding-top:6px}
+}}
+
+/* 精装修 step 2: a short desktop window (820 px tall or less; 1536 × 730 is a 15-inch laptop's browser). With the top bar scrolled away
+   the stage gains 58 px, and parts 4–7 still ran 43 px past it at 1536 × 730; the graph's boxes are 42 px tall (their three lines move
+   up with them, as at 46 px), the check's curve 80 px and its numbers' rows closer, and the gaps around them a few px tighter. Same
+   pieces, lines and sizes of text */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .bp-stage .bp-svg{--bp-bh:42;--bp-gt:4;--bp-gb:2}
+  .bp-stage .bp-check{--bp-ckh:80;gap:4px}
+  .bp-stage .bp-cknum{gap:1px}
+  .bp-top.bp-two>.bp-side{gap:4px}
+  .bp-graph{gap:6px;padding-bottom:6px}
+  .bp-graph>.bp-pwrap{padding-top:4px;gap:4px}
+  .bp-stage>.legend-row{margin-top:4px}
+  .bp-stage>.bp-scope{margin:2px 0 0}
+  .bp-stage .bp-metrics{margin-top:2px}
+  .bp-stage>details.math{margin-top:2px;padding-top:4px}
 }}

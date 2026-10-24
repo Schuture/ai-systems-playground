@@ -316,8 +316,9 @@ def walk(b, w, h, lang):
     onscreen = []
     for k in range(4):
         click(pg, f'#cb-rail [data-preset="{k}"]'); pg.wait_for_timeout(250)
-        onscreen.append(ev(pg, "()=>{const r=document.getElementById('cb-sb-res').getBoundingClientRect(); return [Math.round(r.top), Math.round(r.bottom), innerHeight]}"))
-    check(f'{tag}: after a scenario click the result box is on screen (it sits above the list)', all(55 <= t_ and t_ < h_ - 100 for t_, b_, h_ in onscreen), str(onscreen))
+        onscreen.append(ev(pg, "()=>{const r=document.getElementById('cb-sb-res').getBoundingClientRect(), tb=document.querySelector('.topbar'); return [Math.round(r.top), Math.round(r.bottom), innerHeight, tb?Math.max(0,Math.round(tb.getBoundingClientRect().bottom)):0]}"))
+    # below the top bar: 55 px while the bar stays on top (phones), its visible bottom once it has scrolled away (a desktop lab page)
+    check(f'{tag}: after a scenario click the result box is on screen (it sits above the list)', all(min(55, bb_) <= t_ and t_ < h_ - 100 for t_, b_, h_, bb_ in onscreen), str(onscreen))
     click(pg, '#cb-rail [data-preset="1"]')
     click(pg, '#cb-rail [data-preset="2"]')
     rs2 = pg.inner_text('#cb-sb-res')
@@ -637,9 +638,9 @@ with sync_playwright() as _p:
 # when it is on (a real click, which scrolls it into view first), else the part's title. Entering part 6 in English, the kit's reveal put
 # the card's top under the top bar, little of the bench was left under it, and the bench's end pushed the sticky stage up to −285 px
 # (the whole chart above the screen); part 7 in Chinese to 61 px. keepStage() pulls it back once the page stops scrolling. At every
-# part the stage's top stays at or below the top bar's bottom; at parts 6 and 7 it is not pushed above its sticky line (70 px; it sits
-# there in English at both and in Chinese at part 7, lower when the page did not scroll), needs no scrolling inside, and has 30 px to
-# spare in Chinese
+# part the stage's top stays at or below the top bar's bottom; at parts 6 and 7 it is not pushed above its sticky line (70 px until
+# 精装修 step 2, now 12 px: the top bar scrolls away with a lab page on a desktop; it sits there in English at both and in Chinese at
+# part 7, lower when the page did not scroll), needs no scrolling inside, and has 30 px to spare in Chinese
 subprocess.run([sys.executable, str(P / 'build.py'), 'out/site-continuous-batching.html'], check=True, capture_output=True)
 (P / 'out/wrapped-site-continuous-batching.html').write_text('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}[hidden]{display:none!important}</style></head><body>'
                                                            + (P / 'out/site-continuous-batching.html').read_text() + '</body></html>')
@@ -647,7 +648,7 @@ SITE = 'file://' + str(P / 'out/wrapped-site-continuous-batching.html')
 WALK = """()=>{const s=document.querySelector('#cb-stage'), r=s.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
   cur=document.querySelector('#cb-rail .steps>.step.current'), h=s.querySelector('.stage-head').getBoundingClientRect(), g=(document.querySelector('#cb-gantt')||s).getBoundingClientRect();
   return {part:cur?[...cur.parentNode.children].indexOf(cur)+1:0, top:Math.round(r.top), head:Math.round(h.top), bar:Math.round(bar), scroll:s.scrollHeight-s.clientHeight,
-    chart:[Math.round(g.top),Math.round(g.bottom)], vh:innerHeight,
+    chart:[Math.round(g.top),Math.round(g.bottom)], vh:innerHeight, stick:getComputedStyle(s).position==='sticky'?Math.round(parseFloat(getComputedStyle(s).top)):0,
     spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight))};}"""
 with sync_playwright() as _p:
     _b = _p.chromium.launch()
@@ -664,19 +665,19 @@ with sync_playwright() as _p:
             if _nb.count(): _nb.first.click()
             else: _pg.evaluate(f"()=>document.querySelector('#cb-rail .steps>.step:nth-child({_i + 1}) .step-h').click()")
             _pg.wait_for_timeout(1500); _rows.append(_pg.evaluate(WALK))
-        check(f'1440 {_lang} walk: entering every part, the stage’s top and its head stay below the top bar’s bottom, the top at its sticky line (70 px) or lower (R3.2, R9.7, B4)',
-              len(_rows) == _n and all(r['part'] == i + 1 and r['top'] >= max(68, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
+        check(f'1440 {_lang} walk: entering every part, the stage’s top and its head stay below the top bar’s bottom, the top at its sticky line or lower (R3.2, R9.7, B4)',
+              len(_rows) == _n and all(r['part'] == i + 1 and r['top'] >= max(r['stick'] - 2, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
         for _k in (6, 7):
             _r = _rows[_k - 1] if len(_rows) >= _k else {}
-            check(f'1440 {_lang} walk part {_k}: the stage is not pushed above its sticky line (its top at 70 px or lower), needs no scrolling inside' + (', 30 px to spare' if _lang == 'zh' else '') + ' (B4, R7.12)',
-                  bool(_r) and _r['top'] >= 68 and _r['scroll'] <= 0 and _r['spare'] >= (30 if _lang == 'zh' else 0), _r)
+            check(f'1440 {_lang} walk part {_k}: the stage is not pushed above its sticky line (its top there or lower), needs no scrolling inside' + (', 30 px to spare' if _lang == 'zh' else '') + ' (B4, R7.12)',
+                  bool(_r) and _r['top'] >= _r['stick'] - 2 and _r['scroll'] <= 0 and _r['spare'] >= (30 if _lang == 'zh' else 0), _r)
         # the parts whose stage the bench's end pushed up before (or that sit there): keepStage brings it back, the Gantt chart whole on
         # screen. Since the 2026-10-22 refit's shorter lab head the reveal often has no need to scroll here, so the stage may stay lower
         # than its sticky line; the chart must still be whole on screen and the stage never above its sticky line
         for _k in {'en': (6, 7), 'zh': (7,)}[_lang]:
             _r = _rows[_k - 1] if len(_rows) >= _k else {}
-            check(f'1440 {_lang} walk part {_k}: the stage’s top at its sticky line (70 px) or lower and the Gantt chart whole on screen (the stage was at ' + {('en', 6): '−285', ('en', 7): '70', ('zh', 7): '61'}[(_lang, _k)] + ' px before keepStage)',
-                  bool(_r) and _r['top'] >= 68 and _r['chart'][0] >= _r['bar'] - 1 and _r['chart'][1] <= _r['vh'], _r)
+            check(f'1440 {_lang} walk part {_k}: the stage’s top at its sticky line or lower and the Gantt chart whole on screen (the stage was at ' + {('en', 6): '−285', ('en', 7): '70', ('zh', 7): '61'}[(_lang, _k)] + ' px before keepStage)',
+                  bool(_r) and _r['top'] >= _r['stick'] - 2 and _r['chart'][0] >= _r['bar'] - 1 and _r['chart'][1] <= _r['vh'], _r)
         _pg.close()
     _b.close()
 

@@ -2,7 +2,7 @@
    Attention weights and tokens are grayscale; blue (--c-weights) only for the weight matrices Wq, Wk, Wv, Wo (R5.6).
    Green and red appear only in the status badge and the challenge (goal met / missed). */
 .mha-app .stage-head>div:first-child{min-width:0}
-.mha-st-title{font-weight:680;font-size:15.5px;line-height:1.3;margin-top:3px}
+.mha-st-title{font-weight:680;font-size:var(--fs-stage);line-height:1.3;margin-top:3px}
 .mha-app .legend-row>span{cursor:help;display:inline-flex;align-items:center}
 .mha-app .legend-row>span[data-jump]{cursor:pointer}
 /* legend swatches */
@@ -18,20 +18,20 @@
 .mha-grid{display:grid;gap:8px;min-width:0}
 .mha-toks,.mha-cells{display:grid;grid-template-columns:var(--mha-cols);column-gap:4px;min-width:0}
 .mha-tok{position:relative;min-width:0;height:30px;padding:0 2px;border:1px solid var(--line);border-radius:4px;background:var(--surface);
-  font-family:var(--font-mono);font-size:12.5px;color:var(--ink);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:28px;text-align:center}
+  font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:28px;text-align:center}
 .mha-tok:hover{border-color:var(--ink)}
 .mha-tok.q{background:var(--ink);border-color:var(--ink);color:var(--bg);font-weight:600}
 .mha-tok.later{color:var(--ink-3);border-style:dotted}
 .mha-tok.need{outline:1.5px dashed var(--ink);outline-offset:2px}
 .mha-tok.q.need{outline-color:var(--ink)}
 .mha-tok:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.mha-idx{display:grid;grid-template-columns:var(--mha-cols);column-gap:4px;font-family:var(--font-mono);font-size:10px;color:var(--ink-3);text-align:center;margin-top:-4px}
+.mha-idx{display:grid;grid-template-columns:var(--mha-cols);column-gap:4px;font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-3);text-align:center;margin-top:-4px}
 .mha-row{display:grid;gap:3px;border-radius:4px;padding:2px 0}
 .mha-row:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
-.mha-rlab{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);line-height:1.35;overflow-wrap:anywhere;cursor:help}
+.mha-rlab{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2);line-height:1.35;overflow-wrap:anywhere;cursor:help;text-wrap:balance}
 .mha-rlab b{color:var(--ink);font-weight:650}
 .mha-cell{display:grid;grid-template-rows:14px 32px;min-width:0;cursor:help}
-.mha-cell .mha-pv{text-align:center;font-family:var(--font-mono);font-size:11px;line-height:14px;color:var(--ink);white-space:nowrap;overflow:visible;pointer-events:none}
+.mha-cell .mha-pv{text-align:center;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:14px;color:var(--ink);white-space:nowrap;overflow:visible;pointer-events:none}
 .mha-bz{position:relative;background:var(--surface-2);border-radius:2px;min-width:0}
 .mha-bar{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:min(22px,64%);background:var(--ink);border-radius:2px 2px 0 0;transition:height .18s ease-out}
 .mha-cell.masked .mha-bz{background:repeating-linear-gradient(135deg,var(--line) 0 1.2px,transparent 1.2px 5px);box-shadow:inset 0 0 0 1px var(--line-2)}
@@ -43,11 +43,11 @@
 .mha-row.dim .mha-rlab b{color:var(--ink-3)}
 .mha-row.dim .mha-cell{grid-template-rows:0 8px;cursor:default}
 .mha-row.dim .mha-cells{opacity:.6}
-.mha-q-mark{font-size:10.5px}
-.mha-cap{font-size:12.5px;color:var(--ink-2);margin:10px 0 0;line-height:1.45}
-.mha-masknote{font-family:var(--font-mono);font-size:12px;color:var(--ink-2);background:var(--surface-2);border-radius:4px;padding:10px 12px;line-height:1.45}
+.mha-q-mark{font-size:var(--fs-mark)}
+.mha-cap{font-size:var(--fs-cap);color:var(--ink-2);margin:10px 0 0;line-height:1.45}
+.mha-masknote{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2);background:var(--surface-2);border-radius:4px;padding:10px 12px;line-height:1.45}
 /* narrow stages: smaller words and numbers so all 9 columns fit */
-@container (max-width:470px){.mha-tok{font-size:10.5px;height:26px;line-height:24px}.mha-cell{grid-template-rows:13px 28px}.mha-cell .mha-pv{font-size:9.5px;line-height:13px}.mha-rlab{font-size:10.5px}.mha-toks,.mha-cells,.mha-idx{column-gap:2px}.mha-bar{width:min(16px,70%)}}
+@container (max-width:470px){.mha-tok{font-size:var(--fs-mark);height:26px;line-height:24px}.mha-cell{grid-template-rows:13px 28px}.mha-cell .mha-pv{font-size:var(--fs-mark);line-height:13px}.mha-rlab{font-size:var(--fs-mark)}.mha-toks,.mha-cells,.mha-idx{column-gap:2px}.mha-bar{width:min(16px,70%)}}
 
 /* the four weight matrices (blue); ink lines mark where the numbers split into heads */
 .mha-mats{margin-top:14px;padding-top:12px;border-top:1px solid var(--line-2)}
@@ -60,9 +60,9 @@
 .mha-mat .mz{fill:var(--surface-2)}
 .mha-mat .ms{stroke:var(--ink);stroke-width:1.6}
 .mha-mat .mf{fill:none;stroke:var(--line);stroke-width:1}
-.mha-mat span{font-family:var(--font-mono);font-size:11px;color:var(--ink-2)}
+.mha-mat span{font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-2)}
 .mha-mats .mha-cap{margin-top:8px}
-.mha-mleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-2);margin-top:6px}
+.mha-mleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-2);margin-top:6px}
 .mha-mleg>span{display:inline-flex;align-items:center;gap:5px;cursor:help}
 .mha-mleg i{display:inline-block;width:10px;height:10px;border-radius:1px}
 .mha-mleg .k1{background:var(--c-weights)}
@@ -79,32 +79,32 @@
 
 /* the word picker (a single choice among the 9 words) and the head switches (several can be on) */
 .mha-words{display:flex;flex-wrap:wrap;gap:4px}
-.mha-words button{flex:0 0 auto;min-width:34px;padding:5px 8px;border:1px solid var(--line);border-radius:4px;background:var(--surface);cursor:pointer;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-2)}
+.mha-words button{flex:0 0 auto;min-width:34px;padding:5px 8px;border:1px solid var(--line);border-radius:4px;background:var(--surface);cursor:pointer;font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2)}
 .mha-words button:hover{border-color:var(--ink)}
 .mha-words button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .mha-onbtns{display:flex;flex-wrap:wrap;gap:5px}
-.mha-onbtns button{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--line);border-radius:4px;background:var(--surface);cursor:pointer;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-2)}
+.mha-onbtns button{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--line);border-radius:4px;background:var(--surface);cursor:pointer;font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2)}
 .mha-onbtns button::before{content:"";width:13px;height:13px;border:1.5px solid var(--ink-3);border-radius:2px;box-sizing:border-box;flex:none}
 .mha-onbtns button[aria-pressed="true"]{color:var(--ink);border-color:var(--ink)}
 .mha-onbtns button[aria-pressed="true"]::before{border-color:var(--ink);background:var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.4 2.4 4.6-5' fill='none' stroke='white' stroke-width='1.8'/%3E%3C/svg%3E") center/10px no-repeat}
-.mha-onlist{font-family:var(--font-mono);font-size:12px;color:var(--ink-2)}
+.mha-onlist{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2)}
 .mha-app .inline-ctl .ctl-note{margin-top:1px}
 
 /* show the math */
 .mha-app .mathbody p{overflow-wrap:anywhere}
-.mha-mh{font-family:var(--font-mono);font-size:11px;letter-spacing:.02em;color:var(--ink-3);margin:8px 0 4px}
+.mha-mh{font-family:var(--font-mono);font-size:var(--fs-mark);letter-spacing:.02em;color:var(--ink-3);margin:8px 0 4px}
 .mha-mtab{overflow-x:auto;margin:6px 0}
-.mha-mtab table{border-collapse:collapse;font-family:var(--font-mono);font-size:11.5px;min-width:100%}
+.mha-mtab table{border-collapse:collapse;font-family:var(--font-mono);font-size:var(--fs-label);min-width:100%}
 .mha-mtab th,.mha-mtab td{padding:3px 7px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line-2)}
 .mha-mtab th{font-weight:600;color:var(--ink-2);text-align:right;vertical-align:bottom}
 .mha-mtab td:first-child,.mha-mtab th:first-child{text-align:left}
 .mha-mtab tr.best td{font-weight:650;color:var(--ink)}
 .mha-mhp{margin:8px 0 2px}
 .mha-mhp .seg-ctl{max-width:320px}
-.mha-mhp .seg-ctl button{padding:5px 6px;font-size:12px}
+.mha-mhp .seg-ctl button{padding:5px 6px;font-size:var(--fs-label)}
 .mha-mxs{margin-top:10px}
-.mha-mxs summary{cursor:pointer;font-family:var(--font-ui);font-size:13px;font-weight:620}
-.mha-mx{border-collapse:collapse;font-family:var(--font-mono);font-size:10.5px;margin:4px 0 10px}
+.mha-mxs summary{cursor:pointer;font-family:var(--font-ui);font-size:var(--fs-cap);font-weight:620}
+.mha-mx{border-collapse:collapse;font-family:var(--font-mono);font-size:var(--fs-mark);margin:4px 0 10px}
 .mha-mx td,.mha-mx th{padding:1px 5px;text-align:right;white-space:nowrap}
 .mha-mx th{color:var(--ink-3);font-weight:500}
 .mha-mx tr.split td{border-top:1.5px solid var(--ink)}
@@ -120,11 +120,11 @@
 #mha-ch-res{scroll-margin-top:120px;scroll-margin-bottom:12px}
 /* the challenge chart: two bars per choice of heads ("because" and "cat"), the 80% goal dashed */
 .mha-cmp{margin:14px 0 6px}
-.mha-cmp .cmp-title{font-size:13px;font-weight:650;margin:0 0 2px}
+.mha-cmp .cmp-title{font-size:var(--fs-cap);font-weight:650;margin:0 0 2px}
 .mha-cr{margin-top:10px}
 .mha-cr .cmp-lab{margin-bottom:3px}
 .mha-cb{display:grid;grid-template-columns:4.6em minmax(0,1fr);align-items:center;gap:6px;margin-top:3px}
-.mha-cb>span:first-child{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mha-cb>span:first-child{font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mha-cr .cmp-track{margin:0 38px 0 0}
 .mha-cr.ok .cmp-track i{background:var(--c-ok)}
 .mha-cr:not(.ok) .cmp-track i{background:var(--ink-3)}
@@ -143,17 +143,17 @@
 @media (max-width:760px){#dock .dock-in:has(.mha-dk-st){padding-top:5px;padding-bottom:5px}}
 
 /* connect */
-.mha-prod{margin:0 0 8px;padding-left:18px;display:grid;gap:6px;font-size:13.5px;line-height:1.5}
+.mha-prod{margin:0 0 8px;padding-left:18px;display:grid;gap:6px;font-size:var(--fs-cap);line-height:1.5}
 .mha-app .c-card code{overflow-wrap:anywhere}
 
 /* home tile */
 .mha-tz{display:grid;gap:4px}
 .mha-tz .mha-toks,.mha-tz .mha-cells{column-gap:2px}
-.mha-tz .mha-tok{height:22px;line-height:20px;font-size:10px;cursor:default;padding:0 1px}
+.mha-tz .mha-tok{height:22px;line-height:20px;font-size:var(--fs-mark);cursor:default;padding:0 1px}
 .mha-tz .mha-cell{grid-template-rows:12px 24px;cursor:default}
-.mha-tz .mha-cell .mha-pv{font-size:9px;line-height:12px}
-.mha-tz .mha-rlab{font-size:10px;cursor:default}
-.mha-tz-cap{margin:0;font-size:11.5px;line-height:1.35;color:var(--ink-3)}
+.mha-tz .mha-cell .mha-pv{font-size:var(--fs-mark);line-height:12px}
+.mha-tz .mha-rlab{font-size:var(--fs-mark);cursor:default}
+.mha-tz-cap{margin:0;font-size:var(--fs-label);line-height:1.35;color:var(--ink-3)}
 @media (prefers-reduced-motion:reduce){.mha-cell .mha-bar{transition:none}}
 /* challenge goal lines: the label can wrap; the value keeps to one line and moves under it on phones */
 .mha-app .goal.mha-goal{flex-wrap:wrap}
@@ -168,8 +168,8 @@
 /* Show the math as a few blocks (the owner, 2026-10-09, H1/H2): a lead line in words, the formula typeset, then the numbers; a hairline
    between blocks */
 .mha-app .mha-mb{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
-.mha-app .mha-mlead{font-family:var(--font-ui);font-size:13px;line-height:1.5;color:var(--ink-2);margin:2px 0 4px}
-.mha-app .mha-math-line{overflow-x:auto;max-width:100%;margin:4px 0;font-size:15px}
+.mha-app .mha-mlead{font-family:var(--font-ui);font-size:var(--fs-cap);line-height:1.5;color:var(--ink-2);margin:2px 0 4px}
+.mha-app .mha-math-line{overflow-x:auto;max-width:100%;margin:4px 0;font-size:var(--fs-stage)}
 /* the owner's review of 2026-10-09 (R6.37: a row the reader has to scroll sideways is not read). A formula: the name with “=” first; the
    right-hand side beside it while its widest term fits there, else on its own line, indented under the name; its terms wrap onto the
    next line under its first term. The two tables: a key k wraps between its numbers, and on a phone-wide stage the columns sit closer */
@@ -179,11 +179,11 @@
 .mha-app .mha-fg{display:inline-block;max-width:100%}
 .mha-app .mha-fp{display:inline-block;white-space:nowrap}
 .mha-mtab-s table,.mha-mtab-w table{min-width:0}
-.mha-mtab td.mha-k,.mha-mtab th.mha-k{white-space:normal;text-align:left}
+.mha-mtab td.mha-k,.mha-mtab th.mha-k{white-space:normal;text-align:left;text-wrap:balance}
 .mha-mtab td.mha-k{color:var(--ink-2)}
 .mha-mtab th.mha-aw{white-space:normal}
 @container (max-width:480px){.mha-mtab th,.mha-mtab td{padding:3px 4px}}
-.mha-mtab th math{font-size:12.5px}
+.mha-mtab th math{font-size:var(--fs-label)}
 /* ---------- polish r5 (B4, R7.12): parts 7 and 8 fit a 1440 × 900 screen. With four heads the stage stacked the words and the four
    head rows (336 px), the four weight matrices with their legend and caption under them (141 px) and four metric cards, so it scrolled
    26 px inside itself (English 82: there the status took a line of its own under the title). On a stage at least 736 px wide the
@@ -203,3 +203,16 @@
   .mha-metrics .metric .v{line-height:1.25}
   .mha-stage>details.math{margin-top:8px;padding-top:8px}
 }}
+
+/* 精装修 step 2: a short desktop window (820 px tall or less; 1536 × 730 is a 15-inch laptop's browser). With the top bar scrolled away
+   the stage gains 58 px, and parts 7 and 8 still ran 35 px past it at 1536 × 730; each head's row of weights is 4 px shorter (bars 28 px,
+   the numbers keep their 14 px line), the gaps around the matrices are tighter, and the figure's padding is 8 px top and bottom (the
+   English legend takes two lines) */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){
+  .mha-stage .mha-grid{gap:6px}
+  .mha-stage .mha-row{padding:1px 0}
+  .mha-stage .mha-cell{grid-template-rows:14px 28px}
+  .mha-stage .mha-cap{margin-top:6px}
+  .mha-stage .mha-mats{margin-top:6px;padding-top:6px}
+  .mha-stage .mha-graph{padding-top:8px;padding-bottom:8px}
+}

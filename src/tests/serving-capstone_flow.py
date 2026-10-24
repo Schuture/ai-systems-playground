@@ -743,7 +743,7 @@ CEIL7 = {'zh': 420, 'en': 440}
 WALK5 = """q=>{const s=document.getElementById('sc-stage'), r=s.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
   lo=Math.max(r.top+s.clientTop,bar), hi=Math.min(r.bottom-s.clientTop,innerHeight), h=s.querySelector('.stage-head').getBoundingClientRect(), R=e=>{const b=e.getBoundingClientRect(); return [Math.round(b.top),Math.round(b.bottom)]};
   const st=window.__sc.state, f=q[st.partId], fe=f&&document.querySelector(f), cv=document.getElementById('sc-tl'), b0=window.__sc.rowBox(0);
-  return {part:st.part+1, id:st.partId, top:Math.round(r.top), head:Math.round(h.top), bar:Math.round(bar), lo:Math.round(lo), hi:Math.round(hi), scroll:s.scrollHeight-s.clientHeight,
+  return {part:st.part+1, id:st.partId, top:Math.round(r.top), head:Math.round(h.top), bar:Math.round(bar), stick:(c=>c.position==='sticky'?Math.round(parseFloat(c.top)):70)(getComputedStyle(s)), lo:Math.round(lo), hi:Math.round(hi), scroll:s.scrollHeight-s.clientHeight,
     focus:fe?R(fe):null, tl:R(cv), rh:b0?Math.round(b0.bottom-b0.top):null, drawn:Math.round(cv.width/Math.min(2,devicePixelRatio||1)), boxW:document.getElementById('sc-tlbox').clientWidth}}"""
 # the fold: what the stage's foot shows, where the table is, and whether it is whole on the screen (inside the stage's visible part)
 FOLD = """()=>{const s=document.getElementById('sc-stage'), w=document.getElementById('sc-mtw'), b=document.getElementById('sc-rtbtn'), m=document.querySelector('#sc-math>summary'), sc=document.getElementById('sc-scope'),
@@ -752,7 +752,7 @@ FOLD = """()=>{const s=document.getElementById('sc-stage'), w=document.getElemen
   const lo=Math.max(sr.top+s.clientTop,bar), hi=Math.min(sr.bottom-s.clientTop,innerHeight);
   return {open:window.__sc.state.runOpen, hidden:w.hidden, table:shown(w), btn:shown(b), exp:b.getAttribute('aria-expanded'), mark:getComputedStyle(b,'::before').content, btnText:b.textContent.trim(),
     whole:shown(w)&&r.top>=lo-1&&r.bottom<=hi+1, gap:shown(w)?Math.round(r.top-ft.getBoundingClientRect().bottom):null, row:shown(b)?[mid(m),mid(b),mid(sc)]:null,
-    top:Math.round(sr.top), bar:Math.round(bar), hint:shown(hn)&&!!hn.closest('.stage-head'), low:shown(document.querySelector('#sc-stage>.sc-low')),
+    top:Math.round(sr.top), bar:Math.round(bar), stick:(c=>c.position==='sticky'?Math.round(parseFloat(c.top)):70)(getComputedStyle(s)), hint:shown(hn)&&!!hn.closest('.stage-head'), low:shown(document.querySelector('#sc-stage>.sc-low')),
     xs:shown(b)?[m,b,sc].map(e=>Math.round(e.getBoundingClientRect().left)):null, scopeAbove:sc.getBoundingClientRect().bottom<=m.getBoundingClientRect().top+1,
     card:card?Math.round(card.getBoundingClientRect().top):null, part:window.__sc.state.part+1}}"""
 TIP = "()=>{const t=document.querySelector('#tip'); return t&&!t.hidden?t.innerText.trim():null}"
@@ -788,8 +788,8 @@ with sync_playwright() as _p:
             check(f'1440 {_lang} part 1: playing the run leaves the stage’s content height alone (R7.9)', len(_hs) > 30 and max(_hs) - min(_hs) <= 1, (len(_hs), min(_hs or [0]), max(_hs or [0])))
         for _i in range(1, _n):
             enter(_pg, _i, _rm); _rows.append(_pg.evaluate(WALK5, FOCUS))
-        check(f'1440 {_lang} walk: entering every part, the stage’s top at its sticky line (70 px) or lower and its head below the top bar (R3.2, R9.7, B4)',
-              len(_rows) == _n == 8 and all(r['part'] == i + 1 and r['top'] >= max(68, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
+        check(f'1440 {_lang} walk: entering every part, the stage’s top at its sticky line or lower and its head below the top bar (R3.2, R9.7, B4)',
+              len(_rows) == _n == 8 and all(r['part'] == i + 1 and r['top'] >= max(r['stick'] - 2, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
         for _r in _rows:
             if _r['id'] == 'code':   # part 7: the code panel stands above the timeline (DOM order), the panel is the part's figure
                 check(f'1440 {_lang} walk part 7: what the stage cannot hold scrolls inside it, at most {CEIL7[_lang]} px (B4; 830–850 px before the fold)', _r['scroll'] <= CEIL7[_lang], _r)
@@ -805,7 +805,8 @@ with sync_playwright() as _p:
         _pg.close()
 
     # the fold (the owner, 2026-10-22): the table hides until its button is pressed; the button, or the card's sentence that names the
-    # table, opens it whole on the screen with the stage at its sticky line; the choice holds across Next, a language switch and a reload
+    # table, opens it whole on the screen with the stage at its sticky line (its computed top: 70 px then, 12 px on a desktop lab page
+    # since refit step 2, where the top bar scrolls away); the choice holds across Next, a language switch and a reload
     for _lang in ('zh', 'en'):
         T = f'1440 {_lang} fold'
         _pg = site(_b, 1440, 900, _lang, resume=True)
@@ -816,7 +817,7 @@ with sync_playwright() as _p:
         check(f'{T}: on a wide stage the trace hint sits in the head and the row under the stage that held it is gone', _f['hint'] and not _f['low'], _f)
         _pg.evaluate("()=>document.getElementById('sc-rtbtn').click()"); _pg.wait_for_timeout(700); _f = _pg.evaluate(FOLD)
         check(f'{T}: pressed at the page’s top, the button opens the table (−) right under its row, whole on the screen, the stage at its sticky line',
-              _f['open'] and _f['table'] and _f['exp'] == 'true' and _f['mark'] == '"−"' and 0 <= _f['gap'] <= 12 and _f['whole'] and _f['top'] >= 68, _f)
+              _f['open'] and _f['table'] and _f['exp'] == 'true' and _f['mark'] == '"−"' and 0 <= _f['gap'] <= 12 and _f['whole'] and _f['top'] >= _f['stick'] - 2, _f)
         rules(_pg, f'{T} open table', _lang)
         enter(_pg, 1, 'reduce'); _f = _pg.evaluate(FOLD)
         check(f'{T}: Next keeps the table open', _f['part'] == 2 and _f['open'] and _f['table'], _f)
@@ -835,13 +836,13 @@ with sync_playwright() as _p:
             _l = _pg.locator('#sc-rail [data-jump=table]:visible').first; _l.hover(); _pg.wait_for_timeout(500); _tp = _pg.evaluate(TIP)
             check(f'{T}: the link’s tooltip says what a click does (R1.1)', _tp is not None and Z(_lang, 'Click to open the whole-run table.', '点击展开整次运行的表格。') in _tp, _tp)
             _c0 = _pg.evaluate(FOLD)['card']; _l.click(); _pg.wait_for_timeout(900); _f = _pg.evaluate(FOLD)
-            check(f'{T}: the link opens the table whole on the screen, the stage at its sticky line, the card’s head never pushed under the top bar', _f['open'] and _f['whole'] and _f['top'] >= 68 and _f['card'] >= min(_c0, _f['bar'] + 8) - 1, (_c0, _f))
+            check(f'{T}: the link opens the table whole on the screen, the stage at its sticky line, the card’s head never pushed under the top bar', _f['open'] and _f['whole'] and _f['top'] >= _f['stick'] - 2 and _f['card'] >= min(_c0, _f['bar'] + 8) - 1, (_c0, _f))
         _pg.close()
     # a 900 px window: the stage is narrower, so the trace hint keeps its row under the stage; the button still opens the table in view
     _pg = site(_b, 900, 900, 'en'); _f = _pg.evaluate(FOLD)
     check('900 en fold: the trace hint keeps its row under the stage; the table is folded', not _f['hint'] and _f['low'] and not _f['table'] and _f['btn'], _f)
     _pg.evaluate("()=>document.getElementById('sc-rtbtn').click()"); _pg.wait_for_timeout(700); _f = _pg.evaluate(FOLD)
-    check('900 en fold: the button opens the table whole on the screen, the stage at its sticky line', _f['open'] and _f['whole'] and _f['top'] >= 68, _f)
+    check('900 en fold: the button opens the table whole on the screen, the stage at its sticky line', _f['open'] and _f['whole'] and _f['top'] >= _f['stick'] - 2, _f)
     _pg.close()
     # a phone keeps its layout: no button and no table (the scope note above Show the math, as before), its timeline rows 4 px for 37 requests
     for _lang in ('zh', 'en'):

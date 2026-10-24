@@ -561,7 +561,7 @@ function tick(t){PL.raf=0; if(!app||!PL.on||!PL.g) return;
 function revealGen(stageOnly){
   if(!app||!PL.on) return; const box=$('#sft-genbox',app), st=$('#sft-stage',app); if(!box||box.hidden||!st) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), dh=dk&&!dk.hidden?dk.getBoundingClientRect().height:0;
-  const top=(bar?bar.getBoundingClientRect().bottom:56)+dh+8, r=box.getBoundingClientRect(), need=Math.min(r.height,170), beh=A.reduceMotion()?'auto':'smooth';
+  const top=(bar?A.ui.barB():56)+dh+8, r=box.getBoundingClientRect(), need=Math.min(r.height,170), beh=A.reduceMotion()?'auto':'smooth';
   if(getComputedStyle(st).position==='sticky'&&st.scrollHeight>st.clientHeight+1){const sr=st.getBoundingClientRect(), v0=Math.max(sr.top,top), v1=Math.min(sr.bottom,innerHeight)-8;
     if(r.top>=v0&&r.top+need<=v1) return; st.scrollBy({top:r.top+need>v1?r.top+need-v1:r.top-v0,behavior:beh}); return;}
   if(stageOnly||(r.top>=top&&r.top+need<=innerHeight-8)) return;
@@ -569,7 +569,7 @@ function revealGen(stageOnly){
 /* G6: is the row of written tokens on screen (inside the sticky stage's visible part on wide screens)? A guided run that starts out
    of view (a phone after Next: the card in view, the tokens below the fold) waits at its first token until the reader scrolls to it */
 function genInView(){const el=$('#sft-gen',app), box=$('#sft-genbox',app); if(!el||!box||box.hidden) return true; const r=el.getBoundingClientRect(); if(!r.height) return true;
-  const bar=document.querySelector('.topbar'); let v0=bar?bar.getBoundingClientRect().bottom:0, v1=innerHeight;
+  const bar=document.querySelector('.topbar'); let v0=bar?A.ui.barB():0, v1=innerHeight;
   const st=$('#sft-stage',app); if(st&&getComputedStyle(st).position==='sticky'){const sr=st.getBoundingClientRect(); v0=Math.max(v0,sr.top); v1=Math.min(v1,sr.bottom);}
   return r.top<v1-16&&r.bottom>v0+16;}
 /* a run the learner started from the rail ends: its observation appears, and is brought into view once */
@@ -745,7 +745,7 @@ function revealStep(){A.ui.reveal($('#sft-rail .step.current',app)||$('#sft-rail
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
   if(r.height>innerHeight-top-16){if(r.top>=top&&r.top<=innerHeight-200) return; A.ui.reveal(box); return;}
   if(r.top>=top&&r.bottom<=innerHeight-8) return;
   const dy=r.bottom>innerHeight-8?r.bottom-innerHeight+16:r.top-top;

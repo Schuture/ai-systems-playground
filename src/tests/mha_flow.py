@@ -331,12 +331,14 @@ def fit_entry(b, lang, parts=(7, 8)):
     pg.close()
 
 
-# polish r5 (B4, R3.2): clicking Next with the mouse into parts 7 and 8, the stage's top comes back to 70 px, under the top bar, with its
-# head, the card's top and the main figure on the screen (before this round the stage sat at -412 px on entering part 7)
+# polish r5 (B4, R3.2): clicking Next with the mouse into parts 7 and 8, the stage's top comes back to its sticky line (70 px under the top
+# bar then; 12 px since the refit's step 2, where the bar scrolls away on a desktop lab page), with its head, the card's top and the main
+# figure on the screen (before this round the stage sat at -412 px on entering part 7)
 TOPS = """()=>{const st=document.getElementById('mha-stage'), s=st.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
   h=st.querySelector('.stage-head').getBoundingClientRect(), cur=document.querySelector('#mha-rail .step.current'), c=cur.getBoundingClientRect(),
   f=[...st.querySelectorAll('svg,canvas')].filter(e=>e.getClientRects().length&&!e.closest('button')).map(e=>e.getBoundingClientRect()).sort((x,y)=>y.width*y.height-x.width*x.height)[0];
-  return {part:[...cur.parentNode.children].indexOf(cur)+1, top:Math.round(s.top), bar:Math.round(bar), head:Math.round(h.top), card:Math.round(c.top), fig:f?[Math.round(f.top),Math.round(f.bottom)]:null, h:innerHeight}}"""
+  cs=getComputedStyle(st);
+  return {part:[...cur.parentNode.children].indexOf(cur)+1, top:Math.round(s.top), stick:cs.position==='sticky'?Math.round(parseFloat(cs.top)):70, bar:Math.round(bar), head:Math.round(h.top), card:Math.round(c.top), fig:f?[Math.round(f.top),Math.round(f.bottom)]:null, h:innerHeight}}"""
 
 
 def next_tops(b, lang):
@@ -349,8 +351,8 @@ def next_tops(b, lang):
         pg.wait_for_timeout(2500)
         r = pg.evaluate(TOPS); seen.append((r['part'], r['top']))
         if k < 7: continue
-        check(f'{lang} 1440 part {k}: clicking Next with the mouse, the stage comes back to 70 px (its head under the top bar), the card’s top and the main figure on the screen (B4, R3.2; polish r5)',
-              r['part'] == k and abs(r['top'] - 70) <= 3 and r['head'] >= r['bar'] - 1 and r['bar'] - 1 <= r['card'] < r['h'] - 100 and bool(r['fig']) and r['fig'][0] >= r['bar'] - 1 and r['fig'][1] <= r['h'] + 1,
+        check(f'{lang} 1440 part {k}: clicking Next with the mouse, the stage comes back to its sticky line (its head under the top bar), the card’s top and the main figure on the screen (B4, R3.2; polish r5)',
+              r['part'] == k and abs(r['top'] - r['stick']) <= 3 and r['head'] >= r['bar'] - 1 and r['bar'] - 1 <= r['card'] < r['h'] - 100 and bool(r['fig']) and r['fig'][0] >= r['bar'] - 1 and r['fig'][1] <= r['h'] + 1,
               {'last': r, 'tops': seen})
     pg.close()
 

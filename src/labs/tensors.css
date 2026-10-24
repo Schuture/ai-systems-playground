@@ -3,28 +3,28 @@
    Colours (R5.6): grayscale and dashes only; red only for an error or an array that does not fit; green only for the challenge's goal. */
 .ts-stage .stage-head{align-items:center}
 .ts-stage .stage-actions{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:flex-end}
-.ts-view button{font-size:12px;padding:3px 9px;white-space:nowrap}
+.ts-view button{font-size:var(--fs-label);padding:3px 9px;white-space:nowrap}
 .ts-graph{padding:12px 14px 14px;display:grid;gap:12px;min-width:0}
 .ts-bc,.ts-es,.ts-nn{display:grid;gap:10px;min-width:0}
 .ts-graph>[hidden]{display:none}
-.ts-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.ts-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35}
 /* A3: what X and Y are, and the inserted axes of the broadcast version */
-.ts-sub2{font-size:12px;color:var(--ink-2);line-height:1.4;margin-top:-6px}
+.ts-sub2{font-size:var(--fs-label);color:var(--ink-2);line-height:1.4;margin-top:-6px}
 .ts-nnshape{display:grid;gap:8px;min-width:0}
 .ts-nnshape .ts-sub2{margin-top:0}
 .ts-nnshape .ts-axes{max-width:460px}
-.ts-nnshape .ts-ax{height:26px;font-size:12px}
-.ts-rl .ts-code1{font-size:11.5px;color:var(--ink)}
+.ts-nnshape .ts-ax{height:26px;font-size:var(--fs-label)}
+.ts-rl .ts-code1{font-size:var(--fs-label);color:var(--ink)}
 /* the part's focus lights up on the chart (R3.14) */
-.ts-graph[data-focus="bc"] .ts-axes,.ts-graph[data-focus="es"] .ts-ltw,.ts-graph[data-focus="nn"] .ts-nnrows{outline:2px solid var(--line-2);outline-offset:4px;border-radius:4px}
+.ts-graph[data-focus="bc"] .ts-axes,.ts-graph[data-focus="es"] .ts-ltw,.ts-graph[data-focus="nn"] .ts-nnrows{outline:2px dashed var(--focus-frame);outline-offset:4px;border-radius:4px}
 
 /* ---------- broadcasting: one row of axis boxes per operand, lined up from the right ---------- */
 .ts-axes{display:grid;gap:6px;align-items:center;min-width:0;max-width:560px}
-.ts-axh{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.ts-rl{font-size:12.5px;color:var(--ink-2);white-space:nowrap;padding-right:4px}
-.ts-rl .mono{font-size:11.5px;color:var(--ink-3)}
+.ts-axh{font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ts-rl{font-size:var(--fs-label);color:var(--ink-2);white-space:nowrap;padding-right:4px}
+.ts-rl .mono{font-size:var(--fs-label);color:var(--ink-3)}
 .ts-rout{font-weight:650;color:var(--ink)}
-.ts-ax{display:flex;align-items:center;justify-content:center;min-width:0;height:30px;padding:0 4px;box-sizing:border-box;border:1.5px solid var(--ink-2);border-radius:4px;background:var(--surface);font-family:var(--font-mono);font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:help;outline-offset:2px}
+.ts-ax{display:flex;align-items:center;justify-content:center;min-width:0;height:30px;padding:0 4px;box-sizing:border-box;border:1.5px solid var(--ink-2);border-radius:4px;background:var(--surface);font-family:var(--font-mono);font-size:var(--fs-cap);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:help;outline-offset:2px}
 .ts-ax.ts-ghost{border-style:dashed;border-color:var(--ink-3);background:transparent;color:var(--ink-2)}
 .ts-ax.ts-none{border:1px dotted var(--line-2);background:transparent;color:var(--ink-3)}
 .ts-ax.ts-out{background:var(--surface-2);font-weight:650;cursor:default}
@@ -32,38 +32,38 @@
 .ts-ax.ts-q{border-color:var(--line-2);background:var(--sunken);color:var(--ink-3);cursor:default}
 .ts-ax.ts-bad{border:2px solid var(--c-oom);color:var(--c-oom)}
 .ts-ax.ts-bad.ts-x{background:transparent;font-weight:650}
-.ts-err{margin:0;font-size:13px;line-height:1.45;color:var(--c-oom)}
-.ts-res{margin:0;font-size:13px;line-height:1.45;color:var(--ink)}
+.ts-err{margin:0;font-size:var(--fs-cap);line-height:1.45;color:var(--c-oom)}
+.ts-res{margin:0;font-size:var(--fs-cap);line-height:1.45;color:var(--ink)}
 /* the small arrays: real numbers solid, stretched ones dashed and grey (read again, not copied) */
 .ts-nums{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;min-width:0}
 /* H5 (the owner, 2026-10-09: information runs together without a divider): the worked numbers start a block of their own under a hairline */
 .ts-nums{border-top:1px solid var(--line);padding-top:10px;margin-top:8px}
 .ts-gw{display:grid;gap:3px;justify-items:center;min-width:0}
-.ts-gcap{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);white-space:nowrap}
+.ts-gcap{font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-3);white-space:nowrap}
 .ts-grid{display:grid;gap:2px}
-.ts-c{display:flex;align-items:center;justify-content:center;min-width:30px;height:22px;padding:0 3px;box-sizing:border-box;border:1px solid var(--line);border-radius:2px;background:var(--surface);font-family:var(--font-mono);font-size:12px;color:var(--ink)}
+.ts-c{display:flex;align-items:center;justify-content:center;min-width:30px;height:22px;padding:0 3px;box-sizing:border-box;border:1px solid var(--line);border-radius:2px;background:var(--surface);font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink)}
 .ts-c.ts-ghost{border-style:dashed;border-color:var(--ink-3);background:transparent;color:var(--ink-3)}
 .ts-c.ts-out{background:var(--surface-2);cursor:help;outline-offset:1px}
-.ts-op{font-family:var(--font-mono);font-size:16px;color:var(--ink-2)}
-.ts-qbox{display:flex;align-items:center;justify-content:center;width:64px;height:48px;border:1.5px solid var(--line-2);background:var(--sunken);border-radius:3px;font-family:var(--font-mono);font-size:18px;color:var(--ink-3)}
+.ts-op{font-family:var(--font-mono);font-size:var(--fs-body);color:var(--ink-2)}
+.ts-qbox{display:flex;align-items:center;justify-content:center;width:64px;height:48px;border:1.5px solid var(--line-2);background:var(--sunken);border-radius:3px;font-family:var(--font-mono);font-size:var(--fs-lead);color:var(--ink-3)}
 
 /* ---------- einsum: the letter table ---------- */
 .ts-ltw{max-width:100%;overflow-x:auto;justify-self:start}
-.ts-lt{border-collapse:collapse;font-size:12.5px}
+.ts-lt{border-collapse:collapse;font-size:var(--fs-label)}
 .ts-lt th,.ts-lt td{border:1px solid var(--line);padding:4px 8px;text-align:center}
-.ts-lt thead th{font-size:14px;color:var(--ink);vertical-align:top}
+.ts-lt thead th{font-size:var(--fs-ui);color:var(--ink);vertical-align:top}
 .ts-lt thead th[data-tipx]{cursor:help}
 .ts-lt thead th.ts-sum{background:var(--surface-2)}
 /* A2: each letter with its name under it */
-.ts-lchar{display:block;font-family:var(--font-mono);font-size:14px;line-height:1.2}
-.ts-lname{display:block;font-size:10.5px;font-weight:500;line-height:1.2;color:var(--ink-3);white-space:nowrap}
+.ts-lchar{display:block;font-family:var(--font-mono);font-size:var(--fs-ui);line-height:1.2}
+.ts-lname{display:block;font-size:var(--fs-mark);font-weight:500;line-height:1.2;color:var(--ink-3);white-space:nowrap}
 .ts-lt tbody th{text-align:left;font-weight:500;color:var(--ink-2)}
-.ts-lt tbody th .mono{display:block;font-size:11.5px;color:var(--ink-3)}
+.ts-lt tbody th .mono{display:block;font-size:var(--fs-label);color:var(--ink-3)}
 .ts-lt td.ts-no{color:var(--ink-3)}
 .ts-lt tr.ts-out th{color:var(--ink);font-weight:650}
 /* round 3 (review 2026-10-03, R5.10): a summed letter's output cell is grey with a diagonal slash and says so in words; a strike-through
    on a one-letter cell read as a smudge on the screen */
-.ts-lt td.ts-x{color:var(--ink-2);white-space:nowrap;cursor:help;font-size:11.5px;
+.ts-lt td.ts-x{color:var(--ink-2);white-space:nowrap;cursor:help;font-size:var(--fs-label);
   background:linear-gradient(to top right,transparent calc(50% - .75px),var(--ink-3) calc(50% - .75px),var(--ink-3) calc(50% + .75px),transparent calc(50% + .75px)),var(--sunken)}
 .ts-lt td.ts-x span{background:var(--sunken);padding:0 3px;border-radius:2px}
 /* on a narrow screen “summed away” may break between its words, never inside one */
@@ -73,18 +73,18 @@
 /* ---------- 1-NN: rows on one log axis, the H100 line ---------- */
 .ts-nnrows{display:grid;gap:10px;min-width:0;overflow-x:clip;padding-top:2px}
 .ts-nnr{display:grid;gap:3px;min-width:0;cursor:help;border-radius:3px;outline-offset:2px}
-.ts-nnh{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;font-size:13px;color:var(--ink)}
-.ts-shp{font-size:11.5px;color:var(--ink-3)}
-.ts-code1{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);background:none;padding:0;white-space:normal;overflow-wrap:anywhere}
+.ts-nnh{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;font-size:var(--fs-cap);color:var(--ink)}
+.ts-shp{font-size:var(--fs-label);color:var(--ink-3)}
+.ts-code1{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2);background:none;padding:0;white-space:normal;overflow-wrap:anywhere}
 .ts-trk{position:relative;height:18px;background:var(--surface-2);border-radius:2px}
 .ts-bar{position:absolute;left:0;top:0;bottom:0;display:block;background:var(--ink-2);border-radius:2px;transition:width .25s ease-out}
 .ts-nnr.ts-over .ts-bar{background:var(--c-oom)}
 .ts-hl{position:absolute;top:-4px;bottom:-4px;width:0;border-left:3px solid var(--ink);margin-left:-1.5px;z-index:2}
-.ts-bv{position:absolute;top:50%;transform:translateY(-50%);margin-left:6px;font-size:11.5px;color:var(--ink);white-space:nowrap;z-index:3}
+.ts-bv{position:absolute;top:50%;transform:translateY(-50%);margin-left:6px;font-size:var(--fs-label);color:var(--ink);white-space:nowrap;z-index:3}
 .ts-bv.ts-in{transform:translate(-100%,-50%);margin-left:-6px;color:var(--bg)}
-.ts-it{color:var(--ink-2);font-size:12px}
+.ts-it{color:var(--ink-2);font-size:var(--fs-label)}
 .ts-axis{position:relative;height:34px;border-top:1px solid var(--line);margin-top:2px}
-.ts-axis span{position:absolute;top:3px;transform:translateX(-50%);font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);white-space:nowrap}
+.ts-axis span{position:absolute;top:3px;transform:translateX(-50%);font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-3);white-space:nowrap}
 .ts-axis span:first-child{transform:none}
 .ts-axis span:nth-child(5){transform:translateX(-100%)}
 .ts-axis .ts-hlab{top:18px;color:var(--ink);font-weight:650}
@@ -103,7 +103,7 @@
 /* ---------- metric cards ---------- */
 .ts-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
 .ts-metrics .metric .v{overflow-wrap:anywhere}
-.ts-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
+.ts-scope{margin:10px 0 6px;font-size:var(--fs-label);line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
 
 /* ---------- rail ---------- */
 .ts-mt{margin-top:12px}
@@ -111,21 +111,21 @@
 .goal.ts-over b{color:var(--c-oom)}
 .ts-lv{margin-top:6px}
 .ts-lv .lever .lv-r{grid-column:2 / 4;grid-row:2;padding-top:0}
-.ts-lv .lever .lv-d{grid-row:3;font-family:var(--font-mono);font-size:12px;overflow-wrap:anywhere}
+.ts-lv .lever .lv-d{grid-row:3;font-family:var(--font-mono);font-size:var(--fs-label);overflow-wrap:anywhere}
 .ts-lv .lever .lv-r:empty{display:none}
 .ts-app .goal span:last-child{white-space:nowrap}
 .ts-app .goal.ts-goal{display:grid;grid-template-columns:minmax(0,1fr);gap:1px}
 .ts-app .goal.ts-goal span:last-child{white-space:normal}
 .ts-app .inline-ctl .seg-ctl{flex-wrap:wrap}
 .ts-app .inline-ctl .seg-ctl button{white-space:nowrap}
-.ts-fx{margin:8px 0;font-size:16px;overflow-x:auto}
+.ts-fx{margin:8px 0;font-size:var(--fs-body);overflow-x:auto}
 /* A16: why Next is greyed out */
-.ts-why{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.ts-why{margin:8px 0 0;font-size:var(--fs-label);line-height:1.4;color:var(--ink-2)}
 .pbar .ts-why{margin-top:6px}
 /* A6: what to remember, each line with its picture */
 .ts-remlist{padding-left:18px}
 .ts-remlist li{margin-bottom:8px}
-.ts-rem{font-size:12.5px;white-space:nowrap}
+.ts-rem{font-size:var(--fs-label);white-space:nowrap}
 .ts-rem[aria-pressed="true"]{font-weight:650;text-decoration:none}
 /* A14: phones, the part's one control at the top of the chart */
 .ts-phone{display:none}
@@ -133,18 +133,18 @@
 /* ---------- settings ---------- */
 .ts-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
 .ts-grp[hidden]{display:none}
-.ts-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.ts-gh{font-size:var(--fs-cap);font-weight:700;color:var(--ink)}
 .ts-grp .ctl>.lbl{display:block}
 .ts-grp .seg-ctl{flex-wrap:wrap}
 .ts-app .ctl output{white-space:nowrap}
 
 /* ---------- connect ---------- */
-.ts-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.ts-prod{margin:0 0 8px;padding-left:18px;font-size:var(--fs-ui);color:var(--ink-2)}
 .ts-prod li{margin-bottom:6px}
 .ts-prod code,.ts-app .refs code{word-break:break-word}
 
 /* ---------- mini result bar ---------- */
-.ts-dk{font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%}
+.ts-dk{font-size:var(--fs-label);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%}
 .ts-dkb{display:grid;gap:2px;width:100%;min-width:48px}
 .ts-dkb i{display:block;height:4px;background:var(--ink-2);border-radius:1px}
 .ts-dkb i.ts-over{background:var(--c-oom)}
@@ -160,19 +160,19 @@
   .ts-stage>details.math{order:5}
   .ts-graph{padding:10px 10px 12px}
   .ts-phone:not(:empty){display:block}
-  .ts-ax{font-size:12px;height:28px}
-  .ts-axh{font-size:9.5px}
-  .ts-c{min-width:26px;font-size:11px;height:20px}
+  .ts-ax{font-size:var(--fs-label);height:28px}
+  .ts-axh{font-size:var(--fs-mark)}
+  .ts-c{min-width:26px;font-size:var(--fs-mark);height:20px}
   .ts-lt th,.ts-lt td{padding:3px 4px}
-  .ts-lt{font-size:12px}
-  .ts-metrics .metric .v{font-size:16px}
+  .ts-lt{font-size:var(--fs-label)}
+  .ts-metrics .metric .v{font-size:var(--fs-body)}
 }
 @media (prefers-reduced-motion:reduce){.ts-bar{transition:none}}
 /* first look: chips on one line each, the bar's value above the H100 line, long shapes in the metric cards */
 .ts-grp .seg-ctl button,.ts-app .inline-ctl .seg-ctl button{white-space:nowrap;flex:1 0 auto}
 .ts-bv.ts-in{background:var(--ink-2);padding:0 4px;border-radius:2px}
 .ts-nnr.ts-over .ts-bv.ts-in{background:var(--c-oom)}
-.ts-metrics .metric.ts-long .v{font-size:15px;white-space:normal}
+.ts-metrics .metric.ts-long .v{font-size:var(--fs-stage);white-space:normal}
 /* the mini result bar: one small box per axis (red: the axis that does not match) or per einsum letter (dashed: summed) */
 .ts-dkx{display:flex;gap:2px;align-items:center}
 .ts-dkx i{display:block;width:8px;height:12px;border:1.5px solid var(--ink-2);border-radius:2px;box-sizing:border-box}
@@ -186,8 +186,8 @@
 .ts-goalwhy{margin:6px 0 10px;color:var(--ink-2);line-height:1.45}
 @media (max-width:760px){
   /* A24: long values such as (32, 4096) or 5,722 GiB fit their card on phones */
-  .ts-metrics .metric .v{font-size:14px;white-space:normal}
-  .ts-metrics .metric.ts-long .v{font-size:13px}
+  .ts-metrics .metric .v{font-size:var(--fs-ui);white-space:normal}
+  .ts-metrics .metric.ts-long .v{font-size:var(--fs-cap)}
 }
 /* phones: the X/Y note goes under the chart, so the bars start on the first screen (R7.3) */
 @media (max-width:760px){.ts-nn>.ts-xy{order:1;margin-top:0}}
@@ -200,30 +200,30 @@
 /* part 5: each way of writing the distance, term by term: what it computes, its shape, its memory at the current sizes (R6.29) */
 .ts-terms{display:grid;gap:10px;margin:10px 0 12px}
 .ts-tw{display:grid;gap:2px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:0}
-.ts-th{font-size:13px;font-weight:650;color:var(--ink);line-height:1.4;margin-bottom:2px}
-.ts-th code{display:block;font-size:11.5px;font-weight:400;color:var(--ink-2);white-space:normal;overflow-wrap:anywhere}
-.ts-tw .ts-fx{margin:0 0 4px;font-size:15px}
-.ts-tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 12px;align-items:center;padding:5px 0;border-top:1px solid var(--line);font-size:12.5px;line-height:1.4}
+.ts-th{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.4;margin-bottom:2px}
+.ts-th code{display:block;font-size:var(--fs-label);font-weight:400;color:var(--ink-2);white-space:normal;overflow-wrap:anywhere}
+.ts-tw .ts-fx{margin:0 0 4px;font-size:var(--fs-stage)}
+.ts-tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 12px;align-items:center;padding:5px 0;border-top:1px solid var(--line);font-size:var(--fs-label);line-height:1.4}
 .ts-tt{grid-column:1;min-width:0;color:var(--ink-2)}
-.ts-tt math{font-size:14px;color:var(--ink)}
-.ts-ts{grid-column:1;font-size:11px;color:var(--ink-3);white-space:nowrap}
-.ts-tb{grid-column:2;grid-row:1 / 3;min-width:62px;text-align:right;font-size:12.5px;color:var(--ink);white-space:nowrap}
+.ts-tt math{font-size:var(--fs-ui);color:var(--ink)}
+.ts-ts{grid-column:1;font-size:var(--fs-mark);color:var(--ink-3);white-space:nowrap}
+.ts-tb{grid-column:2;grid-row:1 / 3;min-width:62px;text-align:right;font-size:var(--fs-label);color:var(--ink);white-space:nowrap}
 .ts-tr.ts-over .ts-tb{color:var(--c-oom)}
-.ts-tnote{padding-top:5px;border-top:1px solid var(--line);font-size:12px;line-height:1.45;color:var(--ink-2)}
+.ts-tnote{padding-top:5px;border-top:1px solid var(--line);font-size:var(--fs-label);line-height:1.45;color:var(--ink-2)}
 /* part 5's picture: each axis named by what it indexes, and the pairs the broadcast makes */
-.ts-nnshape .ts-axh{white-space:normal;font-family:inherit;font-size:11px;line-height:1.2;align-self:end}
+.ts-nnshape .ts-axh{white-space:normal;font-family:inherit;font-size:var(--fs-mark);line-height:1.2;align-self:end}
 .ts-pair{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;min-width:0}
-.ts-pgrid{display:grid;grid-template-columns:auto repeat(4,auto);gap:2px;font-family:var(--font-mono);font-size:12px}
+.ts-pgrid{display:grid;grid-template-columns:auto repeat(4,auto);gap:2px;font-family:var(--font-mono);font-size:var(--fs-label)}
 .ts-ph{display:flex;align-items:center;justify-content:center;min-height:20px;padding:0 4px;color:var(--ink-3)}
 .ts-pc{display:flex;align-items:center;justify-content:center;min-height:20px;padding:0 5px;border:1px solid var(--line);border-radius:2px;background:var(--surface-2);color:var(--ink);white-space:nowrap}
 .ts-pc.ts-pe{border-color:transparent;background:none;color:var(--ink-3)}
 .ts-pgrid sub,.ts-pcap sub{font-size:.75em;line-height:0}
 .ts-pcap{margin:0;flex:1 1 220px;max-width:340px;color:var(--ink-2);line-height:1.45}
 @media (max-width:760px){
-  .ts-nnshape .ts-axh{font-size:10px}
+  .ts-nnshape .ts-axh{font-size:var(--fs-mark)}
   .ts-nnshape .ts-rl{display:flex;flex-direction:column;white-space:normal;line-height:1.25}
   .ts-nnshape .ts-rl>*{white-space:nowrap}
-  .ts-pgrid{font-size:10.5px}
+  .ts-pgrid{font-size:var(--fs-mark)}
   .ts-pc{padding:0 3px}
 }
 
@@ -233,8 +233,8 @@
 .ts-mb{padding:10px 0}
 .ts-mb:first-child{padding-top:2px}
 .ts-mb+.ts-mb{border-top:1px solid var(--line)}
-.mathbody .ts-ml{margin:0 0 6px;font-family:var(--font-ui);font-size:13.5px;line-height:1.55;color:var(--ink-2)}
-.ts-mg{display:grid;grid-template-columns:repeat(var(--n),auto);justify-content:start;justify-items:center;align-items:center;column-gap:.35em;row-gap:.45em;overflow-x:auto;padding-block:.3em;margin-bottom:4px;font-size:13.5px}
+.mathbody .ts-ml{margin:0 0 6px;font-family:var(--font-ui);font-size:var(--fs-math);line-height:1.55;color:var(--ink-2)}
+.ts-mg{display:grid;grid-template-columns:repeat(var(--n),auto);justify-content:start;justify-items:center;align-items:center;column-gap:.35em;row-gap:.45em;overflow-x:auto;padding-block:.3em;margin-bottom:4px;font-size:var(--fs-cap)}
 .ts-mg .ts-mn{justify-self:end}
 .ts-mg .ts-mw{justify-self:start}
 .ts-mg .ts-mh{font-family:'STIX Two Math','Cambria Math','Latin Modern Math','Noto Sans Math',var(--font-ui);font-size:1.08em;white-space:nowrap}
@@ -288,3 +288,17 @@
   .ts-metrics .metric .d{min-height:13px;line-height:1.1}
   .ts-stage>details.math{margin-top:8px;padding-top:8px}
 }}
+
+/* 精装修 step 2: a short desktop window (820 px tall or less; 1536 × 730 is a 15-inch laptop's browser). With the top bar scrolled away
+   the stage gains 58 px, and part 5 (the 1-NN rewrite) still ran 41 px past it at 1536 × 730; the gaps between its blocks, the axes
+   picture's rows and the rows of bars are a few px tighter. Same blocks, lines and sizes of text */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){
+  .ts-nn{gap:4px}
+  .ts-nnshape{row-gap:5px}
+  .ts-nnshape .ts-ax{height:22px}
+  .ts-nnrows{row-gap:5px}
+  .ts-nnr{row-gap:2px}
+  .ts-axis{height:30px}
+  .ts-stage .ts-graph{padding-top:6px;padding-bottom:6px}
+  .ts-stage>.ts-scope{margin:6px 0 2px}
+}

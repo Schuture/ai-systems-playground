@@ -22,24 +22,24 @@
 .tf-legend>span{cursor:help}
 
 /* stage */
-.tf-cap{margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-3)}
-.tf-now{margin:0 0 8px;font-size:12px;color:var(--ink);font-weight:600}
+.tf-cap{margin:8px 0 0;font-size:var(--fs-cap);line-height:1.4;color:var(--ink-3)}
+.tf-now{margin:0 0 8px;font-size:var(--fs-label);color:var(--ink);font-weight:600}
 .tf-stack{position:relative;padding-left:14px}
 /* the residual connection's line leaves the embedding table's bar, runs down the left edge and enters the LM head's bar (placeStream sets
    its width to the bars' left edge), drawn like the lab Architecture overview's .ar-res */
 .tf-rs{position:absolute;left:5px;width:8px;border:1.5px solid var(--ink-3);border-right:0;border-radius:9px 0 0 9px;pointer-events:none}
 .tf-tok{position:absolute;left:0;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 2px var(--surface);transition:top .25s ease-out;pointer-events:none}
 .tf-tok[hidden]{display:none}
-.tf-io{margin:0 0 4px 30px;font-family:var(--font-mono);font-size:11.5px;line-height:1.35;color:var(--ink-2);border-radius:3px}
+.tf-io{margin:0 0 4px 30px;font-family:var(--font-mono);font-size:var(--fs-label);line-height:1.35;color:var(--ink-2);border-radius:3px}
 .tf-out{margin:6px 0 0 30px}
 .tf-sec{display:grid;grid-template-columns:24px minmax(0,1fr) 40px;column-gap:6px;row-gap:2px;align-items:center;margin:5px 0}
 .tf-sec>.tf-lab{grid-column:2 / 4}
 .tf-sec>.tf-bar,.tf-sec>.tf-gap{grid-column:2}
-.tf-sec>.tf-ln{grid-column:1;justify-self:end;font-size:10.5px;line-height:1;color:var(--ink-3)}
-.tf-lab{font-size:12px;line-height:1.3;color:var(--ink-2);min-width:0;overflow-wrap:anywhere}
+.tf-sec>.tf-ln{grid-column:1;justify-self:end;font-size:var(--fs-mark);line-height:1;color:var(--ink-3)}
+.tf-lab{font-size:var(--fs-label);line-height:1.3;color:var(--ink-2);min-width:0;overflow-wrap:anywhere}
 .tf-lab b{color:var(--ink);font-weight:650}
-.tf-lab .tf-n{color:var(--ink);font-size:11.5px}
-.tf-each{font-size:10.5px;color:var(--ink-3)}
+.tf-lab .tf-n{color:var(--ink);font-size:var(--fs-label)}
+.tf-each{font-size:var(--fs-mark);color:var(--ink-3)}
 .tf-bar{position:relative;height:14px;min-width:0;display:flex}
 .tf-bar.tf-thin{height:4px}
 .tf-bar .tf-seg{display:block;height:100%;flex:none;border-radius:2px;min-width:2px}
@@ -50,7 +50,7 @@
 .tf-lw .tf-seg:last-child{border-radius:0 2px 2px 0}
 .tf-lw .tf-seg:only-child{border-radius:2px}
 .tf-gap{height:6px}
-.tf-brace{grid-column:3;align-self:stretch;display:flex;align-items:center;padding-left:6px;border:1.5px solid var(--ink-3);border-left:0;border-radius:0 7px 7px 0;font-size:11.5px;color:var(--ink-2);min-height:16px}
+.tf-brace{grid-column:3;align-self:stretch;display:flex;align-items:center;padding-left:6px;border:1.5px solid var(--ink-3);border-left:0;border-radius:0 7px 7px 0;font-size:var(--fs-label);color:var(--ink-2);min-height:16px}
 /* part 3: the order inside a layer (not to scale) and where the token is (an outline, never a colour) */
 .tf-flow{line-height:2;white-space:normal}
 .tf-fl{display:inline-block;padding:0 4px;border:1px solid var(--line);border-radius:3px;background:var(--surface);color:var(--ink-2);line-height:1.45;white-space:nowrap}
@@ -61,24 +61,24 @@
 @container (max-width:430px){.tf-shape{display:none}.tf-sec{grid-template-columns:20px minmax(0,1fr) 34px}.tf-io{margin-left:26px}}
 /* share of the parameters */
 .tf-share{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
-.tf-share-t{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);margin:0 0 6px}
+.tf-share-t{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2);margin:0 0 6px}
 .tf-sbar{display:flex;height:20px;border-radius:3px;overflow:hidden;background:var(--surface-2)}
 .tf-sbar .tf-seg{flex:none;display:flex;align-items:center;justify-content:flex-end;padding-right:3px;border-radius:0;min-width:0;overflow:hidden}
-.tf-sbar .tf-seg span{font-size:10.5px;line-height:1.3;white-space:nowrap;background:var(--surface);color:var(--ink);padding:0 3px;border-radius:2px}
-.tf-skey{display:flex;flex-wrap:wrap;gap:3px 14px;margin-top:7px;font-family:var(--font-mono);font-size:11px;line-height:1.4;color:var(--ink-2)}
+.tf-sbar .tf-seg span{font-size:var(--fs-mark);line-height:1.3;white-space:nowrap;background:var(--surface);color:var(--ink);padding:0 3px;border-radius:2px}
+.tf-skey{display:flex;flex-wrap:wrap;gap:3px 14px;margin-top:7px;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:1.4;color:var(--ink-2)}
 .tf-skey>span{display:inline-flex;align-items:center;cursor:help}
 .tf-skey b{font-weight:600;color:var(--ink);margin-left:4px}
-.tf-share-mask{font-size:12.5px;color:var(--ink-3);padding:8px 10px;border:1px dashed var(--line);border-radius:4px}
+.tf-share-mask{font-size:var(--fs-label);color:var(--ink-3);padding:8px 10px;border:1px dashed var(--line);border-radius:4px}
 
 /* R3.2 (review 8): a change under Settings never moves the page. Up to 1180 px the card and the chart sit above or beside Settings and
    change height with it, so they are not scroll anchors: the browser keeps the control in use where it is */
 @media (max-width:1180px){#tf-rail,#tf-stage{overflow-anchor:none}}
 
 /* rail */
-.tf-cfg{font-size:12px;line-height:1.6;background:var(--sunken);border:1px solid var(--line-2);border-radius:4px;padding:8px 10px;margin:0 0 4px;overflow-x:auto}
+.tf-cfg{font-size:var(--fs-label);line-height:1.6;background:var(--sunken);border:1px solid var(--line-2);border-radius:4px;padding:8px 10px;margin:0 0 4px;overflow-x:auto}
 .tf-cfg>div{white-space:nowrap}
-.tf-walkctl .lbl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;font-weight:620;color:var(--ink-2)}
-.tf-walkctl output{font-family:var(--font-mono);font-weight:500;color:var(--ink);font-size:13px}
+.tf-walkctl .lbl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:var(--fs-cap);font-weight:620;color:var(--ink-2)}
+.tf-walkctl output{font-family:var(--font-mono);font-weight:500;color:var(--ink);font-size:var(--fs-cap)}
 .tf-walkbtns{display:flex;gap:8px;flex-wrap:wrap}
 .tf-lines{margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
 .tf-lines p{margin:4px 0;overflow-wrap:anywhere;line-height:1.5}
@@ -88,7 +88,7 @@
 .progress.tf-over i{background:var(--c-oom)}
 
 /* connect */
-.tf-prod{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-2)}
+.tf-prod{margin:0;padding-left:18px;font-size:var(--fs-cap);color:var(--ink-2)}
 .tf-prod li{margin-bottom:8px}
 .tf-see{margin:12px 0 0;color:var(--ink-2)}
 .tf-nw{white-space:nowrap}   /* keeps “（” with the link after it, never alone at a line end */
@@ -114,7 +114,7 @@
    lab's patterns, all weights blue (R5.6). Timing (labs/transformer.js TZ_LEAD, TZ_SPAN, TZ_CELL): the old cells fade in 0.12 s, each new
    cell grows in 0.22 s after its own delay, the tables resize in 0.5 s; the build-up fades the LM head in at 0.66 s. All ends by 0.96 s */
 .tf-tz-vis{display:grid;gap:4px;min-width:0}
-.tf-tz-cap{font-size:11px;line-height:1.3;color:var(--ink-3)}
+.tf-tz-cap{font-size:var(--fs-mark);line-height:1.3;color:var(--ink-3)}
 .tf-tz-frame{position:relative;height:96px;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
 .tf-tz-in{position:absolute;inset:2px}
 .tf-tz-emb,.tf-tz-head,.tf-tz-lay{position:absolute;top:0;bottom:0}
@@ -152,8 +152,8 @@
 /* Show the math as a few blocks (the owner, 2026-10-09, H2): a lead line in words, the formula typeset, the numbers; blocks separated by a
    hairline; a long chain breaks at “=” onto lines whose “=” line up (two columns: the name, then each “= …”) */
 #tf-mathbody .tf-mb+.tf-mb{border-top:1px solid var(--line);margin-top:10px;padding-top:8px}
-#tf-mathbody .tf-mlead{font-family:var(--font-ui);font-size:13px;line-height:1.5;color:var(--ink-2);margin:2px 0 4px}
-#tf-app .tf-math-line{overflow-x:auto;max-width:100%;margin:2px 0 4px;font-size:15px}
+#tf-mathbody .tf-mlead{font-family:var(--font-ui);font-size:var(--fs-cap);line-height:1.5;color:var(--ink-2);margin:2px 0 4px}
+#tf-app .tf-math-line{overflow-x:auto;max-width:100%;margin:2px 0 4px;font-size:var(--fs-stage)}
 /* a formula that does not fit its box (the owner's review of 2026-10-09): the name with “=” first; the right-hand side beside it while its
    widest term fits there, else on its own line, indented under the name; its terms wrap onto the next line under its first term */
 #tf-app .tf-fw{display:flex;flex-wrap:wrap;align-items:baseline;padding-left:1.4em}

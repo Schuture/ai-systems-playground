@@ -1074,7 +1074,7 @@ function revealStep(){A.ui.reveal($('#ckr-rail .step.current',app)||$('#ckr-rail
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, rc=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, rc=box.getBoundingClientRect();
   if(rc.bottom<=innerHeight-8) return;
   const dy=Math.min(rc.bottom-innerHeight+16,rc.top-top); if(dy>0) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
 const revealObs=()=>requestAnimationFrame(()=>{if(!app) return; if(mode==='guided') revealBox($('#ckr-rail [data-obs]',app)); else if(mode==='sandbox') revealBox($('#ckr-insight',app)); else revealBox($('#ckr-ch-res',app));});
@@ -1082,7 +1082,7 @@ const revealObs=()=>requestAnimationFrame(()=>{if(!app) return; if(mode==='guide
    would run off screen. Its panel comes into view first, and the playback waits until the page stops scrolling. When a playback ends
    in view while the conclusion (the observation, or the scenario's) is off screen, a line under the panel leads to it. Not in 自由调参,
    where the page does not scroll and the result is read on the stage (R3.2). */
-const topOff=()=>{const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'); return (bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12;};
+const topOff=()=>{const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'); return (bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12;};
 function stageFirst(){
   if(!app||innerWidth>760||mode==='challenge'||!busy()) return false;
   const pb=anim||rra, pan=$(anim?'#ckr-pan-doc':'#ckr-pan-lists',app); if(!pan||pan.hidden||pb.paused) return false;

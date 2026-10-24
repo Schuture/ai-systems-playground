@@ -703,7 +703,7 @@ function revealStep(){A.ui.reveal($('#ctm-rail .step.current',app)||$('#ctm-rail
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, rc=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, rc=box.getBoundingClientRect();
   if(rc.bottom<=innerHeight-8) return;
   const dy=Math.min(rc.bottom-innerHeight+16,rc.top-top); if(dy>0) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
 const revealObs=()=>requestAnimationFrame(()=>{if(!app) return; if(mode==='guided') revealBox($('#ctm-rail [data-obs]',app)); else if(mode==='sandbox') revealBox($('#ctm-insight',app)); else revealBox($('#ctm-ch-res',app));});

@@ -1081,7 +1081,7 @@ function onClick(e){
   if(d.nav==='back'){enterStep(step-1); A.ui.reveal($('#cb-rail .step.current',root)); keepStage(); return;}
   if(d.nav==='showme'){const s=STEPS[step]; if(s.showMe==='play'){if(play.playing) play.rate=SPEEDS.fast; else playFrom(b,SPEEDS.fast);} else if(s.showMe){if(s.levers) lvTried.add(s.showMe.pol); learnerSet(s.showMe);} return;}
   if(d.modeGo){setMode(d.modeGo); A.ui.reveal($('#cb-rail',root)); return;}
-  if(d.preset!=null){learnerSet({...PRESETS[+d.preset].p}); const box=$('#cb-sb-res',root); if(box){const rc=box.getBoundingClientRect(); if(rc.top<60||rc.top>window.innerHeight-120) A.ui.reveal(box);} return;}
+  if(d.preset!=null){learnerSet({...PRESETS[+d.preset].p}); const box=$('#cb-sb-res',root); if(box){const rc=box.getBoundingClientRect(); if(rc.top<A.ui.barB()||rc.top>window.innerHeight-120) A.ui.reveal(box);} return;}
   const act=d.act; if(!act) return;
   if(act==='play') playFrom(b);
   else if(act==='to-card') toCard(b);
@@ -1115,7 +1115,7 @@ function keepStage(){stageStop();
   stageT=setTimeout(tick,A.reduceMotion()?30:150);}
 // Play pressed inside a step card while the chart is scrolled away (narrow screens): bring the chart into view to watch it
 function playFrom(b,rate){const gr=$('#cb-graph',root);
-  if(!play.playing&&b.closest('#cb-rail')&&gr){const rc=gr.getBoundingClientRect(); if(rc.top<60||rc.bottom>window.innerHeight) gr.scrollIntoView({block:'start',behavior:A.reduceMotion()?'auto':'smooth'});}
+  if(!play.playing&&b.closest('#cb-rail')&&gr){const rc=gr.getBoundingClientRect(); if(rc.top<A.ui.barB()||rc.bottom>window.innerHeight) gr.scrollIntoView({block:'start',behavior:A.reduceMotion()?'auto':'smooth'});}
   startPlay(rate);}
 function onKey(e){
   if(!mine(e)) return; const el=e.target; if(!el.classList||!el.classList.contains('cb-req')) return;

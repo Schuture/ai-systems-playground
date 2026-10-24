@@ -1107,7 +1107,7 @@ const wholeNow=()=>{const st=stickyStage(); return !!st&&scrollY<=stageMaxY(st)+
    the sticky stage: the page moves no further than the whole stage still fits beside the rail (maxY), and an element in view lets the
    page move down as far as the rest of the stage needs (review polish r1, P23, P28) */
 function revealWith(el,st,maxY){
-  const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:0)+12;
+  const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:0)+12;
   const r=el.getBoundingClientRect(), sr=st.getBoundingClientRect(), want=parseFloat(getComputedStyle(st).top)||70, shown=el.getClientRects().length>0;
   let y=scrollY;
   if(shown&&!(r.top>=top&&r.top<=innerHeight-160)) y=scrollY+r.top-top;
@@ -1136,7 +1136,7 @@ function revealMode(){
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, rc=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, rc=box.getBoundingClientRect();
   if(rc.bottom<=innerHeight-8) return;
   const dy=Math.min(rc.bottom-innerHeight+16,rc.top-top); if(dy>0) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
 const revealObs=()=>requestAnimationFrame(()=>{if(!app) return; if(mode==='guided') revealBox($('#vix-rail [data-obs]',app)); else if(mode==='sandbox') revealBox($('#vix-insight',app)); else revealBox($('#vix-ch-res',app));});
@@ -1144,7 +1144,7 @@ const PHONE=()=>innerWidth<=760;
 /* on a phone the stage sits above the card, so a pick that starts the picture's search brings the stage to the top while it plays,
    and the observation once it ends (R7.12; review polish r1, P24); on a wider screen the stage is sticky and stays in view */
 function revealStage(){requestAnimationFrame(()=>{if(!app) return; const st=$('#vix-stage',app), bar=document.querySelector('.topbar'); if(!st) return;
-  const top=(bar?bar.offsetHeight:56)+8, r=st.getBoundingClientRect(); if(Math.abs(r.top-top)<8) return;
+  const top=(bar?A.ui.barB():56)+8, r=st.getBoundingClientRect(); if(Math.abs(r.top-top)<8) return;
   window.scrollTo({top:Math.max(0,scrollY+r.top-top),behavior:A.reduceMotion()?'auto':'smooth'});});}
 function afterPick(started){barsStop(); if(started!==false&&anim&&PHONE()){pendObs=true; revealStage();} else if(started===false) revealBars(); else revealObs();}
 /* exact search and the k-d tree on a phone: a pick adds a row of bars in the stage, above the card. The bars come up under the top bar and stay about a
@@ -1153,7 +1153,7 @@ let barsT=0;
 function barsStop(){clearTimeout(barsT); barsT=0;}
 function revealBars(){barsStop(); const pan=app&&($('#vix-pan-scale:not([hidden])',app)||$('#vix-pan-kd:not([hidden])',app));
   if(!PHONE()||!pan||mode!=='guided'){revealObs(); return;}
-  requestAnimationFrame(()=>{if(!app) return; const bar=document.querySelector('.topbar'), top=(bar?bar.offsetHeight:56)+8, r=pan.getBoundingClientRect();
+  requestAnimationFrame(()=>{if(!app) return; const bar=document.querySelector('.topbar'), top=(bar?A.ui.barB():56)+8, r=pan.getBoundingClientRect();
     if(r.top<top||r.bottom>innerHeight-8) window.scrollTo({top:Math.max(0,scrollY+r.top-top),behavior:A.reduceMotion()?'auto':'smooth'});
     barsT=setTimeout(()=>{barsT=0; if(app) revealObs();},A.reduceMotion()?400:1000);});}
 /* 自由调参 on a phone: the kit brings the settings panel to the top, so the picture shows its end there instead of playing off screen
