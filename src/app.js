@@ -990,7 +990,7 @@ function mapInit(){
   svg.addEventListener('focusout',hideTip);
   window.addEventListener('scroll',()=>{tipQuiet=true;
     // a focused element keeps its tooltip only while it is on screen below the top bar (site review R10 #23)
-    const on=tipFor&&tipFor===document.activeElement&&tipHTML&&(()=>{const r=tipFor.getBoundingClientRect(), bar=$('.topbar'); return r.bottom>(bar?bar.offsetHeight:58)&&r.top<window.innerHeight;})();
+    const on=tipFor&&tipFor===document.activeElement&&tipHTML&&(()=>{const r=tipFor.getBoundingClientRect(); return r.bottom>barB()&&r.top<window.innerHeight;})();
     if(on) showTipHTML(tipFor,tipHTML); else hideTip();},{passive:true});
   // a path's "Show its order" and "No path, by branch": on wide screens the line above the tree and the whole tree come into view with
   // the numbered route (H1); phones, where only part of the tree is in view, go to the numbered tiles
@@ -1645,12 +1645,16 @@ function dockCtx(){
   if(view==='lab') return {anchor:$('#pgBar'),bench:$('#view-lab .bench'),target:$('#stageGraph')};
   if(view==='dyn'&&dyn&&dyn.dock){const a=dyn.dock.anchor(); return {anchor:a,bench:dyn.dock.bench(),target:dyn.dock.target?dyn.dock.target():a};}
   return null;}
-function barInView(a,dy){dy=dy||0; const b=a.getBoundingClientRect(); return b.height>0&&b.top-dy>=60&&b.bottom-dy<=window.innerHeight-8;}
+function barInView(a,dy){dy=dy||0; const b=a.getBoundingClientRect(); return b.height>0&&b.top-dy>=barB(dy)+1&&b.bottom-dy<=window.innerHeight-8;}   // below the top bar (60 px while it stays on top)
 // the mini result bar waits until the lab's title has scrolled under the top bar, so it never covers the breadcrumb or the title,
 // at any width and whatever pushed the chart down (an open Fidelity popover did; site review R10 #1, #2). On phones, Next, Back and a
 // mode switch scroll the new card up to the top bar (R3.7), so the title is gone and the bar shows while the learner works.
-function benchInView(bn,dy){dy=dy||0; const b=bn.getBoundingClientRect(), bar=$('.topbar'), tl=$(view==='lab'?'#view-lab .labtitle':'#view-dyn .labtitle');
-  if(tl&&tl.getBoundingClientRect().bottom-dy>(bar?bar.offsetHeight:58)-2) return false;
+/* how far down the top bar covers the window (精装修 step 2). On a lab page on a desktop the bar scrolls away with the page (styles.css),
+   so it covers only what of it is still on the screen, and nothing once the page has scrolled past it; elsewhere it stays on top.
+   dy: the same once the page has scrolled by dy (a scroll the caller is about to make; a large dy: anywhere further down) */
+function barB(dy){const b=$('.topbar'); if(!b) return 56; if(getComputedStyle(b).position==='sticky') return b.offsetHeight; return Math.max(0,b.getBoundingClientRect().bottom-(dy||0));}
+function benchInView(bn,dy){dy=dy||0; const b=bn.getBoundingClientRect(), tl=$(view==='lab'?'#view-lab .labtitle':'#view-dyn .labtitle');
+  if(tl&&tl.getBoundingClientRect().bottom-dy>barB(dy)-2) return false;
   return b.top-dy<window.innerHeight-120&&b.bottom-dy>200;}
 /* the stage's title row (kit polish K4): on a desktop the stage sticks at 70 px, right where the bar sits (59 to about 108 px), so a bar
    shown while the stage was on the screen covered the stage's title and its status badge (product-design P15, at 1440x900 in part 8,
@@ -1661,7 +1665,7 @@ function benchInView(bn,dy){dy=dy||0; const b=bn.getBoundingClientRect(), bar=$(
    stage scrolled up to the top. The stage stays put (no shift of the sticky top, no smaller stage), so nothing on it moves */
 const DOCK_H=50;   // the bar's height (min-height 48 px and its border), also when it is hidden
 function dockStageTop(c,dy){dy=dy||0; const st=(c.anchor.closest&&c.anchor.closest('.stage'))||c.bench.querySelector(':scope>.stage'); if(!st||!st.getClientRects().length) return false;
-  const hd=st.querySelector('.stage-head')||st, bar=$('.topbar'), bb=bar?bar.offsetHeight:58, h=hd.getBoundingClientRect();
+  const hd=st.querySelector('.stage-head')||st, bb=barB(dy), h=hd.getBoundingClientRect();
   return h.height>0&&h.bottom-dy>bb+1&&h.top-dy<bb+DOCK_H;}   // some of the title row is in the bar's band, from the top bar's bottom to 50 px below it
 // whether the bar shows, or would show once the page is scrolled by dy with nothing else moving (revealTop asks that on phones, K3)
 function dockShows(c,dy){return !!(c&&c.anchor&&c.bench)&&c.bench.dataset.flow!=='primer'&&benchInView(c.bench,dy)&&!barInView(c.anchor,dy)&&!dockStageTop(c,dy);}   // no dock over the primer (2026-10-11)
@@ -1792,8 +1796,8 @@ function labUI(){
     if(d.lever!==undefined){const i=+d.lever; lvTried.add(LEVERS[i].id); learnerSet(lvCfg(i));
       // the result box comes into view: from below the fold its top goes under the header (the kit's reveal);
       // when only its end is cut off, a short scroll shows the end and keeps its first line on screen
-      const box=$('#rail [data-obs]'); if(box&&!box.hidden){const q=box.getBoundingClientRect(), vh=window.innerHeight, bar=$('.topbar'), dk=$('#dock'),
-          hdr=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(window.innerWidth<=760?50:0))+12;
+      const box=$('#rail [data-obs]'); if(box&&!box.hidden){const q=box.getBoundingClientRect(), vh=window.innerHeight, dk=$('#dock'),
+          hdr=barB()+(dk&&!dk.hidden?dk.offsetHeight:(window.innerWidth<=760?50:0))+12;
         if(q.top>vh-160) revealTop(box);
         else if(q.bottom>vh){quietTips(); window.scrollBy({top:Math.max(0,Math.min(q.bottom-vh+12,q.top-hdr)),behavior:reduceMotion()?'auto':'smooth'});}}
       return;}
@@ -1952,7 +1956,7 @@ function progRestore(id,lab,tok){if(RESTORED.has(id)) return false; RESTORED.add
 // back in the primer: the section the reader was reading (once per page load, like the lab's own state)
 const FRES=new Set();
 function flowResume(id){if(FRES.has(id)) return; FRES.add(id); const r=PROG.get(id); if(!r||r.flow!=='primer'||FLOW[id]!=='primer'||!(r.pat>1)) return;
-  const sec=$(`#view-dyn .primer [data-psec="${r.pat|0}"].pr-sec`); if(!sec) return; const bar=$('.topbar'); window.scrollTo(0,Math.max(0,window.scrollY+sec.getBoundingClientRect().top-(bar?bar.offsetHeight:56)-12));}
+  const sec=$(`#view-dyn .primer [data-psec="${r.pat|0}"].pr-sec`); if(!sec) return; const y=sec.getBoundingClientRect().top; window.scrollTo(0,Math.max(0,window.scrollY+y-barB(y-12)-12));}
 window.__prog={snap:()=>{const lab=view==='lab'?KVLAB:(view==='dyn'?dyn:null); try{return lab&&lab.snap?lab.snap():null;}catch(e){return null;}},get:id=>PROG.get(id),last:()=>PROG.last(),save:progSave,clear:()=>PROG.clear()};
 let dyn=null;
 function showView(v){view=v; $('#view-home').hidden=v!=='home'; $('#view-lab').hidden=v!=='lab'; $('#view-dyn').hidden=v!=='dyn'; hideTip(); $('#dock').hidden=true; dockSoon();}
@@ -2130,7 +2134,7 @@ function revealTop(el){
   // (only right after a click that changes the part or the mode: a lab's own reveal of its card, e.g. "the conclusion is in part 3", goes to the card)
   if(PHONE.matches&&performance.now()<structUntil){const m=el.closest('.m2'); if(m&&(el.matches('.rail')||el.closest('.rail .steps'))){const pb=m.querySelector('.bench .pbar'), st=m.querySelector('.bench>.stage');
     el=pb&&pb.getBoundingClientRect().height>0?pb:(st||el);}}
-  const bar=$('.topbar'), dk=$('#dock'), r=el.getBoundingClientRect(), bh=bar?bar.offsetHeight:56;
+  const dk=$('#dock'), r=el.getBoundingClientRect(), bh=barB(r.top-12);
   let top=bh+(dk&&!dk.hidden?dk.offsetHeight:0)+12;
   // phones: room for the mini result bar only when it will show where the scroll ends (kit polish K3: the 50 px kept for a bar that did not
   // come pushed rag-failure's metric cards off the screen in Scenarios and Settings). Asked for the place without that room: if the bar
@@ -2208,7 +2212,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
   // a question comes up from the top of its stem (the paragraphs right above the options, owner 2026-10-14: the question line alone
   // left the setup under the top bar), as far back as still leaves the options on the screen (a long list: at least its first 45%)
   let to=isQ&&pv&&pv.matches('p')?pv:g;
-  if(to!==g){const bar=$('.topbar'), dk=$('#dock'), av=window.innerHeight-(bar?bar.offsetHeight:56)-(dk&&!dk.hidden?dk.offsetHeight:50)-12,
+  if(to!==g){const dk=$('#dock'), av=window.innerHeight-barB(1e6)-(dk&&!dk.hidden?dk.offsetHeight:50)-12,
     room=av-Math.min(g.offsetHeight,av*0.45), gt=g.getBoundingClientRect().top;
     for(let e=to.previousElementSibling; e&&e.matches('p:not(.nx-why),ul,ol')&&e.getClientRects().length; e=e.previousElementSibling){if(gt-e.getBoundingClientRect().top>room) break; to=e;}}
   revealTop(to); f.focus({preventScroll:true}); flashEl(g);});
@@ -2340,7 +2344,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
   const f=nb.querySelector(k==='q'?'.ex-opts .choice':sel)||nb.querySelector('[data-ex="tab"][aria-pressed="true"]'); if(f) f.focus({preventScroll:true});
   // a pick near the bottom of the screen: bring the verdict up, as far as needed and never so far that the options leave the screen (R3.10)
   const res=k==='ans'&&nb.querySelector('.ex-res'); if(!res) return;
-  const bar=$('.topbar'), dk=$('#dock'), safe=(bar?bar.getBoundingClientRect().bottom:56)+(dk&&!dk.hidden?dk.offsetHeight:0)+8;
+  const dk=$('#dock'), safe=barB()+(dk&&!dk.hidden?dk.offsetHeight:0)+8;
   const r=res.getBoundingClientRect(), o=nb.querySelector('.ex-opts').getBoundingClientRect();
   if(r.bottom>innerHeight-8){const dy=Math.min(r.bottom-innerHeight+16,o.top-safe); if(dy>=2) window.scrollBy({top:dy,behavior:reduceMotion()?'auto':'smooth'});}});
 function exPassSync(){$$('[data-exits]').forEach(box=>{const id=box.dataset.exits, d=EXD[id]; if(!d||d.selfDone||!box.isConnected) return;
@@ -2396,6 +2400,7 @@ const kitObs=window.MutationObserver?new MutationObserver(recs=>{for(const r of 
 function kitObserve(){tipReachAll(document.body); fillAll(document.body); cmpSeeAll(document.body); if(kitObs) kitObs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['data-tip','data-tipx','data-tipfn','data-jump','disabled','min','max','step','value']});}
 const UI={
   flash:flashEl, jumpToEl, obsBump, setRange:setFill, reveal:revealTop, done:id=>doneHTML(id),
+  barB,   // the top bar's cover, for a lab's own scrolling (it scrolls away on a lab page on a desktop)
   /* set every Next in root (the card's and the part bar's) and, if given, the text of their why lines (steps({nextWhy})) */
   setNext:(root,disabled,why)=>{$$('[data-nav="next"]',root).forEach(b=>{b.disabled=!!disabled;}); $$('[data-next-why]',root).forEach(p=>{if(why!=null) p.innerHTML=why; if(disabled) p.hidden=false;});},
   initRanges:root=>$$('input[type=range]',root).forEach(setFill),
@@ -2514,7 +2519,7 @@ function flowSync(scope,m){const nav=scope&&scope.querySelector('[data-flow-nav]
   if(LASTMODE[id]!==undefined&&m!==LASTMODE[id]&&F2M[FLOW[id]]!==m) FLOW[id]=M2F[m]||FLOW[id];
   LASTMODE[id]=m; if(nav.closest('.bench.flowed')) flowApply(nav); else $$('button[data-flow]',nav).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.flow===M2F[m])));}
 function flowSet(nav,f){const id=nav.dataset.lab; if(!nav.querySelector(`[data-flow="${f}"]`)) return; FLOW[id]=f; flowApply(nav);}
-function flowTop(bench){const bar=$('.topbar'), top=(bar?bar.offsetHeight:56)+12, r=bench.getBoundingClientRect();
+function flowTop(bench){const r=bench.getBoundingClientRect(), top=barB(r.top-12)+12;
   if(r.top<top||r.top>window.innerHeight*0.6) window.scrollTo({top:Math.max(0,window.scrollY+r.top-top),behavior:'auto'});}
 // a click on the list sets the step before the lab's own handler (bindHeader, or the KV lab's) switches its mode
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-flow-nav] button[data-flow], [data-flow-go]'); if(!b) return;
@@ -2578,12 +2583,12 @@ function prRun(fig){const st=PRF.get(fig); if(!st||st.t||!fig.isConnected) retur
   const tick=()=>{st.t=0; if(!fig.isConnected||!st.on) return; prShow(fig,(st.k+1)%st.frames.length,true); st.t=setTimeout(tick,st.frames[st.k].ms||4800);};
   st.t=setTimeout(tick,st.frames[st.k].ms||4800);}
 function primerKick(bench){const sec=bench.querySelector(':scope>.primer'); if(!sec) return; $$('.pr-fig',sec).forEach(f=>{const st=PRF.get(f); if(st&&st.on) prRun(f);});}
-function prGo(sec,k){const a=sec.querySelector(`[data-psec="${k}"].pr-sec`); if(!a) return; const bar=$('.topbar'), top=(bar?bar.offsetHeight:56)+12;
-  window.scrollTo({top:Math.max(0,window.scrollY+a.getBoundingClientRect().top-top),behavior:reduceMotion()?'auto':'smooth'});}
+function prGo(sec,k){const a=sec.querySelector(`[data-psec="${k}"].pr-sec`); if(!a) return; const y=a.getBoundingClientRect().top, top=barB(y-12)+12;
+  window.scrollTo({top:Math.max(0,window.scrollY+y-top),behavior:reduceMotion()?'auto':'smooth'});}
 // the section being read: the list under 知识梳理 marks it, and PROG keeps it with the lab's record
 const PRAT={};
 function primerTocSync(bench){if(!bench) return; const sec=bench.querySelector(':scope>.primer'), nav=bench.querySelector(':scope>[data-flow-nav]'); if(!sec||!nav) return;
-  const bar=$('.topbar'), line=(bar?bar.offsetHeight:56)+innerHeight*0.25; let k=1;
+  const line=barB()+innerHeight*0.25; let k=1;
   $$('.pr-sec',sec).forEach(a=>{if(a.getBoundingClientRect().top<=line) k=+a.dataset.psec;});
   PRAT[nav.dataset.lab]=k; $$('.fl-sub a',nav).forEach(a=>{const on=+a.dataset.psec===k; a.classList.toggle('on',on); if(on) a.setAttribute('aria-current','true'); else a.removeAttribute('aria-current');});}
 {let rq=0; window.addEventListener('scroll',()=>{if(rq||view==='home') return; rq=requestAnimationFrame(()=>{rq=0; const b=$('.bench.flowed[data-flow="primer"]'); if(b&&b.offsetParent) primerTocSync(b);});},{passive:true});}

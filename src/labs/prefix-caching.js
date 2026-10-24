@@ -1337,7 +1337,7 @@ function otPick(v,fromRail){
   if(fromRail&&innerWidth<=760) otShowStage();
   byLearner(()=>{swStart(false,otDone.has(v)); updateRail();});}      // R3.20: a position whose lookup was watched to the end (A → B → A) shows its end state at once
 function otShowStage(){const pb=app&&$('#px-pairbox',app); if(!pb) return; const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:0)+8, y=pb.getBoundingClientRect().top;
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:0)+8, y=pb.getBoundingClientRect().top;
   if(Math.abs(y-top)>=2) window.scrollTo({top:Math.max(0,scrollY+y-top),behavior:'auto'});}
 /* metric cards: ▲▼ only after the learner's own change, from the numbers as shown (R6.6) */
 const numOf=v=>{const m=String(v).replace(/,/g,'').match(/^[<>]?(\d+(?:\.\d+)?)/); return m?parseFloat(m[1]):NaN;};
@@ -1538,7 +1538,7 @@ function revealStep(){A.ui.reveal($('#px-rail .step.current',app)||$('#px-rail',
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
   if(r.height>innerHeight-top-16){if(r.top>=top&&r.top<=innerHeight-200) return; A.ui.reveal(box); return;}
   if(r.top>=top&&r.bottom<=innerHeight-8) return;
   const dy=r.bottom>innerHeight-8?Math.min(r.bottom-innerHeight+16,r.top-top):r.top-top;

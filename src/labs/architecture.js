@@ -1953,7 +1953,10 @@ A.registerLab({
   },
   leave(){clearTimeout(annT); stopPlay(); stageStop(); if(ov.loop){ov.loop.kill(); ov.loop=null;} dlg=null; dlgShown=''; mkShown=''; mkShownW=0; root=null; app=null;},
   onLang(){if(root) this.mount(root,null);},
-  onResize(){if(isMk()) mkDraw();},
+  /* the overview fits its spacing to the window's height (ovFit); with reduced motion, or off screen, its loop draws only a still frame on
+     a change of view, so a resize draws that still frame again (精装修 step 2: after a resize to a shorter window it kept the taller
+     drawing and the stage scrolled inside); a running loop redraws on its next frame anyway */
+  onResize(){if(isMk()) mkDraw(); if(ov.loop&&!ov.loop.on) ov.loop.sync();},
   termTip, jump, jumpAct,
   dock:{
     anchor:()=>app&&$(isMk()?'#ar-mk':'#ar-ov',app), bench:()=>app&&$('.bench',app), target:()=>app&&$('#ar-graph',app),

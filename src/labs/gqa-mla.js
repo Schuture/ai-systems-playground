@@ -1037,7 +1037,7 @@ function showResult(){const box=$('#gm-rail [data-obs]',host); if(box&&!box.hidd
    never pushing its top under the top bar. Room is kept for the mini result bar at every width, since it appears
    as soon as the stage scrolls away (at 1440 x 1000 in Scenarios it covered the first line of the note). */
 function keepInView(box){const q=box.getBoundingClientRect(), vh=window.innerHeight, bar=$('.topbar'), dk=$('#dock'),
-    hdr=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:50)+12, dy=q.top<hdr?q.top-hdr:(q.bottom>vh-8?Math.min(q.bottom-vh+12,q.top-hdr):0);
+    hdr=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:50)+12, dy=q.top<hdr?q.top-hdr:(q.bottom>vh-8?Math.min(q.bottom-vh+12,q.top-hdr):0);
   if(dy) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
 /* After Next or Back, or a pick that shortens the card, the rail can end above the sticky stage's bottom; the stage then slides up
    under the top bar with the bench's bottom edge (review A r11 #15, r12 N5). Once every scroll has stopped, scroll up just enough for

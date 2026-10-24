@@ -1297,9 +1297,9 @@ function showCode(flash){const wc=$('#sc-wc',app); if(!wc||wc.hidden) return;
          part's card (R3.7; review B, B1) */
       const stick=parseFloat(getComputedStyle(st).top)||70, bottom=off(r.bottom)-(st.scrollTop+(Math.abs(dy)>2?dy:0))+sr.top;
       if(bottom>innerHeight-8&&sr.top>stick+1){const bar=document.querySelector('.topbar'), card=$('#sc-rail .step.current',app);
-        let py=Math.min(bottom-(innerHeight-8),sr.top-stick); if(card) py=Math.min(py,card.getBoundingClientRect().top-((bar?bar.getBoundingClientRect().bottom:58)+8));
+        let py=Math.min(bottom-(innerHeight-8),sr.top-stick); if(card) py=Math.min(py,card.getBoundingClientRect().top-((bar?A.ui.barB():58)+8));
         if(py>2) window.scrollBy({top:py,behavior:beh});}}
-    else {const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), lo=(bar?bar.getBoundingClientRect().bottom:58)+4, hi=innerHeight-8, dkH=dk&&!dk.hidden?dk.offsetHeight:49;
+    else {const bar=document.querySelector('.topbar'), dk=document.getElementById('dock'), lo=(bar?A.ui.barB():58)+4, hi=innerHeight-8, dkH=dk&&!dk.hidden?dk.offsetHeight:49;
       const dy=r.bottom-g.top<=hi-lo?fit(g.top,r.bottom,lo,hi):fit(r.top,r.bottom,lo+dkH,hi);
       if(Math.abs(dy)>2) window.scrollBy({top:dy,behavior:beh});}
     if(flash) A.ui.flash(wc);});}
@@ -1874,7 +1874,7 @@ function announce(o){clearTimeout(annT); const my=runTok; annT=setTimeout(()=>{i
    ===================================================================== */
 function stopPlay(){play.playing=false; if(play.raf) cancelAnimationFrame(play.raf); play.raf=0;}
 function revealObs(){if(mode!=='guided'||innerWidth<=760||!app) return; const rail=$('#sc-rail',app), box=rail&&$('[data-obs]',rail); if(!box||box.hidden||!box.innerHTML) return;
-  const bar=document.querySelector('.topbar'), top=(bar?bar.offsetHeight:56)+8, r=box.getBoundingClientRect(), want=Math.min(r.height,innerHeight-top-16), d=r.top+want-(innerHeight-12); if(d<=4) return;
+  const bar=document.querySelector('.topbar'), top=(bar?A.ui.barB():56)+8, r=box.getBoundingClientRect(), want=Math.min(r.height,innerHeight-top-16), d=r.top+want-(innerHeight-12); if(d<=4) return;
   const keep=$('[data-lever][aria-pressed="true"]',rail)||$('.choice[aria-pressed="true"]',rail)||$('.seg-ctl',rail); let lim=r.top-top; if(keep) lim=Math.min(lim,keep.getBoundingClientRect().top-top);
   const by=Math.max(0,Math.min(d,lim)); if(by<=4) return;
   /* an instant scroll, then a check once laid out: results that grew above can add a scroll-anchoring shift; the option stays in view */
@@ -2045,7 +2045,7 @@ function keepStage(){stageStop(); let lastY=null, waited=0, pulled=false; const 
 let focusWant=null;
 function fitFocus(){const q={tl:'#sc-tlw',mem:'#sc-mem',strip:'#sc-strip'}[STEPS[step].focus], el=q&&$(q,app), st=$('#sc-stage',app);
   if(!el||!st||innerWidth<=760||getComputedStyle(st).position!=='sticky') return;
-  const beh=RM()?'auto':'smooth', bar=document.querySelector('.topbar'), barB=bar?bar.getBoundingClientRect().bottom:58, card=$('#sc-rail .step.current',app);
+  const beh=RM()?'auto':'smooth', bar=document.querySelector('.topbar'), barB=bar?A.ui.barB():58, card=$('#sc-rail .step.current',app);
   const sr=st.getBoundingClientRect(), r=el.getBoundingClientRect(), stick=parseFloat(getComputedStyle(st).top)||70, bw=st.clientTop||0;
   const hiAt=py=>Math.min(sr.bottom-py-bw,innerHeight)-8, loAt=py=>Math.max(sr.top-py+bw,barB)+6;   // room for the block's dashed outline
   if(r.top>=loAt(0)&&r.bottom<=hiAt(0)) return;
@@ -2074,7 +2074,7 @@ function placeCard(o){const tc=$('#sc-tcard',app), g=tlGeo, box=$('#sc-tlbox',ap
     tc.style.left=L.toFixed(0)+'px'; tc.style.top=T.toFixed(0)+'px';}
   else {tc.classList.add('sc-below'); tc.style.width=''; tc.style.left=''; tc.style.top='';}
   const pl=$('#sc-pflab',app); if(pl&&!pl.hidden){const a=pl.getBoundingClientRect(), c=tc.getBoundingClientRect(); if(!(a.right<=c.left||a.left>=c.right||a.bottom<=c.top||a.top>=c.bottom)) pl.hidden=true;}   /* the card is the focus: never on top of the label */
-  if(tc._sel!==sel){tc._sel=sel; const bar=document.querySelector('.topbar'), topL=(bar?bar.offsetHeight:56)+4;
+  if(tc._sel!==sel){tc._sel=sel; const bar=document.querySelector('.topbar'), topL=(bar?A.ui.barB():56)+4;
     requestAnimationFrame(()=>{if(tc.hidden) return; const rc=tc.getBoundingClientRect(); if(rc.top<topL||rc.bottom>innerHeight-4){tc.scrollIntoView({block:'nearest',behavior:'auto'});   /* checked once laid out */
       const ov=tc.getBoundingClientRect().bottom-(innerHeight-2); if(ov>0){const sp=scrollHost(tc); if(sp) sp.scrollTop+=Math.ceil(ov); else window.scrollBy(0,Math.ceil(ov));}}});}}   /* “nearest” can leave a fraction of a pixel below the screen */
 /* the element that scrolls a node: the sticky stage on a desktop, else the page */
@@ -2093,7 +2093,7 @@ function syncRunTab(){if(!app) return; const w=$('#sc-mtw',app), b=$('#sc-rtbtn'
 function showRunTab(){const w=$('#sc-mtw',app), st=$('#sc-stage',app); if(!w||!w.offsetParent) return w;
   const beh=RM()?'auto':'smooth';
   if(!st||innerWidth<=760||getComputedStyle(st).position!=='sticky'){w.scrollIntoView({block:'nearest',behavior:beh}); return w;}
-  const bar=document.querySelector('.topbar'), barB=bar?bar.getBoundingClientRect().bottom:58, card=$('#sc-rail .step.current',app);
+  const bar=document.querySelector('.topbar'), barB=bar?A.ui.barB():58, card=$('#sc-rail .step.current',app);
   const sr=st.getBoundingClientRect(), r=w.getBoundingClientRect(), stick=parseFloat(getComputedStyle(st).top)||70, bw=st.clientTop||0;
   const hiAt=py=>Math.min(sr.bottom-py-bw,innerHeight)-8, loAt=py=>Math.max(sr.top-py+bw,barB)+6;
   let py=0; if(r.bottom>hiAt(0)){py=Math.max(0,sr.top-stick); if(card&&card.getClientRects().length) py=Math.max(0,Math.min(py,card.getBoundingClientRect().top-(barB+8)));}

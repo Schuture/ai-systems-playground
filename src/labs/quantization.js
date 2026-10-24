@@ -1048,10 +1048,10 @@ function playAnim(from,quick,acc0){
 }
 /* phones (≤ 760 px): the stage sits above the card (P36). Most of the picture on screen, below the top bar */
 const phone=()=>innerWidth<=760;
-function stageInView(){const s=$('#qz-svg',app); if(!s||!s.getClientRects().length) return false; const bar=document.querySelector('.topbar'), top=bar?bar.offsetHeight:56, r=s.getBoundingClientRect();
+function stageInView(){const s=$('#qz-svg',app); if(!s||!s.getClientRects().length) return false; const bar=document.querySelector('.topbar'), top=bar?A.ui.barB():56, r=s.getBoundingClientRect();
   return Math.min(r.bottom,innerHeight)-Math.max(r.top,top)>=0.7*r.height;}
 /* bring the stage's head under the top bar, so a replay a click in the card started is seen */
-function bringStage(){const st=$('#qz-stage',app); if(!st) return; const bar=document.querySelector('.topbar'), dy=st.getBoundingClientRect().top-((bar?bar.offsetHeight:56)+8);
+function bringStage(){const st=$('#qz-stage',app); if(!st) return; const bar=document.querySelector('.topbar'), dy=st.getBoundingClientRect().top-((bar?A.ui.barB():56)+8);
   if(Math.abs(dy)>4) window.scrollBy({top:dy,behavior:A.reduceMotion()?'auto':'smooth'});}
 /* a guided replay waiting for its picture: it starts once the reader has scrolled the picture on screen */
 function pendCheck(){clearTimeout(pendT); pendT=setTimeout(()=>{pendT=0; if(app&&AN.pend&&AN.pend===animKey()&&!AN.on&&!AN.paused&&viewNow()==='block'&&stageInView()) playAnim(1,AN.pendQ);},250);}
@@ -1109,7 +1109,7 @@ function revealStep(){A.ui.reveal($('#qz-rail .step.current',app)||$('#qz-rail',
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
   if(r.height>innerHeight-top-16){if(r.top>=top&&r.top<=innerHeight-200) return; A.ui.reveal(box); return;}
   if(r.top>=top&&r.bottom<=innerHeight-8) return;
   const dy=r.bottom>innerHeight-8?r.bottom-innerHeight+16:r.top-top;

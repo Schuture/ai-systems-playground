@@ -1017,7 +1017,7 @@ function revealStep(){A.ui.reveal($('#fa-rail .step.current',app)||$('#fa-rail',
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
   if(r.height>innerHeight-top-16){if(r.top>=top&&r.top<=innerHeight-200) return; A.ui.reveal(box); return;}
   if(r.top>=top&&r.bottom<=innerHeight-8) return;
   const dy=r.bottom>innerHeight-8?r.bottom-innerHeight+16:r.top-top;
@@ -1139,7 +1139,7 @@ function stageToView(btn){
   if(innerWidth>760||!btn||!btn.closest('#fa-rail')||A.reduceMotion()) return false;
   const g=$('#fa-graph',app); if(!g) return false;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:50)+8, r=g.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:50)+8, r=g.getBoundingClientRect();
   if(Math.abs(r.top-top)<8||(r.top>=top&&r.bottom<=innerHeight)) return false;
   window.scrollBy({top:r.top-top,behavior:'smooth'});
   return true;

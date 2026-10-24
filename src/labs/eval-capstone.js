@@ -1103,7 +1103,7 @@ function revealStep(){A.ui.reveal($('#ecap-rail .step.current',app)||$('#ecap-ra
 function revealBox(box){
   if(!box||box.hidden) return;
   const bar=document.querySelector('.topbar'), dk=document.getElementById('dock');
-  const top=(bar?bar.offsetHeight:56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
+  const top=(bar?A.ui.barB():56)+(dk&&!dk.hidden?dk.offsetHeight:(innerWidth<=760?50:0))+12, r=box.getBoundingClientRect();
   if(r.height>innerHeight-top-16){if(r.top>=top&&r.top<=innerHeight-200) return; A.ui.reveal(box); return;}
   if(r.top>=top&&r.bottom<=innerHeight-8) return;
   const dy=r.bottom>innerHeight-8?r.bottom-innerHeight+16:r.top-top;
@@ -1116,7 +1116,7 @@ let holdT=0, holdOn=false;
 function holdEnd(){clearTimeout(holdT); holdT=0; if(holdOn){document.removeEventListener('scrollend',holdEnd); holdOn=false;}
   const st=app&&$('#ecap-stage',app); if(st) st.classList.remove('ecap-hold');}
 function stageUp(){const st=$('#ecap-stage',app); if(!st) return;
-  const bar=document.querySelector('.topbar'), dy=st.getBoundingClientRect().top-(bar?bar.offsetHeight:56)-6;
+  const bar=document.querySelector('.topbar'), dy=st.getBoundingClientRect().top-(bar?A.ui.barB():56)-6;
   if(Math.abs(dy)<=2) return;
   if(A.reduceMotion()){window.scrollBy({top:dy,behavior:'auto'}); return;}
   holdEnd(); st.classList.add('ecap-hold'); holdOn=true; document.addEventListener('scrollend',holdEnd);

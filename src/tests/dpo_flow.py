@@ -58,7 +58,12 @@ def shot(pg, name, full=False):
     pg.screenshot(path=str(SH / f'{name}.png'), full_page=full)
 
 def in_view(pg, sel):
-    return pg.evaluate("s=>{const e=document.querySelector(s); if(!e) return false; const r=e.getBoundingClientRect(); return r.height>0&&r.top>=58&&r.bottom<=innerHeight+1}", sel)
+    return pg.evaluate("s=>{const e=document.querySelector(s); if(!e) return false; const r=e.getBoundingClientRect(), b=document.querySelector('.topbar'), bb=b?Math.max(0,b.getBoundingClientRect().bottom):0; return r.height>0&&r.top>=Math.min(58,bb)&&r.bottom<=innerHeight+1}", sel)
+
+def bar_b(pg):
+    """How far down the top bar covers the window. Since 精装修 step 2 it scrolls away with a lab page on a desktop (A.ui.barB), so a revealed
+    card can sit 12 px from the top once the bar is gone; on phones it stays on top."""
+    return pg.evaluate("()=>{const b=document.querySelector('.topbar'); return b?Math.max(0,Math.round(b.getBoundingClientRect().bottom)):0}")
 
 def settle(pg, ms=2500):
     """Wait until a smooth scroll (A.ui.reveal) has finished."""
@@ -207,7 +212,7 @@ def run_flow(b, w, h, lang, dark=False):
     # part 2: predict gates Next
     pg.click('#dpo-rail [data-nav="next"]'); pg.wait_for_timeout(250)
     t2 = top_shown(pg, '#dpo-rail .pbar' if w <= 760 else '#dpo-rail .step.current')   # phones (m2): the part bar
-    check(f'{tag} Next reveals the new {"part bar" if w <= 760 else "card"} (top on screen, below the top bar)', t2 is not None and TOPBAR <= t2 <= h - 160, str(t2))
+    check(f'{tag} Next reveals the new {"part bar" if w <= 760 else "card"} (top on screen, below the top bar)', t2 is not None and min(TOPBAR, bar_b(pg)) <= t2 <= h - 160, str(t2))
     check(f'{tag} predict: Next disabled until a choice, “pick one” said', disabled(pg, '#dpo-rail [data-nav="next"]') and Z(lang, 'Pick one.', '选一个。') in pg.inner_text('#dpo-rail .step.current'))
     opts = pg.evaluate("()=>[...document.querySelectorAll('#dpo-rail [data-pred]')].map(b=>b.textContent)")
     check(f'{tag} predict: three options, each “claim: reason”, no mechanism word; the group is “Your prediction”', len(opts) == 3 and all(Z(lang, ': ', '：') in o_ for o_ in opts) and not any('logit' in o_ or Z(lang, 'although', '尽管') in o_ for o_ in opts)
@@ -287,7 +292,7 @@ def run_flow(b, w, h, lang, dark=False):
     o = txt(pg, '#dpo-rail [data-obs]')
     check(f'{tag} Back to part 3 at 0 steps: no contradictory “changed anyway”', Z(lang, 'Step 0: nothing trained yet.', '第 0 步：还没训练。') in o and Z(lang, 'changed anyway', '还是变了') not in o, o[:200])
     tb = top_shown(pg, '#dpo-rail .pbar' if w <= 760 else '#dpo-rail .step.current')   # phones (m2): the part bar
-    check(f'{tag} Back reveals the {"part bar" if w <= 760 else "card"}', tb is not None and TOPBAR <= tb <= h - 160, str(tb))
+    check(f'{tag} Back reveals the {"part bar" if w <= 760 else "card"}', tb is not None and min(TOPBAR, bar_b(pg)) <= tb <= h - 160, str(tb))
     go_step(pg, PART['loss'])
     pg.evaluate("()=>{document.getElementById('dpo-math').open=true; const s=document.getElementById('dpo-stage'); s.scrollTop=s.scrollHeight}"); pg.wait_for_timeout(100)
     # part 5: the push fades
@@ -415,7 +420,7 @@ def run_flow(b, w, h, lang, dark=False):
     check(f'{tag} guided ends in Scenarios, and the scenarios card ends with “Take the challenge”', pg.get_attribute('#view-dyn .modes button[data-mode="sandbox"]:not([data-flow=free])', 'aria-pressed') == 'true' and pg.query_selector('#dpo-rail [data-mode-go="challenge"]') is not None)
     pg.click('#dpo-rail [data-mode-go="challenge"]'); pg.wait_for_timeout(450)
     tc = top_shown(pg, '#dpo-stage' if w <= 760 else '#dpo-rail .railcard')   # phones (m2): the stage first, the card right under it
-    check(f'{tag} “Take the challenge” reveals the challenge {"stage" if w <= 760 else "card (goal and β in view)"}', tc is not None and TOPBAR <= tc <= h - 160 and (w <= 760 or in_view(pg, '#dpo-rail .rh')), str(tc))
+    check(f'{tag} “Take the challenge” reveals the challenge {"stage" if w <= 760 else "card (goal and β in view)"}', tc is not None and min(TOPBAR, bar_b(pg)) <= tc <= h - 160 and (w <= 760 or in_view(pg, '#dpo-rail .rh')), str(tc))
     # challenge
     check(f'{tag} challenge: mode pressed and goal written in full', pg.get_attribute('#dpo-app .modes button[data-mode="challenge"]', 'aria-pressed') == 'true' and pg.inner_text('#dpo-rail .rh') == Z(lang, 'After 60 DPO steps, make the model give A at least half the time, with its KL from the SFT model at most 0.8 nats', '训练 60 步 DPO 后，让模型至少一半的时候给出 A，且离 SFT 模型的 KL 不超过 0.8 nats'), pg.inner_text('#dpo-rail .rh'))
     check(f'{tag} challenge: the KL note has no second KL for β = 0.1; no ▲▼ badge on entering', Z(lang, 'KL measures how far the model has moved from the SFT model, in nats. The 50% and 0.8-nat thresholds are set for this challenge.', 'KL 衡量模型离 SFT 模型有多远，单位 nats。50% 和 0.8 nats 是这道题定的门槛。') in pg.inner_text('#dpo-rail .railcard')
@@ -486,7 +491,7 @@ def run_flow(b, w, h, lang, dark=False):
     # scenarios: presets follow the settings
     pg.click('#dpo-app .modes button[data-mode="sandbox"]:not([data-flow=free])'); pg.wait_for_timeout(350)
     tr = top_shown(pg, '#dpo-stage' if w <= 760 else '#dpo-rail')   # phones (m2): the stage
-    check(f'{tag} mode switch reveals the {"stage" if w <= 760 else "rail"}', tr is not None and tr >= TOPBAR - 1 and tr <= h - 160, str(tr))
+    check(f'{tag} mode switch reveals the {"stage" if w <= 760 else "rail"}', tr is not None and tr >= min(TOPBAR, bar_b(pg)) - 1 and tr <= h - 160, str(tr))
     check(f'{tag} scenarios card is titled “Pick a scenario”; its only intro line is the lead-in (G1: what to pick and what to watch, not “one at a time”)', pg.inner_text('#dpo-rail .rh') == Z(lang, 'Pick a scenario', '选一个应用场景') and pg.inner_text('#dpo-rail .railcard > p.small') == Z(lang, 'Pick a scenario and see how the four answers’ probabilities change as DPO trains.', '选一个场景，看看 DPO 训练时四个回答的概率怎么变。')
           and pg.get_attribute('#dpo-rail .presets', 'aria-label') == Z(lang, 'Scenarios, pick one', '应用场景，选一个'), (pg.inner_text('#dpo-rail .rh'), pg.inner_text('#dpo-rail .railcard > p.small')))
     names = pg.evaluate("()=>[...document.querySelectorAll('#dpo-rail [data-preset] b')].map(b=>b.textContent)")
@@ -679,7 +684,7 @@ with sync_playwright() as p:
               and 'Razin et al., ICLR 2025' in conn and ' · ' not in conn and 'Higher β means' not in conn and 'the model keeps moving toward the chosen answer whatever β is' in conn)
         pg.locator('#dpo-app .connect [data-jump="step7"]').first.click(); pg.wait_for_timeout(500)
         s = state(pg)
-        check('the “part 7” link in In production opens guided part 7 and reveals it', s['mode'] == 'guided' and s['step'] == PART['shared'] and (top_shown(pg, '#dpo-rail .step.current') or -1) >= TOPBAR, json.dumps(s))
+        check('the “part 7” link in In production opens guided part 7 and reveals it', s['mode'] == 'guided' and s['step'] == PART['shared'] and (top_shown(pg, '#dpo-rail .step.current') or -1) >= min(TOPBAR, bar_b(pg)), json.dumps(s))
         pg.close()
         # home tile teaser, light and dark
         for w, lang, dark in [(1440, 'en', False), (390, 'zh', False), (390, 'en', False), (1440, 'zh', True), (390, 'en', True)]:
@@ -702,7 +707,8 @@ with sync_playwright() as p:
 # in the lab's real layout (window.__aspPrimer, as tests/kit_flow.py), entering each part as the polish probe stage.py does: Next when it
 # is on, else the part's title. Before, at 1440 × 900 the stage scrolled inside itself at every part (40 px at parts 1–2, 53 at 3–6 and 8,
 # 182 at part 7), the curve started 722 px down under the answers, and entering part 7 (and 8) pushed the stage up to −213 px (−35 px; in
-# English part 6 to −271 and part 7 to −55). Now, at every part in both languages: the stage's top at its sticky line (70 px) or lower and
+# English part 6 to −271 and part 7 to −55). Now, at every part in both languages: the stage's top at its sticky line (70 px until
+# 精装修 step 2, now 12 px: the top bar scrolls away with a lab page on a desktop) or lower and
 # its head below the top bar; no scrolling inside, at least 30 px to spare in Chinese (none needed in English); the curve (the main figure)
 # beside the answers at the top of the chart and whole on the screen. Spare = the stage's max-height minus what its content and borders
 # need. Part 7 is the exception: the picture “Where the logits come from” keeps the room of its shared-weight form (R7.9, dpo.js
@@ -721,7 +727,7 @@ if ONLY != 'timing':
       return {part:cur?[...cur.parentNode.children].indexOf(cur)+1:0, top:Math.round(r.top), head:Math.round(h.top), bar:Math.round(bar), scroll:s.scrollHeight-s.clientHeight,
         spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)), fig:[Math.round(f.top),Math.round(f.bottom)], vh:innerHeight,
         beside:Math.abs(ch.top-bs.top)<=2&&ch.left>=bs.right, graph:(q=>[Math.round(q.top),Math.round(q.bottom)])(document.getElementById('dpo-graph').getBoundingClientRect()),
-        vis:[Math.round(r.top+s.clientTop),Math.round(r.top+s.clientTop+s.clientHeight)]};}"""
+        vis:[Math.round(r.top+s.clientTop),Math.round(r.top+s.clientTop+s.clientHeight)], stick:getComputedStyle(s).position==='sticky'?Math.round(parseFloat(getComputedStyle(s).top)):0};}"""
     HT = "()=>{const s=document.getElementById('dpo-stage'); return s.scrollHeight+s.offsetHeight-s.clientHeight}"
     with sync_playwright() as _p:
         _b = _p.chromium.launch()
@@ -784,8 +790,8 @@ if ONLY != 'timing':
             check(f'1440 {_lang} Scenarios: every card, the shared-weight one among them, leaves the stage’s height alone (R7.9)', len(_hscen) == 6 and max(_hscen) - min(_hscen) <= 1, _hscen)
             check(f'1440 {_lang} part 6: Show me, another β and each view of the curve (the key naming the previous setting) leave the stage’s height alone (R7.9)',
                   bool(_held6) and max(_held6) - min(_held6) <= 1 and ('previous' in _keys6 or '上一个' in _keys6), (_held6, _keys6))
-            check(f'1440 {_lang} walk: entering every part, the stage’s top at its sticky line (70 px) or lower and its head below the top bar (R3.2, R9.7, B4)',
-                  len(_rows) == _n == 8 and all(r['part'] == i + 1 and r['top'] >= max(68, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
+            check(f'1440 {_lang} walk: entering every part, the stage’s top at its sticky line or lower and its head below the top bar (R3.2, R9.7, B4)',
+                  len(_rows) == _n == 8 and all(r['part'] == i + 1 and r['top'] >= max(r['stick'] - 2, r['bar'] - 1) and r['head'] >= r['bar'] - 1 for i, r in enumerate(_rows)), [(r['part'], r['top']) for r in _rows])
             for _r in _rows:
                 if _r['part'] == 7:   # the picture's room kept for its shared-weight form (R7.9): rule 7, a short scroll inside, the whole chart on show
                     _cap = 50 if _lang == 'zh' else 70
@@ -798,9 +804,9 @@ if ONLY != 'timing':
             for _k, _hs in _held.items():
                 check(f'1440 {_lang} part {_k}: switching the curve’s view and playing leave the stage’s height alone (R7.9)', max(_hs) - min(_hs) <= 1, _hs)
             _was = {('zh', 7): '−213', ('zh', 8): '−35', ('en', 6): '−271', ('en', 7): '−55', ('en', 8): '70'}   # stage.py, before
-            for _k in {'zh': (7, 8), 'en': (6, 7, 8)}[_lang]:   # the parts whose stage the bench's end pushed up before (or that sit there): at 70 px
+            for _k in {'zh': (7, 8), 'en': (6, 7, 8)}[_lang]:   # the parts whose stage the bench's end pushed up before (or that sit there): at the sticky line
                 _r = _rows[_k - 1] if len(_rows) >= _k else {}
-                check(f'1440 {_lang} walk part {_k}: the stage’s top at its sticky line, 70 px (it was at {_was[(_lang, _k)]} px)', bool(_r) and abs(_r['top'] - 70) <= 2, _r)
+                check(f'1440 {_lang} walk part {_k}: the stage’s top at its sticky line (it was at {_was[(_lang, _k)]} px)', bool(_r) and abs(_r['top'] - _r['stick']) <= 2, _r)
             _pg.close()
         _b.close()
 
