@@ -6,7 +6,7 @@
 .emb-c-t{--tc:var(--emb-t)}.emb-c-l{--tc:var(--emb-l)}.emb-c-v{--tc:var(--emb-v)}.emb-c-a{--tc:var(--emb-a)}.emb-c-e{--tc:var(--emb-e)}.emb-c-w{--tc:var(--emb-w)}
 .emb-stage{container-type:inline-size}
 .emb-head{align-items:flex-start;gap:10px;flex-wrap:nowrap}
-.emb-st-title{font-weight:650;font-size:15px;line-height:1.35;min-width:0;flex:1 1 auto}
+.emb-st-title{font-weight:650;font-size:var(--fs-stage);line-height:1.35;min-width:0;flex:1 1 auto}
 .emb-head .stage-actions{flex:none}
 @media (max-width:760px){.emb-st-title{min-height:2.7em}.emb-cfg{display:none}}   /* two lines kept on a phone, and while a run plays only its step count, so the title never pushes the stage down (P10) */
 .emb-transport{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0 4px;padding-bottom:10px;border-bottom:1px solid var(--line)}
@@ -14,7 +14,7 @@
 .emb-transport .btn.sm,.emb-transport .seg-ctl{height:32px;box-sizing:border-box}
 .emb-transport .btn.sm{padding-top:0;padding-bottom:0;line-height:1.2}
 .emb-transport [data-act="play"]{min-width:6.2em}   /* Train and Pause take the same width, so the controls beside it do not shift when a run starts (R7.9) */
-.emb-transport .seg-ctl button{padding:0 10px;font-size:13px;line-height:1.2}
+.emb-transport .seg-ctl button{padding:0 10px;font-size:var(--fs-cap);line-height:1.2}
 .emb-transport .inline-ctl{flex:1 1 180px;min-width:160px;border:0;padding:0;background:none}
 .emb-pan{border-top:1px solid var(--line);padding-top:8px;margin-top:8px;min-width:0}
 /* the panels of a part sit in one grid, in the part's order (R7.12): a pair side by side on a wide stage; part 4 puts the table on the
@@ -31,8 +31,8 @@
   .emb-body.l3>.emb-metrics{grid-area:met}}
 .emb-pan.first{border-top:0;margin-top:0;padding-top:4px}
 .emb-frozen .emb-heat,.emb-frozen .emb-rows,.emb-frozen .emb-rres{opacity:.45;transition:opacity .2s}
-.emb-pt{font-weight:600;font-size:13px;line-height:1.35;margin-bottom:4px;min-width:0}
-.emb-leg{margin:2px 0 6px;flex-wrap:wrap;gap:4px 12px;font-size:12px}
+.emb-pt{font-weight:600;font-size:var(--fs-cap);line-height:1.35;margin-bottom:4px;min-width:0}
+.emb-leg{margin:2px 0 6px;flex-wrap:wrap;gap:4px 12px;font-size:var(--fs-label)}
 .emb-leg .lg{display:inline-flex;align-items:center;gap:5px}
 .sw.emb-sw{background:var(--tc);border-radius:50%;width:10px;height:10px}
 .sw.emb-sw-p{background:var(--ink-2);border-radius:50%;width:10px;height:10px}
@@ -59,14 +59,14 @@
 .emb-me{fill:none;stroke:var(--ink);stroke-width:2.6}
 .emb-own{fill:none;stroke-width:2.4}
 .emb-own.ok{stroke:var(--c-ok)}.emb-own.bad{stroke:var(--c-oom)}
-.emb-rk{font-family:var(--font-mono);font-size:11px;font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
-.emb-side{min-width:0;font-size:13px;margin-top:4px}
-.emb-ql{display:block;font-size:12px;color:var(--ink-2);margin-bottom:4px}
-.emb-qsel{width:100%;max-width:100%;font:inherit;font-size:13px;padding:5px 6px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--ink)}
+.emb-rk{font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.emb-side{min-width:0;font-size:var(--fs-cap);margin-top:4px}
+.emb-ql{display:block;font-size:var(--fs-label);color:var(--ink-2);margin-bottom:4px}
+.emb-qsel{width:100%;max-width:100%;font:inherit;font-size:var(--fs-cap);padding:5px 6px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--ink)}
 .emb-top{margin:8px 0 4px;padding-left:20px}
 .emb-top li{display:list-item;margin:3px 0}
 .emb-top li span:first-child{margin-right:6px}
-.emb-top li .mono{color:var(--ink-2);font-size:12px}
+.emb-top li .mono{color:var(--ink-2);font-size:var(--fs-label)}
 .emb-top li.emb-hit span:first-child{font-weight:650}
 .emb-miss{margin:4px 0 0}
 .emb-miss.ok{color:var(--c-ok)}.emb-miss.bad{color:var(--c-oom)}
@@ -80,15 +80,15 @@
 .emb-ar.halo{stroke:var(--surface);stroke-width:4.2}
 .emb-ar.up{stroke:var(--c-ok)}
 .emb-ar.dn{stroke:var(--ink)}
-.emb-arw{display:inline-flex;gap:1px;font-weight:700;font-size:13px;line-height:1}
+.emb-arw{display:inline-flex;gap:1px;font-weight:700;font-size:var(--fs-cap);line-height:1}
 .emb-arw .up{color:var(--c-ok)}.emb-arw .dn{color:var(--ink)}
 .emb-cell{fill:var(--ink);stroke:none}
 .emb-cell.dg{stroke:var(--ink);stroke-width:2}
-.emb-cv{font-family:var(--font-mono);font-size:11px;fill:var(--ink)}
+.emb-cv{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink)}
 .emb-cv.inv{fill:var(--surface)}
 .emb-pbt{fill:var(--sunken);stroke:var(--line-2);stroke-width:.6}
 .emb-pb{fill:var(--ink-2)}
-.emb-ax{font-family:var(--font-mono);font-size:11px;fill:var(--ink-3)}
+.emb-ax{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-3)}
 .sw.emb-sw-cell{background:linear-gradient(90deg,var(--sunken),var(--ink))}
 .sw.emb-sw-dg{background:transparent;border:2px solid var(--ink)}
 .sw.emb-sw-pb{background:var(--ink-2)}
@@ -107,10 +107,10 @@
 .emb-r5{fill:none;stroke:var(--ink-2);stroke-width:1.3;stroke-dasharray:5 3}
 .emb-chance{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:1 3}
 .emb-ghost{fill:none;stroke:var(--ink-3);stroke-width:1.3}
-.emb-gl{font-family:var(--font-mono);font-size:11px;fill:var(--ink-2);paint-order:stroke;stroke:var(--surface);stroke-width:3px}   /* the halo keeps a label legible where another line crosses it (P12) */
+.emb-gl{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-2);paint-order:stroke;stroke:var(--surface);stroke-width:3px}   /* the halo keeps a label legible where another line crosses it (P12) */
 .emb-head-l{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
 .emb-dot{fill:var(--ink)}
-.emb-cl{font-family:var(--font-mono);font-size:11px;font-weight:650;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.emb-cl{font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:650;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
 .sw.emb-sw-line{background:transparent;border-top:2.4px solid var(--ink);height:0;align-self:center}
 .sw.emb-sw-r5{background:transparent;border-top:1.5px dashed var(--ink-2);height:0;align-self:center}
 .sw.emb-sw-ch{background:transparent;border-top:1.5px dotted var(--ink-3);height:0;align-self:center}
@@ -121,8 +121,8 @@
 /* the mission question's rows of the table (parts 4 and 8) */
 .emb-rsub{margin:0 0 2px}
 .emb-rows{list-style:none;margin:6px 0 4px;padding:0;display:grid;gap:3px}
-.emb-rows li{display:grid;grid-template-columns:12px minmax(3.2em,auto) minmax(60px,1fr) 3.4em;align-items:center;gap:6px;font-size:13px}
-.emb-rm{visibility:hidden;color:var(--ink);font-size:10px;line-height:1}
+.emb-rows li{display:grid;grid-template-columns:12px minmax(3.2em,auto) minmax(60px,1fr) 3.4em;align-items:center;gap:6px;font-size:var(--fs-cap)}
+.emb-rm{visibility:hidden;color:var(--ink);font-size:var(--fs-mark);line-height:1}
 .emb-rows li.hit .emb-rm{visibility:visible}
 .emb-rows li.hit .emb-rt{font-weight:700}
 .emb-rt{white-space:nowrap}
@@ -130,14 +130,14 @@
 .emb-rb i.z{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--ink-3)}
 .emb-rb i.v{position:absolute;top:2px;bottom:2px;background:var(--ink-2);border-radius:2px}
 .emb-rb i.v.neg{background:var(--ink-3)}
-.emb-rv{text-align:right;font-size:12px}
+.emb-rv{text-align:right;font-size:var(--fs-label)}
 .emb-rres{margin:4px 0 0}
 .emb-rres.ok{color:var(--c-ok)}.emb-rres.bad{color:var(--c-oom)}
 /* part 7: the two sentences' tokens and their average vectors */
-.emb-trap{font-size:13px}
+.emb-trap{font-size:var(--fs-cap)}
 .emb-ts{margin:6px 0 10px}
 .emb-chips{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
-.emb-chip{display:inline-block;padding:1px 6px;border-radius:4px;border:1px solid var(--line-2);font-size:13px;line-height:1.5;background:var(--surface);color:var(--ink)}
+.emb-chip{display:inline-block;padding:1px 6px;border-radius:4px;border:1px solid var(--line-2);font-size:var(--fs-cap);line-height:1.5;background:var(--surface);color:var(--ink)}
 .emb-chip.both{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .emb-chip.only{background:var(--sunken)}
 .emb-chip.skip{text-decoration:line-through;color:var(--ink-3);border-style:dashed}
@@ -145,25 +145,25 @@
 .emb-vec{display:block;max-width:100%;height:auto}
 .emb-vz{stroke:var(--ink-3);stroke-width:1}
 .emb-vb{fill:var(--ink-2)}
-.emb-tres{margin:6px 0;font-size:14px}
+.emb-tres{margin:6px 0;font-size:var(--fs-ui)}
 /* phones: a pick in the card links back up to the picture it changed (P20) */
 .emb-see{display:none;margin:4px 0 0}
 @media (max-width:760px){.emb-see{display:block}}
-.emb-pair{display:grid;gap:10px;font-size:14px}
+.emb-pair{display:grid;gap:10px;font-size:var(--fs-ui)}
 .emb-pair p{margin:2px 0}
-.emb-pq,.emb-pp,.emb-kw{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
-.emb-lab{display:block;font-size:12px;color:var(--ink-2);font-weight:600}
+.emb-pq,.emb-pp,.emb-kw{border:1px solid transparent;border-radius:8px;padding:8px 10px;background:var(--surface-2)}   /* a soft panel, no frame inside the stage (精装修 step 2) */
+.emb-lab{display:block;font-size:var(--fs-label);color:var(--ink-2);font-weight:600}
 .emb-bad{color:var(--c-oom)}
 .emb-kw ol{margin:4px 0;padding-left:20px}
 .emb-math-line{overflow-x:auto;padding-block:.3em;margin:4px 0}
 .emb-mb{border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
 .emb-mb:first-child{border-top:0;margin-top:0}
-.emb-mb-lead{margin:0 0 2px;font-size:13px}
+.emb-mb-lead{margin:0 0 2px;font-size:var(--fs-cap)}
 .emb-ib{margin:8px 0}
 .emb-ul{margin:4px 0;padding-left:18px}
 .emb-prod li{margin-bottom:6px}
 .emb-dkw{display:flex;align-items:center;gap:6px;min-width:0}
-.emb-dkl{font-family:var(--font-mono);font-size:11px;color:var(--ink-2);white-space:nowrap}
+.emb-dkl{font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-2);white-space:nowrap}
 .emb-dk{flex:1 1 auto;height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;min-width:40px}
 .emb-dk i{display:block;height:100%;background:var(--ink-2)}
 .emb-ch-res .cmp{margin-top:10px}
@@ -199,3 +199,27 @@
 }}
 /* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
 .emb-st-title,#emb-h-title,#emb-m-title,.emb-miss{font-variant-numeric:tabular-nums}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730), in English, part 4 still ran 51 px past the stage. The
+   recall curve is drawn 100 px high instead of 118 (embeddings.js reads --emb-chart-h; it is drawn for its height, so its text keeps its
+   size), and the gaps under the run's controls, above the curve, above the metric cards and above Show the math are 2 px smaller. In
+   English the question's rows are 16 px apart instead of 17, the curve's heading and legend sit 2 px closer, and the gaps under the
+   controls and above Show the math are 2 px smaller again (R7.16) */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .emb-transport{padding-bottom:6px}
+  .emb-body.l3{--emb-chart-h:100}
+  .emb-body.l3>#emb-pan-chart{margin-top:4px;padding-top:4px}
+  .metrics.emb-metrics{margin-top:6px}
+  .emb-stage>details.math{margin-top:6px;padding-top:6px}
+  html[lang="en"] .emb-transport{padding-bottom:4px}
+  html[lang="en"] .emb-body.l3 .emb-rows li{line-height:16px}
+  html[lang="en"] .emb-body.l3 .emb-chead{gap:2px 10px}
+  html[lang="en"] .emb-body.l3 #emb-c-leg{margin:0}
+  html[lang="en"] .emb-stage>details.math{padding-top:4px}
+}}
+/* refit step 2 (2026-10-24): at 700 px tall or less (1366 × 650) part 8 still ran 13 px past the stage in English. The space above
+   each panel is 4 px, and in English the space under the player and above the math is smaller (R7.16) */
+@media (min-width:761px) and (min-height:600px) and (max-height:700px){@container (min-width:736px){
+  .emb-pan{margin-top:4px;padding-top:4px}
+  html[lang="en"] .emb-transport{padding-bottom:2px}
+  html[lang="en"] .emb-stage>details.math{margin-top:4px}
+}}

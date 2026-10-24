@@ -6,9 +6,9 @@
 .px-graph>*{min-width:0}
 .px-graph[data-lead="strip"] .px-stripbox{order:1}.px-graph[data-lead="strip"] .px-tl{order:2}.px-graph[data-lead="strip"] .px-rowsbox{order:3}
 .px-graph[data-lead="rows"] .px-rowsbox{order:1}.px-graph[data-lead="rows"] .px-stripbox{order:2}.px-graph[data-lead="rows"] .px-tl{order:3}
-.px-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+.px-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
 /* the part's focus lights up on the chart (R3.14) */
-.px-graph[data-focus="tl"] .px-tl,.px-graph[data-focus="strip"] .px-stripbox,.px-graph[data-focus="rows"] .px-rowsbox{outline:2px dashed var(--ink-3);outline-offset:4px;border-radius:4px}
+.px-graph[data-focus="tl"] .px-tl,.px-graph[data-focus="strip"] .px-stripbox,.px-graph[data-focus="rows"] .px-rowsbox{outline:2px dashed var(--focus-frame);outline-offset:4px;border-radius:4px}
 
 /* ---------- block states: cached (amber), computed (gray), computed although the same tokens are cached after another prefix (hatched) ---------- */
 .px-s0{background:var(--c-kv)}
@@ -22,7 +22,7 @@
 html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68px}
 .px-row:hover{border-color:var(--line)}
 .px-row.on{border-color:var(--ink);background:var(--surface-2)}
-.px-rl{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.px-rl{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .px-rl b{font-weight:700;color:var(--ink)}
 .px-row.on .px-rl{color:var(--ink);font-weight:650}
 .px-rt{position:relative;height:14px;min-width:0}
@@ -30,9 +30,9 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 .px-runs{display:flex;height:100%;width:100%}
 .px-runs i{display:block;height:100%;min-width:1px}
 .px-rbar b{position:absolute;top:0;bottom:0;width:1.5px;margin-left:-.75px;background:var(--surface)}
-.px-rv{font-size:12px;text-align:right;white-space:nowrap;color:var(--ink)}
+.px-rv{font-size:var(--fs-label);text-align:right;white-space:nowrap;color:var(--ink)}
 .px-row-wait{cursor:default}
-.px-rwait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border:1.5px dashed var(--line);border-radius:2px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden}
+.px-rwait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border:1.5px dashed var(--line);border-radius:2px;font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-3);white-space:nowrap;overflow:hidden}
 .px-row-wait .px-rv{color:var(--ink-3)}
 .px-sum{margin-top:6px;color:var(--ink-2);line-height:1.45}
 
@@ -41,7 +41,7 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 .px-band{position:relative;height:18px;margin-bottom:3px}
 .px-bs{position:absolute;top:0;bottom:0;border:1px solid var(--line);border-radius:2px;background:var(--surface-2);overflow:hidden;cursor:help;display:flex;align-items:center}
 .px-bs.px-alt{background:var(--surface)}
-.px-bs em{font-style:normal;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-2);white-space:nowrap;padding:0 5px;line-height:1}
+.px-bs em{font-style:normal;font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-2);white-space:nowrap;padding:0 5px;line-height:1}
 .px-cells{display:flex;gap:1px;height:24px;cursor:help;outline-offset:3px}
 .px-cell{flex:1 1 0;min-width:0;display:flex;border-radius:1px;overflow:hidden}
 .px-cell i{display:block;height:100%}
@@ -51,20 +51,20 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 /* labels of parts too narrow for their own: under the strip (or above it), each on a short leader line to its part */
 .px-pins{position:relative;height:0}
 .px-pins>i{position:absolute;width:0;border-left:1px solid var(--ink-2)}
-.px-pin{position:absolute;white-space:nowrap;font-family:var(--font-mono);font-size:10.5px;line-height:15px;padding:0 3px;color:var(--ink-2);background:var(--surface);border-radius:2px;cursor:help}
+.px-pin{position:absolute;white-space:nowrap;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:15px;padding:0 3px;color:var(--ink-2);background:var(--surface);border-radius:2px;cursor:help}
 .px-strip-foot{margin-top:8px;color:var(--ink-2);line-height:1.45}
 .px-strip-foot .muted{display:block;margin-top:2px}
 
 /* ---------- time to first token: without and with the cache, one time scale ---------- */
 .px-tl{display:grid;gap:6px;min-width:0}
 .px-tlrow{display:grid;gap:2px;min-width:0}
-.px-tll{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 12px;font-family:var(--font-mono);font-size:11.5px;line-height:1.35;color:var(--ink-2)}
+.px-tll{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 12px;font-family:var(--font-mono);font-size:var(--fs-label);line-height:1.35;color:var(--ink-2)}
 .px-tlv{color:var(--ink);font-weight:600}
 .px-track{position:relative;height:28px;border-bottom:1px solid var(--line);cursor:help;outline-offset:3px}
 .px-pre{position:absolute;left:0;top:5px;bottom:5px;min-width:2px;background:var(--ink-3);border-radius:3px 0 0 3px;transition:width .5s ease-out}
 .px-first{position:absolute;top:0;bottom:-5px;width:0;border-left:3px solid var(--ink);margin-left:-1.5px;transition:left .5s ease-out}
 .px-ticks i{position:absolute;top:8px;bottom:8px;width:0;border-left:1.5px solid var(--ink);margin-left:-.75px;transition:left .5s ease-out}
-.px-axis{position:relative;height:15px;font-size:10.5px;color:var(--ink-3)}
+.px-axis{position:relative;height:15px;font-size:var(--fs-mark);color:var(--ink-3)}
 .px-axis span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 .px-axis span:first-child{transform:none}
 
@@ -78,7 +78,7 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 /* ---------- metric cards: five on wide stages, three per row on narrow ones; the challenge's four in one row, or two by two ---------- */
 .px-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
 @container (min-width:560px){.px-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.px-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
+.px-scope{margin:10px 0 6px;font-size:var(--fs-label);line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
 
 /* ---------- rail ---------- */
 .px-send{display:flex;justify-content:flex-start}
@@ -88,24 +88,24 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 .px-app .rail .next-lab{overflow-anchor:none}
 .px-order{list-style:none;margin:6px 0 10px;padding:0;display:grid;gap:5px}
 .px-part{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 8px;border:1px solid var(--line);border-radius:5px;background:var(--surface)}
-.px-pnum{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);font-size:11px}
+.px-pnum{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);font-size:var(--fs-mark)}
 .px-pt{display:grid;gap:1px;min-width:0}
-.px-pt b{font-size:13.5px;font-weight:650}
-.px-pt span{font-size:11.5px;color:var(--ink-3);line-height:1.35}
+.px-pt b{font-size:var(--fs-cap);font-weight:650}
+.px-pt span{font-size:var(--fs-label);color:var(--ink-3);line-height:1.35}
 .px-pbtns{display:flex;gap:4px}
-.px-pbtns .btn.sm{padding:4px 8px;font-size:12px;line-height:1.1}
+.px-pbtns .btn.sm{padding:4px 8px;font-size:var(--fs-label);line-height:1.1}
 .px-moves{margin:0 0 10px}
 
 /* ---------- settings ---------- */
 .px-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
-.px-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.px-gh{font-size:var(--fs-cap);font-weight:700;color:var(--ink)}
 .px-grp .ctl>.lbl{display:block}
 .px-app .seg-ctl[data-key="change"],.px-app .seg-ctl[data-key="mem"]{flex-wrap:wrap}
 .px-app .seg-ctl[data-key="change"] button,.px-app .seg-ctl[data-key="mem"] button{flex:1 1 30%}
 .px-app .ctl output{white-space:nowrap}
 
 /* ---------- connect ---------- */
-.px-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.px-prod{margin:0 0 8px;padding-left:18px;font-size:var(--fs-ui);color:var(--ink-2)}
 .px-prod li{margin-bottom:6px}
 .px-prod code,.refs code{word-break:break-word}
 
@@ -135,13 +135,13 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 /* part 5 (Batch 3 review): what the cache holds after each request, and the requests arriving one at a time */
 .px-rows-apps .px-row{grid-template-columns:86px minmax(0,1fr) 52px 68px}
 .px-rc{display:inline-flex;gap:2px;justify-content:center}
-.px-rc i{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:3px;font-style:normal;font-family:var(--font-mono);font-size:10px;font-weight:700;line-height:1;color:var(--ink-3);border:1px solid var(--line)}
+.px-rc i{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:3px;font-style:normal;font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:700;line-height:1;color:var(--ink-3);border:1px solid var(--line)}
 .px-rc i.on{background:var(--c-kv);border-color:var(--c-kv);color:#fff}
 .px-rc i.ev{text-decoration:line-through;color:var(--ink-2);border-style:dashed;border-color:var(--ink-3)}
 .px-row.px-new{animation:px-in .6s ease-out}
 @keyframes px-in{from{background:color-mix(in srgb,var(--c-kv) 24%,transparent)}to{background:transparent}}
-.px-rcap{display:block;font-weight:500;font-size:11.5px;color:var(--ink-3);margin-top:2px}
-.px-replay{font-size:12px;margin-top:2px}
+.px-rcap{display:block;font-weight:500;font-size:var(--fs-label);color:var(--ink-3);margin-top:2px}
+.px-replay{font-size:var(--fs-label);margin-top:2px}
 @media (prefers-reduced-motion:reduce){.px-pre,.px-first,.px-ticks i,.px-cells.px-sweep .px-s0{transition:none}.px-row.px-new{animation:none}}
 
 /* ---------- part 5 (Batch 4): request 1 and request 2 block by block; where the miss starts and that it runs to the end; the keys ---------- */
@@ -149,10 +149,10 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 .px-graph[data-lead="pair"] .px-pairbox{display:block}
 .px-graph[data-lead="pair"] .px-rowsbox,.px-graph[data-lead="pair"] .px-stripbox,.px-graph[data-lead="pair"] .px-tl{display:none}
 .px-stage[data-part="onetoken"] .px-metrics{display:none}
-.px-graph[data-focus="pair"] .px-pairbox{outline:2px dashed var(--ink-3);outline-offset:4px;border-radius:4px}
+.px-graph[data-focus="pair"] .px-pairbox{outline:2px dashed var(--focus-frame);outline-offset:4px;border-radius:4px}
 .px-pair{display:grid;grid-template-columns:70px minmax(0,1fr);column-gap:8px;align-items:center}
-.px-plab{font-family:var(--font-mono);font-size:11.5px;color:var(--ink);font-weight:600;white-space:nowrap}
-.px-plab3{font-weight:400;color:var(--ink-2);font-size:10.5px;white-space:normal;line-height:1.2;align-self:end;padding-bottom:6px}
+.px-plab{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink);font-weight:600;white-space:nowrap}
+.px-plab3{font-weight:400;color:var(--ink-2);font-size:var(--fs-mark);white-space:normal;line-height:1.2;align-self:end;padding-bottom:6px}
 .px-pcol{position:relative;min-width:0}
 .px-ppins{position:relative;height:0}
 .px-ppins>i{position:absolute;bottom:0;height:5px;width:0;border-left:1px solid var(--ink-2)}
@@ -165,51 +165,51 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 /* the part not looked up yet: blank, its left edge the lookup's front; before the prediction a dashed outline with a word */
 .px-pcover{position:absolute;top:-1px;bottom:-1px;right:-1px;background:var(--surface);border:1px dashed var(--line);border-left:2px solid var(--ink);border-radius:0 2px 2px 0;display:flex;align-items:center;justify-content:center;overflow:hidden;z-index:2}
 .px-pcover.wait{border:1.5px dashed var(--line);border-radius:2px}
-.px-pcover span{font-family:var(--font-mono);font-size:10.5px;line-height:12px;color:var(--ink-3);white-space:nowrap;align-self:flex-start;margin-top:1px;max-width:calc(100% - 8px);overflow:hidden;text-overflow:ellipsis}   /* the tick uses the lower part */
+.px-pcover span{font-family:var(--font-mono);font-size:var(--fs-mark);line-height:12px;color:var(--ink-3);white-space:nowrap;align-self:flex-start;margin-top:1px;max-width:calc(100% - 8px);overflow:hidden;text-overflow:ellipsis}   /* the tick uses the lower part */
 .px-pmiss{position:absolute;top:-21px;bottom:-3px;width:0;border-left:3px solid var(--ink);margin-left:-1.5px;z-index:3;pointer-events:none}
 .px-ptick{position:absolute;top:62%;bottom:-8px;width:0;border-left:2px solid var(--ink);margin-left:-1px;z-index:4;pointer-events:none}
 /* between the strips: an "=" and a "≠" pair of keys (request 1's on top, request 2's below), and the arrow from the first miss to the end */
 .px-lane{position:relative;height:42px}
 .px-larrow{position:absolute;top:50%;height:0;border-top:2px solid var(--ink);margin-top:-1px;z-index:1}
 .px-larrow.end::after{content:"";position:absolute;right:-2px;top:-6px;border-style:solid;border-width:5px 0 5px 8px;border-color:transparent transparent transparent var(--ink)}
-.px-kp{position:absolute;top:1px;bottom:1px;display:grid;grid-template-rows:1fr auto 1fr;justify-items:center;align-items:center;padding:0 5px;background:var(--surface);border:1px solid var(--line);border-radius:3px;font-family:var(--font-mono);font-size:10.5px;line-height:1;color:var(--ink-2);cursor:help;z-index:2}
+.px-kp{position:absolute;top:1px;bottom:1px;display:grid;grid-template-rows:1fr auto 1fr;justify-items:center;align-items:center;padding:0 5px;background:var(--surface);border:1px solid var(--line);border-radius:3px;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:1;color:var(--ink-2);cursor:help;z-index:2}
 .px-kp b{font-weight:600}
-.px-kp i{font-style:normal;font-size:13px;font-weight:700;color:var(--ink);line-height:1}
+.px-kp i{font-style:normal;font-size:var(--fs-cap);font-weight:700;color:var(--ink);line-height:1}
 .px-kp.ne{border-color:var(--ink)}
 /* the three positions under request 2, each with a caret at its token */
 .px-ppos{position:relative;height:36px}
 .px-pcaret{position:absolute;top:1px;width:0;height:0;margin-left:-4.5px;border-style:solid;border-width:0 4.5px 6px 4.5px;border-color:transparent transparent var(--line) transparent}
 .px-pcaret.on{border-bottom-color:var(--ink)}
-.px-pbtn{position:absolute;top:8px;height:27px;padding:0 10px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink-2);font:600 12px/1 var(--font-ui);cursor:pointer;white-space:nowrap}
+.px-pbtn{position:absolute;top:8px;height:27px;padding:0 10px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink-2);font:600 var(--fs-label)/1 var(--font-ui);cursor:pointer;white-space:nowrap}
 .px-pbtn:hover{border-color:var(--ink);color:var(--ink)}
 .px-pbtn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .px-same{display:flex;align-items:center;gap:6px;margin:6px 0 0;color:var(--ink-2);min-height:19px;line-height:1.35}
 .px-same .sw{margin-right:0;flex:none}
-.px-ne{font-size:13.5px;color:var(--ink);flex:none}
+.px-ne{font-size:var(--fs-cap);color:var(--ink);flex:none}
 /* the three counters, each with a bar: tokens recomputed and the time (gray, of the prompt and of no cache), new blocks (amber: KV cache) */
 .px-ctrs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
 .px-ctr{border:1px solid var(--line-2);border-radius:4px;padding:8px 9px;background:var(--surface);min-width:0;cursor:help}
 /* a counter's name as a metric card's (kit polish r2, M1): 12 px in the text's font (was 10.5 px, and 10 px on phones, in the numbers' font) */
-.px-ctr .k{font-family:var(--font-ui);font-size:12px;color:var(--ink-3);line-height:1.2}
+.px-ctr .k{font-family:var(--font-ui);font-size:var(--fs-label);color:var(--ink-3);line-height:1.2}
 .px-ctr .v{font-size:clamp(15px,4cqi,18px);font-weight:500;margin-top:2px;white-space:nowrap}
 .px-cbar{height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden;margin:5px 0 4px}
 .px-cbar i{display:block;height:100%;width:0;background:var(--ink-3)}
 .px-ctr[data-k="nw"] .px-cbar i{background:var(--c-kv)}
-.px-ctr .sub{font-size:12px;color:var(--ink-3);line-height:1.35}
+.px-ctr .sub{font-size:var(--fs-label);color:var(--ink-3);line-height:1.35}
 .px-pfoot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 8px;margin-top:8px;min-height:32px}
-.px-prog{color:var(--ink-2);font-family:var(--font-mono);font-size:11.5px;min-width:0;flex:1 1 180px}
+.px-prog{color:var(--ink-2);font-family:var(--font-mono);font-size:var(--fs-label);min-width:0;flex:1 1 180px}
 .px-otstep{margin-left:auto;white-space:nowrap}
 /* the lookup's two controls (R3.20: ↻ Replay, then Block by block) stay together at the right, on the first line or both on the next */
 .px-otbtns{margin-left:auto;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px 8px}
 .px-otreplay{white-space:nowrap}
 .sw.px-sw-chg{width:0;height:0;border-style:solid;border-width:0 5px 8px 5px;border-color:transparent transparent var(--ink) transparent;border-radius:0;vertical-align:1px;margin:0 6px 0 1px}
-.sw.px-sw-key{width:auto;height:auto;padding:0 3px;border-color:var(--line);font:600 10px/12px var(--font-mono);color:var(--ink-2);font-style:normal;vertical-align:0}
+.sw.px-sw-key{width:auto;height:auto;padding:0 3px;border-color:var(--line);font:600 var(--fs-mark)/12px var(--font-mono);color:var(--ink-2);font-style:normal;vertical-align:0}
 .sw.px-sw-key::before{content:"#"}
 .px-otq{margin:12px 0 0}
 .px-otqn{margin:2px 0 6px}
 /* the question sits in the card on a wide screen and in the chart, under the positions, on a phone (review r1 #1, #2) */
 .px-otqs{display:none}
-.px-otqs .px-otq{margin-top:10px;font-size:14px;line-height:1.45}
+.px-otqs .px-otq{margin-top:10px;font-size:var(--fs-ui);line-height:1.45}
 /* the pair's caption explains the chart in two sentences: normal weight, so it stays short on a phone */
 #px-pair-cap{font-weight:400;color:var(--ink-2)}
 .px-nw{white-space:nowrap}
@@ -221,7 +221,7 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 .px-otlv .lever .lv-r{order:2;margin-left:auto;white-space:nowrap;font-weight:600}
 .px-otlv .lever .lv-d{order:3;flex:1 0 100%;padding-left:24px}
 .px-otlv .lever .lv-r:empty{display:none}
-.px-otres{font-size:12.5px}
+.px-otres{font-size:var(--fs-label)}
 .px-app .linkbtn[data-otrail]{text-align:left}
 @media (max-width:760px){
   /* on a phone the card comes first in the page's order but sits under the chart: without this, the browser keeps the card still while the
@@ -233,24 +233,24 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
   .px-otqs .px-otqn{order:3;margin:6px 0 0}                     /* on a phone the note follows the choices, so the first choice is in view */
   #px-rail .px-otqc{display:none}
   .px-pair{grid-template-columns:52px minmax(0,1fr);column-gap:6px}
-  .px-plab{font-size:10.5px;white-space:normal;line-height:1.2}
-  .px-pbtn{padding:0 8px;font-size:11.5px}
+  .px-plab{font-size:var(--fs-mark);white-space:normal;line-height:1.2}
+  .px-pbtn{padding:0 8px;font-size:var(--fs-label)}
   .px-pw{display:none}
-  .px-same{font-size:11px;gap:4px}
+  .px-same{font-size:var(--fs-mark);gap:4px}
   .px-ctrs{gap:6px}
   .px-ctr{padding:7px 7px}
-  .px-ctr .sub{font-size:11px}
+  .px-ctr .sub{font-size:var(--fs-mark)}
 }
 
 /* phones with seven parts: the dots and the Back and Next buttons share one line, also in Chinese (review r1 #10) */
 @media (max-width:420px){
   .px-app .pbar .pb-dots{gap:3px}
-  .px-app .pbar .pb-dot{width:23px;height:23px;font-size:11px}
+  .px-app .pbar .pb-dot{width:23px;height:23px;font-size:var(--fs-mark)}
   .px-app .pbar .pb-nav .btn.sm{padding:7px 9px}
 }
 @media (max-width:380px){
   .px-app .pbar .pb-dots{gap:2px}
-  .px-app .pbar .pb-dot{width:21px;height:21px;font-size:10.5px}
+  .px-app .pbar .pb-dot{width:21px;height:21px;font-size:var(--fs-mark)}
   .px-app .pbar .pb-nav .btn.sm{padding:6px 7px}
 }
 /* the challenge's reveal (GPT-6 review of v9, #2): Alice's day 1 (in the cache) against her day 2 (the new prompt), part by part, on
@@ -259,42 +259,42 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
    chat history */
 /* the side-by-side, closed by default under the answer (the owner's review of batch 8), styled like the kit's “See all” disclosure */
 .px-alx{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
-.px-alx>summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--ink);padding:4px 0}
+.px-alx>summary{cursor:pointer;font-weight:650;font-size:var(--fs-cap);color:var(--ink);padding:4px 0}
 .px-al{margin:14px 0 4px;display:grid;gap:10px;scroll-margin-top:72px}
 @media (max-width:760px){.px-al{scroll-margin-top:118px}}
-.px-al-q{margin:0;font-size:13px;font-weight:650;line-height:1.4;color:var(--ink)}
-.px-al-leg{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:11.5px;line-height:1.5;color:var(--ink-2)}
-.px-al-fig{margin:0;padding:8px 8px 7px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:0}
+.px-al-q{margin:0;font-size:var(--fs-cap);font-weight:650;line-height:1.4;color:var(--ink)}
+.px-al-leg{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:var(--fs-label);line-height:1.5;color:var(--ink-2)}
+.px-al-fig{margin:0;padding:8px 8px 7px;border:1px solid transparent;border-radius:8px;background:var(--surface-2);min-width:0}   /* a soft panel, no frame inside the stage (精装修 step 2) */
 .px-al-fig.me{border-color:var(--ink)}
-.px-al-fig figcaption{display:flex;align-items:flex-start;gap:6px 8px;margin-bottom:6px;font-size:12.5px;line-height:1.3;color:var(--ink)}
+.px-al-fig figcaption{display:flex;align-items:flex-start;gap:6px 8px;margin-bottom:6px;font-size:var(--fs-cap);line-height:1.3;color:var(--ink)}
 .px-al-t{display:grid;gap:1px;flex:1 1 0;min-width:0}
-.px-al-k{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--ink);font-size:10.5px;font-weight:700;line-height:1}
-.px-al-avg{font-family:var(--font-mono);font-size:11px;color:var(--ink-2)}
+.px-al-k{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--ink);font-size:var(--fs-mark);font-weight:700;line-height:1}
+.px-al-avg{font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-2)}
 .px-al-avg .cmp-you{white-space:nowrap}
 .px-al-go{margin:8px 0 0}
 .px-al-ns{flex-basis:100%;color:var(--ink-3)}
 .px-al-g{display:grid;grid-template-columns:minmax(0,1fr) 5px minmax(0,1fr) 18px;row-gap:3px;align-items:stretch}
-.px-al-ch{font-size:11px;line-height:1.3;color:var(--ink-2);padding-bottom:1px;min-width:0;overflow-wrap:anywhere;align-self:end}
-.px-al-p{display:flex;align-items:center;justify-content:space-between;gap:4px;min-width:0;height:18px;padding:0 4px;border-radius:3px;font-size:10.5px;line-height:1;cursor:help;outline-offset:2px}
+.px-al-ch{font-size:var(--fs-mark);line-height:1.3;color:var(--ink-2);padding-bottom:1px;min-width:0;overflow-wrap:anywhere;align-self:end}
+.px-al-p{display:flex;align-items:center;justify-content:space-between;gap:4px;min-width:0;height:18px;padding:0 4px;border-radius:3px;font-size:var(--fs-mark);line-height:1;cursor:help;outline-offset:2px}
 .px-al-p b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.px-al-p em{font-style:normal;font-family:var(--font-mono);font-size:9.5px;flex-shrink:0}
+.px-al-p em{font-style:normal;font-family:var(--font-mono);font-size:var(--fs-mark);flex-shrink:0}
 .px-al-p.px-s0{color:var(--on-kv)}
 .px-al-p.px-s1{color:var(--surface)}
 .px-al-p.px-s2 b,.px-al-p.px-s2 em{background:var(--surface);color:var(--ink);padding:2px 2px;border-radius:2px}
 .px-al-held{background:var(--surface);border:1.5px dashed var(--c-kv);color:var(--ink-2)}
 .px-al-cut{position:relative;display:flex;align-items:center;justify-content:center;height:15px}
 .px-al-cut::before{content:'';position:absolute;left:0;right:0;top:50%;margin-top:-1.25px;border-top:2.5px solid var(--ink)}
-.px-al-cut>span{position:relative;padding:0 6px;background:var(--surface);font-size:10.5px;font-weight:650;line-height:1;color:var(--ink);white-space:nowrap}
+.px-al-cut>span{position:relative;padding:0 6px;background:var(--surface);font-size:var(--fs-mark);font-weight:650;line-height:1;color:var(--ink);white-space:nowrap}
 .px-al-br{position:relative;width:5px;margin-left:3px;border:1.5px solid var(--ink-2);border-left:0;border-radius:0 3px 3px 0}
-.px-al-br>span{position:absolute;left:6px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;font-size:10px;line-height:1;color:var(--ink-2);white-space:nowrap}
-.px-al .px-al-foot{margin:6px 0 0;font-size:11.5px;line-height:1.4;color:var(--ink-2)}
+.px-al-br>span{position:absolute;left:6px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;font-size:var(--fs-mark);line-height:1;color:var(--ink-2);white-space:nowrap}
+.px-al .px-al-foot{margin:6px 0 0;font-size:var(--fs-label);line-height:1.4;color:var(--ink-2)}
 .sw.px-sw-held{background:transparent;border:1.5px dashed var(--c-kv)}
 .sw.px-sw-cut{width:13px;height:0;border:0;border-top:2.5px solid var(--ink);border-radius:0;vertical-align:3px}
 /* H1/H2 (the owner, 2026-10-09): Show the math in short blocks with a hairline between them; in each block the name and the typeset
    formula, then this run's numbers under the terms they replace, the "=" signs lined up; a table wider than its box is set again by fitMath (below), so nothing scrolls sideways */
 .px-mb{padding:8px 0 10px}
 .px-mb+.px-mb{border-top:1px solid var(--line)}
-.px-mb .px-mlead{margin:0 0 4px;font-family:var(--font-ui);font-size:13.5px;line-height:1.5}
+.px-mb .px-mlead{margin:0 0 4px;font-family:var(--font-ui);font-size:var(--fs-math);line-height:1.5}
 
 .px-mfx{overflow-x:auto;max-width:100%;padding-block:.3em}
 .px-mt{border-collapse:collapse}
@@ -303,7 +303,7 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 .px-mt tr.px-mname th{color:var(--ink);font-weight:600}
 .px-mt tr.px-mname:not(:first-child) th,.px-mt tr.px-mname:not(:first-child) td{padding-top:8px}
 .px-mt td.px-mres{text-align:left;white-space:normal}
-.px-mb .px-mnote{margin:4px 0 0;font-family:var(--font-ui);font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.px-mb .px-mnote{margin:4px 0 0;font-family:var(--font-ui);font-size:var(--fs-label);line-height:1.5;color:var(--ink-2)}
 /* Show the math on a box too narrow for its table (the owner's review of 2026-10-09): fitMath sets the block again, the name on its own
    line, the formula broken before an operator with the numbers under the terms they replace, nothing scrolling sideways */
 .px-mtn{border-collapse:collapse}
@@ -365,3 +365,29 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
 }}
 /* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
 #px-sum,#px-strip-cap,#px-tl-cap,#px-metrics .sub,#px-mathbody .px-mlead{font-variant-numeric:tabular-nums}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) parts 3, 4 and 6 still ran 10–44 px past the stage
+   (English 17–51). The legend, the figure, the scope line, the metric cards and Show the math sit 2–4 px closer to what is above
+   them, the figure's padding and gaps are 8 px, and the request rows lose their 3 px of vertical padding. In English, whose legend
+   takes two lines, it sits 4 px under the head (R7.16) */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .px-stage>.legend-row{margin-top:6px}
+  .px-graph{margin-top:6px;padding:8px 14px 8px;gap:8px}
+  .px-graph[data-lead="rows"]{gap:8px 0}
+  .px-cap{margin-bottom:4px}
+  .px-row{padding-top:0;padding-bottom:0}
+  .px-stage>.px-scope{margin:4px 0 2px}
+  .px-metrics{margin-top:6px}
+  .px-stage>details.math{margin-top:6px;padding-top:6px}
+  html[lang="en"] .px-stage>.legend-row{margin-top:4px}
+}}
+/* refit step 2 (2026-10-24): at 700 px tall or less (1366 × 650) parts 1, 2 and 7 still ran 18 px past the stage (English 22). The
+   space above the legend, the figure's padding and the gaps between its blocks, and the space round the scope line, above the cards
+   and above the math are smaller (parts 3, 4 and 6 still run past) */
+@media (min-width:761px) and (min-height:600px) and (max-height:700px){@container (min-width:736px){
+  .px-stage>.legend-row{margin-top:4px}
+  .px-graph{padding-top:4px;padding-bottom:4px;gap:6px}
+  .px-graph[data-lead="rows"]{gap:6px 0}
+  .px-stage>.px-scope{margin:2px 0 2px}
+  .px-metrics{margin-top:4px}
+  .px-stage>details.math{margin-top:4px;padding-top:4px}
+}}

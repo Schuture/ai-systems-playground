@@ -8,7 +8,7 @@
 #qz-ctl-sch-wrap .seg-ctl button{padding:7px 2px}
 .qz-graph{padding:12px 14px 14px;display:grid;gap:12px;min-width:0}
 .qz-graph>[hidden]{display:none!important}
-.qz-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+.qz-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
 .qz-phone:empty{display:none}
 @media (min-width:761px){.qz-phone{display:none}}
 .qz-graph>.qz-blockv:not([hidden])~.qz-chart:not([hidden]){border-top:1px solid var(--line);padding-top:10px}
@@ -18,26 +18,26 @@
 .qz-tp{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;min-width:0}
 .qz-tp:empty{display:none}
 .qz-phs{display:flex;flex-wrap:wrap;gap:4px}
-.qz-ph{font:inherit;font-size:11.5px;padding:3px 8px;border:1px solid var(--line-2);border-radius:999px;background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.qz-ph{font:inherit;font-size:var(--fs-label);padding:3px 8px;border:1px solid var(--line-2);border-radius:999px;background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
 .qz-ph:hover{border-color:var(--ink-3);color:var(--ink)}
 .qz-ph.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .qz-tbtns{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .qz-speed{display:inline-flex;gap:6px;align-items:center}
-.qz-speed-l{font-size:11.5px;color:var(--ink-3)}
+.qz-speed-l{font-size:var(--fs-label);color:var(--ink-3)}
 .qz-speed .seg{margin:0}
 .qz-svg{display:block;width:100%;height:auto;overflow:visible;max-width:100%}
 .qz-plot{fill:var(--surface);stroke:var(--line-2);stroke-width:1}
 .qz-ax{stroke:var(--line);stroke-width:1}
 .qz-zero{stroke:var(--ink-3);stroke-width:1}
-.qz-yl,.qz-xl,.qz-yt{font-size:10.5px;fill:var(--ink-3);font-family:var(--font-mono)}
+.qz-yl,.qz-xl,.qz-yt{font-size:var(--fs-mark);fill:var(--ink-3);font-family:var(--font-mono)}
 .qz-xl,.qz-yt{font-family:var(--font-ui)}
 /* round 1 polish (P6, P9): the grid of each block, the half step around 0 that rounds to 0, the part too dense to draw, and the sum
    one weight carries through each phase */
 .qz-band{fill:var(--ink);fill-opacity:.08;stroke:none}
 .qz-hl{stroke:var(--ink-3);stroke-width:1}
 .qz-dense{stroke:none;opacity:.55}
-.qz-gtl{font-size:10.5px;fill:var(--ink-2);font-family:var(--font-mono);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
-.qz-call{font-size:11px;font-weight:650;fill:var(--ink);font-family:var(--font-mono)}
+.qz-gtl{font-size:var(--fs-mark);fill:var(--ink-2);font-family:var(--font-mono);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.qz-call{font-size:var(--fs-mark);font-weight:650;fill:var(--ink);font-family:var(--font-mono)}
 /* round 1 polish check (N3): the callout sits on a backing of its own, so the points under it do not show through */
 .qz-callbg{fill:var(--surface);fill-opacity:.94;stroke:var(--line-2);stroke-width:1}
 .qz-seg{fill:var(--surface-2);stroke:var(--line-2);stroke-width:1}
@@ -49,14 +49,14 @@
 .qz-q{fill:var(--c-weights);stroke:none}
 .qz-x{stroke:var(--ink);stroke-width:2;stroke-linecap:round}
 .qz-x.qz-xs{stroke-width:1.6}
-.qz-ol{font-size:10.5px;fill:var(--ink-2);font-family:var(--font-mono)}
+.qz-ol{font-size:var(--fs-mark);fill:var(--ink-2);font-family:var(--font-mono)}
 .qz-orig.qz-red{stroke:var(--c-oom)}
 .qz-q.qz-red{fill:var(--c-oom)}
 .qz-mv.qz-red{stroke:var(--c-oom)}
 .qz-redt{fill:var(--c-oom);font-weight:650}
 .qz-legend{flex-wrap:wrap;gap:4px 14px}
 .qz-blockv .qz-legend{margin-top:0}
-.qz-sw{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:5px;vertical-align:-2px;font-style:normal;text-align:center;line-height:12px;font-size:12px}
+.qz-sw{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:5px;vertical-align:-2px;font-style:normal;text-align:center;line-height:12px;font-size:var(--fs-label)}
 .qz-sw-o{border:1.6px solid var(--c-weights);border-radius:50%;box-sizing:border-box}
 .qz-sw-q{background:var(--c-weights);border-radius:50%;transform:scale(.8)}
 .qz-sw-x{color:var(--ink);font-weight:700}
@@ -81,20 +81,20 @@
 /* ---------- the schemes ---------- */
 .qz-chart{min-width:0}
 .qz-crows{display:grid;gap:2px}
-.qz-crow,.qz-chdr{display:grid;grid-template-columns:minmax(0,1.6fr) 44px minmax(60px,2fr) 50px 58px;gap:8px;align-items:center;padding:2px 6px;border-radius:4px;font-size:12.5px;line-height:1.35;min-width:0}
+.qz-crow,.qz-chdr{display:grid;grid-template-columns:minmax(0,1.6fr) 44px minmax(60px,2fr) 50px 58px;gap:8px;align-items:center;padding:2px 6px;border-radius:4px;font-size:var(--fs-label);line-height:1.35;min-width:0}
 /* the columns' names (P13) */
-.qz-chdr{align-items:end;padding-bottom:4px;margin-bottom:2px;border-bottom:1px solid var(--line);border-radius:0;font-size:11px;color:var(--ink-3);line-height:1.25}
+.qz-chdr{align-items:end;padding-bottom:4px;margin-bottom:2px;border-bottom:1px solid var(--line);border-radius:0;font-size:var(--fs-mark);color:var(--ink-3);line-height:1.25}
 .qz-chdr>span{min-width:0}
 .qz-chdr>span:nth-child(2),.qz-chdr>span:nth-child(4){text-align:right}
 .qz-chdr>span:nth-child(3){grid-column:span 2}
 .qz-crow.me{background:var(--surface-2);outline:1px solid var(--line-2)}
 .qz-cl{color:var(--ink);min-width:0;overflow-wrap:anywhere;line-height:1.3}
-.qz-cl em{font-style:normal;font-size:10.5px;color:var(--ink-3);margin-left:6px;white-space:nowrap}
-.qz-cb,.qz-cv,.qz-ca{font-family:var(--font-mono);font-size:12px;text-align:right;color:var(--ink-2);white-space:nowrap}
+.qz-cl em{font-style:normal;font-size:var(--fs-mark);color:var(--ink-3);margin-left:6px;white-space:nowrap}
+.qz-cb,.qz-cv,.qz-ca{font-family:var(--font-mono);font-size:var(--fs-label);text-align:right;color:var(--ink-2);white-space:nowrap}
 .qz-crow.me .qz-cl{font-weight:650}
 .qz-ct{position:relative;height:12px;background:var(--surface-2);border-radius:2px;min-width:0}
 .qz-ct i{position:absolute;left:0;top:0;bottom:0;background:var(--c-weights);border-radius:2px;transition:width .25s ease-out}
-@media (max-width:480px){.qz-crow,.qz-chdr{grid-template-columns:minmax(0,1.4fr) 36px minmax(36px,1.2fr) 44px 46px;gap:5px;padding:3px 2px;font-size:11.5px}.qz-chdr{font-size:10.5px}.qz-cl em{display:block;margin-left:0}}
+@media (max-width:480px){.qz-crow,.qz-chdr{grid-template-columns:minmax(0,1.4fr) 36px minmax(36px,1.2fr) 44px 46px;gap:5px;padding:3px 2px;font-size:var(--fs-label)}.qz-chdr{font-size:var(--fs-mark)}.qz-cl em{display:block;margin-left:0}}
 
 /* ---------- step times and memory ---------- */
 .qz-serve{display:flex;flex-direction:column;gap:14px;min-width:0}
@@ -104,11 +104,11 @@
 .qz-serve.qz-memfirst .qz-steps{border-top:1px solid var(--line);padding-top:12px}
 .qz-steps{display:grid;gap:10px;min-width:0}
 .qz-sk{display:grid;gap:3px;min-width:0}
-.qz-skh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px}
+.qz-skh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:var(--fs-label)}
 .qz-skh b{font-weight:650;color:var(--ink)}
 .qz-skh span{font-family:var(--font-mono);color:var(--ink)}
 .qz-skh em{font-style:normal;color:var(--ink-3);margin-left:8px}
-.qz-skr{display:grid;grid-template-columns:76px minmax(0,1fr) 56px;gap:8px;align-items:center;font-size:11.5px}
+.qz-skr{display:grid;grid-template-columns:76px minmax(0,1fr) 56px;gap:8px;align-items:center;font-size:var(--fs-label)}
 .qz-skl{color:var(--ink-3)}
 .qz-skr.long .qz-skl{color:var(--ink);font-weight:650}
 .qz-skt{position:relative;height:12px;background:var(--surface-2);border-radius:2px;display:flex;overflow:hidden;min-width:0}
@@ -120,7 +120,7 @@
 .qz-skv{font-family:var(--font-mono);text-align:right;color:var(--ink-2);white-space:nowrap}
 .qz-mem{min-width:0}
 .qz-mrows{display:grid;gap:5px}
-.qz-mrow{display:grid;grid-template-columns:96px minmax(0,1fr) 64px;grid-template-areas:"l t v" ". n n";gap:2px 8px;align-items:center;padding:3px 6px;border-radius:4px;font-size:12px}
+.qz-mrow{display:grid;grid-template-columns:96px minmax(0,1fr) 64px;grid-template-areas:"l t v" ". n n";gap:2px 8px;align-items:center;padding:3px 6px;border-radius:4px;font-size:var(--fs-label)}
 .qz-mrow.me{background:var(--surface-2);outline:1px solid var(--line-2)}
 .qz-ml{grid-area:l;color:var(--ink)}
 .qz-mrow.me .qz-ml{font-weight:650}
@@ -129,9 +129,9 @@
 .qz-mt i.qz-kv{background:var(--c-kv);border-radius:0 2px 2px 0}
 .qz-gl{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed var(--ink);z-index:1}
 .qz-mv2{grid-area:v;font-family:var(--font-mono);text-align:right;color:var(--ink);white-space:nowrap}
-.qz-mn{grid-area:n;color:var(--ink-3);font-size:11px}
+.qz-mn{grid-area:n;color:var(--ink-3);font-size:var(--fs-mark)}
 .qz-gls{position:relative;height:16px;margin:2px 0 0 110px;margin-right:78px}
-.qz-gls span{position:absolute;transform:translateX(-50%);white-space:nowrap;font-family:var(--font-mono);font-size:10.5px}
+.qz-gls span{position:absolute;transform:translateX(-50%);white-space:nowrap;font-family:var(--font-mono);font-size:var(--fs-mark)}
 /* a wide stage puts each format's GPUs on its bar's line (P35) */
 @container (min-width:640px){.qz-mrow{grid-template-columns:96px minmax(0,1fr) 64px 176px;grid-template-areas:"l t v n";padding:2px 6px}.qz-mn{white-space:nowrap}.qz-gls{margin-right:262px}}
 
@@ -153,8 +153,8 @@
 
 /* ---------- Settings ---------- */
 .qz-grp{border-top:1px solid var(--line-2);padding-top:8px;margin-top:4px}
-.qz-gh{font-size:11.5px;font-weight:650;color:var(--ink-2);margin-bottom:4px}
-.qz-asm{margin:0;padding-left:16px;display:grid;gap:3px;font-size:12px;line-height:1.4;color:var(--ink-2)}
+.qz-gh{font-size:var(--fs-label);font-weight:650;color:var(--ink-2);margin-bottom:4px}
+.qz-asm{margin:0;padding-left:16px;display:grid;gap:3px;font-size:var(--fs-label);line-height:1.4;color:var(--ink-2)}
 .qz-asm b{color:var(--ink);font-weight:600}
 .qz-prod{padding-left:18px;display:grid;gap:6px;min-width:0}
 .qz-prod code,.qz-prod a{overflow-wrap:anywhere}
@@ -165,7 +165,7 @@
 .qz-mb+.qz-mb{border-top:1px solid var(--line)}
 .qz-mb>p{margin:0 0 6px}
 .qz-mb>p:last-child{margin-bottom:0}
-.qz-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3}
+.qz-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:var(--fs-stage);line-height:1.3}
 .qz-eq-l{text-align:right}
 @media (max-width:560px){.qz-eqs-nm{grid-template-columns:max-content max-content}.qz-eqs-nm>.qz-eq-l{grid-column:1/-1;text-align:left}.qz-eqs-nm>.qz-eq-l:empty{display:none}}
 
@@ -180,3 +180,14 @@
 .qz-metrics[data-n="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
 .qz-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
 @container (min-width:560px){.qz-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) parts 4 and 7 still ran 36 px past the stage (English 54).
+   The figure's padding and gap, the space above the table, its header's padding and the gaps between its rows are smaller. In English,
+   where the note under the block takes two lines, the block is drawn 188 px high instead of 206 with the table under it (drawBlock
+   reads --qz-bh; it is drawn for its height, so its text keeps its size) (R7.16) */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .qz-graph{padding:8px 14px 8px;gap:8px}
+  .qz-graph>.qz-blockv:not([hidden])~.qz-chart:not([hidden]){padding-top:6px}
+  .qz-crows{gap:0}
+  .qz-chdr{padding-bottom:2px}
+  html[lang="en"] #qz-blockv{--qz-bh:188}
+}}

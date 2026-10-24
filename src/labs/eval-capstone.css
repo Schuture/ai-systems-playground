@@ -7,7 +7,7 @@
 .ecap-graph{padding:12px 14px 14px;display:grid;gap:10px;min-width:0}
 .ecap-phone:empty{display:none}
 @media (min-width:761px){.ecap-phone{display:none}}
-.ecap-leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-2);line-height:1.4;margin:0}
+.ecap-leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:var(--fs-label);color:var(--ink-2);line-height:1.4;margin:0}
 .ecap-leg span{display:inline-flex;align-items:center;gap:6px}
 .ecap-sw{display:inline-block;position:relative;width:22px;height:10px;flex:none}
 .ecap-sw.pt::before{content:"";position:absolute;left:0;right:0;top:4px;height:2px;background:var(--ink-2)}
@@ -32,9 +32,9 @@
 .ecap-row.tot{padding-bottom:9px;border-bottom:1px solid var(--line-2)}
 .ecap-row.tot+.ecap-row{border-top:0}
 .ecap-rn{min-width:0;display:grid;gap:1px;line-height:1.3}
-.ecap-rn b{font-size:13px;font-weight:650;color:var(--ink)}
+.ecap-rn b{font-size:var(--fs-cap);font-weight:650;color:var(--ink)}
 /* a plan's line breaks after its commas, never inside a word such as 校正 (P19) */
-.ecap-rn span{font-size:11.5px;color:var(--ink-2);word-break:keep-all;overflow-wrap:anywhere}
+.ecap-rn span{font-size:var(--fs-label);color:var(--ink-2);word-break:keep-all;overflow-wrap:anywhere}
 .ecap-tr{position:relative;height:26px;min-width:0}
 .ecap-row.has-b .ecap-tr{height:34px}
 .ecap-tr>i{position:absolute;display:block}
@@ -76,18 +76,18 @@
 .ecap-row.has-r .ecap-cut{top:16px}
 .ecap-row.has-r .ecap-bs{top:35px}
 .ecap-row.has-r .ecap-ah{top:32px}
-.ecap-ann{grid-column:2/4;display:flex;flex-wrap:wrap;gap:2px 14px;font-size:11.5px;line-height:1.35;color:var(--ink-2);padding-top:2px;min-width:0}
+.ecap-ann{grid-column:2/4;display:flex;flex-wrap:wrap;gap:2px 14px;font-size:var(--fs-label);line-height:1.35;color:var(--ink-2);padding-top:2px;min-width:0}
 .ecap-ann span{display:inline-flex;align-items:center;gap:5px;min-width:0}
 .ecap-row.wrong .ecap-rn b{color:var(--c-oom)}
-.ecap-vd{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.3;min-width:0;display:grid}
+.ecap-vd{font-size:var(--fs-cap);font-weight:600;color:var(--ink);line-height:1.3;min-width:0;display:grid}
 .ecap-vd.bad{color:var(--c-oom)}
-.ecap-vd small{font-weight:400;font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.ecap-vd small{font-weight:400;font-size:var(--fs-mark);color:var(--ink-2);font-variant-numeric:tabular-nums}
 .ecap-row.ecap-axis{border-top:0;padding:2px 0 0}
 .ecap-axis .ecap-tr{height:16px}
-.ecap-axis .ecap-tr span{position:absolute;top:0;transform:translateX(-50%);font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ecap-axis .ecap-tr span{position:absolute;top:0;transform:translateX(-50%);font-size:var(--fs-mark);color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
 .ecap-axis .ecap-tr span:first-child{transform:none}
 .ecap-axis .ecap-tr span:last-child{transform:translateX(-100%)}
-.ecap-axl{font-size:11.5px;color:var(--ink-2);text-align:center;padding-left:calc(25% + 10px);padding-right:calc(17% + 10px);line-height:1.35}
+.ecap-axl{font-size:var(--fs-label);color:var(--ink-2);text-align:center;padding-left:calc(25% + 10px);padding-right:calc(17% + 10px);line-height:1.35}
 
 /* the build-up, about 1 s on one clock (P11, P15): the lean grows from the diamond, preference by preference, then the judge's result
    appears at its tip; in calibration the bias is taken off the judge's own result, leftward, then the corrected result appears.
@@ -126,7 +126,7 @@
 /* ---------- rail ---------- */
 .ecap-lv .levers{margin-top:6px}
 .ecap-vl,.ecap-pick{margin:4px 0 8px;padding-left:18px;display:grid;gap:2px}
-.ecap-pick{font-size:13px;word-break:keep-all;overflow-wrap:anywhere}   /* a plan line breaks after a comma, not inside 校准 (P19) */
+.ecap-pick{font-size:var(--fs-cap);word-break:keep-all;overflow-wrap:anywhere}   /* a plan line breaks after a comma, not inside 校准 (P19) */
 .ecap-mt{margin-top:10px}
 .ecap-goal{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
 .ecap-goal.ecap-over b{color:var(--c-oom)}
@@ -138,8 +138,8 @@
 /* ---------- settings ---------- */
 #ecap-controls .ecap-cg{border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
 .ecap-grp{border-top:1px solid var(--line-2);padding-top:8px;margin-top:8px}
-.ecap-gh{font-size:11.5px;font-weight:650;color:var(--ink-2);margin-bottom:4px}
-.ecap-asm{margin:0;padding-left:16px;display:grid;gap:3px;font-size:12px;line-height:1.4;color:var(--ink-2)}
+.ecap-gh{font-size:var(--fs-label);font-weight:650;color:var(--ink-2);margin-bottom:4px}
+.ecap-asm{margin:0;padding-left:16px;display:grid;gap:3px;font-size:var(--fs-label);line-height:1.4;color:var(--ink-2)}
 .ecap-asm b{color:var(--ink);font-weight:600}
 .ecap-prod{padding-left:18px;display:grid;gap:6px;min-width:0}
 .ecap-prod code,.ecap-prod a{overflow-wrap:anywhere}
@@ -148,11 +148,11 @@
 .ecap-mb{padding:8px 0 10px}
 .ecap-mb+.ecap-mb{border-top:1px solid var(--line)}
 .ecap-mb>p{margin:0 0 6px}
-.ecap-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3;max-width:100%}
+.ecap-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:var(--fs-stage);line-height:1.3;max-width:100%}
 .ecap-eq-l{text-align:right}
 #ecap-mathbody{container-type:inline-size}
 @container (max-width:560px){.ecap-eqs-nm{grid-template-columns:max-content max-content}.ecap-eqs-nm>.ecap-eq-l{grid-column:1/-1;text-align:left}.ecap-eqs-nm>.ecap-eq-l:empty{display:none}}
-@container (max-width:420px){.ecap-eqs{font-size:13px}}
+@container (max-width:420px){.ecap-eqs{font-size:var(--fs-cap)}}
 
 /* ---------- mini result bar ---------- */
 .ecap-dk{position:relative;height:10px;background:var(--surface-2);border-radius:2px;min-width:60px}
@@ -165,14 +165,14 @@
    1,000-item interval is several times wider than its dot; the legend is smaller, the rows shorter ---------- */
 @media (max-width:760px){
   .ecap-graph{padding:10px 10px 12px;gap:8px}
-  .ecap-leg{font-size:11px;gap:2px 10px;line-height:1.35}
+  .ecap-leg{font-size:var(--fs-mark);gap:2px 10px;line-height:1.35}
   .ecap-leg .ecap-sw{width:16px}
   .ecap-leg .ecap-sw.mg{width:0;margin:0 5px}
   .ecap-leg .ecap-sw.tru{width:8px;height:8px}
   .ecap-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"rn vd" "tr tr";column-gap:8px;row-gap:1px;padding:5px 0 4px;align-items:baseline}
-  .ecap-rn{grid-area:rn;display:block;font-size:12.5px;line-height:1.3}
-  .ecap-rn b{font-size:12.5px;margin-right:6px}
-  .ecap-rn span{font-size:11px}
+  .ecap-rn{grid-area:rn;display:block;font-size:var(--fs-cap);line-height:1.3}
+  .ecap-rn b{font-size:var(--fs-cap);margin-right:6px}
+  .ecap-rn span{font-size:var(--fs-mark)}
   .ecap-tr{grid-area:tr;height:22px}
   .ecap-row.has-b .ecap-tr{height:30px}
   .ecap-bar{top:9px}
@@ -193,19 +193,19 @@
   .ecap-row.has-r .ecap-cut{top:12px}
   .ecap-row.has-r .ecap-bs{top:30px}
   .ecap-row.has-r .ecap-ah{top:27px}
-  .ecap-vd{grid-area:vd;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:baseline;gap:0 6px;text-align:right;font-size:12px;max-width:46vw}
-  .ecap-ann{grid-column:1/-1;font-size:11px;gap:1px 10px}
+  .ecap-vd{grid-area:vd;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:baseline;gap:0 6px;text-align:right;font-size:var(--fs-label);max-width:46vw}
+  .ecap-ann{grid-column:1/-1;font-size:var(--fs-mark);gap:1px 10px}
   .ecap-row.ecap-axis{padding:0}
   .ecap-row.ecap-axis .ecap-rn,.ecap-row.ecap-axis .ecap-vd{display:none}
   .ecap-axis .ecap-tr{height:15px}
-  .ecap-axl{padding-left:0;padding-right:0;font-size:11px}
+  .ecap-axl{padding-left:0;padding-right:0;font-size:var(--fs-mark)}
   /* the part's control on one line: its name left of the buttons */
   .ecap-phone .inline-ctl{grid-template-columns:minmax(0,max-content) minmax(0,1fr);align-items:center;column-gap:10px;margin:0;padding:6px 8px}
-  .ecap-phone .inline-ctl>.lbl{max-width:7.5em;font-size:12.5px;line-height:1.3}
+  .ecap-phone .inline-ctl>.lbl{max-width:7.5em;font-size:var(--fs-cap);line-height:1.3}
 }
 
 /* part 4: the line above the three ways to grade writing (R2.5), styled like a control's label */
-.ecap-lvh{margin:12px 0 6px;font-size:13px;font-weight:620;color:var(--ink-2);line-height:1.4}
+.ecap-lvh{margin:12px 0 6px;font-size:var(--fs-cap);font-weight:620;color:var(--ink-2);line-height:1.4}
 /* a tried way's verdict on one line (R6.4, P13), and “wrong” in red under it, as on the chart's rows */
 .ecap-lv .lever .lv-r{white-space:normal;text-align:right;line-height:1.3}
 .ecap-nw,.ecap-wd{white-space:nowrap}
@@ -240,14 +240,14 @@ html:not([lang^="zh"]) .ecap-leg .lg-r{gap:0}
   html:not([lang^="zh"]) .ecap-row{grid-template-columns:minmax(0,1fr) auto 66px;grid-template-areas:"rn vw vw" "tr tr nm";column-gap:6px;align-items:center;padding:4px 0 3px}
   html:not([lang^="zh"]) .ecap-row.tot{padding-bottom:7px}
   html:not([lang^="zh"]) .ecap-row.ecap-axis{padding:0}
-  html:not([lang^="zh"]) .ecap-rn b{font-size:12px}
-  html:not([lang^="zh"]) .ecap-rn span{font-size:10.5px}
+  html:not([lang^="zh"]) .ecap-rn b{font-size:var(--fs-label)}
+  html:not([lang^="zh"]) .ecap-rn span{font-size:var(--fs-mark)}
   html:not([lang^="zh"]) .ecap-vd{display:contents}
   html:not([lang^="zh"]) .ecap-vw{grid-area:vw;justify-self:end;align-self:start;white-space:nowrap;line-height:1.3}
   html:not([lang^="zh"]) .ecap-vn{grid-area:nm;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;text-align:right;line-height:1.25;min-width:0}
   html:not([lang^="zh"]) .ecap-vn small{white-space:nowrap}
   html:not([lang^="zh"]) .ecap-metrics[data-n="3"]{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr)}
-  html:not([lang^="zh"]) .ecap-metrics .metric[data-k="dec"] .v,html:not([lang^="zh"]) .ecap-metrics .metric[data-k="guard"] .v{font-size:14px;line-height:1.3}
+  html:not([lang^="zh"]) .ecap-metrics .metric[data-k="dec"] .v,html:not([lang^="zh"]) .ecap-metrics .metric[data-k="guard"] .v{font-size:var(--fs-ui);line-height:1.3}
   html:not([lang^="zh"]) .ecap-ann .ecap-sw{width:16px}
   html:not([lang^="zh"]) .ecap-ann .ecap-sw.rw{width:10px;margin:0 3px}
 }

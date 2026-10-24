@@ -505,6 +505,9 @@ function split2(t,maxW){if(estW(t)<=maxW) return [t]; const ws=t.split(' '); if(
 function nodeState(R,i,clock){const c=R.cs[i]; if(!c) return 'idle'; const b=R.bad.find(x=>x.i===i&&clock>=x.at-1e-9); if(b) return 'bad'; if(clock>=c.e-1e-9) return 'done'; if(clock>=c.s-1e-9) return 'run'; return 'idle';}
 /* the panel's own width in px: the pictures are drawn 1:1 to it, so their text keeps its size and they do not grow taller on a wide screen */
 const panW=id=>{const el=app&&$(id,app); return el?Math.round(el.clientWidth):0;};
+/* the gantt's row height where tool-scheduling.css sets one (--tls-rh: a short desktop window, 精装修 step 2), read when it is drawn;
+   without it a wide stage keeps 21 px rows (19 in a narrower panel) and a phone 20 */
+const rowH=el=>{const v=el?parseFloat(getComputedStyle(el).getPropertyValue('--tls-rh')):0; return v>0?v:0;};
 /* wide stage: the class gives the pictures' text its desktop size (13 px names, 12 px numbers; N11) */
 const wideNow=()=>{const w=isWide(), st=app&&$('#tls-stage',app); if(st&&st.classList.contains('tls-wide')!==w) st.classList.toggle('tls-wide',w); return w;};
 /* part 2: the call picked, the calls it waits for, and (for a call that waits for nobody) the others that wait for nobody */
@@ -566,7 +569,7 @@ function drawGantt(){
   /* the row names get the room they need, so “E 改 test_parser.py” is whole on a phone too; a longer one is cut with … */
   const rw=t=>estW(t)*fRL/12, lw0=Math.ceil(Math.max(...task.calls.map(c=>rw(L(c.n)))))+8, LW=wide?Math.min(170,Math.max(124,lw0)):Math.min(140,Math.max(64,lw0));
   const fit=t=>{if(rw(t)<=LW-2) return t; let u=t; while(u.length>1&&rw(u+'…')>LW-2) u=u.slice(0,-1); return u+'…';};
-  const X0=LW+6, X1=W-10, RH=wide?(pw<600?19:21):20, n=task.calls.length, T=axisMax(R), X=t=>X0+(X1-X0)*t/T, clock=clockNow(R);
+  const X0=LW+6, X1=W-10, RH=(wide&&rowH(svg))||(wide?(pw<600?19:21):20), n=task.calls.length, T=axisMax(R), X=t=>X0+(X1-X0)*t/T, clock=clockNow(R);
   const numW=wide?(R.n>=10?17:11):13, numUp=X(R.m)-X(0)<numW, top=numUp?17:8, Y=r=>top+r*RH, tY=wide&&pw>=600?15:13, H=top+RH*(n+1)+(wide&&pw>=600?21:18);   // model-call blocks too narrow for their number: it goes above the row
   let g=`<defs><pattern id="tls-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" class="tls-hbg"/><line x1="0" y1="0" x2="0" y2="5" class="tls-hl"/></pattern></defs>`;
   for(let s=0;s<=T+1e-9;s+=5) g+=`<line class="tls-grid" x1="${X(s)}" y1="${top}" x2="${X(s)}" y2="${Y(n+1)}"/><text class="tls-ax" x="${X(s)}" y="${Y(n+1)+tY}" text-anchor="middle">${s}</text>`;

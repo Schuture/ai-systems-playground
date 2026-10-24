@@ -414,7 +414,9 @@ def run(b, w, h, lang, dark=False):
 # (Next when it is enabled, else the part's heading), the stage needs no scrolling inside: Chinese with at least 30 px to spare,
 # English with none (spare = the stage's max-height minus what its content and borders need). Its top is not under the top bar,
 # and the main picture (the stage's largest svg or canvas, if it has one) is whole on the screen.
-B4_FIT = """(id)=>{const s=document.getElementById(id), r=s.getBoundingClientRect(), tb=(document.querySelector('.topbar')||{offsetHeight:0}).offsetHeight;
+# The top bar's bottom is where it is on the screen now: on a desktop lab page the bar scrolls away (refit step 2), on a phone it
+# stays on top and this is its height.
+B4_FIT = """(id)=>{const s=document.getElementById(id), r=s.getBoundingClientRect(), b=document.querySelector('.topbar'), tb=b?Math.max(0,Math.round(b.getBoundingClientRect().bottom)):0;
   const cur=document.querySelector('#'+id.replace(/-stage$/,'-rail')+' .steps>.step.current');
   const f=[...s.querySelectorAll('svg,canvas')].filter(e=>e.getClientRects().length&&!e.closest('button,.btn')).map(e=>e.getBoundingClientRect()).sort((a,c)=>c.width*c.height-a.width*a.height)[0];
   return {part:cur?[...cur.parentNode.children].indexOf(cur)+1:0, spare:Math.round(parseFloat(getComputedStyle(s).maxHeight)-(s.scrollHeight+s.offsetHeight-s.clientHeight)),

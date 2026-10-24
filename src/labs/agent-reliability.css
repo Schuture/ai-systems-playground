@@ -2,7 +2,7 @@
    the metric cards. Colours (R5.6): grayscale, hatching and outlines; green and red only for ✓ / ✗ and the challenge's goal. */
 .arl-stage .stage-head{align-items:center}
 .arl-graph{padding:12px 14px 14px;display:grid;gap:10px;min-width:0}
-.arl-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.arl-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35}
 .arl-legend{margin-top:0}
 .arl-legend>span{cursor:help;display:inline-flex;align-items:center}
 .arl-okm{color:var(--c-ok);margin-right:2px}
@@ -15,10 +15,10 @@
 /* ---------- the player ---------- */
 .arl-player{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
 .arl-play{min-width:92px}
-.arl-speed button{font-size:12px;padding:3px 9px}
+.arl-speed button{font-size:var(--fs-label);padding:3px 9px}
 .arl-scrub{flex:1 1 140px;min-width:120px}
 /* the tally keeps two lines' height, so the stage does not jump while the tasks run (R7.9) */
-.arl-tally{font-size:11.5px;line-height:1.45;color:var(--ink-2);min-height:2.9em}
+.arl-tally{font-size:var(--fs-label);line-height:1.45;color:var(--ink-2);min-height:2.9em}
 
 /* ---------- the curve ---------- */
 .arl-curve{display:grid;gap:4px;min-width:0}
@@ -28,15 +28,15 @@
 .arl-svgw.arl-wait{cursor:default;background:var(--surface-2);border-radius:3px}
 .arl-svgw svg{display:block;max-width:100%;height:auto;overflow:visible}
 .arl-gl{stroke:var(--line-2);stroke-width:1}
-.arl-tk{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.arl-tk{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-3)}
 .arl-plain{fill:none;stroke:var(--ink-3);stroke-width:1.6;stroke-dasharray:4 3}
 .arl-mine{fill:none;stroke:var(--ink);stroke-width:2.2}
-.arl-ln{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink)}
+.arl-ln{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink)}
 .arl-ln2{fill:var(--ink-3)}
 .arl-mk{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 3}
 .arl-dot{fill:var(--ink)}
 .arl-dot2{fill:var(--surface);stroke:var(--ink-3);stroke-width:1.5}
-.arl-vl{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink);paint-order:stroke fill;stroke:var(--surface);stroke-width:3.5px;stroke-linejoin:round}
+.arl-vl{font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:650;fill:var(--ink);paint-order:stroke fill;stroke:var(--surface);stroke-width:3.5px;stroke-linejoin:round}
 .arl-vl2{font-weight:400;fill:var(--ink-3)}
 
 /* ---------- legend swatches (the same shapes as the cells; R5.11: the step where a task goes wrong has a red outline) ---------- */
@@ -51,7 +51,7 @@
 /* ---------- metric cards ---------- */
 .arl-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
 @container (min-width:560px){.arl-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.arl-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
+.arl-scope{margin:10px 0 6px;font-size:var(--fs-label);line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
 
 /* ---------- rail ---------- */
 .arl-fx{margin:8px 0 10px;overflow-x:auto}
@@ -63,19 +63,19 @@
 .goal.arl-over b{color:var(--c-oom)}
 .arl-app .inline-ctl .seg-ctl{flex-wrap:wrap}
 .arl-remlist li{margin-bottom:8px}
-.arl-rem{font-size:12.5px;white-space:nowrap}
+.arl-rem{font-size:var(--fs-label);white-space:nowrap}
 .arl-rem[aria-pressed="true"]{font-weight:650;text-decoration:none}
 
 /* ---------- settings ---------- */
 .arl-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
-.arl-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.arl-gh{font-size:var(--fs-cap);font-weight:700;color:var(--ink)}
 .arl-grp .ctl>.lbl{display:block}
 .arl-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
 .arl-row .ctl-note{flex-basis:100%}
 .arl-app .ctl output{white-space:nowrap}
 
 /* ---------- connect ---------- */
-.arl-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.arl-prod{margin:0 0 8px;padding-left:18px;font-size:var(--fs-ui);color:var(--ink-2)}
 .arl-prod li{margin-bottom:6px}
 .arl-prod code{word-break:break-word}
 
@@ -107,7 +107,7 @@
 .arl-mb+.arl-mb{border-top:1px solid var(--line)}
 .arl-mb>p{margin:0 0 6px}
 .arl-mb>p:last-child{margin-bottom:0}
-.arl-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3}
+.arl-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:var(--fs-stage);line-height:1.3}
 .arl-eq-l{text-align:right}
 /* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
 @media (max-width:560px){.arl-eqs-nm{grid-template-columns:max-content max-content}.arl-eqs-nm>.arl-eq-l{grid-column:1/-1;text-align:left}.arl-eqs-nm>.arl-eq-l:empty{display:none}}
@@ -139,4 +139,20 @@
   .arl-metrics .metric .v{line-height:1.25}
   .arl-metrics .metric .d{min-height:13px;line-height:13px}
   .arl-stage>details.math{margin-top:10px}
+}}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) every part still ran 23 px past the stage (English 23–62).
+   The curve beside the grid is drawn 84 px high instead of 104 (drawCurve reads --arl-ch; it is drawn for its height, so its text keeps
+   its size) and the gaps above the scope line and the metric cards are smaller. In English, whose legend and notes take more lines,
+   the figure's padding and the gaps under it are 2 px smaller again (R7.16), and parts 4–6 still run 20 px past 1536 × 730 (62
+   before): a curve drawn shorter than 84 px crowds its labels */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .arl-graph>.arl-grid~.arl-curve:not([hidden]){--arl-ch:84}
+  .arl-svgw{min-height:84px}
+  .arl-scope{margin:6px 0 2px}
+  .arl-metrics{margin-top:8px}
+  html[lang="en"] .arl-graph{padding-top:8px;padding-bottom:8px}
+  html[lang="en"] .arl-scope{margin:4px 0 0}
+  html[lang="en"] .arl-metrics{margin-top:6px}
+  html[lang="en"] .arl-stage>details.math{margin-top:6px}
+  html[lang="en"] .arl-legend{row-gap:2px}
 }}

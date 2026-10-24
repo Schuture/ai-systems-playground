@@ -6,7 +6,7 @@
 .evc-graph{padding:12px 14px 14px;display:grid;gap:14px;min-width:0}
 .evc-graph>div{min-width:0}
 .evc-phone{display:none}
-.evc-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+.evc-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
 
 /* ---------- score axis: one row per model; the label sits above the bar, at its end ---------- */
 .evc-ax,.evc-df{padding:0 14px;min-width:0}
@@ -15,10 +15,10 @@
 .evc-bar{position:absolute;top:22px;height:12px;box-sizing:border-box;border-left:2px solid var(--ink-2);border-right:2px solid var(--ink-2);
   background:linear-gradient(var(--ink-2),var(--ink-2)) center/100% 2px no-repeat;transition:left .2s ease-out,width .2s ease-out}
 .evc-dot{position:absolute;top:23px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 2px var(--surface);transition:left .2s ease-out}
-.evc-lab{position:absolute;top:2px;z-index:2;padding:0 3px;font:12px/16px var(--font-mono);color:var(--ink);white-space:nowrap;background:var(--surface);border-radius:2px}
+.evc-lab{position:absolute;top:2px;z-index:2;padding:0 3px;font:var(--fs-label)/16px var(--font-mono);color:var(--ink);white-space:nowrap;background:var(--surface);border-radius:2px}
 .evc-lab.r{text-align:right}
 .evc-scale{position:relative;height:18px;border-top:1px solid var(--line);margin-top:2px}
-.evc-scale span{position:absolute;top:3px;transform:translateX(-50%);font:10.5px/1.2 var(--font-mono);color:var(--ink-3);white-space:nowrap}
+.evc-scale span{position:absolute;top:3px;transform:translateX(-50%);font:var(--fs-mark)/1.2 var(--font-mono);color:var(--ink-3);white-space:nowrap}
 .evc-scale span::before{content:"";position:absolute;left:50%;top:-4px;height:3px;border-left:1px solid var(--line)}
 
 /* ---------- part 2: the re-run pile and its player ---------- */
@@ -31,19 +31,19 @@
 .evc-dots{position:absolute;inset:0}
 .evc-dots i{position:absolute;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--ink-2)}
 .evc-band{position:absolute;top:-4px;bottom:0;box-sizing:border-box;border-left:1.5px dashed var(--ink-3);border-right:1.5px dashed var(--ink-3);background:rgba(128,128,128,.10);pointer-events:none}
-.evc-bandlab{position:absolute;top:100%;margin-top:4px;transform:translateX(-50%);font:11px/1.2 var(--font-ui);font-style:normal;color:var(--ink-2);white-space:nowrap}
+.evc-bandlab{position:absolute;top:100%;margin-top:4px;transform:translateX(-50%);font:var(--fs-mark)/1.2 var(--font-ui);font-style:normal;color:var(--ink-2);white-space:nowrap}
 .evc-player{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .evc-player .ctl{display:flex;align-items:center;gap:6px;margin:0}
-.evc-player .ctl>.lbl{font-size:12px}
-.evc-player .seg-ctl button{font-size:12px;padding:3px 9px}
+.evc-player .ctl>.lbl{font-size:var(--fs-label)}
+.evc-player .seg-ctl button{font-size:var(--fs-label);padding:3px 9px}
 .evc-play{min-width:92px;justify-content:center}
 .evc-scrub{display:flex;align-items:center;gap:8px;flex:1 1 180px;min-width:0}
 .evc-scrub input{flex:1 1 auto;min-width:0}
-.evc-count{font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.evc-count{font-size:var(--fs-label);color:var(--ink-2);white-space:nowrap}
 
 /* ---------- part 3: the size slider's ticks (three real benchmarks) ---------- */
 .evc-ticks{position:relative;height:32px;margin:-4px 8px 0}
-.evc-ticks span{position:absolute;top:0;padding-top:6px;transform:translateX(-50%);font:10.5px/1.25 var(--font-mono);color:var(--ink-3);text-align:center;white-space:nowrap}
+.evc-ticks span{position:absolute;top:0;padding-top:6px;transform:translateX(-50%);font:var(--fs-mark)/1.25 var(--font-mono);color:var(--ink-3);text-align:center;white-space:nowrap}
 .evc-ticks span::before{content:"";position:absolute;top:0;left:50%;height:4px;border-left:1px solid var(--ink-3)}
 .evc-ticks span.l{transform:translateX(-6px);text-align:left}
 .evc-ticks span.l::before{left:6px}
@@ -57,16 +57,16 @@
    once the paired error bar is added under the first one */
 @media (min-width:761px){.evc-gridwrap{grid-template-columns:minmax(0,clamp(240px,calc(100vh - 580px),420px)) minmax(0,1fr)}}
 .evc-grid{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);gap:5px;align-items:center}
-.evc-grh,.evc-gr{font:11px/1.2 var(--font-mono);color:var(--ink-3);white-space:nowrap}
+.evc-grh,.evc-gr{font:var(--fs-mark)/1.2 var(--font-mono);color:var(--ink-3);white-space:nowrap}
 .evc-grh{text-align:center}
 .evc-gr{text-align:right;padding-right:2px}
 .evc-cell{position:relative;aspect-ratio:1;min-height:90px;box-sizing:border-box;border:1.5px solid var(--ink-3);border-radius:4px;display:grid;place-items:center;cursor:help;overflow:hidden;outline-offset:2px}
 .evc-cell.disc{border-style:dashed;border-color:var(--ink-2)}
 .evc-cell i{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--ink-3);opacity:.3;border-radius:2px}
 .evc-cell.disc i{background:var(--ink-2);opacity:.45}
-.evc-cell span{position:relative;font-size:12px;line-height:1.25;text-align:center;color:var(--ink);padding:4px}
-.evc-cell b{display:block;font:650 15px/1.2 var(--font-mono)}
-.evc-gleg{display:grid;gap:8px;font-size:12px;color:var(--ink-2);align-content:center}
+.evc-cell span{position:relative;font-size:var(--fs-label);line-height:1.25;text-align:center;color:var(--ink);padding:4px}
+.evc-cell b{display:block;font:650 var(--fs-stage)/1.2 var(--font-mono)}
+.evc-gleg{display:grid;gap:8px;font-size:var(--fs-label);color:var(--ink-2);align-content:center}
 .evc-gleg>span{cursor:help}
 .evc-gleg>span:last-child{cursor:default}
 .evc-sw-disc{border:1.5px dashed var(--ink-2);background:transparent}
@@ -75,33 +75,33 @@
 /* ---------- part 5: the problems' mix, one labelled row each ---------- */
 .evc-mix{display:grid;gap:4px;margin-bottom:12px}
 .evc-mrow{display:grid;grid-template-columns:96px minmax(0,1fr) 40px;gap:8px;align-items:center;cursor:help;border-radius:3px;outline-offset:2px}
-.evc-ml{font-size:12.5px;color:var(--ink);white-space:nowrap}
+.evc-ml{font-size:var(--fs-label);color:var(--ink);white-space:nowrap}
 .evc-mtrk{position:relative;height:14px;background:var(--surface-2);border-radius:2px}
 .evc-mtrk i{position:absolute;left:0;top:0;bottom:0;border-radius:2px}
 .evc-m1{background:var(--ink-2)}
 .evc-m2{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,transparent 2px 5px);box-shadow:inset 0 0 0 1px var(--ink-2)}
 .evc-m3{background:var(--ink-3);opacity:.45}
-.evc-mrow b{font-size:12px;font-weight:600;text-align:right;color:var(--ink)}
+.evc-mrow b{font-size:var(--fs-label);font-weight:600;text-align:right;color:var(--ink)}
 
 /* ---------- part 5: A's error bar against answers per problem; the floor's label sits in the right gutter ---------- */
 .evc-kbars{position:relative;height:150px;margin:18px 96px 0 0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:end}
 .evc-kcol{position:relative;height:100%;cursor:help;outline-offset:2px;border-radius:2px}
 .evc-kcol i{position:absolute;left:14%;right:14%;bottom:0;background:var(--ink-3);border-radius:2px 2px 0 0;transition:height .2s ease-out}
 .evc-kcol.on i{background:var(--ink)}
-.evc-kcol em{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);padding-bottom:2px;font:11px/1.2 var(--font-mono);font-style:normal;color:var(--ink-2);white-space:nowrap}
+.evc-kcol em{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);padding-bottom:2px;font:var(--fs-mark)/1.2 var(--font-mono);font-style:normal;color:var(--ink-2);white-space:nowrap}
 .evc-kcol.on em{color:var(--ink);font-weight:650}
 .evc-floor{position:absolute;left:0;right:-96px;height:0;border-top:2px dashed var(--ink);z-index:1;cursor:help}
-.evc-floor em{position:absolute;right:0;bottom:3px;width:90px;text-align:right;font:650 11px/1.2 var(--font-mono);font-style:normal;color:var(--ink)}
-.evc-floor small{position:absolute;right:0;top:4px;width:90px;text-align:right;font-size:10.5px;line-height:1.25;color:var(--ink-2)}
+.evc-floor em{position:absolute;right:0;bottom:3px;width:90px;text-align:right;font:650 var(--fs-mark)/1.2 var(--font-mono);font-style:normal;color:var(--ink)}
+.evc-floor small{position:absolute;right:0;top:4px;width:90px;text-align:right;font-size:var(--fs-mark);line-height:1.25;color:var(--ink-2)}
 .evc-klabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-right:96px;border-top:1px solid var(--line);padding-top:3px}
-.evc-klabs span{text-align:center;font:11.5px/1.3 var(--font-mono);color:var(--ink-2)}
+.evc-klabs span{text-align:center;font:var(--fs-label)/1.3 var(--font-mono);color:var(--ink-2)}
 .evc-klabs span.on{color:var(--ink);font-weight:700}
-.evc-kx{margin-right:96px;text-align:center;font-size:11.5px;color:var(--ink-3)}
+.evc-kx{margin-right:96px;text-align:center;font-size:var(--fs-label);color:var(--ink-3)}
 
 /* ---------- B − A on its own axis, 0 marked ---------- */
 .evc-dfin{position:relative;padding-top:20px}
 .evc-zero{position:absolute;top:4px;bottom:18px;border-left:1.5px solid var(--ink);z-index:1;pointer-events:none}
-.evc-zero em{position:absolute;top:-2px;left:4px;font:11px/1.2 var(--font-ui);font-style:normal;color:var(--ink-2);white-space:nowrap}
+.evc-zero em{position:absolute;top:-2px;left:4px;font:var(--fs-mark)/1.2 var(--font-ui);font-style:normal;color:var(--ink-2);white-space:nowrap}
 .evc-drow:not(.on){opacity:.5}
 .evc-drow.real .evc-bar{border-color:var(--ink);background-image:linear-gradient(var(--ink),var(--ink))}
 .evc-drow .evc-lab{font-family:var(--font-ui)}
@@ -114,15 +114,15 @@
 @media (min-width:761px){@container (min-width:480px){.evc-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}}
 
 /* ---------- formulas on their own line ---------- */
-.evc-fx{margin:8px 0 10px;overflow-x:auto;font-size:15px;line-height:1.3}
+.evc-fx{margin:8px 0 10px;overflow-x:auto;font-size:var(--fs-stage);line-height:1.3}
 .evc-fxn{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.6em;row-gap:2px}
-.evc-fx-nm{font-size:14px;color:var(--ink-2)}
+.evc-fx-nm{font-size:var(--fs-ui);color:var(--ink-2)}
 /* Show the math in short blocks (the owner, 2026-10-09): a hairline between blocks; a chain's “=” signs in one column */
 .evc-mb{padding:8px 0 10px}
 .evc-mb+.evc-mb{border-top:1px solid var(--line)}
 .evc-mb>p{margin:0 0 6px}
 .evc-mb>p.evc-mb-res{margin:6px 0 0}
-.evc-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;font-size:15px;line-height:1.3}
+.evc-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;font-size:var(--fs-stage);line-height:1.3}
 .evc-eq-l{text-align:right}
 /* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
 @media (max-width:560px){.evc-eqs-nm{grid-template-columns:max-content max-content}.evc-eqs-nm>.evc-eq-l{grid-column:1/-1;text-align:left}.evc-eqs-nm>.evc-eq-l:empty{display:none}}
@@ -144,12 +144,12 @@
 
 /* ---------- settings ---------- */
 .evc-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
-.evc-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.evc-gh{font-size:var(--fs-cap);font-weight:700;color:var(--ink)}
 .evc-grp .ctl>label{display:flex}
 .evc-app .ctl output{white-space:nowrap}
 
 /* ---------- connect ---------- */
-.evc-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.evc-prod{margin:0 0 8px;padding-left:18px;font-size:var(--fs-ui);color:var(--ink-2)}
 .evc-prod li{margin-bottom:6px}
 .evc-prod code,.evc-app .refs code{word-break:break-word}
 
@@ -190,3 +190,8 @@
 .primer .evc-prfx.one{column-gap:.35em}
 .primer .evc-prfx>span{min-width:0;max-width:100%}
 @media (max-width:760px){.primer .evc-prfx{padding-left:.4em;column-gap:1.6em}.primer .evc-prfx.one{column-gap:.35em}}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) part 5 still ran 5 px past the stage, in both languages: the
+   figure's padding is 10 px at the top and the bottom instead of 12 and 14 */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .evc-graph{padding-top:10px;padding-bottom:10px}
+}}

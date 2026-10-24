@@ -8,67 +8,67 @@
 /* a wide stage: the rail above Settings on the left, the stage on the right (the kit's 761–1180 px layout, at every desktop width) */
 @media (min-width:1181px){.sc-app .bench{grid-template-columns:318px minmax(0,1fr)}.sc-app .bench>.rail{grid-column:1;grid-row:1}.sc-app .bench>.controls{grid-column:1;grid-row:2}.sc-app .bench>.stage{grid-column:2;grid-row:1 / span 2}}
 .sc-stage .stage-head{align-items:center}
-.sc-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.sc-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35}
 .sc-cfgrow{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 14px;margin:6px 0 2px}
 .sc-pills{display:flex;flex-wrap:wrap;gap:4px}
-.sc-pill{font-family:var(--font-mono);font-size:11px;line-height:1.2;padding:2px 7px;border:1px solid var(--line);border-radius:999px;color:var(--ink-2);background:var(--surface);cursor:help;white-space:nowrap}
+.sc-pill{font-family:var(--font-mono);font-size:var(--fs-mark);line-height:1.2;padding:2px 7px;border:1px solid var(--line);border-radius:999px;color:var(--ink-2);background:var(--surface);cursor:help;white-space:nowrap}
 .sc-pill.on{border-color:var(--ink);color:var(--ink);font-weight:650}
-.sc-stage .meter-sub{font-size:14px}
-.sc-kinds{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:12px;color:var(--ink-2)}
+.sc-stage .meter-sub{font-size:var(--fs-ui)}
+.sc-kinds{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:var(--fs-label);color:var(--ink-2)}
 .sc-kinds>span{display:inline-flex;align-items:center;gap:5px;cursor:help}
 .sc-sw{display:inline-block;width:11px;height:11px;border-radius:2px;flex:none;vertical-align:-1px}
 .sc-sw-ok{background:var(--c-ok)}
 .sc-graph{padding:10px 12px 12px;display:grid;gap:10px}
-.sc-graph[data-focus="strip"] .sc-strip,.sc-graph[data-focus="mem"] .sc-mem,.sc-graph[data-focus="tl"] .sc-tlw{outline:2px dashed var(--ink-3);outline-offset:3px;border-radius:4px}
+.sc-graph[data-focus="strip"] .sc-strip,.sc-graph[data-focus="mem"] .sc-mem,.sc-graph[data-focus="tl"] .sc-tlw{outline:2px dashed var(--focus-frame);outline-offset:3px;border-radius:4px}
 
 /* ---------- the live strip: queue → GPU step → tokens out ---------- */
 .sc-strip{display:grid;grid-template-columns:minmax(0,1fr) 14px minmax(0,1.75fr) 14px minmax(0,1fr);align-items:stretch;gap:0 4px}
-.sc-arr{display:grid;place-items:center;color:var(--ink-3);font-size:15px}
-.sc-box{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:7px 8px 8px;min-width:0;display:flex;flex-direction:column;gap:5px;transition:border-color .2s,box-shadow .2s}
+.sc-arr{display:grid;place-items:center;color:var(--ink-3);font-size:var(--fs-stage)}
+.sc-box{border:1px solid transparent;border-radius:8px;background:var(--surface-2);padding:7px 8px 8px;min-width:0;display:flex;flex-direction:column;gap:5px;transition:border-color .2s,box-shadow .2s}   /* a soft panel, no frame inside the stage (精装修 step 2) */
 .sc-box.hot{border-color:var(--ink);box-shadow:0 0 0 2px color-mix(in srgb,var(--ink) 18%,transparent)}
-.sc-bh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:0 6px;font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
-.sc-bh b{color:var(--ink);font-weight:650;font-size:13px}
+.sc-bh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:0 6px;font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2)}
+.sc-bh b{color:var(--ink);font-weight:650;font-size:var(--fs-cap)}
 .sc-chips{display:flex;flex-wrap:wrap;align-items:center;gap:3px 4px;height:34px;overflow:hidden;align-content:flex-start}
 .sc-qg{display:inline-flex;flex-wrap:wrap;align-items:center;gap:3px}
-.sc-qw{display:inline-flex;align-items:center;gap:3px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink);padding:0 5px 0 3px;border:1px solid var(--line);border-radius:999px;cursor:help;white-space:nowrap}
+.sc-qw{display:inline-flex;align-items:center;gap:3px;font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink);padding:0 5px 0 3px;border:1px solid var(--line);border-radius:999px;cursor:help;white-space:nowrap}
 .sc-q .sc-qg[data-why="cap"] .sc-qw,.sc-q .sc-qg[data-why="budget"] .sc-qw,.sc-q .sc-qg[data-why="memory"] .sc-qw{border-color:var(--ink)}
 .sc-chip{width:12px;height:12px;padding:0;border:0;border-radius:3px;background:var(--k);cursor:pointer}
 .sc-chip.sel,.sc-dot.sel{outline:2px solid var(--ink);outline-offset:1px}
 .sc-chip.rel,.sc-dot.rel{outline:1.5px dashed var(--ink);outline-offset:1px}
-.sc-more{font-size:11px;color:var(--ink-2)}
-.sc-empty{font-size:11.5px;color:var(--ink-3)}
+.sc-more{font-size:var(--fs-mark);color:var(--ink-2)}
+.sc-empty{font-size:var(--fs-label);color:var(--ink-3)}
 .sc-meters{display:flex;flex-wrap:wrap;gap:3px 10px}
-.sc-meter{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-2);cursor:help;border-radius:3px;padding:0 2px}
+.sc-meter{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-mark);color:var(--ink-2);cursor:help;border-radius:3px;padding:0 2px}
 .sc-meter i{display:inline-block;width:46px;height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden}
 .sc-meter i b{display:block;height:100%;background:var(--ink-3)}
-.sc-meter em{font-style:normal;color:var(--ink);font-size:11px}
+.sc-meter em{font-style:normal;color:var(--ink);font-size:var(--fs-mark)}
 .sc-meter.hot{background:color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink)}
 .sc-meter.hot i b{background:var(--ink)}
-.sc-gbar{position:relative;height:30px;background:var(--surface-2);border-radius:3px;overflow:hidden}
+.sc-gbar{position:relative;height:30px;background:var(--surface);border-radius:3px;overflow:hidden}   /* inside a soft panel (var(--surface-2)), so a track or a highlight is var(--surface) (精装修 step 2) */
 .sc-gbar i{position:absolute;top:0;bottom:0;display:block}
 .sc-sl{background:var(--k);cursor:pointer}
 .sc-pb{background:var(--k);cursor:pointer;display:flex!important;align-items:center;overflow:hidden}
-.sc-pb em{font-style:normal;font-family:var(--font-mono);font-size:11px;color:var(--bg);padding-left:6px;white-space:nowrap;font-weight:600}
+.sc-pb em{font-style:normal;font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--bg);padding-left:6px;white-space:nowrap;font-weight:600}
 .sc-sl.sel,.sc-pb.sel{box-shadow:inset 0 0 0 2px var(--ink),inset 0 0 0 3px var(--bg)}
 .sc-sl.rel,.sc-pb.rel{box-shadow:inset 0 0 0 1.5px var(--bg)}
 .sc-gbar i.sc-sweep{left:0;top:auto;bottom:0;height:4px;background:var(--ink);box-shadow:0 -1px 0 var(--bg);pointer-events:none;z-index:1}
-.sc-idle{display:grid;place-items:center;height:100%;font-size:11.5px;color:var(--ink-3)}
+.sc-idle{display:grid;place-items:center;height:100%;font-size:var(--fs-label);color:var(--ink-3)}
 .sc-gpu.warn{border:2px dashed var(--ink);padding:6px 7px 7px}
 .sc-gpu.warn .sc-gbar::after{content:'';position:absolute;inset:0;background:var(--sc-warn);pointer-events:none}
-.sc-gdur{display:flex;align-items:center;gap:8px;min-height:16px;font-size:11.5px;color:var(--ink-2);flex-wrap:wrap}
-.sc-dt{font-size:12.5px;font-weight:650;color:var(--ink)}
-.sc-elap{font-size:11.5px;color:var(--ink-2)}
+.sc-gdur{display:flex;align-items:center;gap:8px;min-height:16px;font-size:var(--fs-label);color:var(--ink-2);flex-wrap:wrap}
+.sc-dt{font-size:var(--fs-cap);font-weight:650;color:var(--ink)}
+.sc-elap{font-size:var(--fs-label);color:var(--ink-2)}
 .sc-gauge{position:relative;width:64px;height:6px;background:var(--surface-2);border-radius:3px;cursor:help;flex:none}
 .sc-gauge i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:3px}
 .sc-gpu.warn .sc-gauge i{background:var(--ink)}
 .sc-gauge b{position:absolute;left:50%;top:-3px;bottom:-3px;border-left:1.5px dashed var(--ink)}
-.sc-warn{font-weight:650;color:var(--ink);font-size:11.5px}
+.sc-warn{font-weight:650;color:var(--ink);font-size:var(--fs-label)}
 .sc-dnote{color:var(--ink-3)}
 .sc-dots{display:flex;flex-wrap:wrap;gap:3px;height:28px;overflow:hidden;align-content:flex-start;align-items:center}
 .sc-dot{width:9px;height:9px;padding:0;border:0;border-radius:50%;background:var(--k);cursor:pointer;animation:scpop .32s ease-out}
 .sc-dot.f{width:11px;height:11px;box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--k)}
 @keyframes scpop{from{transform:scale(.2);opacity:.2}to{transform:scale(1);opacity:1}}
-.sc-onote{font-size:11.5px;color:var(--ink-3);height:32px;overflow:hidden;line-height:16px}
+.sc-onote{font-size:var(--fs-label);color:var(--ink-3);height:32px;overflow:hidden;line-height:16px}
 .sc-out.hot .sc-onote{color:var(--ink);font-weight:650}
 
 /* ---------- playback ---------- */
@@ -76,25 +76,25 @@
 .sc-play input[type=range]{flex:1 1 140px;min-width:100px}
 .sc-pbtn{min-width:92px}
 .sc-ls{display:none}
-.sc-speed button{padding:4px 7px;font-size:12px}
+.sc-speed button{padding:4px 7px;font-size:var(--fs-label)}
 .sc-speed{cursor:help}
-.sc-clock{margin:-4px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.4;height:1.4em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-clock{margin:-4px 0 0;font-size:var(--fs-label);color:var(--ink-2);line-height:1.4;height:1.4em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- the timeline ---------- */
 .sc-tlw{display:grid;gap:3px;min-width:0}
 .sc-tlbox{position:relative;min-width:0}
 .sc-tlbox canvas{display:block;width:100%;cursor:pointer;border-radius:2px}
 .sc-tlbox canvas:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.sc-stall{position:absolute;z-index:2;font-family:var(--font-mono);font-size:11px;line-height:1;padding:3px 7px;border:1.5px solid var(--ink);border-radius:999px;background:var(--surface);color:var(--ink);font-weight:650;cursor:pointer;white-space:nowrap;box-shadow:var(--shadow)}
+.sc-stall{position:absolute;z-index:2;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:1;padding:3px 7px;border:1.5px solid var(--ink);border-radius:999px;background:var(--surface);color:var(--ink);font-weight:650;cursor:pointer;white-space:nowrap;box-shadow:var(--shadow)}
 .sc-stall:hover{background:var(--surface-2)}
 .sc-stall.sc-pulse{animation:scpulse .7s ease-in-out 3}
 @keyframes scpulse{50%{transform:scale(1.14);box-shadow:0 0 0 5px color-mix(in srgb,var(--ink) 22%,transparent)}}
-.sc-axis{position:relative;height:14px;font-size:10.5px;color:var(--ink-3)}
+.sc-axis{position:relative;height:14px;font-size:var(--fs-mark);color:var(--ink-3)}
 .sc-axis span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 .sc-axis span.sc-ax-r{transform:translateX(-100%)}
 .sc-axis span.sc-ax-l{transform:none}
 .sc-maxis{margin-top:1px}
-.sc-tlleg,.sc-mleg{margin-top:0;font-size:11.5px}
+.sc-tlleg,.sc-mleg{margin-top:0;font-size:var(--fs-label)}
 .sw.sc-sw-wait{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 4px);border:0}
 .sw.sc-sw-pre{background:var(--ink-3)}
 .sw.sc-sw-first{width:3px;background:var(--ink);border-radius:0}
@@ -109,10 +109,10 @@
 .sc-mem.hot{box-shadow:0 0 0 2px var(--ink)}
 .sc-memh{display:flex;justify-content:space-between;align-items:baseline;gap:4px 12px;flex-wrap:wrap}
 @media (max-width:760px){.sc-memh{display:grid;gap:0}.sc-memv{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:1.4em}}
-.sc-memv{font-size:11.5px;color:var(--ink-2)}
+.sc-memv{font-size:var(--fs-label);color:var(--ink-2)}
 .sc-mlab{position:relative;height:17px}
 /* the memory bar's labels; .sc-mb is also a Show the math block, so these rules stay inside #sc-mlab (the owner's review of 2026-10-09) */
-.sc-mlab .sc-mb{position:absolute;bottom:1px;transform:translateX(-50%);white-space:nowrap;font-family:var(--font-mono);font-size:10.5px;line-height:1;padding:2px 5px;border-radius:999px;background:var(--surface);color:var(--ink);border:1.5px solid var(--k);font-weight:650;z-index:1}
+.sc-mlab .sc-mb{position:absolute;bottom:1px;transform:translateX(-50%);white-space:nowrap;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:1;padding:2px 5px;border-radius:999px;background:var(--surface);color:var(--ink);border:1.5px solid var(--k);font-weight:650;z-index:1}
 .sc-mlab .sc-mb-idle{font-weight:500;border-style:dashed;color:var(--ink-2)}
 .sc-mlab .sc-mb-ev{border:1.5px dashed var(--ink);color:var(--ink)}
 .sc-mbar{position:relative;height:26px;background:var(--surface-2);border:1px solid var(--line);border-radius:3px;overflow:hidden}
@@ -137,30 +137,30 @@
 @container (max-width:640px){.sc-low.has-trace{grid-template-columns:minmax(0,1fr)}}
 .sc-trace.sc-trempty{border:0;padding:0;background:none}
 .sc-trhint{margin:0}
-.sc-tab tr.sc-grp th{text-align:left;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.05em;color:var(--ink-3);font-weight:600;padding-top:7px;border-bottom:1px solid var(--line)}
-.sc-tab{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+.sc-tab tr.sc-grp th{text-align:left;font-family:var(--font-mono);font-size:var(--fs-mark);letter-spacing:.05em;color:var(--ink-3);font-weight:600;padding-top:7px;border-bottom:1px solid var(--line)}
+.sc-tab{width:100%;border-collapse:collapse;font-size:var(--fs-label);margin-top:4px}
 .sc-tab th,.sc-tab td{padding:3px 6px;border-bottom:1px solid var(--line-2);text-align:right;white-space:nowrap}
-.sc-tab thead th{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--ink-3);border-bottom:1px solid var(--line)}
+.sc-tab thead th{font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:600;color:var(--ink-3);border-bottom:1px solid var(--line)}
 .sc-tab thead th[data-tipx]{cursor:help}
 .sc-tab tbody th{text-align:left;font-weight:500;color:var(--ink-2);white-space:normal;cursor:help;padding-left:10px}
 .sc-tab td{color:var(--ink)}
-.sc-dd{color:var(--ink-2)!important;font-size:11.5px}
+.sc-dd{color:var(--ink-2)!important;font-size:var(--fs-label)}
 .sc-okc{color:var(--c-ok)!important;font-weight:650}
 .sc-badc{color:var(--c-oom)!important;font-weight:650}
 .sc-m2{display:none}
-.sc-trace{min-width:0;border:1px solid var(--line-2);border-radius:6px;padding:8px 10px;background:var(--surface)}
+.sc-trace{min-width:0;border:1px solid transparent;border-radius:8px;padding:8px 10px;background:var(--surface-2)}   /* a soft panel, no frame inside the stage (精装修 step 2) */
 .sc-trh{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;margin-bottom:4px}
-.sc-trh b{font-size:13.5px}
+.sc-trh b{font-size:var(--fs-cap)}
 .sc-unsel{margin-left:auto}
-.sc-tr{list-style:none;margin:4px 0 0;padding:0 0 0 2px;font-size:12.5px;line-height:1.4}
+.sc-tr{list-style:none;margin:4px 0 0;padding:0 0 0 2px;font-size:var(--fs-label);line-height:1.4}
 .sc-tr li{display:grid;grid-template-columns:58px minmax(0,1fr);gap:8px;padding:2px 0 3px 12px;position:relative;border-left:2px solid var(--line)}
 .sc-tr li::before{content:'';position:absolute;left:-5px;top:7px;width:8px;height:8px;border-radius:50%;background:var(--ink)}
 .sc-tr li.sc-tr-w::before{background:var(--surface);border:1.5px solid var(--ink-3);width:5px;height:5px}
-.sc-trt{color:var(--ink-3);font-size:11.5px}
+.sc-trt{color:var(--ink-3);font-size:var(--fs-label)}
 .sc-scope{margin:8px 0 0;cursor:help}
 /* the whole-run table's button reads as Show the math's summary does (the kit's details.math summary: a boxed + that turns to −) */
-.sc-rtbtn{display:inline-flex;align-items:center;gap:8px;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-size:14px;font-weight:650;cursor:pointer;text-align:left}
-.sc-rtbtn::before{content:"+";font-family:var(--font-mono);font-weight:650;width:18px;height:18px;flex:0 0 18px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-size:12px}
+.sc-rtbtn{display:inline-flex;align-items:center;gap:8px;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-size:var(--fs-ui);font-weight:650;cursor:pointer;text-align:left}
+.sc-rtbtn::before{content:"+";font-family:var(--font-mono);font-weight:650;width:18px;height:18px;flex:0 0 18px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-size:var(--fs-label)}
 .sc-rtbtn[aria-expanded="true"]::before{content:"−"}
 .sc-stage>.sc-mtw{margin-top:8px}
 .sc-hint{display:none}
@@ -168,10 +168,10 @@
 .sc-simpl li{margin-bottom:3px}
 
 /* ---------- rail: goals, levers, the challenge ---------- */
-.sc-goalcard,.sc-load{border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--surface-2);margin:8px 0}
-.sc-gc-h{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);margin-bottom:4px}
+.sc-goalcard,.sc-load{border:1px solid transparent;border-radius:8px;padding:8px 10px;background:var(--surface-2);margin:8px 0}   /* a soft panel, no frame inside the stage (精装修 step 2) */
+.sc-gc-h{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:var(--fs-mark);letter-spacing:.04em;color:var(--ink-2);margin-bottom:4px}
 .sc-lock{display:inline-grid;place-items:center;color:var(--ink)}
-.sc-goalcard ul{list-style:none;margin:0;padding:0;font-size:13px;line-height:1.45}
+.sc-goalcard ul{list-style:none;margin:0;padding:0;font-size:var(--fs-cap);line-height:1.45}
 .sc-goalcard li{display:flex;gap:7px;align-items:baseline;margin:3px 0}
 .sc-goalcard li .sc-sw{flex:none;transform:translateY(1px)}
 .sc-ic-play .sc-prow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
@@ -180,34 +180,34 @@
 .sc-hits .cmp-val{white-space:nowrap}
 .sc-hitleg{margin-top:4px}
 .sc-hitleg .sc-dash{display:inline-block;width:14px;height:0;border-top:2px dashed var(--ink);vertical-align:middle;margin-right:5px}
-.sc-fb{margin:6px 0 0;padding-left:18px;font-size:13px;line-height:1.45}
+.sc-fb{margin:6px 0 0;padding-left:18px;font-size:var(--fs-cap);line-height:1.45}
 .sc-fb li{margin-bottom:4px}
 .sc-ldstrip{position:relative;height:22px;margin:6px 0 0;border-bottom:1px solid var(--ink-3)}
 .sc-ldstrip i{position:absolute;bottom:3px;width:5px;height:12px;border-radius:1.5px;transform:translateX(-50%)}
 .sc-ldstrip i.sc-ld-doc{width:7px;height:19px;bottom:1px;border-radius:1px}
-.sc-ldaxis{position:relative;height:13px;font-size:10px;color:var(--ink-3)}
+.sc-ldaxis{position:relative;height:13px;font-size:var(--fs-mark);color:var(--ink-3)}
 .sc-ldaxis span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 .sc-ldaxis span:first-child{transform:none}.sc-ldaxis span:last-child{transform:translateX(-100%)}
 .sc-ldleg{margin-top:4px}
-.sc-load p{margin:0;font-size:13px;line-height:1.45}
-.sc-chh{font-weight:650;font-size:13px;margin:12px 0 4px}
+.sc-load p{margin:0;font-size:var(--fs-cap);line-height:1.45}
+.sc-chh{font-weight:650;font-size:var(--fs-cap);margin:12px 0 4px}
 .sc-chset .inline-ctl{margin:6px 0}
-.sc-chset .seg-ctl button{padding:5px 8px;font-size:12.5px}
+.sc-chset .seg-ctl button{padding:5px 8px;font-size:var(--fs-label)}
 .sc-chrun{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:10px}
 .sc-dirty{margin:6px 0 0;color:var(--ink);font-weight:600}
 .sc-ch-res{margin-top:8px}
 .sc-plan{margin-top:12px}
-.sc-plantext{white-space:pre-wrap;font-family:var(--font-mono);font-size:11.5px;line-height:1.45;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:8px 10px;margin:0 0 6px;max-height:260px;overflow:auto}
-.sc-jobs ul{list-style:none;margin:4px 0 0;padding:0;font-size:13px}
+.sc-plantext{white-space:pre-wrap;font-family:var(--font-mono);font-size:var(--fs-label);line-height:1.45;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:8px 10px;margin:0 0 6px;max-height:260px;overflow:auto}
+.sc-jobs ul{list-style:none;margin:4px 0 0;padding:0;font-size:var(--fs-cap)}
 .sc-jobs li{margin:0 0 8px;display:grid;gap:2px}
 .sc-jobs li a{font-weight:650}
 .sc-jobs li span{color:var(--ink-2);line-height:1.45}
 .sc-rem{display:grid;gap:10px;margin:6px 0 10px}
 .sc-rem-i{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;align-items:center}
-.sc-rem-i p{margin:0;font-size:13.5px;line-height:1.45}
+.sc-rem-i p{margin:0;font-size:var(--fs-cap);line-height:1.45}
 .sc-rem-pic svg{display:block}
 .sc-grp{margin-top:14px;border-top:1px solid var(--line-2);padding-top:10px}
-.sc-gh{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--ink-3);margin-bottom:6px}
+.sc-gh{font-family:var(--font-mono);font-size:var(--fs-mark);letter-spacing:.06em;color:var(--ink-3);margin-bottom:6px}
 .sc-prod li{margin-bottom:6px}
 .sc-prod code,.refs code{word-break:break-word}
 .sc-cl{display:inline}
@@ -225,8 +225,8 @@
   .sc-stage{display:flex;flex-direction:column}
   .sc-stage>.stage-head{order:1}
   .sc-stage>.sc-cfgrow{order:2;margin:4px 0 0}
-  .sc-kinds{font-size:11px;gap:2px 8px}
-  .sc-pill{font-size:9.5px;padding:1px 4px}
+  .sc-kinds{font-size:var(--fs-mark);gap:2px 8px}
+  .sc-pill{font-size:var(--fs-mark);padding:1px 4px}
   .sc-stage>.sc-graph{order:3}
   .sc-stage>.sc-m2{order:4}
   .sc-stage>.sc-low{order:5}
@@ -237,34 +237,39 @@
   .sc-graph>.sc-strip{order:1}.sc-graph>.sc-play{order:2}.sc-graph>.sc-tlw{order:3}.sc-graph>.sc-mem{order:4}.sc-graph>.sc-clock{order:5}
   .sc-stage{padding:10px 10px 12px}
   .sc-stage .meter-title{display:none}
-  .sc-stage .meter-sub{font-size:13px;margin-top:0}
+  .sc-stage .meter-sub{font-size:var(--fs-cap);margin-top:0}
   .sc-stage>.stage-head{flex-wrap:nowrap;align-items:center}
-  .sc-stage .status{padding:3px 6px;font-size:10.5px}
+  .sc-stage .status{padding:3px 6px;font-size:var(--fs-mark)}
   .sc-cfgrow{justify-content:flex-start;gap:3px 8px}
   .sc-of,.sc-elap{display:none}
-  .sc-strip{grid-template-columns:minmax(0,.9fr) 9px minmax(0,1.5fr) 9px minmax(0,.9fr);gap:0 2px}
-  .sc-arr{font-size:11px}
-  .sc-box{padding:5px 5px 6px;gap:3px}
-  .sc-bh{font-size:10.5px}
-  .sc-bh b{font-size:12px}
+  .sc-strip{grid-template-columns:minmax(0,.9fr) 9px minmax(0,1.5fr) 9px minmax(0,.9fr);gap:0 1px}
+  .sc-arr{font-size:var(--fs-mark)}
+  /* refit step 2 (2026-10-24): the headers and the queue's reason pills are 11 px now (10.5 and 9.5 before); at 390 px “GPU：空闲，请求
+     全部完成” ran 4 px past the GPU box and “等这步结束” or “memory full” past the queue. The boxes' sides are 3 px instead of 5 and the
+     strip's gaps 1 px instead of 2, so each box has 5–6 px more inside; with the 2 px dashed frame of a long step the GPU box keeps the
+     same inner size (it took the desktop's padding and lost 6 px) */
+  .sc-box{padding:5px 3px 6px;gap:3px}
+  .sc-gpu.warn{padding:4px 2px 5px}
+  .sc-bh{font-size:var(--fs-mark)}
+  .sc-bh b{font-size:var(--fs-label)}
   .sc-meters{display:none}
   .sc-gbar{height:24px}
-  .sc-pb em{font-size:10px;padding-left:3px}
+  .sc-pb em{font-size:var(--fs-mark);padding-left:3px}
   .sc-gdur .sc-dnote,.sc-gdur .sc-gauge{display:none}
-  .sc-warn{font-size:10.5px}
-  .sc-qw{font-size:9.5px;padding:0 3px 0 2px}
+  .sc-warn{font-size:var(--fs-mark)}
+  .sc-qw{font-size:var(--fs-mark);padding:0 3px 0 2px}
   .sc-chip{width:10px;height:10px}
   .sc-dot{width:8px;height:8px}
-  .sc-onote{font-size:10.5px;height:28px;line-height:14px}
+  .sc-onote{font-size:var(--fs-mark);height:28px;line-height:14px}
   .sc-chips{height:28px}
   .sc-dots{height:24px}
   .sc-pills{flex-wrap:nowrap;overflow:hidden;max-width:100%}
   .sc-m2l span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-  .sc-clock{font-size:11.5px}
+  .sc-clock{font-size:var(--fs-label)}
   .sc-play{gap:5px}
   .sc-play .btn.sm{padding:5px 8px}
   .sc-pbtn{min-width:70px}
-  .sc-speed button{padding:4px 5px;font-size:11px}
+  .sc-speed button{padding:4px 5px;font-size:var(--fs-mark)}
   .sc-play input[type=range]{flex:1 1 50px;min-width:50px}
   .sc-rt,.sc-lw{display:none}
   .sc-ls{display:inline}
@@ -273,12 +278,12 @@
   .sc-cfgrow{min-height:22px}
   .sc-tlw>.sc-cap,.sc-tlleg{display:none}
   .sc-mlab{height:16px}
-  .sc-mlab .sc-mb{font-size:9.5px;padding:1px 4px}
-  .sc-mleg{font-size:10.5px}
-  .sc-m2{display:grid;gap:3px;margin-top:8px;padding:8px 10px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface)}
-  .sc-m2l{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--ink-2)}
+  .sc-mlab .sc-mb{font-size:var(--fs-mark);padding:1px 4px}
+  .sc-mleg{font-size:var(--fs-mark)}
+  .sc-m2{display:grid;gap:3px;margin-top:8px;padding:8px 10px;border:1px solid transparent;border-radius:8px;background:var(--surface-2)}   /* a soft panel, no frame inside the stage (精装修 step 2) */
+  .sc-m2l{display:flex;justify-content:space-between;gap:10px;font-size:var(--fs-label);color:var(--ink-2)}
   .sc-m2l b{color:var(--ink);white-space:nowrap}
-  .sc-m2n{text-align:right;font-size:11px}
+  .sc-m2n{text-align:right;font-size:var(--fs-mark)}
   .sc-low{grid-template-columns:minmax(0,1fr)}
   .sc-mtw{display:none}
   .sc-rem-i{grid-template-columns:72px minmax(0,1fr)}
@@ -287,7 +292,7 @@
 @media (prefers-reduced-motion:reduce){.sc-dot{animation:none}.sc-stall.sc-pulse{animation:none;outline:2px solid var(--ink)}.sc-box,.sc-mem{transition:none}}
 
 /* the trace card on a desktop: beside the selected row of the timeline (review r1, A1) */
-.sc-tcard{position:absolute;z-index:4;width:min(380px,56%);max-height:236px;overflow:auto;background:var(--surface);border:1.5px solid var(--ink);border-radius:8px;box-shadow:var(--shadow);padding:6px 10px;font-size:12px;line-height:1.4}
+.sc-tcard{position:absolute;z-index:4;width:min(380px,56%);max-height:236px;overflow:auto;background:var(--surface);border:1.5px solid var(--ink);border-radius:8px;box-shadow:var(--shadow);padding:6px 10px;font-size:var(--fs-label);line-height:1.4}
 .sc-tcard .sc-tr li{padding-bottom:2px}
 .sc-tcard .sc-trh{margin-bottom:4px}
 .sc-tcard .sc-tr{margin:0}
@@ -296,10 +301,10 @@
 
 /* the two-line comparison beside the status badge on a desktop (review r1, S15); phones have #sc-m2 under the stage */
 .sc-stage .stage-actions{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.sc-m2d{min-width:230px;font-size:12px;line-height:1.35}
+.sc-m2d{min-width:230px;font-size:var(--fs-label);line-height:1.35}
 .sc-m2d .sc-m2l{display:flex;justify-content:space-between;gap:10px}
 .sc-m2d .sc-m2l b{font-weight:650;white-space:nowrap}
-.sc-m2d .sc-m2n{text-align:right;font-size:11px}
+.sc-m2d .sc-m2n{text-align:right;font-size:var(--fs-mark)}
 @media (max-width:760px){.sc-m2d{display:none}}
 
 /* part 5: each option's result carries its bar (review r1, S1/S13); part 6: two-line results */
@@ -307,7 +312,7 @@
 .sc-lvbar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px}
 .lever[aria-pressed="true"] .sc-lvbar i{background:var(--ink)}
 .sc-lvbar b{position:absolute;top:-2px;bottom:-2px;width:0;border-left:1.5px dashed var(--ink)}
-.sc-lvs{display:block;font-size:10.5px;color:var(--ink-2);margin-top:2px;white-space:normal}
+.sc-lvs{display:block;font-size:var(--fs-mark);color:var(--ink-2);margin-top:2px;white-space:normal}
 .sc-polres{margin:4px 0 0;min-height:1em}
 .sc-barleg{margin-top:6px}
 
@@ -341,16 +346,16 @@
 .sc-app .seg-ctl{flex-wrap:wrap}
 .sc-app .seg-ctl button{flex:1 1 auto;min-width:0;white-space:nowrap}
 /* R5.8: the label beside a prefill that blocks others */
-.sc-pflab{position:absolute;z-index:2;font-family:var(--font-mono);font-size:10.5px;line-height:1;padding:2px 5px;border:1px solid var(--ink);border-radius:3px;background:var(--surface);color:var(--ink);white-space:nowrap;pointer-events:none}
+.sc-pflab{position:absolute;z-index:2;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:1;padding:2px 5px;border:1px solid var(--ink);border-radius:3px;background:var(--surface);color:var(--ink);white-space:nowrap;pointer-events:none}
 .sc-pflab.sc-pf2{line-height:1.3;text-align:right}
 .sc-pflab.sc-pfband{text-align:left}
 .sc-app .seg-ctl[data-key="ch-cb"] button{flex:1 1 30%}   /* 3 + 2 rows, never one option alone (review B4, N8) */
 
 /* part 3's "Why a middle budget works best": the trade-off behind an expander, so the result box fits one screen (GPT review of B4 v4, P3; R3.10, R2.6) */
 .obs details.sc-why{margin:8px 0 0;border-top:1px solid var(--line-2);padding-top:8px}
-.obs details.sc-why summary{cursor:pointer;font-weight:650;list-style:none;display:flex;align-items:center;gap:8px;font-size:13.5px;border-radius:3px}
+.obs details.sc-why summary{cursor:pointer;font-weight:650;list-style:none;display:flex;align-items:center;gap:8px;font-size:var(--fs-cap);border-radius:3px}
 .obs details.sc-why summary::-webkit-details-marker{display:none}
-.obs details.sc-why summary::before{content:"+";flex:none;font-family:var(--font-mono);width:18px;height:18px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-size:12px}
+.obs details.sc-why summary::before{content:"+";flex:none;font-family:var(--font-mono);width:18px;height:18px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-size:var(--fs-label)}
 .obs details.sc-why[open] summary::before{content:"−"}
 .obs details.sc-why summary:hover{text-decoration:underline;text-underline-offset:3px}
 .obs details.sc-why summary:focus-visible{outline:2px solid var(--ink,currentColor);outline-offset:2px}
@@ -365,20 +370,29 @@
 .sc-gr2 .sc-warn,.sc-gr2 .sc-dnote{overflow:hidden;text-overflow:ellipsis;min-width:0}
 @media (max-width:760px){.sc-gdur{grid-template-rows:15px 15px;row-gap:1px}}
 /* part 7: the scheduler's code, synced with the playhead. One row per line, a fixed height, no wrapping: nothing moves while it plays (R7.9) */
-.sc-wc{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:7px 10px 6px;min-width:0}
+.sc-wc{border:1px solid transparent;border-radius:8px;background:var(--surface-2);padding:7px 10px 6px;min-width:0}   /* a soft panel, no frame inside the stage (精装修 step 2) */
 .sc-wc[hidden]{display:none}
-.sc-graph[data-focus="code"] .sc-wc{outline:2px dashed var(--ink-3);outline-offset:3px}
+.sc-graph[data-focus="code"] .sc-wc{outline:2px dashed var(--focus-frame);outline-offset:3px}
 .sc-wch{display:flex;align-items:center;height:20px;overflow:hidden;white-space:nowrap}
 .sc-wch .sc-cap{overflow:hidden;text-overflow:ellipsis}
 /* the legend under the header, so it is on screen with the code (review A, finding 3); its items never change, so its height is fixed */
-.sc-wc .sc-wleg{margin:3px 0 5px;gap:4px 14px;font-size:10.5px}
-.sc-wcb{font-family:var(--font-mono);font-size:11.5px;line-height:14px}
-/* one row per line, 14 px, never wrapping: nothing moves while it plays (R7.9); all 28 fit beside the GPU box at 1440 × 900 */
+.sc-wc .sc-wleg{margin:3px 0 5px;gap:4px 14px;font-size:var(--fs-mark)}
+.sc-wcb{font-family:var(--font-mono);font-size:var(--fs-label);line-height:14px}
+/* refit step 2 (2026-10-24, the owner's choice on a decision card): on a desktop the box shows 14 of the 28 lines, so the queue, the GPU
+   box and the code fit on screen together; followCode keeps the step's lines in view and the reader can scroll the rest. A faded edge
+   says more lines are there (data-more). Phones keep all 28 lines: the page scrolls there */
+@media (min-width:761px){
+  .sc-wcb{height:calc(14 * 14px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+  .sc-wcb[data-more="up"]{-webkit-mask-image:linear-gradient(transparent,#000 10px);mask-image:linear-gradient(transparent,#000 10px)}
+  .sc-wcb[data-more="down"]{-webkit-mask-image:linear-gradient(#000 calc(100% - 10px),transparent);mask-image:linear-gradient(#000 calc(100% - 10px),transparent)}
+  .sc-wcb[data-more="both"]{-webkit-mask-image:linear-gradient(transparent,#000 10px,#000 calc(100% - 10px),transparent);mask-image:linear-gradient(transparent,#000 10px,#000 calc(100% - 10px),transparent)}
+}
+/* one row per line, 14 px, never wrapping: nothing moves while it plays (R7.9) */
 .sc-wl{display:grid;grid-template-columns:2.6ch minmax(0,52ch) minmax(12ch,1fr);column-gap:10px;align-items:center;height:14px;border-radius:2px;padding-right:4px}
-.sc-wn{color:var(--ink-3);text-align:right;font-size:10px}
+.sc-wn{color:var(--ink-3);text-align:right;font-size:var(--fs-mark)}
 .sc-wx{font:inherit;white-space:pre;overflow:hidden;text-overflow:ellipsis;padding:0 0 0 calc(var(--i) * 4ch);color:var(--ink);background:none;border:0}
 .sc-wcm{color:var(--ink-3)}
-.sc-wv{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);font-weight:650;font-size:11px;text-align:left}
+.sc-wv{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);font-weight:650;font-size:var(--fs-mark);text-align:left}
 .sc-wv[data-tipx]{cursor:help}
 .sc-wl.ran{background:color-mix(in srgb,var(--ink) 8%,transparent);box-shadow:inset 3px 0 var(--ink-2)}
 .sc-wl.now{background:color-mix(in srgb,var(--ink) 4%,transparent);box-shadow:inset 0 0 0 1.5px var(--ink)}
@@ -409,18 +423,18 @@
 @media (min-width:761px) and (max-width:899px){.sc-meter i{display:none}}
 /* ... and below 1,000 px the GPU box's header drops “of 1,126” (the code panel's header keeps it), so “, done” fits in both languages */
 @media (min-width:761px) and (max-width:1000px){.sc-of{display:none}}
-@media (min-width:761px) and (max-width:840px){.sc-gpu .sc-bh{letter-spacing:0;font-size:10px}}
+@media (min-width:761px) and (max-width:840px){.sc-gpu .sc-bh{letter-spacing:0;font-size:var(--fs-mark)}}
 /* narrower stages: a 2-space indent, so the longest line fits beside the values (review A, finding 4) */
 @media (max-width:1180px){.sc-wx{padding-left:calc(var(--i) * 2ch)}}
 @media (max-width:760px){
   .sc-graph>.sc-wc{order:3}.sc-graph>.sc-tlw{order:4}.sc-graph>.sc-mem{order:5}.sc-graph>.sc-clock{order:6}
   .sc-wc{padding:6px 5px 5px;margin:0 -6px}
-  .sc-wc .sc-wleg{font-size:10px;gap:3px 10px;margin:2px 0 4px}
-  .sc-wcb{font-size:9.5px;line-height:14px}
+  .sc-wc .sc-wleg{font-size:var(--fs-mark);gap:3px 10px;margin:2px 0 4px}
+  .sc-wcb{font-size:var(--fs-mark);line-height:14px}
   .sc-wl{grid-template-columns:minmax(0,1fr) 13ch;column-gap:5px;height:14px;padding:0 2px 0 4px}   /* 13ch: “淘汰 1,536 块” fits at 390 */
   .sc-wn{display:none}
   .sc-wx{padding-left:calc(var(--i) * 2ch)}
-  .sc-wv{font-size:9.5px}
+  .sc-wv{font-size:var(--fs-mark)}
   /* phones drop the three loops' trailing comments, so every statement shows in full */
   .sc-wl:not([data-k="h"]) .sc-wcm{display:none}
   .sc-wl.ran.key{box-shadow:inset 4px 0 var(--ink)}
@@ -433,13 +447,13 @@
 .sc-tz-svg .sc-tz-miss{fill:var(--c-oom)}
 .sc-tz-svg .sc-tz-w{opacity:.8}
 .sc-tz-svg .sc-tz-box{fill:none;stroke:var(--ink);stroke-width:1}
-.sc-tz-svg text.sc-tz-lab{fill:var(--ink);font-size:10px}
+.sc-tz-svg text.sc-tz-lab{fill:var(--ink);font-size:var(--fs-mark)}
 .sc-tz-svg .sc-tz-base,.sc-tz-svg .sc-tz-tk{fill:var(--line)}
-.sc-tz-svg .sc-tz-ax text{fill:var(--ink-3);font-size:10px}
-.sc-tz-svg text.sc-tz-cap{fill:var(--ink-3);font-size:10px}
+.sc-tz-svg .sc-tz-ax text{fill:var(--ink-3);font-size:var(--fs-mark)}
+.sc-tz-svg text.sc-tz-cap{fill:var(--ink-3);font-size:var(--fs-mark)}
 .sc-tz-rd{display:grid}
 .sc-tz-rd>p{grid-area:1/1;min-width:0}
-.sc-tz-twin{visibility:hidden;margin:0;font-size:13px;line-height:1.45}
+.sc-tz-twin{visibility:hidden;margin:0;font-size:var(--fs-cap);line-height:1.45}
 .sc-tz-twin b{font-weight:650}
 .sc-tz-leg>span[data-tipx]{cursor:help}
 .sc-tz-sw{display:inline-block;flex:none;width:14px;height:10px;margin-right:5px}
@@ -452,7 +466,7 @@
    formula, then this run's numbers under the terms they replace, the "=" signs lined up; a table wider than its box is set again by fitMath (below), so nothing scrolls sideways */
 .mathbody .sc-mb{padding:8px 0 10px}
 .mathbody .sc-mb+.sc-mb{border-top:1px solid var(--line)}
-.sc-mb .sc-mlead{margin:0 0 4px;font-family:var(--font-ui);font-size:13.5px;line-height:1.5}
+.sc-mb .sc-mlead{margin:0 0 4px;font-family:var(--font-ui);font-size:var(--fs-math);line-height:1.5}
 
 .sc-mfx{overflow-x:auto;max-width:100%;padding-block:.3em}
 .sc-mt{border-collapse:collapse}
@@ -461,7 +475,7 @@
 .sc-mt tr.sc-mname th{color:var(--ink);font-weight:600}
 .sc-mt tr.sc-mname:not(:first-child) th,.sc-mt tr.sc-mname:not(:first-child) td{padding-top:8px}
 .sc-mt td.sc-mres{text-align:left;white-space:normal}
-.sc-mb .sc-mnote{margin:4px 0 0;font-family:var(--font-ui);font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.sc-mb .sc-mnote{margin:4px 0 0;font-family:var(--font-ui);font-size:var(--fs-label);line-height:1.5;color:var(--ink-2)}
 /* Show the math on a box too narrow for its table (the owner's review of 2026-10-09): fitMath sets the block again, the name on its own
    line, the formula broken before an operator with the numbers under the terms they replace, nothing scrolling sideways */
 .sc-mtn{border-collapse:collapse}
@@ -522,3 +536,18 @@
 }
 /* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
 .sc-clock,.sc-onote,.sc-gdur,#sc-wct,.sc-runl{font-variant-numeric:tabular-nums}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) parts 1–3 and 8 still ran 27 px past the stage and parts
+   4–6 34 (English 22–48). The timeline's rows may take at most 160 px instead of 200 (drawTL reads --sc-tlh: rows of 4 px for the 37
+   requests of parts 1–3, 7 and 8 instead of 5; the 48 of parts 4–6 keep 4), and the gaps and padding of the configuration row, the
+   figure, its three boxes, the trace hint and the footer are 2–4 px smaller. In English part 5 still runs 15 px past 1536 × 730, whose
+   memory legend takes two lines, and part 7 still scrolls 140–216 px inside the stage, its timeline and memory bar below the 14-line
+   code box */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){
+  .sc-app{--sc-tlh:160}
+  .sc-cfgrow{margin:2px 0 0}
+  .sc-stage>.sc-graph{margin-top:6px}
+  .sc-graph{padding:6px 10px 4px;gap:4px}
+  .sc-box{padding:4px 7px 4px}
+  .sc-hint .sc-trhint{margin-top:2px}
+  .sc-foot{margin-top:4px;padding-top:4px}
+}

@@ -3,42 +3,42 @@
    for the injected instruction and a harmful action, each with ⚠ or ✗ and a word beside it; green only for a goal met. */
 .pin-stage .stage-head{align-items:center}
 .pin-graph{padding:12px 14px 14px;display:grid;gap:12px;min-width:0}
-.pin-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35}
-.pin-sub{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin-bottom:4px}
+.pin-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35}
+.pin-sub{font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-3);margin-bottom:4px}
 .pin-legend{margin-top:6px}
-:where(html[lang^="zh"]) #pin-log-leg{font-size:11px}   /* the log's key is 221 px wide: in Chinese its first line holds three marks only at the size it was fitted to */
+:where(html[lang^="zh"]) #pin-log-leg{font-size:var(--fs-mark)}   /* the log's key is 221 px wide: in Chinese its first line holds three marks only at the size it was fitted to */
 .pin-legend>span{cursor:help;display:inline-flex;align-items:center}
 
 /* ---------- the tools row ---------- */
 .pin-tools{display:grid;gap:4px;min-width:0}
 .pin-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .pin-chip{display:inline-grid;gap:1px;border:1.5px solid var(--ink);border-radius:4px;padding:4px 8px;background:var(--surface);cursor:help;min-width:0}
-.pin-chip code{font-family:var(--font-mono);font-size:12px;color:var(--ink)}
-.pin-chip>span{font-size:11.5px;color:var(--ink-2);line-height:1.3}
+.pin-chip code{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink)}
+.pin-chip>span{font-size:var(--fs-label);color:var(--ink-2);line-height:1.3}
 .pin-chip.off{border-style:dashed;border-color:var(--ink-3);background:transparent}
 .pin-chip.off code{text-decoration:line-through;color:var(--ink-3)}
 .pin-chip.off>span{color:var(--ink-3)}
 .pin-plus{color:var(--ink-3);font-weight:700}
-.pin-tw{font-size:12.5px;line-height:1.4;color:var(--ink-2);min-height:1.4em}
+.pin-tw{font-size:var(--fs-label);line-height:1.4;color:var(--ink-2);min-height:1.4em}
 .pin-tw.on{color:var(--ink);font-weight:650}
 
 /* ---------- the replay: context beside actions. Each box gets one height per replay from the script (the whole replay, capped by
    max-height), so it does not jump while it plays (R7.9) and a short replay leaves no empty box; the newest block scrolls into view ---------- */
 .pin-rp{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;min-width:0}
 .pin-ctx-w,.pin-log-w{min-width:0;display:flex;flex-direction:column}
-.pin-ctx{max-height:286px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:6px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);cursor:help;outline-offset:2px}
-.pin-blk{display:grid;grid-template-columns:62px minmax(0,1fr);gap:6px;align-items:baseline;padding:5px 7px;border:1px solid var(--ink-3);border-radius:3px;background:var(--surface);font-size:12.5px;line-height:1.4;flex:none}
-.pin-role{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3)}
+.pin-ctx{max-height:286px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:6px;border:1px solid transparent;border-radius:8px;background:var(--surface-2);cursor:help;outline-offset:2px}   /* a soft panel, no frame inside the stage (精装修 step 2) */
+.pin-blk{display:grid;grid-template-columns:62px minmax(0,1fr);gap:6px;align-items:baseline;padding:5px 7px;border:1px solid var(--ink-3);border-radius:3px;background:var(--surface);font-size:var(--fs-label);line-height:1.4;flex:none}
+.pin-role{font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-3)}
 .pin-bt{min-width:0;overflow-wrap:anywhere;color:var(--ink)}
 .pin-blk.un{border-color:var(--line);background:repeating-linear-gradient(135deg,var(--line-2) 0 1px,var(--surface) 1px 6px)}
 .pin-blk.pv{border:1.5px dotted var(--ink-2)}
 .pin-blk.call{background:var(--surface-2);border-color:var(--line)}
-.pin-blk.call .pin-bt{font-family:var(--font-mono);font-size:11.5px}
+.pin-blk.call .pin-bt{font-family:var(--font-mono);font-size:var(--fs-label)}
 .pin-blk.call.inj{border-left:3px dashed var(--ink)}
 .pin-blk.held{border-style:dashed;color:var(--ink-3)}
 .pin-blk.held .pin-bt{color:var(--ink-2);font-style:italic}
 .pin-blk.ans{border-color:var(--ink-2)}
-.pin-blk.wait{display:block;border:1px dashed var(--line);color:var(--ink-3);font-size:12px}
+.pin-blk.wait{display:block;border:1px dashed var(--line);color:var(--ink-3);font-size:var(--fs-label)}
 mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;padding:1px 3px;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .pin-tag{color:var(--c-oom);font-weight:700;white-space:nowrap}
 /* the harmful action, where it happens: the assistant's call in the context and its line in the log */
@@ -50,14 +50,14 @@ mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;pad
 @keyframes pinHot{0%{box-shadow:0 0 0 0 var(--c-oom)}70%{box-shadow:0 0 0 5px transparent}100%{box-shadow:0 0 0 0 transparent}}
 .pin-blk.harm.pin-now,.pin-li.harm.pin-now,.pin-hx.pin-now,.pin-now mark.pin-hid{animation:pinHot 1s ease-out 1}
 .pin-ctx.pin-one{display:block}
-.pin-stream{margin:0;font-size:12.5px;line-height:1.65;color:var(--ink);overflow-wrap:anywhere}
-.pin-tok{font-family:var(--font-mono);font-size:11px;color:var(--ink-3)}
+.pin-stream{margin:0;font-size:var(--fs-label);line-height:1.65;color:var(--ink);overflow-wrap:anywhere}
+.pin-tok{font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-3)}
 .pin-more{color:var(--ink-3)}
 
-.pin-log{list-style:none;margin:0;padding:6px;max-height:286px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface)}
-.pin-li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:6px;align-items:baseline;padding:5px 7px;border:1px solid var(--line-2);border-radius:3px;font-size:12.5px;line-height:1.4;flex:none}
+.pin-log{list-style:none;margin:0;padding:6px;max-height:286px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;border:1px solid transparent;border-radius:8px;background:var(--surface-2)}   /* a soft panel, no frame inside the stage (精装修 step 2) */
+.pin-li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:6px;align-items:baseline;padding:5px 7px;border:1px solid var(--line-2);border-radius:3px;font-size:var(--fs-label);line-height:1.4;flex:none}
 .pin-li>b{font-weight:700;color:var(--ink-2)}
-.pin-li code{font-family:var(--font-mono);font-size:11.5px;overflow-wrap:anywhere}
+.pin-li code{font-family:var(--font-mono);font-size:var(--fs-label);overflow-wrap:anywhere;background:var(--surface)}   /* the log is a soft panel (var(--surface-2)), so a code chip in it is var(--surface) (精装修 step 2) */
 .pin-li.blk>b,.pin-li.no>b{color:var(--ink)}
 .pin-li.harm{border:1.5px solid var(--c-oom);background:var(--c-oom-soft)}
 .pin-li.harm>b{color:var(--c-oom)}
@@ -84,7 +84,7 @@ mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;pad
 /* ---------- the player ---------- */
 .pin-player{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
 .pin-play{min-width:92px}
-.pin-speed button{font-size:12px;padding:3px 9px}
+.pin-speed button{font-size:var(--fs-label);padding:3px 9px}
 .pin-scrub{flex:1 1 140px;min-width:120px}
 
 /* ---------- the 100 tasks ---------- */
@@ -94,7 +94,7 @@ mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;pad
 .pin-grid{cursor:help;outline-offset:3px;border-radius:2px;min-width:0}
 .pin-strips{display:grid;gap:6px}
 .pin-strip{display:grid;gap:3px;min-width:0}
-.pin-sl{font-size:11.5px;color:var(--ink-2);line-height:1.3}
+.pin-sl{font-size:var(--fs-label);color:var(--ink-2);line-height:1.3}
 .pin-cells{display:flex;flex-wrap:wrap;gap:3px}
 .pin-c{position:relative;display:block;width:12px;height:12px;box-sizing:border-box;border:1px solid var(--ink-3);border-radius:2px;background:var(--surface)}
 .pin-c.done{background:var(--ink-3)}
@@ -109,11 +109,11 @@ mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;pad
 .pin-stage>.pin-metrics{margin:10px 0 4px;gap:6px}
 .pin-metrics .metric{padding:5px 8px 4px}
 .pin-metrics .metric .k{line-height:1.14}   /* 12 px (kit polish r2, M1; was 10.5 px), each line as tall as before */
-.pin-metrics .metric .v{font-size:16px;line-height:1.2;margin-top:1px}
-.pin-metrics .metric .sub{font-size:11px;line-height:1.3}
+.pin-metrics .metric .v{font-size:var(--fs-body);line-height:1.2;margin-top:1px}
+.pin-metrics .metric .sub{font-size:var(--fs-mark);line-height:1.3}
 .pin-metrics .metric .d{min-height:13px;line-height:1.1}
 .metric.pin-bad .v{color:var(--c-oom)}
-.pin-scope{margin:10px 0 6px;font-size:12.5px;line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
+.pin-scope{margin:10px 0 6px;font-size:var(--fs-label);line-height:1.45;width:max-content;max-width:100%;cursor:help;border-bottom:1px dotted var(--line-2)}
 .pin-fx{margin:8px 0 10px;overflow-x:auto}
 
 /* ---------- rail ---------- */
@@ -132,12 +132,12 @@ mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;pad
 
 /* ---------- settings ---------- */
 .pin-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
-.pin-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.pin-gh{font-size:var(--fs-cap);font-weight:700;color:var(--ink)}
 .pin-grp .ctl>.lbl{display:block}
 .pin-app .ctl output{white-space:nowrap}
 
 /* ---------- connect ---------- */
-.pin-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.pin-prod{margin:0 0 8px;padding-left:18px;font-size:var(--fs-ui);color:var(--ink-2)}
 .pin-prod li{margin-bottom:6px}
 .pin-prod code,.pin-prod a{overflow-wrap:anywhere;word-break:break-word}
 .pin-out{margin-top:6px}
@@ -163,7 +163,7 @@ mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;pad
   /* the three tools fit one row: the names stay, what each brings is in the chip's tooltip and the warning line */
   .pin-chip>span{display:none}
   .pin-chip{padding:2px 5px}
-  .pin-chip code{font-size:11px}
+  .pin-chip code{font-size:var(--fs-mark)}
   .pin-chips{gap:4px}
   .pin-tools{gap:2px}
 }
@@ -173,8 +173,9 @@ mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;pad
    tighter, so a replay needs about 100 px less; each row of the 100 tasks has its name at the left of its cells; the line on the
    assumed rates sits at the right of "Show the math"; the spacing is tighter. The context box keeps its rule (one height per
    replay, the newest block in view when the replay is longer than the box); on a desktop its cap follows the screen's height:
-   at 900 px 300 px in Chinese (the whole replay of every guided part) and 240 px in English, whose legends and player take
-   more lines; never under 164 / 160 px. */
+   at 900 px 300 px in Chinese (the whole replay of every guided part) and 286 px in English, whose legends and player take
+   more lines; never under 164 / 160 px. (Refit step 2, 2026-10-24: the top bar scrolls away on a lab page, so the stage is 58 px
+   taller and the box takes those 58 px: 240 px in English at 900 px before; at 730 px 188 px in Chinese instead of 164.) */
 @media (min-width:761px){.pin-stage{padding-block:12px}}   /* the stage is its own container, so this one is a plain media rule */
 @media (min-width:761px){
 @container (min-width:736px){
@@ -191,8 +192,8 @@ mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;pad
   .pin-ctx,.pin-log{gap:3px;padding:4px}
   .pin-blk,.pin-li{padding:3px 6px;line-height:1.35}
   .pin-graph>.pin-rp~.pin-gridw{padding-top:8px}
-  .pin-ctx{max-height:clamp(160px,calc(100vh - 660px),286px)}
-  html[lang^="zh"] .pin-ctx{max-height:clamp(164px,calc(100vh - 600px),300px)}
+  .pin-ctx{max-height:clamp(160px,calc(100vh - 602px),286px)}
+  html[lang^="zh"] .pin-ctx{max-height:clamp(164px,calc(100vh - 542px),300px)}
   .pin-legend{row-gap:3px}
   .pin-strips{grid-template-columns:max-content minmax(0,1fr);column-gap:10px;row-gap:6px}
   .pin-strip{grid-column:1/-1;grid-template-columns:subgrid;align-items:start}
@@ -216,7 +217,17 @@ mark.pin-hid{background:var(--c-oom-soft);color:var(--c-oom);font-weight:600;pad
 .pin-mb+.pin-mb{border-top:1px solid var(--line)}
 .pin-mb>p{margin:0 0 6px}
 .pin-mb>p:last-child{margin-bottom:0}
-.pin-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3}
+.pin-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:var(--fs-stage);line-height:1.3}
 .pin-eq-l{text-align:right}
 /* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
 @media (max-width:560px){.pin-eqs-nm{grid-template-columns:max-content max-content}.pin-eqs-nm>.pin-eq-l{grid-column:1/-1;text-align:left}.pin-eqs-nm>.pin-eq-l:empty{display:none}}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) the English stage still ran 13 px past at 1536 × 730, its
+   context box already at the 160 px floor (Chinese fits). In English the figure's padding and the gaps between its rows are 2 px
+   smaller, and so are the space above the 100 tasks and above the cards; where the window has room for more the box takes those
+   14 px (212 px at 800 px instead of 198) (R7.16) */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  html[lang="en"] .pin-graph{padding-top:8px;padding-bottom:8px;row-gap:4px}
+  html[lang="en"] .pin-graph>.pin-rp~.pin-gridw{padding-top:6px}
+  html[lang="en"] .pin-stage>.pin-metrics{margin-top:6px}
+  html[lang="en"] .pin-ctx{max-height:clamp(160px,calc(100vh - 588px),286px)}
+}}

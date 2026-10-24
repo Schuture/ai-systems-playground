@@ -2,12 +2,12 @@
 .adm-graph{display:flex;flex-direction:column;gap:0}
 .adm-blk{padding:8px 0}
 .adm-blk+.adm-blk{border-top:1px solid var(--line)}
-.adm-bh{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);margin:0 0 6px;min-height:1.35em;overflow-wrap:anywhere}
+.adm-bh{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2);margin:0 0 6px;min-height:1.35em;overflow-wrap:anywhere}
 .adm-day,.adm-q{width:100%;min-width:0}
 .adm-svg{display:block;max-width:100%;height:auto}
-.adm-svg text{font-family:var(--font-mono);font-size:11px;fill:var(--ink-2)}
-.adm-svg .adm-at{font-size:10px;fill:var(--ink-3)}
-.adm-svg .adm-capt{font-size:10.5px;fill:var(--ink)}
+.adm-svg text{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-2)}
+.adm-svg .adm-at{font-size:var(--fs-mark);fill:var(--ink-3)}
+.adm-svg .adm-capt{font-size:var(--fs-mark);fill:var(--ink)}
 .adm-ax{stroke:var(--ink-3)}
 .adm-pa{fill:var(--c-weights)}
 .adm-fr{fill:var(--c-kv)}
@@ -24,7 +24,7 @@
 .adm-lb{stroke:var(--ink-3);stroke-dasharray:4 3}
 .adm-miss{fill:var(--c-oom)}
 .adm-ph{stroke:var(--ink);stroke-width:1.2;stroke-dasharray:3 2}
-.adm-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:2px 0 4px;font-size:12px}
+.adm-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:2px 0 4px;font-size:var(--fs-label)}
 .adm-legend>span{display:inline-flex;align-items:center;gap:6px;cursor:help}
 .adm-sw{display:inline-block;width:14px;height:10px;border-radius:2px;flex:none}
 .adm-sw.pa{background:var(--c-weights)}
@@ -40,17 +40,17 @@
 .adm-run{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 0 0}
 .adm-run .btn{min-height:30px}
 .adm-speed{display:inline-flex;align-items:center;gap:6px;flex:none}
-.adm-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
-.adm-app .adm-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;min-height:26px}   /* the kit's tray adds 3 px above and below its keys (2026-10-22 refit), so a 26 px key keeps the control 32 px tall, as before */
+.adm-speed-l{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2)}
+.adm-app .adm-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:var(--fs-label);min-height:26px}   /* the kit's tray adds 3 px above and below its keys (2026-10-22 refit), so a 26 px key keeps the control 32 px tall, as before */
 .adm-prog{flex:1 1 140px;min-width:120px}
 .adm-goals{display:flex;flex-direction:column;gap:6px}
-.adm-gr{display:grid;grid-template-columns:minmax(96px,150px) minmax(60px,1fr) max-content;align-items:center;gap:4px 10px;font-size:13px}
+.adm-gr{display:grid;grid-template-columns:minmax(96px,150px) minmax(60px,1fr) max-content;align-items:center;gap:4px 10px;font-size:var(--fs-cap)}
 .adm-gb{position:relative;height:10px;background:var(--sunken);border-radius:5px}
 .adm-gb>i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--ink-3)}
 .adm-gr.ok .adm-gb>i{background:var(--c-ok)}
 .adm-gr.bad .adm-gb>i{background:var(--c-oom)}
 .adm-gb>b{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink)}
-.adm-gv{font-size:12px;white-space:nowrap}
+.adm-gv{font-size:var(--fs-label);white-space:nowrap}
 @container (max-width:420px){.adm-gr{grid-template-columns:minmax(0,1fr) max-content}.adm-gb{grid-column:1/-1;grid-row:2}}
 .adm-metrics.adm-wait .metric{opacity:.55}
 .adm-goal{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:10px 0}
@@ -65,7 +65,7 @@
 .adm-mb+.adm-mb{border-top:1px solid var(--line)}
 .adm-mb>p{margin:0 0 6px}
 .adm-mb-res{margin-bottom:0}
-.adm-eqs{display:grid;grid-template-columns:max-content max-content minmax(0,max-content);justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.35em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3;max-width:100%}
+.adm-eqs{display:grid;grid-template-columns:max-content max-content minmax(0,max-content);justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.35em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:var(--fs-stage);line-height:1.3;max-width:100%}
 .adm-eq-l{text-align:right}
 .adm-app .mathbody{container-type:inline-size}
 @container (max-width:560px){.adm-eqs{grid-template-columns:max-content minmax(0,1fr)}.adm-eqs>.adm-eq-l{grid-column:1/-1;text-align:left}.adm-eqs>.adm-eq-l:empty{display:none}.adm-eq-r{min-width:0;overflow-x:auto}}
@@ -74,7 +74,7 @@
 .adm-app .inline-ctl .seg-ctl button{flex:1 0 auto;white-space:nowrap}
 .adm-blk[hidden]+.adm-blk{border-top:0}
 .adm-prod code,.adm-app .small code{overflow-wrap:anywhere;word-break:break-word}
-.adm-gnote{margin:2px 0 0;padding-left:8px;border-left:3px solid var(--c-oom);font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.adm-gnote{margin:2px 0 0;padding-left:8px;border-left:3px solid var(--c-oom);font-size:var(--fs-label);line-height:1.45;color:var(--ink-2)}
 /* ---------- a wide stage (polish round 3, 2026-10-16; the owner's B4, R7.12): at 1440 × 900 parts 1, 2, 7 and 8 needed 69 px of
    scrolling inside the stage (part 5: 27). On a stage at least 736 px wide (windows from about 1226 px) the day chart and the busiest
    minute are drawn shorter (--adm-ch, read by chartH), the metric cards share the row by their number (it was five columns, the rest
@@ -101,4 +101,13 @@
   .adm-metrics .metric .v{line-height:1.25}
   .adm-metrics .metric .d{min-height:13px;line-height:1.1}
   .adm-stage>details.math{margin-top:8px;padding-top:8px}
+}}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) parts 1, 2, 7 and 8 still ran 21 px past the stage (English
+   24–41). The day's and the queue's charts are drawn 108 px high instead of 120 (chartH reads --adm-ch; they are drawn for their height,
+   so their text keeps its size). In English, whose text takes more lines, they are drawn 100 px high and the blocks' padding is 5 px
+   instead of 6 (R7.16) */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  #adm-day,#adm-q{--adm-ch:108}
+  html[lang="en"] #adm-day,html[lang="en"] #adm-q{--adm-ch:100}
+  html[lang="en"] .adm-blk{padding:5px 0}
 }}

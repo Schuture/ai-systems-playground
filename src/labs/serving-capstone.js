@@ -522,8 +522,10 @@ function costLine(o,b,lead){const ef=effects(b,o).cost.sort((x,y)=>y.rel-x.rel);
   const why=k==='peak'&&o.cfg.cache?tx(', because idle cached prompts stay in memory','，因为空闲的缓存 prompt 一直占着显存'):'';
   const body=tx(`${core}: from about ${A} to about ${Y}${why}.`,`${core}，从约 ${A} 变成约 ${Y}${why}。`);
   const t=lead?tx(`The cost is that ${body}`,`代价是${body}`):tx(cap1(body),body);
-  /* the table is folded under its button on a desktop (runOpen), so its name opens it; phones have no table */
-  const tb=tx('whole-run table','整次运行的表格'), tl=innerWidth>760?J('table',tb):tb;
+  /* the table is folded under its button on a desktop (runOpen), so its name opens it; phones have no table, so they get no pointer to it
+     (精装修 step 2: the sentence named a table a phone does not show) */
+  if(innerWidth<=760) return t;
+  const tb=tx('whole-run table','整次运行的表格'), tl=J('table',tb);
   return t+(more?tx(` The ${tl} below the stage shows how the other numbers change.`,`其他指标的变化见舞台下方${tl}。`):'');}
 
 /* =====================================================================
@@ -1376,7 +1378,25 @@ function drawCode(o){const wc=$('#sc-wc',app); if(!wc) return; const on=codeOn()
     const fresh=cs.phase==='end'&&(wc._ps!==cs.s||wc._pp!=='end'||wc._pk!==o.key); wc._ps=cs.s; wc._pp=cs.phase; wc._pk=o.key;
     $$('.sc-wl',wc).forEach(l=>{const x=ls[l.dataset.k]||{st:'skip',v:'',tip:''}; l._st=x.st; l.className='sc-wl'+(x.st==='plain'?'':' '+x.st)+(l.dataset.k===key?' key':'')+(fresh&&x.st==='ran'&&END_K.includes(l.dataset.k)?' sc-wlf':''); const v=$('.sc-wv',l); v.textContent=x.v;
       if(x.tip&&x.v){v.dataset.tipx=x.tip; v.tabIndex=0;} else {v.removeAttribute('data-tipx'); v.tabIndex=-1;}});}
-  const lg=$('#sc-wleg',wc), lh=wLeg(); if(lg._h!==lh){lg.innerHTML=lh; lg._h=lh;}}
+  const lg=$('#sc-wleg',wc), lh=wLeg(); if(lg._h!==lh){lg.innerHTML=lh; lg._h=lh;}
+  followCode(wc,cs?cs.phase:null);}
+/* refit step 2 (2026-10-24, the owner's choice on a decision card): on a desktop the box shows 14 of the 28 lines (CSS) and follows the
+   step. While a step runs, the GPU's line, the red lines where admission stops and the moment's deciding line stay in view; once it has
+   ended, its end lines and the deciding line. Each keeps a line of room around it where it can, and the box moves as little as it can,
+   so playing a run mostly leaves it still; when they do not all fit, the top one wins. Nothing picked yet shows the top. A box that holds
+   every line (a phone) is left alone */
+function followCode(wc,phase){const b=$('#sc-wcb',wc); if(!b) return; const rows=$$('.sc-wl',b), lh=rows.length?rows[0].offsetHeight:0;
+  if(!b._ml){b._ml=1; b.addEventListener('scroll',()=>moreMark(b),{passive:true});}
+  if(!lh||b.scrollHeight<=b.clientHeight+1){b.dataset.more=''; return;}
+  const vis=Math.floor(b.clientHeight/lh+0.01), max=rows.length-vis, M=[];
+  rows.forEach((l,i)=>{const c=l.classList; if(c.contains('key')||(phase==='run'&&(c.contains('now')||c.contains('stop')))||(phase==='end'&&c.contains('ran')&&END_K.includes(l.dataset.k))) M.push(i);});
+  const s0=Math.round(b.scrollTop/lh); let s=0;
+  if(M.length){const lo=Math.min(...M), hi=Math.max(...M), a=Math.max(0,hi-vis+2), z=Math.min(max,lo-1);
+    s=a<=z?Math.min(Math.max(s0,a),z):Math.max(0,Math.min(max,lo-1));}
+  if(Math.abs(b.scrollTop-s*lh)>1) b.scrollTo({top:s*lh,behavior:RM()||!b._seen?'auto':'smooth'});
+  b._seen=true; moreMark(b,s*lh);}
+/* the faded edges: more lines above, below or both */
+function moreMark(b,top){const t=top==null?b.scrollTop:top, up=t>1, dn=t<b.scrollHeight-b.clientHeight-1; b.dataset.more=up&&dn?'both':(up?'up':(dn?'down':''));}
 
 function connectHTML(){
   return `<section class="wrap connect" aria-labelledby="sc-connH"><div class="eyebrow">${A.t('connEyebrow')}</div><h2 id="sc-connH">${A.t('connTitle')}</h2><div class="connect-grid">`+
@@ -2274,8 +2294,10 @@ function tzSVG(t){
   if(d){const near=t.rows.filter(r=>Math.abs(r.row-d.row)<=2), x=Math.max(tzX(d.fin)+0.7,...near.map(r=>tzX(r.fin)));   // right of every row the label's height covers
     s+=`<text class="sc-tz-lab" x="${x.toFixed(3)}%" dx="5" y="${f2(y0(d.row)+TZH.docH/2+3.5)}">${esc(tx(`◂ ${tokK(d.own)} document`,`◂ ${tokK(d.own)} 的文档`))}</text>`;}
   /* the rows' caption, right-aligned in the top corner the staircase leaves empty (the early requests are done by then);
-     the tests check it clears every row at a 280 px tile */
-  s+=tzCap().map((c,i)=>`<text class="sc-tz-cap" x="100%" y="${TZH.top+8+i*11}" text-anchor="end">${esc(c)}</text>`).join('');
+     the tests check it clears every row at a 280 px tile.
+     refit step 2 (2026-10-24): the caption is 11 px now (10 before), so its lines are 12 apart (11 before; at 11 the Chinese lines
+     touched), and it ends 1 px before the picture's edge (a line's box reached 0.5–0.6 px past it, at 10 px too) */
+  s+=tzCap().map((c,i)=>`<text class="sc-tz-cap" x="100%" dx="-1" y="${TZH.top+8+i*12}" text-anchor="end">${esc(c)}</text>`).join('');
   const yb=TZH.top+TZH.rows+2, tk=tzTicks();
   s+=`<g class="sc-tz-ax" aria-hidden="true"><rect class="sc-tz-base" x="0" y="${yb}" width="100%" height="0.8"/>`+
     tk.map((v,i)=>`<rect class="sc-tz-tk" x="${P(v)}" y="${yb}" width="1" height="4"/><text x="${P(v)}" y="${yb+TZH.ax-1}" text-anchor="${i?'middle':'start'}">${v%1?fixd(v,1):String(v)}${i===tk.length-1?NB+'s':''}</text>`).join('')+`</g>`;

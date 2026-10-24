@@ -2,44 +2,44 @@
 .rgf-app [hidden]{display:none!important}
 .rgf-stage{container-type:inline-size}
 .rgf-head{align-items:flex-start;gap:6px 10px;flex-wrap:wrap}
-.rgf-st-title{font-weight:650;font-size:15px;min-width:0;line-height:1.35;flex:1 1 200px}
+.rgf-st-title{font-weight:650;font-size:var(--fs-stage);min-width:0;line-height:1.35;flex:1 1 200px}
 .rgf-head .status{justify-content:center;box-sizing:border-box}
 .rgf-pan{border-top:1px solid var(--line);padding-top:8px;margin-top:8px;min-width:0}
-.rgf-pt{font-weight:600;font-size:13px;line-height:1.35;margin-bottom:6px;min-width:0}
+.rgf-pt{font-weight:600;font-size:var(--fs-cap);line-height:1.35;margin-bottom:6px;min-width:0}
 /* the run's controls in one row on wide stages: the run, Play, the speed, Replay, the progress (round-1 polish P2) */
 .rgf-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 8px}
 .rgf-qrow{display:flex;align-items:center;gap:4px 8px;margin:0;flex:1 1 150px;min-width:0}
-.rgf-ql{font-size:12px;color:var(--ink-2)}
-.rgf-rsel{flex:1 1 120px;min-width:0;max-width:100%;font:inherit;font-size:13px;padding:5px 6px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--ink)}
+.rgf-ql{font-size:var(--fs-label);color:var(--ink-2)}
+.rgf-rsel{flex:1 1 120px;min-width:0;max-width:100%;font:inherit;font-size:var(--fs-cap);padding:5px 6px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--ink)}
 .rgf-rsel:disabled{opacity:.75}
 .rgf-transport{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:0;flex:0 1 auto;min-width:0}
 .rgf-transport .seg-ctl,.rgf-transport .inline-ctl,.rgf-transport .ctl{margin:0}
 .rgf-transport .btn.sm,.rgf-transport .seg-ctl{height:32px;box-sizing:border-box}
 .rgf-transport .btn.sm{padding-top:0;padding-bottom:0;line-height:1.2}
-.rgf-transport .seg-ctl button{padding:0 10px;font-family:var(--font-ui);font-size:13px;line-height:1.2}
+.rgf-transport .seg-ctl button{padding:0 10px;font-family:var(--font-ui);font-size:var(--fs-cap);line-height:1.2}
 .rgf-transport .inline-ctl{flex:1 1 140px;min-width:130px;border:0;padding:0;background:none;display:flex;align-items:center;gap:8px}
-.rgf-transport .inline-ctl>label{flex:none;gap:6px;font-size:12px}
+.rgf-transport .inline-ctl>label{flex:none;gap:6px;font-size:var(--fs-label)}
 .rgf-transport .inline-ctl>input{flex:1 1 auto;min-width:60px}
 .rgf-transport .ctl{display:flex;align-items:center;gap:6px}
-.rgf-transport .ctl>.lbl{font-size:12px}
+.rgf-transport .ctl>.lbl{font-size:var(--fs-label)}
 /* the progress readout keeps the width of 100% (set from the text), right-aligned, so nothing in the row moves while the run plays (P4) */
 .rgf-transport .inline-ctl output{text-align:right;font-variant-numeric:tabular-nums}
 /* Play and Pause keep one width (set from the wider label), so the row never shifts (P4) */
 .rgf-play{justify-content:center}
 /* the run, one stage per block */
 .rgf-flow{display:flex;flex-direction:column;gap:6px;min-width:0}
-.rgf-stg{display:grid;grid-template-columns:118px minmax(0,1fr);gap:4px 10px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--surface);min-width:0;position:relative}
+.rgf-stg{display:grid;grid-template-columns:118px minmax(0,1fr);gap:4px 10px;border:1px solid transparent;border-radius:8px;padding:6px 8px;background:var(--surface-2);min-width:0;position:relative}   /* a soft panel, no frame inside the stage (精装修 step 2) */
 .rgf-stg.bad{border-color:var(--c-oom);box-shadow:inset 3px 0 0 var(--c-oom)}
 .rgf-stg.nolog{background:var(--sunken)}
-.rgf-sl{font-size:12px;font-weight:650;color:var(--ink-2);line-height:1.35;min-width:0}
+.rgf-sl{font-size:var(--fs-label);font-weight:650;color:var(--ink-2);line-height:1.35;min-width:0}
 .rgf-stg.bad .rgf-sl{color:var(--c-oom)}
-.rgf-sn{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;border:1px solid var(--ink-3);font-size:10.5px;margin-right:5px;font-weight:600}
-.rgf-sb{min-width:0;font-size:13px;line-height:1.45}
+.rgf-sn{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;border:1px solid var(--ink-3);font-size:var(--fs-mark);margin-right:5px;font-weight:600}
+.rgf-sb{min-width:0;font-size:var(--fs-cap);line-height:1.45}
 .rgf-sb p{margin:0}
 .rgf-qt{font-weight:600}
 .rgf-nolog{color:var(--ink-3);font-style:italic}
 .rgf-ol{list-style:none;margin:0;padding:0}
-.rgf-li{display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:6px;align-items:start;padding:3px 4px;border-bottom:1px solid var(--line);font-size:12.5px;border-radius:4px;transition:opacity .2s}
+.rgf-li{display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:6px;align-items:start;padding:3px 4px;border-bottom:1px solid var(--line);font-size:var(--fs-label);border-radius:4px;transition:opacity .2s}
 /* a part of the record waits for its beat: hidden but in place, so the record never changes height (R7.9) */
 .rgf-w{visibility:hidden;opacity:0}
 .rgf-li,.rgf-bl,.rgf-miss,.rgf-cl,.rgf-truth,.rgf-verdict,.rgf-nolog,.rgf-chip{transition:opacity .3s,background-color .45s,color .45s,transform .35s}
@@ -47,39 +47,39 @@
 .rgf-li.cutk{border-bottom:2px dashed var(--ink);padding-bottom:2px}
 .rgf-li.gold b{font-weight:700}
 .rgf-li.bad{outline:2px solid var(--c-oom);outline-offset:-2px}
-.rgf-rk{color:var(--ink-3);font-size:11.5px}
+.rgf-rk{color:var(--ink-3);font-size:var(--fs-label)}
 .rgf-nm{min-width:0}
 .rgf-nm b{font-weight:600}
-.rgf-tx{font-size:11.5px;color:var(--ink-2);overflow-wrap:anywhere}
+.rgf-tx{font-size:var(--fs-label);color:var(--ink-2);overflow-wrap:anywhere}
 .rgf-li.below .rgf-tx{color:var(--ink-3)}
-.rgf-sc{font-size:11.5px;color:var(--ink-2);white-space:nowrap;font-family:var(--font-mono)}
-.rgf-tag{display:inline-block;margin-left:6px;font-size:10.5px;border:1px solid var(--ink-3);border-radius:4px;padding:0 4px;color:var(--ink-2);font-weight:500}
+.rgf-sc{font-size:var(--fs-label);color:var(--ink-2);white-space:nowrap;font-family:var(--font-mono)}
+.rgf-tag{display:inline-block;margin-left:6px;font-size:var(--fs-mark);border:1px solid var(--ink-3);border-radius:4px;padding:0 4px;color:var(--ink-2);font-weight:500}
 .rgf-li.bad .rgf-tag{border-color:var(--c-oom);color:var(--c-oom)}
-.rgf-bl{font-size:11.5px;color:var(--ink-2);margin:4px 0 0!important}
+.rgf-bl{font-size:var(--fs-label);color:var(--ink-2);margin:4px 0 0!important}
 .rgf-bl.rgf-w{transform:translateY(-8px)}
-.rgf-miss{font-size:12px;margin-top:4px!important;padding:3px 6px;border:1px dashed var(--ink-3);border-radius:4px}
+.rgf-miss{font-size:var(--fs-label);margin-top:4px!important;padding:3px 6px;border:1px dashed var(--ink-3);border-radius:4px}
 /* the red ring keeps the box's outer size, so the record does not grow when the verdict shows (R7.9) */
 .rgf-miss.bad{border:2px solid var(--c-oom);color:var(--c-oom);padding:2px 5px}
 .rgf-chips{display:flex;flex-wrap:wrap;gap:4px 6px}
-.rgf-chip{font-size:12px;border:1px solid var(--line-2);border-radius:999px;padding:1px 8px;background:var(--surface-2)}
+.rgf-chip{font-size:var(--fs-label);border:1px solid var(--line-2);border-radius:999px;padding:1px 8px;background:var(--surface-2)}
 .rgf-chip.rgf-fly{position:relative;z-index:3;transition:none;box-shadow:0 2px 6px rgba(0,0,0,.18);border-color:var(--ink-3)}
 .rgf-chip.gold{font-weight:650}
 /* while the chips fly into the context, the rows under the budget line and its notes step back (N10 of the round-1 check) */
 .rgf-flow.rgf-flying .rgf-li.below,.rgf-flow.rgf-flying .rgf-bl,.rgf-flow.rgf-flying .rgf-miss{opacity:.2}
-.rgf-at{font-size:13px}
+.rgf-at{font-size:var(--fs-cap)}
 .rgf-cl{border-radius:3px;padding:0 1px}
 .rgf-cl.bad{background:color-mix(in srgb,var(--c-oom) 18%,transparent);box-shadow:inset 0 -2px 0 var(--c-oom)}
-.rgf-src{font-size:10.5px;color:var(--ink-3);margin-left:3px;vertical-align:baseline}
+.rgf-src{font-size:var(--fs-mark);color:var(--ink-3);margin-left:3px;vertical-align:baseline}
 .rgf-cl.bad .rgf-src{color:var(--c-oom)}
-.rgf-truth{margin-top:4px!important;font-size:12.5px;color:var(--ink-2)}
+.rgf-truth{margin-top:4px!important;font-size:var(--fs-label);color:var(--ink-2)}
 .rgf-pills{display:flex;flex-wrap:wrap;gap:4px 6px}
-.rgf-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;border:1px solid var(--line-2);border-radius:999px;padding:1px 9px;background:var(--surface)}
+.rgf-pill{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-label);border:1px solid var(--line-2);border-radius:999px;padding:1px 9px;background:var(--surface)}
 .rgf-pill b{font-family:var(--font-mono);min-width:9px;text-align:center}
 .rgf-pill.wait{opacity:.35}
 .rgf-pill.yes b{color:var(--c-ok)}
 .rgf-pill.no{border-color:var(--ink-3)}
 .rgf-pill.bad{border:2px solid var(--c-oom);color:var(--c-oom);padding:0 8px}
-.rgf-verdict{margin-top:5px!important;font-size:12.5px;color:var(--c-oom)}
+.rgf-verdict{margin-top:5px!important;font-size:var(--fs-label);color:var(--c-oom)}
 .rgf-verdict.ok,.rgf-verdict.nt{color:var(--ink-2)}
 /* on phones a new run waits for ▶ (P2): the button sits over the empty record */
 .rgf-flowbox{position:relative}
@@ -87,14 +87,14 @@
 /* phones: one column per stage and a tighter record, so a whole run, question to verdict, fits a 390×844 screen in both languages (B4) */
 @container (max-width:460px){.rgf-stg{grid-template-columns:minmax(0,1fr);gap:2px 10px;padding:5px 7px}.rgf-flow{gap:5px}.rgf-li{padding:2px 4px;line-height:1.35}.rgf-li.cutk{padding-bottom:1px}.rgf-sb{line-height:1.4}}
 /* the failure breakdown */
-.rgf-sum{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:center;margin:0 0 8px;font-size:12.5px}
+.rgf-sum{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:center;margin:0 0 8px;font-size:var(--fs-label)}
 .rgf-sum-t{height:12px;border-radius:3px;background:var(--sunken);overflow:hidden;display:flex;border:1px solid var(--line-2)}
 .rgf-sum-t i{display:block;height:100%}
 .rgf-sum-t i.ok{background:var(--c-ok);opacity:.75}
 .rgf-sum-t i.fx{background:repeating-linear-gradient(135deg,var(--c-ok) 0 3px,transparent 3px 6px)}
 .rgf-tb{display:flex;flex-direction:column;min-width:0}
-.rgf-tr{display:grid;grid-template-columns:minmax(92px,150px) minmax(60px,1fr) repeat(4,minmax(36px,52px));gap:0 6px;align-items:center;padding:4px 2px;border-bottom:1px solid var(--line);font-size:12.5px;min-width:0;transition:opacity .2s}
-.rgf-th{font-size:11.5px;color:var(--ink-2);font-weight:600;align-items:end}
+.rgf-tr{display:grid;grid-template-columns:minmax(92px,150px) minmax(60px,1fr) repeat(4,minmax(36px,52px));gap:0 6px;align-items:center;padding:4px 2px;border-bottom:1px solid var(--line);font-size:var(--fs-label);min-width:0;transition:opacity .2s}
+.rgf-th{font-size:var(--fs-label);color:var(--ink-2);font-weight:600;align-items:end}
 .rgf-tr.dim{opacity:.35}
 .rgf-tr.cur .rgf-kn{font-weight:700}
 .rgf-tr.cur .rgf-kn::before{content:'▸ '}
@@ -104,13 +104,13 @@
 .rgf-bt i{display:block;height:100%}
 .rgf-bt i.lf{background:var(--ink-3)}
 .rgf-bt i.fx{background:repeating-linear-gradient(135deg,var(--c-ok) 0 3px,transparent 3px 6px);border-left:1px solid var(--surface)}
-.rgf-bn{font-family:var(--font-mono);font-size:11.5px;white-space:nowrap}
+.rgf-bn{font-family:var(--font-mono);font-size:var(--fs-label);white-space:nowrap}
 .rgf-cc{text-align:center;font-family:var(--font-mono);min-width:0;overflow-wrap:anywhere}
-.rgf-th .rgf-cc{font-family:inherit;font-size:11px;line-height:1.2}
+.rgf-th .rgf-cc{font-family:inherit;font-size:var(--fs-mark);line-height:1.2}
 .rgf-cc.on{background:var(--sunken);font-weight:700;border-radius:3px}
 .rgf-x{font-family:var(--font-mono);font-weight:700}
-@container (max-width:420px){.rgf-tr{grid-template-columns:minmax(78px,1.1fr) minmax(48px,1fr) repeat(4,30px);gap:0 3px;font-size:11.5px}.rgf-th .rgf-cc{font-size:10px}}
-.rgf-leg{margin:4px 0 4px;flex-wrap:wrap;gap:4px 12px;font-size:12px}
+@container (max-width:420px){.rgf-tr{grid-template-columns:minmax(78px,1.1fr) minmax(48px,1fr) repeat(4,30px);gap:0 3px;font-size:var(--fs-label)}.rgf-th .rgf-cc{font-size:var(--fs-mark)}}
+.rgf-leg{margin:4px 0 4px;flex-wrap:wrap;gap:4px 12px;font-size:var(--fs-label)}
 .rgf-leg .lg{display:inline-flex;align-items:center;gap:5px}
 .sw.rgf-sw-ok{background:var(--c-ok);opacity:.75;width:12px;height:10px}
 .sw.rgf-sw-fx{background:repeating-linear-gradient(135deg,var(--c-ok) 0 3px,transparent 3px 6px);border:1px solid var(--c-ok);width:12px;height:10px}
@@ -121,7 +121,7 @@
 .rgf-metrics{margin-top:10px}
 .rgf-mb{padding:6px 0;border-bottom:1px solid var(--line);container-type:inline-size}
 .rgf-mb:last-child{border-bottom:0}
-.rgf-mb-lead{margin:0 0 4px;font-size:13px}
+.rgf-mb-lead{margin:0 0 4px;font-size:var(--fs-cap)}
 .rgf-math-line{overflow-x:auto;padding-block:.3em;max-width:100%}
 .rgf-prod li{margin:4px 0}
 .rgf-ul{padding-left:18px;margin:6px 0}
@@ -134,13 +134,13 @@
 .rgf-tri .choice::before{margin-top:3px}
 .rgf-ch{display:flex;flex-direction:column;gap:1px;min-width:0}
 .rgf-ch b{font-weight:650}
-.rgf-kd{font-size:12px;line-height:1.35;color:var(--ink-3)}
+.rgf-kd{font-size:var(--fs-label);line-height:1.35;color:var(--ink-3)}
 .rgf-tri .choice[aria-pressed="true"] .rgf-kd{color:inherit;opacity:.8}
 .rgf-tri .choice.right{border-color:var(--line);box-shadow:inset 0 0 0 2px var(--c-ok)}
 .rgf-verd{margin-top:8px}
 .rgf-fxs{display:flex;flex-direction:column;gap:6px;margin:8px 0}
-.rgf-fxb{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer}
-.rgf-fxb span{font-size:12px;color:var(--ink-2)}
+.rgf-fxb{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;font:inherit;font-size:var(--fs-cap);padding:7px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer}
+.rgf-fxb span{font-size:var(--fs-label);color:var(--ink-2)}
 .rgf-fxb[aria-pressed="true"]{border:2px solid var(--ink);padding:6px 9px}
 .rgf-fxb[aria-pressed="true"] b::before{content:'✓ '}
 .rgf-fxb:disabled{opacity:.5;cursor:not-allowed}
@@ -173,21 +173,21 @@
 @media (max-width:760px){.rgf-pk:not([hidden]){display:block}}
 #rgf-app .bench[data-flow="free"] .rgf-pk-sc,#rgf-app .bench:not([data-flow="free"]) .rgf-pk-fx{display:none}
 .rgf-pk-g{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.rgf-pk-l{font-size:12.5px;font-weight:600;color:var(--ink-2);margin-right:2px}
-.rgf-pkb{font:inherit;font-size:13px;line-height:1.25;padding:5px 11px;min-height:32px;border:1px solid var(--line-2);border-radius:999px;background:var(--surface);color:var(--ink);cursor:pointer}
+.rgf-pk-l{font-size:var(--fs-cap);font-weight:600;color:var(--ink-2);margin-right:2px}
+.rgf-pkb{font:inherit;font-size:var(--fs-cap);line-height:1.25;padding:5px 11px;min-height:32px;border:1px solid var(--line-2);border-radius:999px;background:var(--surface);color:var(--ink);cursor:pointer}
 .rgf-pkb[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 /* part 4: two numbers (P11) */
 .rgf-two{display:grid;gap:12px;padding:4px 0 6px}
-.rgf-tw-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13.5px;font-weight:600}
-.rgf-tw-h b{font-size:17px;font-weight:600}
+.rgf-tw-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:var(--fs-cap);font-weight:600}
+.rgf-tw-h b{font-size:var(--fs-lead);font-weight:600}
 .rgf-tw-t{height:14px;margin:5px 0 4px;background:var(--sunken);border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
 .rgf-tw-t i{display:block;height:100%}
 .rgf-tw-t i.ok{background:var(--c-ok);opacity:.75}
 .rgf-tw-t i.rc{background:var(--ink-2)}
-.rgf-tw-s{font-size:12.5px;color:var(--ink-2);line-height:1.4}
+.rgf-tw-s{font-size:var(--fs-label);color:var(--ink-2);line-height:1.4}
 /* Scenarios: the run record waits closed under the cards (P18) */
-.rgf-runtog{display:flex;align-items:center;gap:8px;width:100%;text-align:left;font:inherit;font-size:13.5px;font-weight:620;color:var(--ink);background:none;border:0;padding:4px 0;cursor:pointer}
-.rgf-runtog::before{content:'▸';font-size:12px;color:var(--ink-2)}
+.rgf-runtog{display:flex;align-items:center;gap:8px;width:100%;text-align:left;font:inherit;font-size:var(--fs-cap);font-weight:620;color:var(--ink);background:none;border:0;padding:4px 0;cursor:pointer}
+.rgf-runtog::before{content:'▸';font-size:var(--fs-label);color:var(--ink-2)}
 .rgf-runtog[aria-expanded="true"]::before{content:'▾'}
 .rgf-runtog:hover{text-decoration:underline;text-underline-offset:3px}
 .rgf-sbx .rgf-runbody{margin-top:6px}
@@ -196,6 +196,12 @@
 .rgf-fxb span{display:block}
 .rgf-mk{margin:4px 0}
 .rgf-mk .rgf-math-line{padding-block:.1em}
-.rgf-rnote{margin:0 0 6px;font-size:12.5px;line-height:1.4}
-.rgf-lh{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--ink-3);padding:0 4px 2px 26px;border-bottom:1px solid var(--line)}
+.rgf-rnote{margin:0 0 6px;font-size:var(--fs-label);line-height:1.4}
+.rgf-lh{display:flex;justify-content:space-between;gap:8px;font-size:var(--fs-mark);color:var(--ink-3);padding:0 4px 2px 26px;border-bottom:1px solid var(--line)}
 .rgf-lhs{border-bottom:1px dotted var(--ink-3);cursor:help}
+/* refit step 2 (2026-10-24): at 700 px tall or less (1366 × 650) part 1 still ran 10 px past the stage in English. The space above
+   each panel and above the math is 4 px */
+@media (min-width:761px) and (min-height:600px) and (max-height:700px){@container (min-width:736px){
+  .rgf-pan{margin-top:4px;padding-top:4px}
+  .rgf-stage>details.math{margin-top:4px}
+}}

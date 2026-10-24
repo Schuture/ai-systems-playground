@@ -601,7 +601,9 @@ function gridSVG(){
 /* the chart against k: pass@k rising, pass^k falling, the dashed "every task equally hard" lines, τ-bench's diamonds, the k line */
 function chartSVG(){
   const svg=$('#pak-chart',app), box=$('#pak-chartbox',app), v=viewNow();
-  const W=Math.max(260,Math.round(box.clientWidth||520)), H=innerWidth<=760?176:196, zh=A.lang()==='zh';
+  /* the chart's height where pass-k.css sets one (--pak-ch: a short desktop window in English, 精装修 step 2), read when it is drawn; it
+     is drawn for its height, so its text keeps its size. Without it a desktop keeps 196 px and a phone 176 */
+  const W=Math.max(260,Math.round(box.clientWidth||520)), ch=parseFloat(getComputedStyle(box).getPropertyValue('--pak-ch')), H=innerWidth<=760?176:(ch>0?ch:196), zh=A.lang()==='zh';
   const PL=34, PR=zh?78:84, PT=v==='ch'?24:10, PB=24, kmax=v==='ch'?8:S.n, X=k=>PL+(W-PL-PR)*(kmax===1?0:(k-1)/(kmax-1)), Y=p=>PT+(H-PT-PB)*(1-p);
   let s='';
   [0,0.25,0.5,0.75,1].forEach(p=>{s+=`<line class="pak-gridl" x1="${PL}" x2="${W-PR}" y1="${Y(p).toFixed(1)}" y2="${Y(p).toFixed(1)}"/><text class="pak-ax" x="${PL-4}" y="${(Y(p)+3.5).toFixed(1)}" text-anchor="end">${Math.round(p*100)}%</text>`;});

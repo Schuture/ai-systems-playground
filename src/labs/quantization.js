@@ -686,7 +686,9 @@ function rnd(sg,u,r){const a=Math.abs(u), b=Math.abs(r), L=sg.lv; let n=null;
 function drawBlock(){
   const svg=$('#qz-svg',app), box=$('#qz-blockv',app); if(!svg||box.hidden) return;
   const k=keyOf(), v=view(S.bsel,k), segs=segsOf(v,k), {ph,t}=dispPhase(), live=AN.on||AN.paused;
-  const tbl=!$('#qz-chart',app).hidden, Wd=Math.max(280,Math.round(svg.clientWidth||box.clientWidth||520)), H=innerWidth<=480?246:(tbl?206:240);
+  /* with the table under it the block is drawn 206 px high, or as high as quantization.css sets --qz-bh (a short desktop window in
+     English, 精装修 step 2), read when it is drawn; it is drawn for its height, so its text keeps its size */
+  const tbl=!$('#qz-chart',app).hidden, Wd=Math.max(280,Math.round(svg.clientWidth||box.clientWidth||520)), bh=parseFloat(getComputedStyle(box).getPropertyValue('--qz-bh')), H=innerWidth<=480?246:(tbl?(bh>0?bh:206):240);
   const G=blockGeo(v,segs,Wd,H), {ml,ph0,ph1,cw,yc,hh}=G, W1=Wd-G.mr;
   const e1=ph===1?prog(t):(ph>1?1:0), e2=ph===2?prog(t):(ph>2?1:0), e3=ph===3?prog(t):0;
   const wB=ph===1?e1:(ph===2?1:(ph===3?1-e3:0));   // 1 in frame B (w ÷ s), 0 in frame A (weights)

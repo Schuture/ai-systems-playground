@@ -2,16 +2,16 @@
 .mgs-graph{display:flex;flex-direction:column;gap:0}
 .mgs-blk{padding:4px 0}
 .mgs-blk+.mgs-blk{border-top:1px solid var(--line)}
-.mgs-bh{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);margin:0 0 4px;min-height:1.35em;overflow-wrap:anywhere}
+.mgs-bh{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2);margin:0 0 4px;min-height:1.35em;overflow-wrap:anywhere}
 .mgs-gpus{width:100%;min-width:0}
 .mgs-svg{display:block;max-width:100%;height:auto}
-.mgs-svg text{font-family:var(--font-mono);font-size:11px;fill:var(--ink-2)}
-.mgs-svg .mgs-gn{font-size:11px;fill:var(--ink)}
-.mgs-svg .mgs-bt{font-size:11px;fill:var(--ink-2)}
+.mgs-svg text{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-2)}
+.mgs-svg .mgs-gn{font-size:var(--fs-mark);fill:var(--ink)}
+.mgs-svg .mgs-bt{font-size:var(--fs-mark);fill:var(--ink-2)}
 .mgs-svg .mgs-bt.off{opacity:0}
-.mgs-svg .mgs-hop{font-size:11px;fill:var(--ink);font-weight:600;opacity:0}
+.mgs-svg .mgs-hop{font-size:var(--fs-mark);fill:var(--ink);font-weight:600;opacity:0}
 .mgs-svg .mgs-hop.on{opacity:1}
-.mgs-svg .mgs-ibt{font-size:11px;fill:var(--ink-3)}
+.mgs-svg .mgs-ibt{font-size:var(--fs-mark);fill:var(--ink-3)}
 .mgs-node{fill:none;stroke:var(--line);stroke-width:1}
 .mgs-gbox{fill:var(--sunken);stroke:var(--ink-3);stroke-width:.8}
 .mgs-gbox.bad{stroke:var(--c-oom);stroke-width:1.6}
@@ -29,7 +29,7 @@
 .mgs-ibp{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.3;opacity:0}
 .mgs-ibp.on{opacity:1}
 .mgs-sw.ibl{width:14px;height:0;border-top:1.5px solid var(--ink-3);border-radius:0}
-.mgs-legend{display:flex;flex-wrap:wrap;gap:2px 14px;margin:3px 0 1px;font-size:12px;line-height:1.35}
+.mgs-legend{display:flex;flex-wrap:wrap;gap:2px 14px;margin:3px 0 1px;font-size:var(--fs-label);line-height:1.35}
 .mgs-legend>span,.mgs-leg>span{display:inline-flex;align-items:center;gap:6px;cursor:help}
 .mgs-sw{display:inline-block;width:14px;height:10px;border-radius:2px;flex:none}
 .mgs-sw.w{background:var(--c-weights)}
@@ -49,23 +49,23 @@
 .mgs-run{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:4px 0 2px}
 .mgs-run .btn{min-height:30px}
 .mgs-speed{display:inline-flex;align-items:center;gap:6px;flex:none}
-.mgs-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
-.mgs-app .mgs-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;min-height:26px}   /* the kit's tray adds 3 px above and below its keys (2026-10-22 refit), so a 26 px key keeps the control 32 px tall, as before */
+.mgs-speed-l{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2)}
+.mgs-app .mgs-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:var(--fs-label);min-height:26px}   /* the kit's tray adds 3 px above and below its keys (2026-10-22 refit), so a 26 px key keeps the control 32 px tall, as before */
 .mgs-prog{flex:1 1 120px;min-width:80px}
-.mgs-sum{margin:2px 0 0;font-size:13.5px}
+.mgs-sum{margin:2px 0 0;font-size:var(--fs-cap)}
 /* the TP sweep */
 .mgs-swp{display:flex;flex-direction:column;gap:4px}
 .mgs-swp{gap:1px}
-.mgs-sw-row{display:grid;grid-template-columns:minmax(0,9em) minmax(60px,1fr) minmax(0,7em);gap:8px;align-items:center;font-size:12.5px;padding:0 4px;border-radius:4px;line-height:1.3}
+.mgs-sw-row{display:grid;grid-template-columns:minmax(0,9em) minmax(60px,1fr) minmax(0,7em);gap:8px;align-items:center;font-size:var(--fs-label);padding:0 4px;border-radius:4px;line-height:1.3}
 .mgs-sw-row.on{background:var(--sunken);font-weight:600}
-.mgs-sw-l{font-family:var(--font-mono);font-size:11.5px;overflow-wrap:anywhere}
+.mgs-sw-l{font-family:var(--font-mono);font-size:var(--fs-label);overflow-wrap:anywhere}
 .mgs-sw-tr{display:flex;height:12px;background:var(--sunken);border-radius:3px;overflow:hidden;min-width:0}
 .mgs-sw-row.on .mgs-sw-tr{background:var(--bg,transparent);outline:1px solid var(--line)}
 .mgs-sw-tr i{display:block;height:100%}
 .mgs-sw-tr i.cm{background:var(--ink-3)}
 .mgs-sw-tr i.ar{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,transparent 2px 4px)}
 .mgs-sw-tr i.ar.bad{background:repeating-linear-gradient(135deg,var(--c-oom) 0 2px,var(--c-oom-soft) 2px 4px)}
-.mgs-sw-v{font-size:11.5px;text-align:right;white-space:nowrap}
+.mgs-sw-v{font-size:var(--fs-label);text-align:right;white-space:nowrap}
 @media (max-width:560px){.mgs-sw-row{grid-template-columns:minmax(0,7em) minmax(40px,1fr) max-content}}
 /* challenge */
 .mgs-goal{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
@@ -92,22 +92,22 @@
 .mgs-mb+.mgs-mb{border-top:1px solid var(--line)}
 .mgs-mb>p{margin:0 0 6px}
 .mgs-mb-res{margin-bottom:0}
-.mgs-eqs{display:grid;grid-template-columns:max-content max-content minmax(0,max-content);justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.35em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3;max-width:100%}
+.mgs-eqs{display:grid;grid-template-columns:max-content max-content minmax(0,max-content);justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.35em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:var(--fs-stage);line-height:1.3;max-width:100%}
 .mgs-eq-l{text-align:right}
 .mathbody{container-type:inline-size}
 @container (max-width:560px){.mgs-eqs{grid-template-columns:max-content minmax(0,1fr)}.mgs-eqs>.mgs-eq-l{grid-column:1/-1;text-align:left}.mgs-eqs>.mgs-eq-l:empty{display:none}.mgs-eq-r{min-width:0;overflow-x:auto}}
-.drill-a .mgs-eqs{font-size:14px}
+.drill-a .mgs-eqs{font-size:var(--fs-ui)}
 /* metric values fit their box at every width (S22): a smaller number, the unit smaller still */
 .mgs-metrics .metric .v{font-size:clamp(14px,3.6cqi,17px)}
 .mgs-metrics .metric .v .u{font-size:max(11px,.76em);color:var(--ink-2)}
 /* a stage of 480–560 px keeps the five numbers in one row (the stage must fit the screen at 900 px wide), with a smaller number */
-@container (min-width:480px) and (max-width:559.98px){.mgs-metrics{grid-template-columns:repeat(5,minmax(0,1fr))}.mgs-metrics .metric{padding:8px 7px}.mgs-metrics .metric .v{font-size:15px}}
+@container (min-width:480px) and (max-width:559.98px){.mgs-metrics{grid-template-columns:repeat(5,minmax(0,1fr))}.mgs-metrics .metric{padding:8px 7px}.mgs-metrics .metric .v{font-size:var(--fs-stage)}}
 .mgs-sw-note{margin:2px 0 0;line-height:1.35}
 /* dock in the MoE part: one bar per GPU */
 .mgs-dk.mgs-dk-ep{align-items:flex-end;gap:2px;height:14px;background:none}
 .mgs-dk.mgs-dk-ep i{flex:1;border-radius:1px}
 .mgs-dk.mgs-dk-ep i.bad{background:var(--c-oom)}
-.mgs-metrics .metric .v.txt{white-space:normal;font-size:14px;line-height:1.25}
+.mgs-metrics .metric .v.txt{white-space:normal;font-size:var(--fs-ui);line-height:1.25}
 /* one layer, under each GPU: this layer's bytes (a bar that empties as it is read), the flow into the compute units, the result vector,
    the merge's arrows around each group's ring; red arrows when the merges take half the step or more */
 .mgs-sl0{fill:none;stroke:var(--line);stroke-width:1}
@@ -119,7 +119,7 @@
 .mgs-fl.on{opacity:1}
 .mgs-chip{fill:var(--surface);stroke:var(--ink-3);stroke-width:1}
 .mgs-chip.on{fill:var(--ink-2);stroke:var(--ink)}
-.mgs-svg .mgs-chipt{font-size:11px;fill:var(--ink-3);pointer-events:none}
+.mgs-svg .mgs-chipt{font-size:var(--fs-mark);fill:var(--ink-3);pointer-events:none}
 .mgs-svg .mgs-chipt.on{fill:var(--surface);font-weight:600}
 .mgs-cell{fill:none;stroke:var(--ink-3);stroke-width:.8;stroke-dasharray:1.5 1.5}
 .mgs-cell.p{fill:color-mix(in srgb,var(--ink-3) 22%,transparent);stroke-dasharray:none}
@@ -131,14 +131,14 @@
 .mgs-pk{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.6;opacity:0}
 .mgs-pk.f{fill:var(--ink);stroke:var(--ink)}
 .mgs-pk.on{opacity:1}
-.mgs-svg .mgs-mk{font-size:12px;fill:var(--ink-3);opacity:.55}
+.mgs-svg .mgs-mk{font-size:var(--fs-label);fill:var(--ink-3);opacity:.55}
 .mgs-svg .mgs-mk.on{fill:var(--ink);opacity:1;font-weight:700}
 .mgs-ahp{fill:var(--ink-2)}
 .mgs-ahp.bad{fill:var(--c-oom)}
 .mgs-ib.on{stroke-width:3.5}
 /* the pipeline: one band per stage under its GPUs; batch A solid, batch B outlined */
 .mgs-band{fill:none;stroke:var(--line);stroke-width:1;stroke-dasharray:3 2}
-.mgs-svg .mgs-band-t{font-size:11px;fill:var(--ink-3)}
+.mgs-svg .mgs-band-t{font-size:var(--fs-mark);fill:var(--ink-3)}
 .mgs-bandg.on .mgs-band{stroke-dasharray:none;stroke:var(--ink-2)}
 .mgs-bandg.off{opacity:0}
 .mgs-bandg.on.mbA .mgs-band{fill:var(--ink-2)}
@@ -146,15 +146,15 @@
 .mgs-bandg.on.mbB .mgs-band{fill:var(--surface);stroke-width:1.6}
 .mgs-bandg.on.mbB .mgs-band-t{fill:var(--ink);font-weight:600}
 .mgs-gantt{overflow:visible}
-.mgs-svg .mgs-gl{font-size:11px;fill:var(--ink-2)}
+.mgs-svg .mgs-gl{font-size:var(--fs-mark);fill:var(--ink-2)}
 .mgs-gtr{fill:var(--sunken)}
 .mgs-gidle{fill:var(--surface);stroke:var(--line);stroke-dasharray:3 2}
-.mgs-svg .mgs-git{font-size:11px;fill:var(--ink-3)}
+.mgs-svg .mgs-git{font-size:var(--fs-mark);fill:var(--ink-3)}
 .mgs-gb{cursor:help}
 .mgs-gb rect{stroke:var(--ink-2);stroke-width:1}
 .mgs-gb.mbA rect{fill:var(--ink-2)}
 .mgs-gb.mbB rect{fill:var(--surface);stroke-width:1.6}
-.mgs-svg .mgs-gb text{font-size:11px;pointer-events:none}
+.mgs-svg .mgs-gb text{font-size:var(--fs-mark);pointer-events:none}
 .mgs-svg .mgs-gb.mbA text{fill:var(--surface);font-weight:600}
 .mgs-svg .mgs-gb.mbB text{fill:var(--ink);font-weight:600}
 .mgs-gb.now rect{stroke:var(--ink);stroke-width:2}
@@ -162,11 +162,11 @@
 .mgs-gax{stroke:var(--line);stroke-width:1}
 .mgs-gtok{fill:var(--ink);cursor:help}
 .mgs-gbr{fill:none;stroke:var(--ink-3);stroke-width:1}
-.mgs-svg .mgs-gbt{font-size:11px;fill:var(--ink-2)}
+.mgs-svg .mgs-gbt{font-size:var(--fs-mark);fill:var(--ink-2)}
 .mgs-gph{stroke:var(--ink);stroke-width:2;opacity:0}
 .mgs-gph.on{opacity:1}
 /* the time bar: each phase named inside it; the phase playing now outlined */
-.mgs-seg span{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-family:var(--font-ui);font-size:11.5px;line-height:1;white-space:nowrap;overflow:hidden;color:var(--surface);pointer-events:none}
+.mgs-seg span{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-family:var(--font-ui);font-size:var(--fs-label);line-height:1;white-space:nowrap;overflow:hidden;color:var(--surface);pointer-events:none}
 .mgs-seg.ar span{left:50%;right:auto;transform:translate(-50%,-50%);max-width:calc(100% - 2px);box-sizing:border-box;padding:2px 3px;border-radius:3px;background:var(--surface);color:var(--ink)}
 .mgs-seg.ar.bad span{color:var(--c-oom)}
 .mgs-seg.now{box-shadow:inset 0 0 0 2px var(--ink)}
@@ -185,12 +185,12 @@
 .mgs-sw.tokm{width:8px;height:8px;background:var(--ink);transform:rotate(45deg);border-radius:0}
 /* MoE: one MoE layer on 8 GPUs, its four steps */
 .mgs-ep-steps{display:flex;flex-wrap:wrap;gap:4px 6px;margin:2px 0 6px}
-.mgs-st4{font-family:var(--font-mono);font-size:11px;padding:2px 7px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3)}
+.mgs-st4{font-family:var(--font-mono);font-size:var(--fs-mark);padding:2px 7px;border:1px solid var(--line);border-radius:999px;color:var(--ink-3)}
 .mgs-st4.on{color:var(--surface);background:var(--ink);border-color:var(--ink)}
 .mgs-ep-host{width:100%;min-width:0}
 .mgs-ep-card{fill:var(--surface);stroke:var(--line);stroke-width:1}
-.mgs-svg .mgs-ep-gn{font-size:11px;fill:var(--ink);font-weight:600}
-.mgs-svg .mgs-ep-rg{font-size:11px;fill:var(--ink-3)}
+.mgs-svg .mgs-ep-gn{font-size:var(--fs-mark);fill:var(--ink);font-weight:600}
+.mgs-svg .mgs-ep-rg{font-size:var(--fs-mark);fill:var(--ink-3)}
 .mgs-ep-tok{fill:var(--ink-3)}
 .mgs-ep-tok.ex.on{fill:var(--ink);stroke:var(--ink);stroke-width:1;outline:none}
 .mgs-ep-tok.ex.on{filter:drop-shadow(0 0 1.5px var(--ink))}
@@ -208,7 +208,7 @@
 .mgs-ep-exd{opacity:0}
 .mgs-ep-exd.on{opacity:1}
 .mgs-ep-exd rect{fill:var(--surface);stroke:var(--ink);stroke-width:1.2}
-.mgs-svg .mgs-ep-exd text{font-size:11px;fill:var(--ink);font-weight:700}
+.mgs-svg .mgs-ep-exd text{font-size:var(--fs-mark);fill:var(--ink);font-weight:700}
 .mgs-ep-slot{fill:none;stroke:var(--line-2);stroke-width:1}
 .mgs-ep-todo{fill:color-mix(in srgb,var(--ink-3) 25%,transparent);stroke:var(--ink-3);stroke-width:1}
 .mgs-ep-pile{fill:var(--ink-3)}
@@ -218,8 +218,8 @@
 .mgs-ep-idle{stroke:var(--ink-3);stroke-width:1}
 .mgs-sw.epidle{background:repeating-linear-gradient(45deg,var(--ink-3) 0 1.3px,var(--surface) 1.3px 4px);border:1px solid var(--ink-3)}
 .mgs-ep-avg{stroke:var(--ink);stroke-width:1.2;stroke-dasharray:4 3}
-.mgs-svg .mgs-ep-v{font-size:11px;fill:var(--ink)}
-.mgs-leg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:11.5px}
+.mgs-svg .mgs-ep-v{font-size:var(--fs-mark);fill:var(--ink)}
+.mgs-leg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:var(--fs-label)}
 .mgs-leg>span{display:inline-flex;align-items:center;gap:6px}
 .mgs-sw.tok{width:8px;height:8px;background:var(--ink-3)}
 .mgs-sw.xp{width:10px;height:6px;background:var(--c-weights);border-radius:0}
@@ -229,7 +229,7 @@
 .mgs-hpk{opacity:0;pointer-events:none}
 .mgs-hpk.on{opacity:1}
 .mgs-hpk rect{fill:var(--ink);stroke:var(--surface);stroke-width:1.5}
-.mgs-svg .mgs-hpk text{font-size:11px;fill:var(--surface);font-weight:700}
+.mgs-svg .mgs-hpk text{font-size:var(--fs-mark);fill:var(--surface);font-weight:700}
 .mgs-hpk.mbB rect{fill:var(--surface);stroke:var(--ink)}
 .mgs-svg .mgs-hpk.mbB text{fill:var(--ink)}
 .mgs-hpk.tok rect{rx:7px}
