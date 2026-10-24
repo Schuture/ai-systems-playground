@@ -568,9 +568,11 @@ function drawKCurve(){const el=$('#spd-kcurve',app), pb=plotBox(el,210), X0=44, 
   [1,3,5,7,9].forEach(v=>{b+=`<line class="spd-grid" x1="${X0}" x2="${X1}" y1="${sy(v)}" y2="${sy(v)}"/><text class="spd-tk" x="${X0-6}" y="${sy(v)+4}" text-anchor="end">${v}</text>`;});
   KS.forEach(k=>{b+=`<text class="spd-tk" x="${sx(k)}" y="${H-8}" text-anchor="middle">${k}</text>`;});
   b+=`<path class="spd-up" d="M${sx(1)},${sy(2)} L${sx(8)},${sy(9)}"/>`;
+  /* refit step 2 (2026-10-24): drawn shorter (--spd-ch), the curves end closer together, so each α label sits at least 12 px below the one above it */
+  const ly={}; let prev=-1e9; [...SIM_A].sort((p,q)=>q-p).forEach(a=>{prev=ly[a]=Math.max(sy(expTok(a,8))+4,prev+12);});
   SIM_A.forEach(a=>{const cur=a===0.8; b+=`<path class="spd-kl${cur?' spd-cur':''}" d="${KS.map((k,i)=>(i?'L':'M')+sx(k).toFixed(1)+','+sy(expTok(a,k)).toFixed(1)).join(' ')}"/>`+
     KS.map(k=>`<circle class="spd-dot${cur?' spd-cur':''}" cx="${sx(k).toFixed(1)}" cy="${sy(simMean(a,k)).toFixed(1)}" r="${cur?3.4:2.6}"/>`).join('')+
-    `<text class="spd-tl2" x="${X1+6}" y="${sy(expTok(a,8))+4}">α = ${a}</text>`;});
+    `<text class="spd-tl2" x="${X1+6}" y="${ly[a].toFixed(1)}">α = ${a}</text>`;});
   b+=`<line class="spd-kmark" x1="${sx(kk)}" x2="${sx(kk)}" y1="${sy(1)}" y2="${sy(9)}"/><circle class="spd-me" cx="${sx(kk)}" cy="${sy(expTok(0.8,kk))}" r="5"/>`;
   el.innerHTML=`<div class="spd-ch-t">${tx('How many tokens does one target step yield on average, for each number of guesses per round k?','每轮猜 k 个时，目标模型跑一次平均得到几个 token？')}</div>`+svgWrap(H,b,tx('Tokens per target step against k for α 0.6 to 0.9','α 从 0.6 到 0.9 时，目标模型跑一次的 token 数随 k 的变化'),pb.w)+
     `<div class="spd-axl small muted">${tx('Across: guesses per round k. Up: tokens per target step.','横轴：每轮猜的 token 数 k。纵轴：目标模型跑一次得到的 token 数。')}</div>`+

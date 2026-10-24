@@ -20,21 +20,21 @@
 .cb-play{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-bottom:10px}
 .cb-play .btn{white-space:nowrap}
 .cb-play input[type=range]{flex:1 1 110px;min-width:0;width:auto;height:26px}
-.cb-clock{flex:1 1 190px;font-size:12.5px;line-height:1.4;color:var(--ink-2);min-height:1.4em}
+.cb-clock{flex:1 1 190px;font-size:var(--fs-label);line-height:1.4;color:var(--ink-2);min-height:1.4em}
 /* playback speed: slow / medium / fast (R3.9) */
 .cb-speed{display:inline-flex;align-items:center;gap:6px;flex:none;cursor:help}
-.cb-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
+.cb-speed-l{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2)}
 .cb-lab .cb-speed .seg-ctl{display:inline-flex;width:auto}
-.cb-lab .cb-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;cursor:pointer}
-.cb-sub2{font-size:12.5px;line-height:1.4;color:var(--ink-3);margin-top:1px}
+.cb-lab .cb-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:var(--fs-label);cursor:pointer}
+.cb-sub2{font-size:var(--fs-label);line-height:1.4;color:var(--ink-3);margin-top:1px}
 .cb-ic-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 
 /* schedule chart: one row per slot, time left to right */
 .cb-gantt{--rh:20px;display:grid;grid-template-columns:26px minmax(0,1fr);column-gap:6px;position:relative}
-.cb-lab-col{display:flex;flex-direction:column;font-family:var(--font-mono);font-size:10px;color:var(--ink-3);text-align:right}
-.cb-ql{height:26px;margin-bottom:4px;display:flex;align-items:center;justify-content:flex-end;font-size:9.5px;line-height:1}
+.cb-lab-col{display:flex;flex-direction:column;font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-3);text-align:right}
+.cb-ql{height:26px;margin-bottom:4px;display:flex;align-items:center;justify-content:flex-end;font-size:var(--fs-mark);line-height:1}
 .cb-rl{height:var(--rh);margin-bottom:2px;display:flex;align-items:center;justify-content:flex-end;line-height:1}
-.cb-al{height:16px;margin-top:4px;font-size:9.5px}
+.cb-al{height:16px;margin-top:4px;font-size:var(--fs-mark)}
 .cb-plot{--cut:0%;position:relative;min-width:0}
 .cb-q{height:26px;margin-bottom:4px;position:relative;border-bottom:1px solid var(--line-2)}
 .cb-q svg{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -47,12 +47,12 @@
 .cb-req:hover{background:var(--ink-2)}
 .cb-pf{position:absolute;left:0;top:0;bottom:0;background:var(--ink);min-width:2px;max-width:100%}
 .cb-idle{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,transparent 0 3px,color-mix(in srgb,var(--ink-3) 75%,transparent) 3px 4.2px)}
-.cb-axis{position:relative;height:16px;margin-top:4px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3)}
+.cb-axis{position:relative;height:16px;margin-top:4px;font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-3)}
 .cb-axis span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
 .cb-axis span.cb-ax-l{transform:none}
 .cb-axis span.cb-ax-r{transform:translateX(-100%)}
 .cb-ghost{position:absolute;top:0;bottom:20px;width:0;border-left:1.5px dashed var(--ink-2);pointer-events:none;z-index:1}
-.cb-ghost span{position:absolute;top:1px;left:5px;font-family:var(--font-mono);font-size:10px;line-height:1.2;color:var(--ink-2);white-space:nowrap;background:var(--surface);padding:1px 3px;border-radius:2px}
+.cb-ghost span{position:absolute;top:1px;left:5px;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:1.2;color:var(--ink-2);white-space:nowrap;background:var(--surface);padding:1px 3px;border-radius:2px}
 .cb-ghost span.cb-gl-l{left:auto;right:5px}
 .cb-head{position:absolute;top:0;bottom:20px;width:0;border-left:2px solid var(--ink);pointer-events:none;z-index:2}
 #cb-graph{scroll-margin-top:80px}
@@ -60,7 +60,7 @@
 /* metrics: four cards, two per row on narrow stages; label, value, note and change line up across a row */
 .cb-mhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-top:14px}
 .cb-mhead .eyebrow{margin:0}
-.cb-mstate{font-size:12px;color:var(--ink-3)}
+.cb-mstate{font-size:var(--fs-label);color:var(--ink-3)}
 .cb-mhead+.metrics{margin-top:6px}
 .metrics.cb-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
 @container (min-width:560px){.metrics.cb-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
@@ -70,15 +70,15 @@
 /* before the playhead reaches the end, the whole-run values are greyed */
 .cb-metrics.cb-pending .metric{background:var(--surface-2)}
 .cb-metrics.cb-pending .metric .v,.cb-metrics.cb-pending .metric .cb-u,.cb-metrics.cb-pending .metric .sub{color:var(--ink-3)}
-.cb-metrics.cb-pending .metric .v{font-family:var(--font-ui);font-size:13px;font-weight:450;white-space:normal}
+.cb-metrics.cb-pending .metric .v{font-family:var(--font-ui);font-size:var(--fs-cap);font-weight:450;white-space:normal}
 /* guided mode: the way back to the step card after a run ends */
 .cb-done{display:block;margin:8px 0 0;font-weight:600;text-align:left}
 .cb-done[hidden]{display:none}
 
 /* controls */
 .cb-locked .cb-lockable{display:none}
-.cb-fixed{font-size:12.5px;color:var(--ink);padding:7px 9px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface-2)}
-#cb-controls .ctl>.lbl output{font-family:var(--font-mono);font-weight:500;color:var(--ink);font-size:13px}
+.cb-fixed{font-size:var(--fs-label);color:var(--ink);padding:7px 9px;border:1px solid transparent;border-radius:8px;background:var(--surface-2)}   /* a soft panel, no frame inside the stage (精装修 step 2) */
+#cb-controls .ctl>.lbl output{font-family:var(--font-mono);font-weight:500;color:var(--ink);font-size:var(--fs-cap)}
 .cb-g2{margin-top:2px}
 .cb-g2 b{font-weight:600}
 .cb-subwrap:empty{display:none}
@@ -86,15 +86,15 @@
 
 /* step-time chart */
 .cb-stc{margin:10px 0 6px}
-.cb-stc-title{font-size:13px;font-weight:650;line-height:1.35;margin:0 0 2px}
+.cb-stc-title{font-size:var(--fs-cap);font-weight:650;line-height:1.35;margin:0 0 2px}
 .cb-stc-row{margin-top:8px}
-.cb-stc-lab{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;font-size:12.5px;line-height:1.3;color:var(--ink-2)}
-.cb-stc-lab .mono{font-size:11.5px;color:var(--ink)}
+.cb-stc-lab{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;font-size:var(--fs-label);line-height:1.3;color:var(--ink-2)}
+.cb-stc-lab .mono{font-size:var(--fs-label);color:var(--ink)}
 .cb-stc-bar{display:flex;height:11px;margin-top:3px;background:var(--surface-2);border-radius:2px;overflow:hidden}
 .cb-stc-bar i{display:block;height:100%}
 .cb-stc-w{background:var(--c-weights)}
 .cb-stc-kv{background:var(--c-kv)}
-.cb-stc-key{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-family:var(--font-mono);font-size:11px;color:var(--ink-2)}
+.cb-stc-key{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-2)}
 .cb-stc-key span{display:inline-flex;align-items:center}
 .mathbody+#cb-mathchart{font-family:var(--font-ui)}
 
@@ -107,14 +107,14 @@
 /* home tile teaser */
 .tz-cb-g{display:grid;gap:3px;padding:2px 0 0;border-radius:3px}
 .tz-cb-row{position:relative;height:18px;background:var(--surface-2);border-radius:2px;overflow:hidden}
-.tz-cb-req{position:absolute;top:0;bottom:0;background:var(--ink-3);box-shadow:inset 1.5px 0 0 var(--surface);color:var(--surface);font:500 10px/18px var(--font-mono);text-align:center;overflow:hidden;white-space:nowrap}
+.tz-cb-req{position:absolute;top:0;bottom:0;background:var(--ink-3);box-shadow:inset 1.5px 0 0 var(--surface);color:var(--surface);font:500 var(--fs-mark)/18px var(--font-mono);text-align:center;overflow:hidden;white-space:nowrap}
 .tz-cb-idle{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,transparent 0 3px,color-mix(in srgb,var(--ink-3) 75%,transparent) 3px 4.2px)}
-.tz-cb-ax{position:relative;height:13px;font-family:var(--font-mono);font-size:10px;line-height:13px;color:var(--ink-3);margin-top:1px}
+.tz-cb-ax{position:relative;height:13px;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:13px;color:var(--ink-3);margin-top:1px}
 .tz-cb-ax span{position:absolute;top:0;white-space:nowrap}
 .tz-cb-0{left:0}
 .tz-cb-end{transform:translateX(-50%)}
 .tz-cb-end.tz-cb-end-r{transform:translateX(-100%)}
-.tz-cb-lg{display:inline-block;min-width:16px;height:12px;margin-right:5px;padding:0 2px;border-radius:2px;background:var(--ink-3);color:var(--surface);font:500 9px/12px var(--font-mono);font-style:normal;text-align:center}
+.tz-cb-lg{display:inline-block;min-width:16px;height:12px;margin-right:5px;padding:0 2px;border-radius:2px;background:var(--ink-3);color:var(--surface);font:500 var(--fs-mark)/12px var(--font-mono);font-style:normal;text-align:center}
 .tz-cb-sw-idle{display:inline-block;width:12px;height:12px;margin-right:5px;border-radius:2px;border:1px solid var(--line);background:repeating-linear-gradient(135deg,transparent 0 3px,color-mix(in srgb,var(--ink-3) 75%,transparent) 3px 4.2px),var(--surface-2)}
 
 @media (prefers-reduced-motion:reduce){.cb-stc-bar i,.cb-req{transition:none}}
@@ -123,25 +123,25 @@
 .cb-rel ul{margin:4px 0 0;padding-left:18px}
 #cb-ctl-mem .ctl-note p{margin:0}
 #cb-ctl-mem .ctl-note p+p{margin-top:6px}
-.cb-prod{margin:0;padding-left:18px;font-size:13.5px;line-height:1.5}
+.cb-prod{margin:0;padding-left:18px;font-size:var(--fs-cap);line-height:1.5}
 .cb-prod li+li{margin-top:6px}
-.cb-prod a{font-family:var(--font-mono);font-size:12.5px}
-.tz-cb-cap{font-size:11.5px;line-height:1.35;color:var(--ink-3);margin-bottom:-4px}
+.cb-prod a{font-family:var(--font-mono);font-size:var(--fs-label)}
+.tz-cb-cap{font-size:var(--fs-label);line-height:1.35;color:var(--ink-3);margin-bottom:-4px}
 .cb-lab .goal b{font-weight:650}
 /* H1/H2 (the owner, 2026-10-09): Show the math in short blocks with a hairline between them; in each block the name and the typeset
    formula, then this run's numbers under the terms they replace, the "=" signs lined up; a table wider than its box is set again by fitMath (below), so nothing scrolls sideways */
-.cb-mhead{margin:14px 0 2px!important;font-family:var(--font-ui);font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.cb-mhead{margin:14px 0 2px!important;font-family:var(--font-ui);font-size:var(--fs-label);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
 .cb-mhead:first-child{margin-top:2px!important}
 .cb-mb{padding:8px 0 10px}
 .cb-mb+.cb-mb{border-top:1px solid var(--line)}
-.cb-mb .cb-mlead{margin:0 0 4px;font-family:var(--font-ui);font-size:13.5px;line-height:1.5}
+.cb-mb .cb-mlead{margin:0 0 4px;font-family:var(--font-ui);font-size:var(--fs-math);line-height:1.5}
 .cb-fx{overflow-x:auto;max-width:100%}
 .cb-mt{border-collapse:collapse}
 .cb-mt th,.cb-mt td{padding:1px 3px;text-align:center;white-space:nowrap;vertical-align:baseline;font-weight:400;border:0;background:none}
 .cb-mt th{font-family:var(--font-ui);text-align:right;white-space:normal;min-width:4em;max-width:13em;padding-right:6px;color:var(--ink-2)}
 .cb-mt tr:first-child th{color:var(--ink);font-weight:600}
 .cb-mt td.cb-mres{text-align:left}
-.cb-mb .cb-mnote{margin:4px 0 0;font-family:var(--font-ui);font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.cb-mb .cb-mnote{margin:4px 0 0;font-family:var(--font-ui);font-size:var(--fs-label);line-height:1.5;color:var(--ink-2)}
 .cb-fxl{margin:6px 0;padding-block:.3em;overflow-x:auto;max-width:100%}
 /* Show the math on a box too narrow for its table (the owner's review of 2026-10-09): fitMath sets the block again, the name on its own
    line, the formula broken before an operator with the numbers under the terms they replace, nothing scrolling sideways */

@@ -621,7 +621,7 @@ function viewHTML(){return `<div class="adm-app m2" id="adm-app">`+headerHTML()+
 
 /* ---------- the stage ---------- */
 const runT=run=>run.cfg.window||run.m.end||1;
-const niceStep=T=>{for(const s of [5,10,15,20,30,60,120,180,300]) if(T/s<=6) return s; return 600;};
+const niceStep=(T,n=6)=>{for(const s of [5,10,15,20,30,60,120,180,300]) if(T/s<=n) return s; return 600;};
 const niceMax=x=>{if(x<=1) return 1; const p=Math.pow(10,Math.floor(Math.log10(x))); for(const k of [1,1.5,2,2.5,3,4,5,6,8,10]) if(k*p>=x) return k*p; return 10*p;};
 const clsIn=run=>({paid:run.R.some(r=>r.cls==='paid'),free:run.R.some(r=>r.cls==='free'),batch:run.R.some(r=>r.cls==='batch')});
 const scriptOf=(T,rl)=>rl?Math.min(T.script,rl/60):T.script;
@@ -665,7 +665,8 @@ function drawQueue(run,v){
   const body=[];
   ser.forEach(([c,i,k])=>{body.push(`<polyline class="${k}" points="${S_.map(x=>`${X(x[0]).toFixed(1)},${Y(x[i]).toFixed(1)}`).join(' ')}"/>`);});
   if(has.paid){const nb=60, mb=missBins(run,T,nb), bw=(W-LW-8)/nb; mb.forEach((m,i)=>{if(m) body.push(`<rect class="adm-miss" x="${(LW+i*bw).toFixed(1)}" y="${H-bot+4}" width="${Math.max(1,bw-0.5).toFixed(1)}" height="5"/>`);});}
-  const st=niceStep(T), ax=[]; for(let t=0;t<=T+1e-9;t+=st){const x=X(t), e=x>W-24; ax.push(`<line class="adm-ax" x1="${x.toFixed(1)}" y1="${H-bot+11}" x2="${x.toFixed(1)}" y2="${H-bot+14}"/><text class="adm-at" x="${(e?W-1:x).toFixed(1)}" y="${H-6}" text-anchor="${e?'end':t===0?'start':'middle'}">${T>=180?(zh()?`${t/60} 分`:`${t/60} min`):(zh()?`${t} 秒`:`${t} s`)}</text>`);}
+  /* refit step 2 (2026-10-24): the time labels are 11 px now (10 before); on a chart under 400 px wide (a phone) at most 4 steps, so “100 秒” and “120 秒” do not touch */
+  const st=niceStep(T,W<400?4:6), ax=[]; for(let t=0;t<=T+1e-9;t+=st){const x=X(t), e=x>W-24; ax.push(`<line class="adm-ax" x1="${x.toFixed(1)}" y1="${H-bot+11}" x2="${x.toFixed(1)}" y2="${H-bot+14}"/><text class="adm-at" x="${(e?W-1:x).toFixed(1)}" y="${H-6}" text-anchor="${e?'end':t===0?'start':'middle'}">${T>=180?(zh()?`${t/60} 分`:`${t/60} min`):(zh()?`${t} 秒`:`${t} s`)}</text>`);}
   ax.push(`<text class="adm-at" x="${LW-4}" y="${(Y(ymax)+4).toFixed(1)}" text-anchor="end">${fint(ymax)}</text><text class="adm-at" x="${LW-4}" y="${Y(0).toFixed(1)}" text-anchor="end">0</text><line class="adm-ax" x1="${LW}" x2="${W-8}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}"/>`);
   const p=Math.min(phNow,T), cw=Math.max(0,X(p)-LW);
   host.innerHTML=`<svg class="adm-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc($('#adm-q-h',app).textContent)}"><defs><clipPath id="adm-clip"><rect id="adm-cliprect" x="${LW-2}" y="0" width="${(cw+2).toFixed(1)}" height="${H}"/></clipPath></defs>${ax.join('')}<g clip-path="url(#adm-clip)">${body.join('')}</g><line class="adm-ph" id="adm-ph" x1="${X(p).toFixed(1)}" x2="${X(p).toFixed(1)}" y1="0" y2="${H-bot+10}"${PLAY.on?'':' visibility="hidden"'}/></svg>`;

@@ -2,53 +2,53 @@
    them), and the win-rate bars with people's line. Colours (R5.6): grayscale only; green and red only for the challenge's goal. */
 .ljg-stage .stage-head{align-items:center}
 .ljg-graph{padding:12px 14px 14px;display:grid;gap:14px;min-width:0}
-.ljg-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+.ljg-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
 /* H5 (the owner, 2026-10-09): a hairline between the verdicts (waffle) and the win-rate bars below them */
 .ljg-graph>.ljg-wf:not([hidden])~.ljg-bars:not([hidden]){border-top:1px solid var(--line);padding-top:12px}
 .ljg-phone:empty{display:none}
 @media (min-width:761px){.ljg-phone{display:none}}
 
 /* ---------- the pair ---------- */
-.ljg-pair{border:1px solid var(--line-2);border-radius:6px;padding:9px 11px 10px;background:var(--surface);display:grid;gap:7px;min-width:0}
+.ljg-pair{border:1px solid transparent;border-radius:8px;padding:9px 11px 10px;background:var(--surface-2);display:grid;gap:7px;min-width:0}   /* a soft panel, no frame inside the stage (精装修 step 2) */
 .ljg-q{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;min-width:0}
-.ljg-qn{font-size:10.5px;color:var(--ink-3);white-space:nowrap}
-.ljg-qt{font-size:13.5px;color:var(--ink);line-height:1.4}
+.ljg-qn{font-size:var(--fs-mark);color:var(--ink-3);white-space:nowrap}
+.ljg-qt{font-size:var(--fs-cap);color:var(--ink);line-height:1.4}
 .ljg-anss{display:grid;gap:5px}
 .ljg-ans{display:grid;grid-template-columns:18px minmax(0,1fr) 64px;gap:8px;align-items:center}
-.ljg-ans b{font-family:var(--font-mono);font-size:12.5px;color:var(--ink)}
-.ljg-lenbar{position:relative;height:12px;background:var(--surface-2);border-radius:2px}
+.ljg-ans b{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink)}
+.ljg-lenbar{position:relative;height:12px;background:var(--surface);border-radius:2px}   /* inside a soft panel (var(--surface-2)), so a track or a highlight is var(--surface) (精装修 step 2) */
 .ljg-lenbar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px;transition:width .25s ease-out}
-.ljg-w{font-size:11px;color:var(--ink-2);text-align:right;white-space:nowrap}
+.ljg-w{font-size:var(--fs-mark);color:var(--ink-2);text-align:right;white-space:nowrap}
 .ljg-vd{display:flex;flex-wrap:wrap;gap:4px 8px}
-.ljg-vk{font-size:12px;line-height:1.4;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:1px 8px;white-space:nowrap}
+.ljg-vk{font-size:var(--fs-label);line-height:1.4;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:1px 8px;white-space:nowrap}
 .ljg-vres{color:var(--ink);font-weight:650;border-color:var(--ink-3)}
-.ljg-lr{margin:0;font-size:11.5px;line-height:1.4}
+.ljg-lr{margin:0;font-size:var(--fs-label);line-height:1.4}
 
 /* ---------- the 300 verdicts ---------- */
 .ljg-wfrow{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-start;min-width:0}
 .ljg-wfbox{flex:1 1 300px;min-width:0}
 .ljg-wfbox svg{display:block;max-width:100%;height:auto}
 .ljg-wfleg{list-style:none;margin:0;padding:0;display:grid;gap:4px;flex:0 0 auto;min-width:150px}
-.ljg-wfleg li{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);line-height:1.3}
+.ljg-wfleg li{display:flex;align-items:center;gap:6px;font-size:var(--fs-label);color:var(--ink-2);line-height:1.3}
 .ljg-wfleg li svg{flex:none}
-.ljg-wfleg li b{margin-left:auto;padding-left:8px;font-size:12px;color:var(--ink)}
+.ljg-wfleg li b{margin-left:auto;padding-left:8px;font-size:var(--fs-label);color:var(--ink)}
 .ljg-mf{fill:var(--ink-2)}
 .ljg-mr{fill:none;stroke:var(--ink-2);stroke-width:1.3}
 .ljg-md{stroke:var(--ink-3);stroke-width:2;stroke-linecap:round}
 .ljg-mx{stroke:var(--ink-2);stroke-width:1.5;stroke-linecap:round;fill:none}
 .ljg-mon{fill:none;stroke:var(--ink);stroke-width:1.6}
-.ljg-svt{font-size:10.5px;fill:var(--ink-2);font-family:var(--font-mono)}
+.ljg-svt{font-size:var(--fs-mark);fill:var(--ink-2);font-family:var(--font-mono)}
 /* part 5: two 10 × 10 blocks of the 100 labelled pairs, side by side (R5.10) */
 .ljg-agw{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:flex-start}
 .ljg-agb{margin:0;display:grid;gap:4px;min-width:0}
-.ljg-agb figcaption{font-size:11.5px;color:var(--ink-2);line-height:1.3;max-width:180px}
+.ljg-agb figcaption{font-size:var(--fs-label);color:var(--ink-2);line-height:1.3;max-width:180px}
 .ljg-agb svg{display:block}
 
 /* ---------- the win-rate bars; people's win rate is a line across them, labelled under the last bar ---------- */
 .ljg-brows{display:grid;gap:6px}
 .ljg-brow,.ljg-axis{display:grid;grid-template-columns:minmax(96px,34%) minmax(0,1fr);gap:10px;align-items:center;min-width:0}
 .ljg-brow{border-radius:3px;outline-offset:2px;cursor:help}
-.ljg-bl{font-size:12px;line-height:1.3;color:var(--ink-2)}
+.ljg-bl{font-size:var(--fs-label);line-height:1.3;color:var(--ink-2)}
 .ljg-brow.on .ljg-bl{color:var(--ink);font-weight:650}
 .ljg-bt{position:relative;height:20px;background:var(--surface-2);border-radius:2px;margin-right:42px}
 .ljg-axis .ljg-bt{height:16px;background:none}
@@ -58,10 +58,10 @@
 .ljg-ci{position:absolute;top:50%;height:0;border-top:1.5px solid var(--ink);z-index:2}
 .ljg-ci::before,.ljg-ci::after{content:'';position:absolute;top:-5px;height:8px;border-left:1.5px solid var(--ink)}
 .ljg-ci::before{left:0}.ljg-ci::after{right:0}
-.ljg-bv{position:absolute;top:50%;transform:translateY(-50%);margin-left:5px;font-size:11.5px;font-style:normal;color:var(--ink);white-space:nowrap;z-index:3;background:var(--surface);padding:0 2px;border-radius:2px}
+.ljg-bv{position:absolute;top:50%;transform:translateY(-50%);margin-left:5px;font-size:var(--fs-label);font-style:normal;color:var(--ink);white-space:nowrap;z-index:3;background:var(--surface);padding:0 2px;border-radius:2px}
 .ljg-hl{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed var(--ink);z-index:4}
 .ljg-50{position:absolute;top:0;bottom:0;width:0;border-left:1px dotted var(--ink-3);z-index:1}
-.ljg-hlab,.ljg-50lab{position:absolute;top:1px;transform:translateX(-50%);font-size:11px;font-style:normal;white-space:nowrap}
+.ljg-hlab,.ljg-50lab{position:absolute;top:1px;transform:translateX(-50%);font-size:var(--fs-mark);font-style:normal;white-space:nowrap}
 .ljg-hlab{color:var(--ink);font-weight:650;background:var(--surface);padding:0 3px;border-radius:2px;z-index:2}
 .ljg-50lab{color:var(--ink-3)}
 
@@ -70,7 +70,7 @@
 .ljg-pairnav{margin-top:6px}
 .ljg-remlist{margin:0 0 10px;padding-left:18px;display:grid;gap:8px}
 .ljg-remlist li{line-height:1.5}
-.ljg-rem{font-size:12px}
+.ljg-rem{font-size:var(--fs-label)}
 .ljg-prac{margin-top:8px;border-top:1px solid var(--line-2);padding-top:6px}
 .ljg-prac ul{margin:4px 0 0;padding-left:18px;display:grid;gap:3px}
 .ljg-mt{margin-top:10px}
@@ -83,8 +83,8 @@
 
 /* ---------- Settings ---------- */
 .ljg-grp{border-top:1px solid var(--line-2);padding-top:8px;margin-top:4px}
-.ljg-gh{font-size:11.5px;font-weight:650;color:var(--ink-2);margin-bottom:4px}
-.ljg-asm{margin:0;padding-left:16px;display:grid;gap:3px;font-size:12px;line-height:1.4;color:var(--ink-2)}
+.ljg-gh{font-size:var(--fs-label);font-weight:650;color:var(--ink-2);margin-bottom:4px}
+.ljg-asm{margin:0;padding-left:16px;display:grid;gap:3px;font-size:var(--fs-label);line-height:1.4;color:var(--ink-2)}
 .ljg-asm b{color:var(--ink);font-weight:600}
 .ljg-prod{padding-left:18px;display:grid;gap:6px;min-width:0}
 .ljg-prod code,.ljg-prod a{overflow-wrap:anywhere}
@@ -94,7 +94,7 @@
 .ljg-mb+.ljg-mb{border-top:1px solid var(--line)}
 .ljg-mb>p{margin:0 0 6px}
 .ljg-mb>p:last-child{margin-bottom:0}
-.ljg-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:15px;line-height:1.3}
+.ljg-eqs{display:grid;grid-template-columns:max-content max-content max-content;justify-content:start;align-items:baseline;column-gap:.4em;row-gap:.25em;overflow-x:auto;padding-block:.3em;margin:4px 0 8px;font-size:var(--fs-stage);line-height:1.3}
 .ljg-eq-l{text-align:right}
 /* on a phone a chain with a named quantity puts the name on its own line, then “= …” lines, so the chain fits its box instead of scrolling sideways */
 @media (max-width:560px){.ljg-eqs-nm{grid-template-columns:max-content max-content}.ljg-eqs-nm>.ljg-eq-l{grid-column:1/-1;text-align:left}.ljg-eqs-nm>.ljg-eq-l:empty{display:none}}
@@ -133,4 +133,15 @@
   .ljg-metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:8px}
   .ljg-metrics .metric .v{line-height:1.25}
   .ljg-metrics .metric .d{min-height:13px;line-height:13px}
+}}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) parts 4 and 6 still ran 5 and 31 px past the stage, in both
+   languages. The figure's padding and gaps, the pair's padding and the space above the bars, the scope line, the metric cards and
+   Show the math are 2–4 px smaller */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .ljg-graph{gap:6px;padding:8px 14px 8px}
+  .ljg-pair{padding:6px 11px 7px}
+  .ljg-graph>.ljg-wf:not([hidden])~.ljg-bars:not([hidden]){padding-top:6px}
+  .ljg-stage>.ljg-scope{margin:6px 0}
+  .ljg-metrics{margin-top:6px}
+  .ljg-stage>details.math{margin-top:6px}
 }}

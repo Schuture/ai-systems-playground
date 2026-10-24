@@ -5,15 +5,15 @@
 .vix-app [hidden]{display:none!important}
 .vix-stage{container-type:inline-size}
 .vix-head{align-items:flex-start;gap:10px}
-.vix-st-title{font-weight:650;font-size:15px;min-width:0}
+.vix-st-title{font-weight:650;font-size:var(--fs-stage);min-width:0}
 /* the transport: one row, every control one height and one baseline; the speed's label sits left of its buttons (review polish r1, P26) */
 .vix-transport{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0 4px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .vix-transport .ctl{display:flex;align-items:center;gap:6px;margin:0}
-.vix-transport .ctl>.lbl{font-size:12.5px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.vix-transport .ctl>.lbl{font-size:var(--fs-cap);font-weight:600;color:var(--ink-2);white-space:nowrap}
 .vix-transport .seg-ctl{margin:0}
 .vix-transport .btn.sm,.vix-transport .seg-ctl{height:32px;box-sizing:border-box}
 .vix-transport .btn.sm{padding-top:0;padding-bottom:0;line-height:1.2}
-.vix-transport .seg-ctl button{padding:0 10px;font-family:var(--font-ui);font-size:13px;line-height:1.2}   /* the buttons' font, so the text sits on their baseline */
+.vix-transport .seg-ctl button{padding:0 10px;font-family:var(--font-ui);font-size:var(--fs-cap);line-height:1.2}   /* the buttons' font, so the text sits on their baseline */
 .vix-scrub{flex:1 1 120px;min-width:90px;margin:0}
 /* the picture and its partner side by side on a wide stage, one above the other on a narrow one (review polish r1, P23) */
 .vix-figs{display:grid;grid-template-columns:minmax(0,1fr);gap:0 18px;align-items:start}
@@ -24,11 +24,11 @@
 @container (min-width:640px){
   .vix-figs.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   .vix-figs.two>.vix-pan.sec{border-top:0;margin-top:0;padding-top:0;border-left:1px solid var(--line);padding-left:18px}}
-.vix-pt{font-weight:600;font-size:13px;line-height:1.35;margin-bottom:4px;min-width:0}
+.vix-pt{font-weight:600;font-size:var(--fs-cap);line-height:1.35;margin-bottom:4px;min-width:0}
 /* the caption says what the frame on screen shows; its height stays put while it changes */
-.vix-cap{font-size:12.5px;line-height:1.45;color:var(--ink-2);min-height:2.9em;margin:0 0 4px}
+.vix-cap{font-size:var(--fs-cap);line-height:1.45;color:var(--ink-2);min-height:2.9em;margin:0 0 4px}
 @container (max-width:460px){.vix-cap{min-height:4.35em}}
-.vix-leg{margin:4px 0 4px;flex-wrap:wrap;gap:4px 12px;font-size:12px}
+.vix-leg{margin:4px 0 4px;flex-wrap:wrap;gap:4px 12px;font-size:var(--fs-label)}
 .vix-leg .lg{display:inline-flex;align-items:center;gap:5px}
 .vix-pic{display:block;width:100%;max-width:440px;height:auto;margin:0 auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
 .vix-pnote{margin:4px 0 0;line-height:1.4}
@@ -42,8 +42,8 @@
 .vix-cl.off{opacity:.14}
 .vix-zbox{fill:var(--surface);stroke:var(--ink-3);stroke-width:1}
 .vix-zr{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 2}
-.vix-zlab{font-size:10px;font-weight:600;fill:var(--ink-3);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
-.vix-cn{font-family:var(--font-mono);font-size:10px;font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.vix-zlab{font-size:var(--fs-mark);font-weight:600;fill:var(--ink-3);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.vix-cn{font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
 circle.vix-dot{fill:var(--ink-3);opacity:.45}
 circle.vix-dot.chk{fill:var(--ink);opacity:1}
 circle.vix-dot.cur{fill:var(--ink);opacity:1;stroke:var(--surface);stroke-width:1}
@@ -70,11 +70,11 @@ circle.vix-dot.exp{fill:var(--vix-hnsw);opacity:1}
 .vix-entry{fill:none;stroke:var(--vix-hnsw);stroke-width:2}
 .vix-curn{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-dasharray:2 2}
 .vix-out{stroke:var(--ink);stroke-width:1.4;fill:none}
-.vix-elab{font-size:10.5px;font-weight:650;fill:var(--vix-hnsw);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.vix-elab{font-size:var(--fs-mark);font-weight:650;fill:var(--vix-hnsw);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
 .vix-grid{stroke:var(--vix-pq);stroke-width:.8;opacity:.55}
 .vix-trail{stroke:var(--vix-pq);stroke-width:1.2;opacity:.85}
 circle.vix-orig{fill:var(--surface);stroke:var(--ink-3);stroke-width:1}
-.vix-cnt{font-family:var(--font-mono);font-size:10px;font-weight:700;fill:var(--vix-pq);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.vix-cnt{font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:700;fill:var(--vix-pq);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
 /* the legend's swatches, one per mark */
 .sw.vix-sw-q{background:transparent;width:10px;height:10px;position:relative;border:0}
 .sw.vix-sw-q::before,.sw.vix-sw-q::after{content:"";position:absolute;left:4px;top:-1px;width:2.4px;height:12px;background:var(--ink);transform:rotate(45deg)}
@@ -100,22 +100,22 @@ circle.vix-orig{fill:var(--surface);stroke:var(--ink-3);stroke-width:1}
 .sw.vix-sw-exp{background:var(--vix-hnsw);border-radius:50%;width:7px;height:7px}
 .sw.vix-sw-grid{background:transparent;border:1px solid var(--vix-pq);width:10px;height:10px}
 .sw.vix-sw-trail{background:transparent;border-top:1.2px solid var(--vix-pq);height:0;width:16px;align-self:center}
-.vix-sw-cnt{font-size:11px;font-weight:700;color:var(--vix-pq)}
+.vix-sw-cnt{font-size:var(--fs-mark);font-weight:700;color:var(--vix-pq)}
 /* part 2's scale bars and part 3's k-d bars */
 .vix-sg+.vix-sg{margin-top:12px}
 .vix-kdbars,.vix-scale{min-width:0}
-.vix-kb{display:grid;grid-template-columns:7.5em minmax(0,1fr) 4.2em;gap:8px;align-items:center;font-size:13px;margin:4px 0;padding:2px 4px;border-radius:5px}
+.vix-kb{display:grid;grid-template-columns:7.5em minmax(0,1fr) 4.2em;gap:8px;align-items:center;font-size:var(--fs-cap);margin:4px 0;padding:2px 4px;border-radius:5px}
 .vix-scale .vix-kb{grid-template-columns:3.6em minmax(0,1fr) 5.6em}
 .vix-kb.on{background:var(--sunken);font-weight:650}
 .vix-kbt{position:relative;height:10px;border-radius:3px;background:var(--sunken);overflow:hidden;border:1px solid var(--line)}
 .vix-kbt i{display:block;height:100%;background:var(--ink-2)}
 .vix-kbt s{position:absolute;top:0;bottom:0;width:0;border-left:1.5px dashed var(--ink);text-decoration:none}
 .vix-kb b{text-align:right;font-weight:600;white-space:nowrap}
-.vix-snote{font-size:12px;color:var(--ink-3);margin:2px 4px 0;line-height:1.4}
+.vix-snote{font-size:var(--fs-label);color:var(--ink-3);margin:2px 4px 0;line-height:1.4}
 /* the chart */
 .vix-chart{display:block;width:100%;max-width:520px;height:auto;margin:0 auto;overflow:hidden}
 .vix-gl{stroke:var(--line);stroke-width:1}
-.vix-ax{font-family:var(--font-mono);font-size:12px;fill:var(--ink-3)}
+.vix-ax{font-family:var(--font-mono);font-size:var(--fs-label);fill:var(--ink-3)}
 .vix-cv{fill:none;stroke-width:2}
 .vix-cd{stroke:var(--surface);stroke-width:1}
 polyline.vix-k-ivf{stroke:var(--vix-ivf)}circle.vix-k-ivf{fill:var(--vix-ivf)}
@@ -138,7 +138,7 @@ circle.vix-k-flat{fill:var(--ink)}
 .vix-math-line{overflow-x:auto;padding-block:.3em;margin:4px 0}
 .vix-mb{border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
 .vix-mb:first-child{border-top:0;margin-top:0}
-.vix-mb p{margin:0 0 2px;font-size:13px}
+.vix-mb p{margin:0 0 2px;font-size:var(--fs-cap)}
 .vix-prod li{margin-bottom:6px}
 .vix-ref{font-weight:600}
 .vix-dk{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;min-width:60px}
@@ -150,3 +150,14 @@ circle.vix-k-flat{fill:var(--ink)}
 .vix-why p{margin:4px 0}
 /* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
 .vix-cap{font-variant-numeric:tabular-nums}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) parts 5–8 still ran 5–15 px past the stage (English 5–28).
+   The sketch is drawn at its own size, 360 × 260 px inside its 1 px border (it was scaled to its column, 350–400 px wide; its 11 px
+   labels are now as drawn), and the gaps under the player and above the metric cards are 6 px */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .vix-transport{padding-bottom:6px}
+  .vix-stage .vix-metrics{margin-top:6px}
+  .vix-pic{max-width:362px}
+}}
+/* a formula line scrolls sideways when the formula is wider than its box; KaTeX's strut also made it scroll 5 px down (part 8, at every
+   window size), with nothing more to show (refit step 2) */
+.vix-math-line{overflow-y:hidden}

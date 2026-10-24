@@ -2,24 +2,24 @@
 .tls-app [hidden]{display:none!important}
 .tls-stage{container-type:inline-size}
 .tls-head{align-items:flex-start;gap:10px}
-.tls-st-title{font-weight:650;font-size:15px;min-width:0;line-height:1.35}
+.tls-st-title{font-weight:650;font-size:var(--fs-stage);min-width:0;line-height:1.35}
 .tls-pan{border-top:1px solid var(--line);padding-top:8px;margin-top:8px;min-width:0}
 .tls-pan:first-of-type{border-top:0;margin-top:2px;padding-top:2px}
-.tls-pt{font-weight:600;font-size:13px;line-height:1.35;margin-bottom:4px;min-width:0}
+.tls-pt{font-weight:600;font-size:var(--fs-cap);line-height:1.35;margin-bottom:4px;min-width:0}
 .tls-transport{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:4px 0 6px}
 .tls-transport .seg-ctl,.tls-transport .inline-ctl,.tls-transport .ctl{margin:0}
 .tls-transport .btn.sm,.tls-transport .seg-ctl{height:32px;box-sizing:border-box}
 .tls-transport .btn.sm{padding-top:0;padding-bottom:0;line-height:1.2}
-.tls-transport .seg-ctl button{padding:0 10px;font-size:13px;line-height:1.2}
+.tls-transport .seg-ctl button{padding:0 10px;font-size:var(--fs-cap);line-height:1.2}
 .tls-transport .inline-ctl{flex:1 1 160px;min-width:140px;border:0;padding:0;background:none}
-.tls-ph{border:1px dashed var(--line-2);border-radius:8px;padding:28px 12px;text-align:center;color:var(--ink-2);font-size:13px;margin:4px 0}
+.tls-ph{border:1px dashed var(--line-2);border-radius:8px;padding:28px 12px;text-align:center;color:var(--ink-2);font-size:var(--fs-cap);margin:4px 0}
 .tls-gantt,.tls-graph{display:block;width:100%;height:auto}
 .tls-grid{stroke:var(--line);stroke-width:1}
-.tls-ax{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-3)}
-.tls-rl{font-size:11.5px;fill:var(--ink-2)}
+.tls-ax{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-3)}
+.tls-rl{font-size:var(--fs-label);fill:var(--ink-2)}
 .tls-rl.b{font-weight:650;fill:var(--ink)}
 .tls-mc{fill:var(--ink)}
-.tls-mcn{font-family:var(--font-mono);font-size:10px;fill:var(--surface);font-weight:650}
+.tls-mcn{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--surface);font-weight:650}
 .tls-bar{fill:var(--ink-3);stroke:none}
 .tls-bar.crit{stroke:var(--ink);stroke-width:2.2}
 .tls-bar.bad{fill:var(--c-oom);stroke:var(--c-oom);stroke-width:1.5}
@@ -27,11 +27,11 @@
 .tls-hbg{fill:var(--surface)}
 .tls-hl{stroke:var(--ink-3);stroke-width:1.6}
 .tls-wait{stroke:var(--ink-3);stroke-width:1.5;stroke-dasharray:1.5 3}
-.tls-x{font-size:12px;font-weight:700;fill:var(--c-oom)}
+.tls-x{font-size:var(--fs-label);font-weight:700;fill:var(--c-oom)}
 .tls-head-l{stroke:var(--ink);stroke-width:1.4}
 .tls-node rect{fill:var(--surface);stroke:var(--ink-3);stroke-width:1.2}
-.tls-nt{font-size:12px;fill:var(--ink)}
-.tls-ns{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-2)}
+.tls-nt{font-size:var(--fs-label);fill:var(--ink)}
+.tls-ns{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-2)}
 .tls-node.run rect{fill:var(--sunken);stroke:var(--ink);stroke-width:2}
 .tls-node.done rect{fill:var(--ink-3);stroke:var(--ink-3)}
 .tls-node.done .tls-nt,.tls-node.done .tls-ns{fill:var(--surface)}
@@ -45,8 +45,8 @@
 .tls-ahp{fill:var(--ink-3)}
 .tls-conf{stroke:var(--ink-2);stroke-width:1.6;stroke-dasharray:3 3}
 .tls-conf.hi{stroke:var(--ink);stroke-width:2.4}
-.tls-cl{font-size:10.5px;fill:var(--ink-2)}
-.tls-leg{margin:4px 0 6px;flex-wrap:wrap;gap:4px 12px;font-size:12px}
+.tls-cl{font-size:var(--fs-mark);fill:var(--ink-2)}
+.tls-leg{margin:4px 0 6px;flex-wrap:wrap;gap:4px 12px;font-size:var(--fs-label)}
 .tls-leg .lg{display:inline-flex;align-items:center;gap:5px}
 .sw.tls-sw-arr{width:16px;height:0;border-top:1.5px solid var(--ink-3);background:none}
 .sw.tls-sw-dash{width:16px;height:0;border-top:1.5px dashed var(--ink-3);background:none}
@@ -62,7 +62,7 @@
 .tls-metrics .metric.tls-bad .v{color:var(--c-oom)}
 .tls-mb{padding:6px 0;border-bottom:1px solid var(--line);container-type:inline-size}
 .tls-mb:last-child{border-bottom:0}
-.tls-mb-lead{margin:0 0 4px;font-size:13px}
+.tls-mb-lead{margin:0 0 4px;font-size:var(--fs-cap)}
 .tls-math-line{overflow-x:auto;padding-block:.3em;max-width:100%}
 .tls-eq{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:6px;row-gap:2px;align-items:baseline}
 .tls-eq-l{text-align:right;white-space:nowrap}
@@ -72,10 +72,10 @@
 .tls-chrows .seg-ctl button{min-width:30px}
 .tls-ch-res{margin-top:4px}
 .tls-prod li{margin:4px 0}
-.tls-times{list-style:none;margin:2px 0 8px;padding:0;font-size:12px;columns:2;column-gap:14px}
+.tls-times{list-style:none;margin:2px 0 8px;padding:0;font-size:var(--fs-label);columns:2;column-gap:14px}
 .tls-times li{display:flex;justify-content:space-between;gap:6px;break-inside:avoid;color:var(--ink-2)}
 .tls-assumed{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}
-.tls-assumed .ctl-title{font-weight:600;font-size:13px;margin-bottom:2px}
+.tls-assumed .ctl-title{font-weight:600;font-size:var(--fs-cap);margin-bottom:2px}
 .obs.tls-dim{opacity:.55}
 .obs.tls-now{border-left:3px solid var(--c-kv)}
 .obs.tls-now .btn{margin-top:2px}
@@ -83,8 +83,8 @@
 .tls-dk i{display:block;height:100%;background:var(--ink-3)}
 @media (max-width:420px){.tls-times{columns:1}}
 /* polish r1: the timeline drawn 1:1, its marks, the step-2 selection, compact metrics, one-line transport */
-.tls-mcu{font-family:var(--font-mono);font-size:9.5px;fill:var(--ink-2)}
-.tls-mk{font-size:11px;font-weight:650;fill:var(--c-oom)}
+.tls-mcu{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-2)}
+.tls-mk{font-size:var(--fs-mark);font-weight:650;fill:var(--c-oom)}
 .tls-mk.ok{fill:var(--c-ok)}
 .tls-dot{fill:var(--ink);stroke:var(--surface);stroke-width:1.2}
 .tls-early{stroke:var(--c-oom);stroke-width:1.6;stroke-dasharray:3 2}
@@ -101,40 +101,53 @@
 .tls-ch-res.tls-dim{opacity:.55}
 .tls-transport{gap:6px 12px}
 .tls-transport .ctl,.tls-transport .inline-ctl{display:flex;align-items:center;gap:6px;margin:0;border:0;padding:0;background:none}
-.tls-transport .ctl>.lbl,.tls-transport .inline-ctl>label{display:flex;justify-content:flex-start;align-items:center;gap:6px;font-size:12.5px;white-space:nowrap}
+.tls-transport .ctl>.lbl,.tls-transport .inline-ctl>label{display:flex;justify-content:flex-start;align-items:center;gap:6px;font-size:var(--fs-label);white-space:nowrap}
 .tls-transport .inline-ctl input[type=range]{flex:1 1 auto;min-width:70px;width:auto}
 .tls-transport .inline-ctl output{min-width:4ch}
 .tls-stage .tls-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px}
 @container (min-width:480px){.tls-stage .tls-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .tls-metrics .metric{position:relative;padding:6px 9px}
-.tls-metrics .metric .sub{font-size:11.5px}
+.tls-metrics .metric .sub{font-size:var(--fs-label)}
 /* the change line is in the card's flow as in other labs (kit polish r2, M1): set over the card's top right corner, it ran over the
    name and the value whenever it was longer than the room beside the name (“▲ 2 times the last value”, 900 and 390 px, English).
    Its row is 13 px and the value's line 1.25, so a card is 7.5 px taller than before, not 15: at 1440×900 the stage still needs no
    scroll of its own in any scenario (N11; with 15 px it was 4 px too tall in English, scenario 4) */
 .tls-metrics .metric .v{line-height:1.25}
 .tls-metrics .metric .d{height:auto;min-height:13px;line-height:13px}
-@container (max-width:519px){.tls-ax{font-size:11px}}
+@container (max-width:519px){.tls-ax{font-size:var(--fs-mark)}}
 .tls-head{flex-wrap:nowrap}
 .tls-head .tls-st-title{flex:1 1 auto}
 .tls-head .stage-actions{flex:0 0 auto}
 /* polish r2: desktop text in the pictures (N11), the faster tool's dot (N7), the play head's cap (T3), the end hint (T1), part 2's mini graph (T2) */
-.tls-wide .tls-rl{font-size:13px}
-.tls-wide .tls-ax{font-size:12px}
-.tls-wide .tls-mcn{font-size:12px}
-.tls-wide .tls-mcu{font-size:11px}
-.tls-wide .tls-mk{font-size:12px}
-.tls-wide .tls-x{font-size:13px}
-.tls-wide .tls-nt{font-size:13px}
-.tls-wide .tls-ns{font-size:12px}
-.tls-wide .tls-cl{font-size:12px}
+.tls-wide .tls-rl{font-size:var(--fs-cap)}
+.tls-wide .tls-ax{font-size:var(--fs-label)}
+.tls-wide .tls-mcn{font-size:var(--fs-label)}
+.tls-wide .tls-mcu{font-size:var(--fs-mark)}
+.tls-wide .tls-mk{font-size:var(--fs-label)}
+.tls-wide .tls-x{font-size:var(--fs-cap)}
+.tls-wide .tls-nt{font-size:var(--fs-cap)}
+.tls-wide .tls-ns{font-size:var(--fs-label)}
+.tls-wide .tls-cl{font-size:var(--fs-label)}
 .tls-chgd{fill:var(--c-weights);stroke:var(--surface);stroke-width:1.5}
 .sw.tls-sw-chg{width:9px;height:9px;border-radius:50%;background:var(--c-weights);border:0}
 .tls-head-t{fill:var(--ink)}
 .sw.tls-sw-head{position:relative;width:8px;height:12px;border:0;border-radius:0;background:linear-gradient(var(--ink),var(--ink)) 50% 100%/2px 9px no-repeat}
 .sw.tls-sw-head::before{content:'';position:absolute;left:0;top:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--ink)}
-.tls-endhint{display:block;margin:2px 0 4px;font-size:13px;text-align:left}
+.tls-endhint{display:block;margin:2px 0 4px;font-size:var(--fs-cap);text-align:left}
 .tls-dkg{display:block}
 .tls-dkg rect{fill:var(--surface);stroke:var(--ink-3);stroke-width:7}
 .tls-dkg rect.sel{fill:var(--c-weights);stroke:var(--c-weights)}
 .tls-dkg rect.up{fill:color-mix(in srgb,var(--c-weights) 18%,var(--surface));stroke:var(--c-weights)}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) parts 3–7 still ran 45 px past the stage (English 42). The
+   gantt's rows are drawn 19 px tall instead of 21 (drawGantt reads --tls-rh; the rows' text keeps its size), and the gaps between the
+   panels, under their titles, around the player and the legend and above the metric cards and Show the math are 2–4 px smaller */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .tls-pan{padding-top:6px;margin-top:6px}
+  .tls-pan:first-of-type{margin-top:0;padding-top:0}
+  .tls-pt{margin-bottom:2px}
+  .tls-transport{margin:2px 0 4px}
+  .tls-leg{margin:2px 0 4px}
+  #tls-gantt{--tls-rh:19}
+  .tls-stage .tls-metrics{margin-top:4px}
+  .tls-stage>details.math{margin-top:4px}
+}}

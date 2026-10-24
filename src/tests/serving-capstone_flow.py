@@ -164,6 +164,21 @@ GEO7 = """()=>{const r=e=>{const b=document.querySelector(e).getBoundingClientRe
  return {wc:r('#sc-wc'), strip:r('#sc-strip'), top:sticky?Math.max(sr.top,bar):bar, bot:sticky?Math.min(sr.bottom,innerHeight):innerHeight, dock:!document.getElementById('dock').hidden}}"""
 
 
+# the code box's lines inside its visible part (the owner's choice of 2026-10-24: on a desktop it shows 14 of the 28 and follows the step)
+CODE_WIN = """()=>{const b=document.getElementById('sc-wcb'), R=b.getBoundingClientRect(), rows=[...b.querySelectorAll('.sc-wl')];
+  return {vis:rows.filter(l=>{const r=l.getBoundingClientRect(); return r.top>=R.top-1&&r.bottom<=R.bottom+1}).map(l=>l.dataset.k), n:rows.length, h:b.clientHeight, rh:rows[0].getBoundingClientRect().height, sh:b.scrollHeight, top:b.scrollTop, more:b.dataset.more||''}}"""
+
+
+def code_win(pg):
+    """the code box's visible lines, once its scroll has settled (English runs with motion, so the box scrolls smoothly)"""
+    a = pg.evaluate(CODE_WIN)
+    for _ in range(12):
+        pg.wait_for_timeout(100); b = pg.evaluate(CODE_WIN)
+        if abs(b['top'] - a['top']) < 0.5: return b
+        a = b
+    return a
+
+
 def gpu_says(pn, n, done, lang):
     """the GPU box names step n (1-based), done or not: the same step as the panel (review A, finding 1)"""
     d = ('done' in pn['gpu']) if lang == 'en' else ('已结束' in pn['gpu'])
@@ -184,6 +199,12 @@ def walkthrough(pg, tag, w, h, lang):
     if w > 760:
         pg.wait_for_timeout(500); g = pg.evaluate(GEO7)
         check(f'{tag} part 7: on entry the whole panel, its last line included, is on screen (review B, B1)', g['wc'][0] >= g['top'] - 1 and g['wc'][1] <= g['bot'] + 1, g)
+        wn = code_win(pg)
+        check(f'{tag} part 7: on a desktop the code box shows 14 of its 28 lines, from the top, its lower edge faded (the owner’s choice of 2026-10-24)',
+              wn['n'] == 28 and len(wn['vis']) == 14 and wn['vis'][0] == 'h' and abs(wn['h'] - 14 * wn['rh']) <= 1 and wn['more'] == 'down', wn)
+    else:
+        wn = code_win(pg)
+        check(f'{tag} part 7: on a phone the code box shows all 28 lines (the page scrolls)', len(wn['vis']) == 28 and wn['sh'] <= wn['h'] + 1, wn)
     check(f'{tag} part 7: 28 lines, the Connect code’s statements line for line', len(p0['rows']) == 28 and [r['k'] for r in p0['rows']] == WL_ORDER
           and pg.evaluate("()=>{const a=window.__sc.wcode, c=window.__sc.code; return a.length===c.length&&a.every((x,i)=>i===0||x[1].split('#')[0].trim()===c[i][0].split('#')[0].trim())}"))
     # ▸ from the whole run: the end of step 1, in the panel and the GPU box (review A, finding 9)
@@ -210,6 +231,9 @@ def walkthrough(pg, tag, w, h, lang):
         check(f'{tag} part 7 “{m["id"]}”: red lines only where admission stops ({want or "none"})', stops == want, stops)
         keys = pg.evaluate("()=>[...document.querySelectorAll('#sc-wcb .sc-wl.key')].map(l=>l.dataset.k)")
         check(f'{tag} part 7 “{m["id"]}”: the deciding line is drawn heavier ({KEYLN[m["id"]]})', keys == [KEYLN[m['id']]], keys)
+        if w > 760:   # the 14-line box follows the step: the deciding line, and while the step runs the GPU's line and the red lines too
+            wn = code_win(pg); need = [KEYLN[m['id']]] + ([] if m['at'] == 'end' else ['tm'] + want)
+            check(f'{tag} part 7 “{m["id"]}”: the code box has scrolled to the step’s lines ({", ".join(need)})', all(k in wn['vis'] for k in need), (need, wn['vis'][:1], wn['vis'][-1:], wn['more']))
         tips = [k for k in WL_ORDER if rows[k]['v'] and not rows[k]['tip']]
         check(f'{tag} part 7 “{m["id"]}”: every value has a sentence in its tooltip (R6.21)', not tips, tips)
         empt = [k for k in WL_ORDER if not rows[k]['v'] and rows[k]['tip']]
@@ -294,6 +318,9 @@ def walkthrough(pg, tag, w, h, lang):
     check(f'{tag} part 7: at a step’s end the queue holds what the next step’s admission loop sees', qn == len(ci2['adm']) + len(ci2['wait']), (qn, ci2['adm'], ci2['wait']))
     act(pg, '#sc-play [data-act=fwd]', 300); pn = panel(pg)
     check(f'{tag} part 7: ▸ again: the next step, ended, in the panel and the GPU box', pn['code'] == {'s': m['s'] + 1, 'phase': 'end'} and gpu_says(pn, m['s'] + 2, True, lang), (pn['code'], pn['gpu']))
+    if w > 760:
+        wn = code_win(pg)
+        check(f'{tag} part 7: at a step’s end with no moment of its own the code box shows the lines that run at the end', all(k in wn['vis'] for k in ('fl', 'fr', 'un', 'ev', 'rt')), (wn['vis'][:1], wn['vis'][-1:]))
     act(pg, '#sc-play [data-act=back]', 300); pn = panel(pg)
     check(f'{tag} part 7: ◂ goes back to the start of that step: the panel shows it running, the GPU box starting it', pn['code'] is not None and pn['code']['s'] == m['s'] + 1 and pn['code']['phase'] == 'run' and gpu_says(pn, m['s'] + 2, False, lang), (pn['code'], pn['gpu']))
     # the GPU box counts the requests that ran in the step it shows done (review B, B11); its meters are not cut off (B13)
@@ -730,7 +757,9 @@ with sync_playwright() as _p:
 # 814), so the stage scrolled 350–390 px inside (830–850 at part 7) and only the block each part's card talks about was brought whole on
 # the screen. The whole-run table (about 350 px) now opens from a button in Show the math's row, the scope note sits in that row too, and
 # on a wide stage the trace hint moves into the head; the timeline's rows are 5 px for the 37 requests and 4 px for the 48 (6 and 5 in
-# round 5). Part 7's code panel still needs the stage to scroll inside, under a ceiling (this page's numbers plus about 20 px). The walk is
+# round 5). Part 7's code panel still needs the stage to scroll inside, under a ceiling (this page's numbers plus about 20 px); since the
+# owner's choice of 2026-10-24 its code box shows 14 of the 28 lines on a desktop, so the stage scrolls 196 px less (134 px in Chinese and 128
+# in English, 330 and 324 with all 28 lines). The walk is
 # on the whole site (built into out/ and wrapped with a doctype; the one-lab page lacks the “Read first” line, which moves every card
 # 28 px), in the lab's real layout (window.__aspPrimer, as tests/kit_flow.py), entering each part as the polish probe stage.py does: Next
 # when it is on, else the part's title; Chinese with reduced motion, English with motion (its scrolls are smooth). A phone keeps its rows.
@@ -739,7 +768,7 @@ subprocess.run([sys.executable, str(P / 'build.py'), 'out/site-serving-capstone.
                                                           + (P / 'out' / 'site-serving-capstone.html').read_text() + '</body></html>')
 SITE = 'file://' + str(P / 'out' / 'wrapped-site-serving-capstone.html')
 FOCUS = {'mission': '#sc-tlw', 'predict': '#sc-tlw', 'budget': '#sc-tlw', 'cache': '#sc-mem', 'cbudget': '#sc-mem', 'cap': '#sc-strip', 'code': '#sc-wc', 'remember': None}
-CEIL7 = {'zh': 420, 'en': 440}
+CEIL7 = {'zh': 155, 'en': 150}
 WALK5 = """q=>{const s=document.getElementById('sc-stage'), r=s.getBoundingClientRect(), bar=document.querySelector('.topbar').getBoundingClientRect().bottom,
   lo=Math.max(r.top+s.clientTop,bar), hi=Math.min(r.bottom-s.clientTop,innerHeight), h=s.querySelector('.stage-head').getBoundingClientRect(), R=e=>{const b=e.getBoundingClientRect(); return [Math.round(b.top),Math.round(b.bottom)]};
   const st=window.__sc.state, f=q[st.partId], fe=f&&document.querySelector(f), cv=document.getElementById('sc-tl'), b0=window.__sc.rowBox(0);

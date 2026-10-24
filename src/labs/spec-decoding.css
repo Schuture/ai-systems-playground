@@ -3,18 +3,18 @@
    guess, a thrown-away draft step, a setting slower than plain decode, an output that no longer follows the target (failure, R5.11).
    Everything else is grayscale: the target model's steps dark, the draft model's light, a guess dashed. */
 .spd-app .stage-head>div:first-child{min-width:0}
-.spd-st-title{font-weight:680;font-size:15.5px;line-height:1.3;min-height:2.6em}
+.spd-st-title{font-weight:680;font-size:var(--fs-stage);line-height:1.3;min-height:2.6em}
 .spd-app [data-tipx]{cursor:help}
 .spd-app [data-jump],.spd-app button[data-tipx]{cursor:pointer}
 .spd-app [hidden]{display:none!important}
 .spd-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .spd-main{display:flex;flex-direction:column;gap:12px;margin-top:6px}
-.spd-blk{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--surface);min-width:0}
-.spd-ch-t{font-size:13px;font-weight:620;line-height:1.35;margin-bottom:6px}
+.spd-blk{border:1px solid transparent;border-radius:8px;padding:10px 12px;background:var(--surface-2);min-width:0}   /* a soft panel, no frame inside the stage (精装修 step 2) */
+.spd-ch-t{font-size:var(--fs-cap);font-weight:620;line-height:1.35;margin-bottom:6px}
 .spd-svg{display:block;width:100%;height:auto;overflow:visible}
 .spd-axl{margin:2px 0 0}
 .spd-leg{margin-top:8px;flex-wrap:wrap;gap:4px 14px}
-.spd-leg>span{display:inline-flex;align-items:center;gap:6px;font-size:12px}
+.spd-leg>span{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-label)}
 .spd-sw{display:inline-block;width:14px;height:10px;border-radius:2px;flex:none;background:var(--ink-3)}
 .spd-sw-w{background:var(--c-weights)}.spd-sw-kv{background:var(--c-kv)}.spd-sw-c{background:var(--ink-3)}
 .spd-sw-end{width:3px;height:14px;background:var(--ink)}
@@ -35,16 +35,16 @@
 .spd-sw-tgt{background:var(--ink-2)}
 .spd-sw-drf{background:var(--line-2);height:7px}
 .spd-sw-waste{background:var(--line-2);height:7px;outline:2px solid var(--c-oom);outline-offset:-1px}
-.spd-sw-cnt{width:auto;height:auto;background:none;font-family:var(--font-mono);font-size:11px;color:var(--ink);font-style:normal}
+.spd-sw-cnt{width:auto;height:auto;background:none;font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink);font-style:normal}
 .spd-sw-cnt::before{content:"3"}
 /* svg marks */
 .spd-svg text{font-family:var(--font-mono);fill:var(--ink-2)}
-.spd-tl{font-size:12px;fill:var(--ink)!important}
-.spd-tl2{font-size:11px}
-.spd-tk{font-size:10.5px}
-.spd-tv{font-size:12px;font-weight:650;fill:var(--ink)!important}
-.spd-tv2{font-size:10.5px;fill:var(--ink)!important}
-.spd-cnt{font-size:10.5px;fill:var(--ink)!important}
+.spd-tl{font-size:var(--fs-label);fill:var(--ink)!important}
+.spd-tl2{font-size:var(--fs-mark)}
+.spd-tk{font-size:var(--fs-mark)}
+.spd-tv{font-size:var(--fs-label);font-weight:650;fill:var(--ink)!important}
+.spd-tv2{font-size:var(--fs-mark);fill:var(--ink)!important}
+.spd-cnt{font-size:var(--fs-mark);fill:var(--ink)!important}
 .spd-ax{stroke:var(--ink-3);stroke-width:1}
 .spd-grid{stroke:var(--line);stroke-width:1}
 .spd-w{fill:var(--c-weights)}
@@ -81,10 +81,10 @@
 /* the round replay: rows of chips; every row keeps its height while it plays (R7.9) */
 .spd-ctx{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin-bottom:6px}
 .spd-ctx .spd-rl{margin:0}
-.spd-ctxt{font-family:var(--font-mono);font-size:12.5px;padding:2px 8px;border-radius:4px;background:var(--sunken);color:var(--ink)}
-.spd-rl{font-size:12px;color:var(--ink-2);margin:8px 0 4px;min-height:1.4em}
+.spd-ctxt{font-family:var(--font-mono);font-size:var(--fs-label);padding:2px 8px;border-radius:4px;background:var(--sunken);color:var(--ink)}
+.spd-rl{font-size:var(--fs-label);color:var(--ink-2);margin:8px 0 4px;min-height:1.4em}
 .spd-row{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:4px}
-.spd-chip{display:flex;align-items:center;justify-content:center;height:28px;border-radius:5px;font-size:12.5px;font-family:var(--font-mono);border:1.5px solid transparent;min-width:0;overflow:hidden;white-space:nowrap;padding:0 2px;color:var(--ink);transition:background .2s,border-color .2s}
+.spd-chip{display:flex;align-items:center;justify-content:center;height:28px;border-radius:5px;font-size:var(--fs-label);font-family:var(--font-mono);border:1.5px solid transparent;min-width:0;overflow:hidden;white-space:nowrap;padding:0 2px;color:var(--ink);transition:background .2s,border-color .2s}
 .spd-ph{border:1px dashed var(--line);background:none}
 .spd-ghost{visibility:hidden}
 .spd-g{border:1.5px dashed var(--ink-3);background:var(--surface)}
@@ -97,21 +97,21 @@
 .spd-player{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:12px}
 .spd-ib{min-width:32px;padding-left:0;padding-right:0}
 .spd-speed{display:inline-flex;align-items:center;gap:6px;flex:none}
-.spd-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
-.spd-app .spd-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;cursor:pointer}
+.spd-speed-l{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2)}
+.spd-app .spd-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:var(--fs-label);cursor:pointer}
 .spd-player .btn{height:30px;padding-top:0;padding-bottom:0}
 .spd-scrub{flex:1 1 140px;min-width:120px;display:flex;align-items:center}
 .spd-scrub input{width:100%}
 .spd-tbtns{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
-@container (max-width:460px){.spd-chip{font-size:10.5px;height:26px;padding:0 1px}.spd-row{gap:3px}.spd-ctxt{font-size:11.5px}
+@container (max-width:460px){.spd-chip{font-size:var(--fs-mark);height:26px;padding:0 1px}.spd-row{gap:3px}.spd-ctxt{font-size:var(--fs-label)}
   .spd-row.spd-wide{grid-template-columns:repeat(5,minmax(0,1fr))}}   /* k = 8 on a phone: two lines of 5, so every word fits */
 /* metric cards */
 .spd-metrics .metric.spd-mbad .v{color:var(--c-oom)}
 /* formulas: the name on its own line, then the chain broken at “=” (R6.37) */
 .spd-eq{margin:6px 0 8px}
-.spd-eq-n{font-size:12.5px;color:var(--ink-2);margin-bottom:2px}
+.spd-eq-n{font-size:var(--fs-label);color:var(--ink-2);margin-bottom:2px}
 .spd-fx{overflow-x:auto;overflow-y:hidden;max-width:100%;padding-block:.3em;padding-left:.2em}
-.mathbody .spd-mh{font-family:var(--font-mono);font-size:11px;letter-spacing:.02em;color:var(--ink-3);border-top:1px solid var(--line);padding-top:8px;margin:12px 0 4px}
+.mathbody .spd-mh{font-family:var(--font-mono);font-size:var(--fs-mark);letter-spacing:.02em;color:var(--ink-3);border-top:1px solid var(--line);padding-top:8px;margin:12px 0 4px}
 .mathbody .spd-mh:first-child{border-top:0;padding-top:0;margin-top:0}
 .spd-sub{margin:8px 0 0}
 #spd-rail .lever .lv-r{white-space:normal;overflow-wrap:anywhere}
@@ -129,27 +129,27 @@
 .spd-tin{fill:var(--sunken);stroke:var(--ink-3);stroke-width:1}
 .spd-hid{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 2;stroke-opacity:.7}
 .spd-tout{fill:var(--surface);stroke:var(--ink);stroke-width:1.5}
-.spd-svg .spd-ct{font-size:10.5px;fill:var(--ink)}
+.spd-svg .spd-ct{font-size:var(--fs-mark);fill:var(--ink)}
 .spd-svg .spd-cto{font-weight:650}
-.spd-svg .spd-tsub{font-size:10.5px;fill:var(--ink-2)}
+.spd-svg .spd-tsub{font-size:var(--fs-mark);fill:var(--ink-2)}
 .spd-rowbg{fill:var(--sunken);fill-opacity:.75}
 .spd-sw-cxc{background:color-mix(in srgb,var(--c-kv) 22%,var(--surface));border:1px solid var(--c-kv)}
 .spd-sw-tin{background:var(--sunken);border:1px solid var(--ink-3)}
 .spd-sw-hid{background:none;border:1px dashed var(--ink-3)}
 .spd-sw-tout{background:var(--surface);border:1.5px solid var(--ink)}
-.spd-svg .spd-ct.spd-ctn{font-size:9.5px}
+.spd-svg .spd-ct.spd-ctn{font-size:var(--fs-mark)}
 /* part 3: the round's three stages, highlighted in the order the card tells them (① guess, ② one check, ③ keep) */
 .spd-3s{margin:6px 0 8px;padding-left:0;list-style:none}
 .spd-3s li{margin:0 0 6px}
 .spd-stg{margin-top:8px}
-.spd-stl{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;font-size:12.5px;line-height:1.4;color:var(--ink-3);margin:0 0 5px;padding:3px 6px 3px 8px;border-left:3px solid transparent;border-radius:2px;transition:color .2s,border-color .2s,background-color .2s}
+.spd-stl{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;font-size:var(--fs-label);line-height:1.4;color:var(--ink-3);margin:0 0 5px;padding:3px 6px 3px 8px;border-left:3px solid transparent;border-radius:2px;transition:color .2s,border-color .2s,background-color .2s}
 .spd-stl b{font-weight:650}
-.spd-stl .spd-stx{font-size:12px}
+.spd-stl .spd-stx{font-size:var(--fs-label)}
 .spd-stn{font-weight:700}
 .spd-stl.on{color:var(--ink);border-left-color:var(--ink);background:var(--sunken)}
 .spd-stl.done{color:var(--ink-2)}
 .spd-brk{position:relative;height:14px;margin:10px 2px 4px;border:1.5px solid var(--ink-2);border-bottom:0;border-radius:3px 3px 0 0;visibility:hidden;display:flex;justify-content:center}
-.spd-brk span{position:relative;top:-9px;height:16px;background:var(--surface);padding:0 6px;font-size:11.5px;font-family:var(--font-mono);color:var(--ink);line-height:16px;white-space:nowrap;max-width:calc(100% - 12px);overflow:hidden;text-overflow:ellipsis}
+.spd-brk span{position:relative;top:-9px;height:16px;background:var(--surface-2);padding:0 6px;font-size:var(--fs-label);font-family:var(--font-mono);color:var(--ink);line-height:16px;white-space:nowrap;max-width:calc(100% - 12px);overflow:hidden;text-overflow:ellipsis}   /* the label hides the bracket's line behind it, so it takes the soft panel's colour (精装修 step 2) */
 .spd-brk.on{visibility:visible}
 .spd-agree{border-color:var(--c-ok)}
 .spd-na{text-decoration:line-through}
@@ -164,9 +164,9 @@
 .spd-rcost .spd-drf{stroke:var(--ink-3);stroke-width:.8}
 /* folds in the guided cards (owner review 2026-10-14): the card says the point in a sentence or two; the detail and the formulas are one click away */
 .spd-more{margin:8px 0 0}
-.spd-more>summary{cursor:pointer;list-style:none;display:flex;align-items:flex-start;gap:7px;font-size:13px;font-weight:600;color:var(--ink-2);width:fit-content;max-width:100%}
+.spd-more>summary{cursor:pointer;list-style:none;display:flex;align-items:flex-start;gap:7px;font-size:var(--fs-cap);font-weight:600;color:var(--ink-2);width:fit-content;max-width:100%}
 .spd-more>summary::-webkit-details-marker{display:none}
-.spd-more>summary::before{content:"+";flex:none;font-family:var(--font-mono);width:16px;height:16px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-size:11px;margin-top:1px}
+.spd-more>summary::before{content:"+";flex:none;font-family:var(--font-mono);width:16px;height:16px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:3px;font-size:var(--fs-mark);margin-top:1px}
 .spd-more[open]>summary::before{content:"−"}
 .spd-more>summary:hover{color:var(--ink)}
 .spd-more>summary:focus-visible{outline:2px solid var(--ink-3);outline-offset:2px}
@@ -176,8 +176,8 @@
 /* 知识梳理: two schematic pictures in the text's own symbols (HTML grids that size to the figure), formulas on a line of their own.
    Section 2: one forward pass, row i sees x₁…xᵢ (solid cells; dashed: after it) and gives p(· | x₁, …, xᵢ) */
 .spd-prf{container-type:inline-size}
-.primer .spd-prg{display:grid;grid-template-columns:auto repeat(5,minmax(26px,44px)) auto auto;gap:6px;align-items:center;justify-content:start;font-size:15px;line-height:1.2}
-.primer .spd-prg-h,.primer .spd-prg-i,.primer .spd-prr-l,.primer .spd-prr-n{font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+.primer .spd-prg{display:grid;grid-template-columns:auto repeat(5,minmax(26px,44px)) auto auto;gap:6px;align-items:center;justify-content:start;font-size:var(--fs-stage);line-height:1.2}
+.primer .spd-prg-h,.primer .spd-prg-i,.primer .spd-prr-l,.primer .spd-prr-n{font-size:var(--fs-cap);color:var(--ink-2);white-space:nowrap}
 .primer .spd-prg-hc{grid-column:2 / span 5;text-align:center}
 .primer .spd-prg-i,.primer .spd-prr-n{text-align:center}
 .primer .spd-prg-c{height:30px;display:grid;place-items:center;border-radius:4px;border:1px dashed var(--line-2);min-width:0}
@@ -185,15 +185,15 @@
 .primer .spd-prg-a{color:var(--ink-3)}
 .primer .spd-prg-o{justify-self:start;white-space:nowrap;padding:3px 8px;border:1.5px solid var(--ink);border-radius:4px}
 /* section 3: one round, the guesses d₁…d₄ against the target's ŷ₁…ŷ₅ in the lab's chip colours, the verdict under them in words */
-.primer .spd-prr{display:grid;grid-template-columns:auto repeat(5,minmax(0,76px));gap:6px 8px;align-items:center;justify-content:start;font-size:15px;line-height:1.2}
+.primer .spd-prr{display:grid;grid-template-columns:auto repeat(5,minmax(0,76px));gap:6px 8px;align-items:center;justify-content:start;font-size:var(--fs-stage);line-height:1.2}
 .primer .spd-prr-l{padding-right:4px}
 .primer .spd-prc{height:30px;display:grid;place-items:center;border-radius:5px;border:1.5px solid transparent;min-width:0}
-.primer .spd-prm{text-align:center;font-size:13px;font-weight:600;white-space:nowrap}
+.primer .spd-prm{text-align:center;font-size:var(--fs-cap);font-weight:600;white-space:nowrap}
 .primer .spd-pm-ok{color:var(--c-ok)}
 .primer .spd-pm-bad{color:var(--c-oom)}
 .primer .spd-pm-void{color:var(--ink-3)}
-@container (max-width:420px){.primer .spd-prg{gap:5px 4px;font-size:14px}.primer .spd-prg-c{height:28px}.primer .spd-prg-o{padding:2px 5px}
-  .primer .spd-prr{gap:5px 5px;font-size:14px}.primer .spd-prc{height:28px}.primer .spd-prm{font-size:12px}}
+@container (max-width:420px){.primer .spd-prg{gap:5px 4px;font-size:var(--fs-ui)}.primer .spd-prg-c{height:28px}.primer .spd-prg-o{padding:2px 5px}
+  .primer .spd-prr{gap:5px 5px;font-size:var(--fs-ui)}.primer .spd-prc{height:28px}.primer .spd-prm{font-size:var(--fs-label)}}
 .primer .spd-prfx{display:flex;flex-wrap:wrap;align-items:center;column-gap:.35em;row-gap:6px;margin:2px 0 14px;padding-left:1em;font-size:1.05em;line-height:1.3;min-width:0}
 .primer .spd-prfx>span{min-width:0;max-width:100%}
 @media (max-width:760px){.primer .spd-prfx{padding-left:.4em}}
@@ -241,3 +241,24 @@
 }}
 /* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
 .spd-st-title{font-variant-numeric:tabular-nums}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) part 5 still ran 41 px past the stage (English: parts 2 and
+   5, 16 and 48). The k curve is drawn 140 px high instead of 176 (plotBox reads --spd-ch; its text keeps its size), the blocks sit 6 px
+   apart and their vertical padding is 6 px. In English, whose legend takes two lines, the blocks' vertical padding is 4 px and the
+   space under the step's picture and above the legend is smaller (R7.16) */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  #spd-kcurve{--spd-ch:140}
+  .spd-main{gap:6px}
+  .spd-blk{padding-top:6px;padding-bottom:6px}
+  html[lang="en"] .spd-blk{padding-top:4px;padding-bottom:4px}
+  html[lang="en"] .spd-stepin{padding-bottom:4px}
+  html[lang="en"] .spd-leg{margin-top:2px}
+}}
+/* refit step 2 (2026-10-24): at 700 px tall or less (1366 × 650) part 7 still ran 10 px past the stage (English 11). The blocks sit
+   4 px apart with 4 px vertical padding, and the space above the cards and above the math is 6 px (parts 2 and 5 still run 43–71 px
+   past) */
+@media (min-width:761px) and (min-height:600px) and (max-height:700px){@container (min-width:736px){
+  .spd-main{gap:4px}
+  .spd-blk{padding-top:4px;padding-bottom:4px}
+  .spd-metrics{margin-top:6px}
+  .spd-stage>details.math{margin-top:6px;padding-top:6px}
+}}
