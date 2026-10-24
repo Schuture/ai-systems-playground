@@ -12,7 +12,7 @@
 .tcap-graph>.tcap-top:not([hidden])~.tcap-barbox:not([hidden]),.tcap-graph>.tcap-barbox:not([hidden])~.tcap-barbox:not([hidden]){border-top:1px solid var(--line);padding-top:14px}
 .tcap-phone{display:none}
 .tcap-phone .tcap-ph{margin:0 0 6px;color:var(--ink-2)}
-.tcap-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+.tcap-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
 .tcap-cl-note{margin-top:4px;line-height:1.4}
 
 /* ---------- the cluster and the memory column side by side ---------- */
@@ -29,7 +29,7 @@
 .tcap-gpu.me{fill:var(--ink);stroke:var(--ink);stroke-width:1.2}
 .tcap-tpg{fill:var(--surface);stroke:var(--ink-3);stroke-width:.8}
 .tcap-tpg.me{stroke:var(--ink);stroke-width:1.6}
-.tcap-tl{font:9px var(--font-mono);fill:var(--ink-2)}
+.tcap-tl{font:var(--fs-mark) var(--font-mono);fill:var(--ink-2)}
 
 /* the memory column: weights blue, gradients and optimizer states gray, gathered layers light, activations outlined */
 .tcap-mem{display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;align-items:end}
@@ -42,7 +42,7 @@
 .tcap-mb.a{fill:var(--surface-2);stroke:var(--ink-2);stroke-width:.8}
 .tcap-mb.over{fill:var(--c-oom-soft);stroke:var(--c-oom);stroke-width:1;stroke-dasharray:3 2}
 .tcap-cap80{stroke:var(--ink);stroke-width:1.6}
-.tcap-ml{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-size:12px;color:var(--ink-2)}
+.tcap-ml{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-size:var(--fs-label);color:var(--ink-2)}
 .tcap-ml li{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:6px;align-items:center}
 .tcap-ml li[data-tipx]{cursor:help;outline-offset:2px;border-radius:2px}
 .tcap-ml b{font-weight:600;color:var(--ink);white-space:nowrap}
@@ -73,14 +73,14 @@
 .tcap-bar{display:flex;height:22px;background:var(--surface-2);border-radius:2px;overflow:hidden;margin-bottom:8px}
 .tcap-sg{display:block;height:100%;min-width:0;box-sizing:border-box;font-style:normal;transition:width .25s ease}
 .tcap-sg.bb,.tcap-sg.dp{border:1px solid var(--line)}
-.tcap-list{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-size:12px;color:var(--ink-2)}
+.tcap-list{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-size:var(--fs-label);color:var(--ink-2)}
 .tcap-list li{display:grid;grid-template-columns:12px minmax(0,1fr) auto 52px;gap:6px;align-items:center;cursor:help;outline-offset:2px;border-radius:2px}
 .tcap-list b{font-weight:600;color:var(--ink);white-space:nowrap;text-align:right}
 .tcap-list em{font-style:normal;color:var(--ink-3);text-align:right;white-space:nowrap}
 
 /* ---------- part 6: real runs against this lab's plan ---------- */
 .tcap-rl{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px}
-.tcap-rl li{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr) 52px;gap:8px;align-items:center;font-size:12.5px;color:var(--ink-2)}
+.tcap-rl li{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr) 52px;gap:8px;align-items:center;font-size:var(--fs-cap);color:var(--ink-2)}
 .tcap-rl li b{text-align:right;color:var(--ink);font-weight:600}
 .tcap-rl li.me{color:var(--ink);font-weight:650}
 .tcap-rt{position:relative;height:14px;background:var(--surface-2);border-radius:2px;overflow:hidden}
@@ -93,7 +93,7 @@
 @container (min-width:640px){.tcap-metrics[data-n="5"]{grid-template-columns:repeat(5,minmax(0,1fr))}}
 
 /* ---------- formulas on their own line ---------- */
-.tcap-fx{margin:6px 0 8px;padding:4px 0;overflow-x:auto;overflow-y:hidden;font-size:15px;line-height:normal}
+.tcap-fx{margin:6px 0 8px;padding:4px 0;overflow-x:auto;overflow-y:hidden;font-size:var(--fs-stage);line-height:normal}
 .tcap-app .mathbody .tcap-fx{margin-top:12px}
 /* a long formula that wraps (MW; the owner's review of 2026-10-09: no Show the math row scrolls sideways): name, “=”, then pieces that
    wrap before an operator, each new line under the first piece; on a phone-width stage the name goes on its own line above */
@@ -115,30 +115,30 @@
 .tcap-c3{list-style:none;margin:0;padding:0}
 .tcap-c3r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:7px 0 8px;border-bottom:1px solid var(--line-2)}
 .tcap-c3h{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0}
-.tcap-c3t{font-size:13px;font-weight:700;color:var(--ink);margin-right:2px}
-.tcap-chip{font-size:11.5px;line-height:1.45;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--ink-2);white-space:nowrap}
+.tcap-c3t{font-size:var(--fs-cap);font-weight:700;color:var(--ink);margin-right:2px}
+.tcap-chip{font-size:var(--fs-label);line-height:1.45;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--ink-2);white-space:nowrap}
 .tcap-chip.on{border-color:var(--ink);color:var(--ink);font-weight:700;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--ink)}
 .tcap-c3trk{position:relative;height:14px;background:var(--surface-2);border-radius:2px;min-width:0}
 .tcap-c3fill{position:absolute;left:0;top:0;bottom:0;display:flex;overflow:hidden;border-radius:2px;max-width:100%}
 .tcap-c3fill .tcap-sg{flex:none}
 .tcap-c3g{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed var(--ink);margin-left:-1px;pointer-events:none}
-.tcap-c3d{font-size:12.5px;font-weight:650;color:var(--ink);white-space:nowrap;text-align:right;min-width:4.6em}
+.tcap-c3d{font-size:var(--fs-cap);font-weight:650;color:var(--ink);white-space:nowrap;text-align:right;min-width:4.6em}
 .tcap-c3d.bad,.tcap-c3m.bad,.tcap-c3x.bad{color:var(--c-oom)}
-.tcap-c3s{grid-column:1/-1;font-size:12px;line-height:1.4;color:var(--ink-2)}
-.tcap-c3x{grid-column:1/-1;font-size:12.5px;font-weight:650}
-.tcap-c3leg{display:flex;flex-wrap:wrap;gap:3px 12px;margin:7px 0 2px;color:var(--ink-2);font-size:11.5px}
+.tcap-c3s{grid-column:1/-1;font-size:var(--fs-label);line-height:1.4;color:var(--ink-2)}
+.tcap-c3x{grid-column:1/-1;font-size:var(--fs-cap);font-weight:650}
+.tcap-c3leg{display:flex;flex-wrap:wrap;gap:3px 12px;margin:7px 0 2px;color:var(--ink-2);font-size:var(--fs-label)}
 .tcap-c3leg span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .tcap-sw.goal{background:transparent;border:0;border-left:2px dashed var(--ink);border-radius:0;width:2px;height:12px}
-.tcap-gap,.tcap-next{margin:9px 0 0;font-size:13.5px;line-height:1.5}
+.tcap-gap,.tcap-next{margin:9px 0 0;font-size:var(--fs-cap);line-height:1.5}
 .tcap-why{margin:7px 0 0;line-height:1.5;color:var(--ink-2)}
 .tcap-all{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
-.tcap-all>summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--ink);padding:4px 0}
+.tcap-all>summary{cursor:pointer;font-weight:650;font-size:var(--fs-cap);color:var(--ink);padding:4px 0}
 .tcap-allb{padding-top:4px}
 .tcap-allb>p{margin:6px 0}
 /* the list bleeds a little into the card's padding, so its six columns fit the 1440 rail in English */
 .tcap-tblw{max-height:340px;overflow:auto;border:1px solid var(--line-2);border-radius:4px;margin:6px -10px 4px}
-.tcap-tbl{width:100%;border-collapse:collapse;font-size:11.5px;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
-.tcap-tbl th{position:sticky;top:0;z-index:1;background:var(--surface);font-family:var(--font-ui,inherit);font-weight:650;font-size:11.5px;line-height:1.25;color:var(--ink);text-align:right;vertical-align:bottom;padding:5px 4px;border-bottom:1px solid var(--line)}
+.tcap-tbl{width:100%;border-collapse:collapse;font-size:var(--fs-label);font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.tcap-tbl th{position:sticky;top:0;z-index:1;background:var(--surface);font-family:var(--font-ui,inherit);font-weight:650;font-size:var(--fs-label);line-height:1.25;color:var(--ink);text-align:right;vertical-align:bottom;padding:5px 4px;border-bottom:1px solid var(--line)}
 .tcap-tbl td{text-align:right;padding:3px 4px;border-bottom:1px solid var(--line-2);white-space:nowrap;color:var(--ink-2)}
 .tcap-tbl tr.ok td{color:var(--ink)}
 .tcap-tbl tr.me td{font-weight:700;color:var(--ink);background:var(--surface-2)}
@@ -155,17 +155,17 @@
 .tcap-ul{margin:0 0 10px;padding-left:18px}
 .tcap-ul li{margin-bottom:6px}
 .tcap-al{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:6px}
-.tcap-al li{display:grid;gap:1px;font-size:13.5px}
+.tcap-al li{display:grid;gap:1px;font-size:var(--fs-cap)}
 .tcap-al li span{color:var(--ink-2)}
 
 /* ---------- settings ---------- */
 .tcap-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
-.tcap-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.tcap-gh{font-size:var(--fs-cap);font-weight:700;color:var(--ink)}
 .tcap-grp .ctl .lbl{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .tcap-app .ctl output{white-space:nowrap}
 
 /* ---------- connect ---------- */
-.tcap-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.tcap-prod{margin:0 0 8px;padding-left:18px;font-size:var(--fs-ui);color:var(--ink-2)}
 .tcap-prod li{margin-bottom:6px}
 .tcap-prod code,.tcap-app .refs code{word-break:break-word}
 
@@ -186,7 +186,7 @@
   .tcap-top{grid-template-columns:minmax(0,1fr)}
   .tcap-top>.tcap-clbox:not([hidden])+.tcap-membox:not([hidden]){border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:14px}
   .tcap-list li{grid-template-columns:12px minmax(0,1fr) auto 44px}
-  .tcap-rl li{grid-template-columns:minmax(0,112px) minmax(0,1fr) 46px;font-size:12px}
+  .tcap-rl li{grid-template-columns:minmax(0,112px) minmax(0,1fr) 46px;font-size:var(--fs-label)}
   .tcap-metrics[data-n="5"]{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (prefers-reduced-motion:reduce){.tcap-sg,.tcap-mb,.tcap-rt i{transition:none}}
@@ -208,4 +208,18 @@
   .tcap-metrics .metric .sub{line-height:1.25}
   .tcap-metrics .metric .d{min-height:13px;line-height:1.1}
   .tcap-stage>details.math{margin-top:8px;padding-top:8px}
+}}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) parts 5 and 7 still ran 40 px past the stage in Chinese
+   and 50 in English. The gaps round the hairlines, under the captions and between the two time lists' rows are 2–4 px smaller, a row's
+   line is 1.4 instead of 1.55 (its text keeps its size), and the metric cards take the kit's tight line heights (a card's change row stays
+   reserved). Same blocks, lines and texts */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .tcap-graph{gap:8px}
+  .tcap-graph>.tcap-top:not([hidden])~.tcap-barbox:not([hidden]),.tcap-graph>.tcap-barbox:not([hidden])~.tcap-barbox:not([hidden]){padding-top:8px}
+  .tcap-cap{margin-bottom:3px}
+  .tcap-bar{margin-bottom:6px}
+  .tcap-list{gap:1px}
+  .tcap-list li{line-height:1.4}
+  .tcap-metrics .metric .sub{line-height:1.25}
+  .tcap-metrics .metric .d{min-height:13px;line-height:1.1}
 }}

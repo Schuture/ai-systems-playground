@@ -12,16 +12,16 @@
 .mp-graph>.mp-clbox:not([hidden])~.mp-gbox:not([hidden]),.mp-graph>.mp-clbox:not([hidden])~.mp-lbox:not([hidden]),.mp-graph>.mp-gbox:not([hidden])~.mp-lbox:not([hidden]){border-top:1px solid var(--line);padding-top:14px}
 #mp-lt-cap{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
 .mp-phone{display:none}
-.mp-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+.mp-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px;text-wrap:balance}   /* a caption that takes two lines splits them evenly (精装修 step 2) */
 
 /* ---------- the Gantt chart: a 96 px label column, then the track ---------- */
 .mp-gantt{--mp-lab:96px;position:relative;min-width:0;cursor:help;outline-offset:3px}
 .mp-grows{position:relative;display:grid;gap:4px}
 .mp-grow{display:grid;grid-template-columns:var(--mp-lab) minmax(0,1fr);align-items:center;min-height:30px}
-.mp-glab{font:600 12px/1.15 var(--font-ui);color:var(--ink);padding-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mp-glab small{display:block;font:11px/1.2 var(--font-mono);font-weight:400;color:var(--ink-3)}
+.mp-glab{font:600 var(--fs-label)/1.15 var(--font-ui);color:var(--ink);padding-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-glab small{display:block;font:var(--fs-mark)/1.2 var(--font-mono);font-weight:400;color:var(--ink-3)}
 .mp-gtrk{position:relative;height:22px;background:var(--surface-2);border-radius:2px;overflow:hidden}
-.mp-gtrk i{position:absolute;top:0;bottom:0;box-sizing:border-box;font:600 10.5px/20px var(--font-mono);font-style:normal;text-align:center;overflow:hidden;white-space:nowrap}
+.mp-gtrk i{position:absolute;top:0;bottom:0;box-sizing:border-box;font:600 var(--fs-mark)/20px var(--font-mono);font-style:normal;text-align:center;overflow:hidden;white-space:nowrap}
 .mp-cf{background:var(--surface);border:1.5px solid var(--ink-2);color:var(--ink-2);border-radius:2px}
 .mp-cb{background:var(--ink-2);border:1.5px solid var(--ink-2);color:var(--surface);border-radius:2px}
 .mp-ci{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line) 3px 4px)}
@@ -37,12 +37,12 @@
 .mp-grows.dense{gap:2px}
 .mp-grows.dense .mp-grow{min-height:14px}
 .mp-grows.dense .mp-gtrk{height:12px}
-.mp-grows.dense .mp-glab{font-size:10.5px}
+.mp-grows.dense .mp-glab{font-size:var(--fs-mark)}
 .mp-grows.dense .mp-gtrk i{font-size:0}
 /* the playhead: the mask hides what has not happened yet */
 .mp-mask{position:absolute;top:0;bottom:0;right:0;background:var(--surface);opacity:.88;pointer-events:none}
 .mp-head{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px solid var(--ink);pointer-events:none}
-.mp-gleg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--ink-2);margin-bottom:8px}
+.mp-gleg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:var(--fs-label);color:var(--ink-2);margin-bottom:8px}
 .mp-gleg span{cursor:help;white-space:nowrap}
 .mp-ltleg span,.mp-mleg span{white-space:nowrap}
 .sw.mp-sw-f{background:var(--surface);border:1.5px solid var(--ink-2)}
@@ -60,8 +60,8 @@
 /* ---------- the player ---------- */
 .mp-player{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:10px}
 .mp-player .ctl{display:flex;align-items:center;gap:6px;margin:0}
-.mp-player .ctl>.lbl{font-size:12px}
-.mp-player .seg-ctl button{font-size:12px;padding:3px 9px}
+.mp-player .ctl>.lbl{font-size:var(--fs-label)}
+.mp-player .seg-ctl button{font-size:var(--fs-label);padding:3px 9px}
 /* H7 (the owner, 2026-10-09, on GRPO's player: “重放按钮和速度按钮没有对齐”): Replay, the step buttons and the speed buttons share one
    height and one centre line */
 .mp-player .btn.sm,.mp-player .seg-ctl{height:30px;box-sizing:border-box}
@@ -70,19 +70,19 @@
 .mp-play{min-width:92px;justify-content:center}
 .mp-scrub{display:flex;align-items:center;gap:8px;flex:1 1 180px;min-width:0}
 .mp-scrub input{flex:1 1 auto;min-width:0}
-.mp-count{font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.mp-count{font-size:var(--fs-label);color:var(--ink-2);white-space:nowrap}
 
 /* ---------- parts 4–5: the MLP block cut across t GPUs ---------- */
 .mp-tp{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 8px;padding:4px 0 2px;margin-bottom:16px}
 .mp-blk{display:inline-flex;flex-direction:column;align-items:center;gap:5px;cursor:help;outline-offset:3px;border-radius:3px}
-.mp-bl{font-size:11.5px;line-height:1.25;color:var(--ink-2);text-align:center;max-width:150px}
-.mp-op{align-self:center;font:600 16px/1 var(--font-mono);color:var(--ink-3);padding-bottom:4px}
+.mp-bl{font-size:var(--fs-label);line-height:1.25;color:var(--ink-2);text-align:center;max-width:150px}
+.mp-op{align-self:center;font:600 var(--fs-body)/1 var(--font-mono);color:var(--ink-3);padding-bottom:4px}
 .mp-act{display:block;width:34px;height:64px;background:var(--surface-2);border:1.5px solid var(--ink-3);border-radius:2px}
 .mp-mat{display:grid;gap:2px;width:112px;height:64px}
 .mp-mat.cols{grid-template-columns:repeat(var(--n),minmax(0,1fr))}
 .mp-mat.rows{width:64px;height:112px;grid-template-rows:repeat(var(--n),minmax(0,1fr))}
 .mp-st{display:grid;place-items:center;background:var(--c-weights);border-radius:2px;min-width:0;min-height:0;font-style:normal}
-.mp-st b{font:600 10.5px/1 var(--font-mono);color:var(--on-weights)}
+.mp-st b{font:600 var(--fs-mark)/1 var(--font-mono);color:var(--on-weights)}
 .mp-parts{position:relative;display:block;width:44px;height:64px;margin:22px 22px 0 0}
 .mp-parts i{position:absolute;inset:0;box-sizing:border-box;background:var(--surface);border:1.5px solid var(--ink-2);border-radius:2px}
 .mp-parts i:nth-child(2){transform:translate(3px,-3px)}
@@ -92,7 +92,7 @@
 .mp-parts i:nth-child(6){transform:translate(15px,-15px)}
 .mp-parts i:nth-child(7){transform:translate(18px,-18px)}
 .mp-parts i:nth-child(8){transform:translate(21px,-21px)}
-.mp-sum{display:grid;place-items:center;width:44px;height:44px;border:1.5px solid var(--ink-2);border-radius:50%;font:600 20px/1 var(--font-mono);color:var(--ink)}
+.mp-sum{display:grid;place-items:center;width:44px;height:44px;border:1.5px solid var(--ink-2);border-radius:50%;font:600 var(--fs-big)/1 var(--font-mono);color:var(--ink)}
 .mp-blk.ar.red .mp-sum{border-color:var(--c-oom);color:var(--c-oom);background:var(--c-oom-soft)}
 .mp-blk.ar.red .mp-bl{color:var(--c-oom);font-weight:650}
 
@@ -106,20 +106,20 @@
 .mp-cmp.b{background:var(--ink-2)}
 .mp-ar{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--surface) 2px 4px);border-top:1px solid var(--ink-2);border-bottom:1px solid var(--ink-2)}
 .mp-ar.red{background:var(--c-oom);border-color:var(--c-oom)}
-.mp-ltax{display:flex;justify-content:space-between;font:10.5px/1.4 var(--font-mono);color:var(--ink-3);border-top:1px solid var(--line);margin-top:3px}
+.mp-ltax{display:flex;justify-content:space-between;font:var(--fs-mark)/1.4 var(--font-mono);color:var(--ink-3);border-top:1px solid var(--line);margin-top:3px}
 /* S13: the per-GPU layer zoomed to its own length; kept (invisible) at one GPU so that the box does not change height */
 .mp-ltz{margin-top:10px}
 .mp-ltz[aria-hidden="true"]{visibility:hidden}
-.mp-ltzc{font-size:12px;line-height:1.45;color:var(--ink-2);margin-bottom:3px;min-height:1.45em}
+.mp-ltzc{font-size:var(--fs-label);line-height:1.45;color:var(--ink-2);margin-bottom:3px;min-height:1.45em}
 .mp-ltbar.z{height:26px}
 .mp-ltbar.z .mp-ltsegs{top:3px;bottom:3px}
 @media (max-width:760px){.mp-ltzc{min-height:2.9em}}
-.mp-ltleg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--ink-2);margin-top:8px}
+.mp-ltleg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:var(--fs-label);color:var(--ink-2);margin-top:8px}
 
 /* ---------- part 6, Scenarios, challenge: the cluster and the memory bar ---------- */
 .mp-clg{display:grid;grid-template-columns:repeat(var(--c),minmax(0,1fr));gap:4px}
 .mp-cell{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding:4px 2px;border:1px solid var(--line);border-radius:3px;background:var(--surface);cursor:help;outline-offset:2px}
-.mp-cell small{font:10px/1.2 var(--font-mono);color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.mp-cell small{font:var(--fs-mark)/1.2 var(--font-mono);color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 /* R7.4: the short form of the machine label (only its number) when “machine 3” does not fit; none when even that does not fit */
 .mp-cell small .s,.mp-clg.short .mp-cell small .l,.mp-clg.none .mp-cell small{display:none}
 .mp-clg.short .mp-cell small .s{display:inline}
@@ -128,7 +128,7 @@
 .mp-more{margin:6px 0 0}
 .mp-mem{margin-top:12px}
 .mp-mem:not(:empty){border-top:1px solid var(--line);padding-top:12px}
-.mp-mcap{font-size:12px;color:var(--ink-2);margin-bottom:5px}
+.mp-mcap{font-size:var(--fs-label);color:var(--ink-2);margin-bottom:5px}
 .mp-mbar{position:relative;display:flex;height:18px;background:var(--surface-2);border-radius:2px;margin-bottom:20px}
 .mp-mbar i{display:block;height:100%;cursor:help;min-width:0}
 .mp-mbar.over{box-shadow:0 0 0 1.5px var(--c-oom)}
@@ -136,8 +136,8 @@
 .mp-mo{background:var(--ink-3)}
 .mp-ma{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--surface-2) 2px 4px)}
 .mp-mlim{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px solid var(--ink);pointer-events:none}
-.mp-mlim em{position:absolute;top:100%;left:0;transform:translateX(-50%);margin-top:2px;font:10.5px/1.2 var(--font-mono);font-style:normal;color:var(--ink-2);white-space:nowrap}
-.mp-mleg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--ink-2)}
+.mp-mlim em{position:absolute;top:100%;left:0;transform:translateX(-50%);margin-top:2px;font:var(--fs-mark)/1.2 var(--font-mono);font-style:normal;color:var(--ink-2);white-space:nowrap}
+.mp-mleg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:var(--fs-label);color:var(--ink-2)}
 .mp-mtot{font-family:var(--font-mono);color:var(--ink);font-weight:650}
 .mp-mtot.bad{color:var(--c-oom)}
 
@@ -148,7 +148,7 @@
 @container (min-width:560px){.mp-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
 
 /* ---------- formulas on their own line ---------- */
-.mp-fx{margin:8px 0 10px;overflow-x:auto;font-size:15px;line-height:1.3}
+.mp-fx{margin:8px 0 10px;overflow-x:auto;font-size:var(--fs-stage);line-height:1.3}
 
 /* ---------- rail ---------- */
 .mp-mt{margin-top:12px}
@@ -168,12 +168,12 @@
 
 /* ---------- settings ---------- */
 .mp-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
-.mp-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.mp-gh{font-size:var(--fs-cap);font-weight:700;color:var(--ink)}
 .mp-grp .ctl>label{display:flex}
 .mp-app .ctl output{white-space:nowrap}
 
 /* ---------- connect ---------- */
-.mp-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.mp-prod{margin:0 0 8px;padding-left:18px;font-size:var(--fs-ui);color:var(--ink-2)}
 .mp-prod li{margin-bottom:6px}
 .mp-prod code,.mp-app .refs code{word-break:break-word}
 
@@ -192,14 +192,14 @@
   .mp-graph{padding:10px 10px 12px}
   .mp-phone:not(:empty){display:block}
   /* the label column keeps 96 px: “layers 111–126” must fit (R7.8) */
-  .mp-glab{font-size:11px;padding-right:6px}
-  .mp-glab small{font-size:10px}
+  .mp-glab{font-size:var(--fs-mark);padding-right:6px}
+  .mp-glab small{font-size:var(--fs-mark)}
   .mp-mat{width:84px;height:52px}
   .mp-mat.rows{width:52px;height:84px}
   .mp-act{width:26px;height:52px}
   .mp-parts{width:36px;height:52px;margin:22px 22px 0 0}
-  .mp-sum{width:38px;height:38px;font-size:17px}
-  .mp-bl{max-width:110px;font-size:11px}
+  .mp-sum{width:38px;height:38px;font-size:var(--fs-lead)}
+  .mp-bl{max-width:110px;font-size:var(--fs-mark)}
   .mp-tp{gap:8px 6px}
   .mp-clg{gap:3px}
   .mp-cell{padding:3px 1px}
@@ -207,29 +207,29 @@
 @media (prefers-reduced-motion:reduce){.mp-head,.mp-mask{transition:none}}
 
 /* owner b8 (5): part 2's worked examples of the bubble formula, one row per m tried */
-.mp-wx{border-collapse:collapse;margin:4px 0 10px;font-size:12.5px;width:100%}
+.mp-wx{border-collapse:collapse;margin:4px 0 10px;font-size:var(--fs-label);width:100%}
 .mp-wx th{font-weight:600;text-align:left;color:var(--ink-2);border-bottom:1px solid var(--line);padding:3px 8px 3px 0}
-.mp-wx td{font-family:var(--font-mono);font-size:12px;padding:3px 8px 3px 0;color:var(--ink-2);border-bottom:1px solid var(--line-2)}
+.mp-wx td{font-family:var(--font-mono);font-size:var(--fs-label);padding:3px 8px 3px 0;color:var(--ink-2);border-bottom:1px solid var(--line-2)}
 .mp-wx td:first-child{white-space:nowrap}
 .mp-wx tr.cur td{color:var(--ink);font-weight:650}
 
 /* R1 (owner b8): the challenge's summary: your layout next to the fastest, a bar of the step split by where the time goes */
 .mp-chsum{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
-.mp-c3cap{font-size:12.5px;font-weight:650;color:var(--ink);margin-bottom:4px}
+.mp-c3cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);margin-bottom:4px}
 .mp-same{margin:0 0 8px;color:var(--ink-2);line-height:1.45}
 .mp-c3{list-style:none;margin:0;padding:0;display:grid;gap:12px}
 .mp-c3r{display:grid;gap:4px;min-width:0}
-.mp-c3h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:12.5px}
+.mp-c3h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:var(--fs-label)}
 .mp-c3t{font-weight:650;color:var(--ink);margin-right:2px}
-.mp-chip{font:11.5px/1.35 var(--font-mono);padding:0 6px;border:1px solid var(--line);border-radius:9px;color:var(--ink-2);white-space:nowrap}
+.mp-chip{font:var(--fs-label)/1.35 var(--font-mono);padding:0 6px;border:1px solid var(--line);border-radius:9px;color:var(--ink-2);white-space:nowrap}
 .mp-chip.on{border-color:var(--ink);color:var(--ink);font-weight:650}
 .mp-c3b{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
 .mp-c3trk{position:relative;height:14px;background:var(--surface-2);border-radius:2px;overflow:hidden;min-width:0}
 .mp-c3fill{display:flex;height:100%}
 .mp-c3fill i{display:block;height:100%;cursor:help;box-sizing:border-box}
-.mp-c3d{font-size:12.5px;white-space:nowrap}
-.mp-c3s{font-size:12px;color:var(--ink-2)}
-.mp-c3x{font-size:12.5px;font-weight:650;color:var(--c-oom)}
+.mp-c3d{font-size:var(--fs-label);white-space:nowrap}
+.mp-c3s{font-size:var(--fs-label);color:var(--ink-2)}
+.mp-c3x{font-size:var(--fs-cap);font-weight:650;color:var(--c-oom)}
 .mp-c3d.bad,.mp-c3m.bad{color:var(--c-oom)}
 .mp-sg.u,.mp-sw3.u{background:var(--ink-3)}
 .mp-sg.tp,.mp-sw3.tp{background:repeating-linear-gradient(135deg,var(--ink-2) 0 2px,var(--surface) 2px 4px)}
@@ -237,11 +237,29 @@
 .mp-sg.dp,.mp-sw3.dp{background:var(--line)}
 .mp-sw3{display:inline-block;width:12px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;border:1px solid var(--line)}
 .mp-c3leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;color:var(--ink-2)}
-.mp-gap,.mp-next{margin:10px 0 0;font-size:13.5px}
+.mp-gap,.mp-next{margin:10px 0 0;font-size:var(--fs-cap)}
 .mp-all{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
-.mp-all>summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--ink);padding:4px 0}
+.mp-all>summary{cursor:pointer;font-weight:650;font-size:var(--fs-cap);color:var(--ink);padding:4px 0}
 .mp-allb{padding-top:4px}
-.mp-pass{margin:4px 0 8px;padding-left:18px;font-size:13px}
+.mp-pass{margin:4px 0 8px;padding-left:18px;font-size:var(--fs-cap)}
 .mp-pass li{margin-bottom:4px}
 /* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
 #mp-metrics .sub{font-variant-numeric:tabular-nums}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) part 6 still ran 35 px past the stage in Chinese and 57 in
+   English (its legend takes two lines there). The gaps round the hairlines and under the captions are 2–6 px smaller, the timeline's
+   rows 2 px closer, the metric cards take the kit's tight line heights (as parallelism; a card's change row stays reserved). Same blocks,
+   lines and texts */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){
+  .mp-graph{padding:10px 12px 10px;gap:8px}
+  .mp-graph>.mp-clbox:not([hidden])~.mp-gbox:not([hidden]),.mp-graph>.mp-clbox:not([hidden])~.mp-lbox:not([hidden]),.mp-graph>.mp-gbox:not([hidden])~.mp-lbox:not([hidden]){padding-top:10px}
+  .mp-mem{margin-top:8px}
+  .mp-mem:not(:empty){padding-top:8px}
+  .mp-mcap{margin-bottom:3px}
+  .mp-more{margin-top:4px}
+  .mp-gleg{margin-bottom:4px}
+  .mp-grow{min-height:24px}
+  .mp-grows:not(.dense){gap:2px}
+  .mp-player{margin-top:6px}
+  .mp-metrics .metric .sub{line-height:1.25}
+  .mp-metrics .metric .d{min-height:13px;line-height:1.1}
+}

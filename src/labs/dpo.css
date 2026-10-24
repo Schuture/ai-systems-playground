@@ -5,8 +5,8 @@
 .dpo-app .stage-head>div:first-child{min-width:0}
 .dpo-head{align-items:center}
 .dpo-head .dpo-st-title{flex:1 1 auto}
-.dpo-st-title{font-weight:680;font-size:15.5px;line-height:1.3}
-.dpo-st-sub{font-size:12.5px;color:var(--ink-2);margin-top:4px;line-height:1.45;overflow-wrap:anywhere;max-width:100%}
+.dpo-st-title{font-weight:680;font-size:var(--fs-stage);line-height:1.3}
+.dpo-st-sub{font-size:var(--fs-label);color:var(--ink-2);margin-top:4px;line-height:1.45;overflow-wrap:anywhere;max-width:100%}
 /* β with its tooltip: in the step-1 chip and the stage title */
 .dpo-bt{cursor:help;white-space:nowrap;text-decoration:underline dotted;text-decoration-thickness:1px;text-underline-offset:3px;border-radius:2px}
 .dpo-bt:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
@@ -14,12 +14,12 @@
 .dpo-transport .btn[aria-pressed="true"]{background:var(--ink-2);border-color:var(--ink-2)}
 .dpo-tnote{line-height:1.4}
 .dpo-tnote:empty{display:none}
-.dpo-prompt{margin:12px 0 0;font-size:13px;line-height:1.45;color:var(--ink-2);max-width:100%}
+.dpo-prompt{margin:12px 0 0;font-size:var(--fs-cap);line-height:1.45;color:var(--ink-2);max-width:100%}
 /* playback speed: a small segmented control next to Play (R3.9) */
 .dpo-speed{display:inline-flex;align-items:center;gap:6px;flex:none;cursor:help}
 .dpo-speed[hidden]{display:none}
-.dpo-speed-l{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2)}
-.dpo-app .dpo-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:12px;cursor:pointer}
+.dpo-speed-l{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--ink-2)}
+.dpo-app .dpo-speed .seg-ctl button{flex:none;padding:4px 9px;font-size:var(--fs-label);cursor:pointer}
 
 /* role fills, shared by the answer bars, the mini result bar, the tile bars and the legend swatches */
 .dpo-c-w .dpo-fill,.dpo-sg.dpo-c-w{background:var(--ink)}
@@ -38,30 +38,30 @@
 .dpo-row{display:grid;grid-template-columns:minmax(0,1fr) 128px;column-gap:10px;row-gap:3px;align-items:center;min-width:0;border-radius:4px;cursor:help}
 .dpo-row>.dpo-rh{grid-column:1 / -1}
 .dpo-row:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
-.dpo-rh{display:flex;align-items:center;gap:7px;min-width:0;font-size:13px;line-height:1.3}
-.dpo-let{flex:none;width:19px;height:19px;display:inline-grid;place-items:center;border-radius:3px;font-family:var(--font-mono);font-size:11.5px;font-weight:700;background:var(--surface-2);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line)}
+.dpo-rh{display:flex;align-items:center;gap:7px;min-width:0;font-size:var(--fs-cap);line-height:1.3}
+.dpo-let{flex:none;width:19px;height:19px;display:inline-grid;place-items:center;border-radius:3px;font-family:var(--font-mono);font-size:var(--fs-label);font-weight:700;background:var(--surface-2);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line)}
 .dpo-c-w .dpo-let{background:var(--ink);color:var(--surface);box-shadow:none}
 .dpo-c-l .dpo-let{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink-2)}
 .dpo-lab{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
-.dpo-role{flex:none;font-family:var(--font-mono);font-size:10.5px;line-height:1.5;border:1px solid var(--line);border-radius:999px;padding:0 6px;color:var(--ink-2);white-space:nowrap;background:var(--surface)}
+.dpo-role{flex:none;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:1.5;border:1px solid var(--line);border-radius:999px;padding:0 6px;color:var(--ink-2);white-space:nowrap;background:var(--surface)}
 .dpo-c-w .dpo-role{color:var(--ink);border-color:var(--ink-3)}
-.dpo-val{flex:none;font-size:12px;white-space:nowrap;color:var(--ink)}
+.dpo-val{flex:none;font-size:var(--fs-label);white-space:nowrap;color:var(--ink)}
 .dpo-track{position:relative;height:14px;background:var(--surface-2);border-radius:2px;margin-right:2px}
 .dpo-fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px;transition:width .14s ease-out}
 .dpo-ghost{position:absolute;left:0;top:-3px;bottom:-3px;border:1.5px dashed var(--ink);border-radius:3px;pointer-events:none}
-.dpo-foot{font-size:11px;color:var(--ink-3);line-height:1.3;min-height:1.3em;overflow-wrap:anywhere}
+.dpo-foot{font-size:var(--fs-mark);color:var(--ink-3);line-height:1.3;min-height:1.3em;overflow-wrap:anywhere}
 @container (max-width:470px){.dpo-row{grid-template-columns:minmax(0,1fr)}.dpo-row>*{grid-column:1 / -1}}
 @container (max-width:430px){.dpo-rh{flex-wrap:wrap;row-gap:2px}.dpo-lab{flex-basis:calc(100% - 30px)}.dpo-role{margin-left:26px}.dpo-val{margin-left:auto}}
 
 /* curve over training steps; the key draws each line style with the same classes */
 .dpo-curve-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:8px 14px;margin-top:16px;padding-top:12px;border-top:1px solid var(--line-2)}
-.dpo-curve-title{font-size:13px;font-weight:650;line-height:1.35;flex:1 1 220px;min-width:0;cursor:help}
+.dpo-curve-title{font-size:var(--fs-cap);font-weight:650;line-height:1.35;flex:1 1 220px;min-width:0;cursor:help}
 .dpo-curve-head .ctl{gap:3px;flex:0 1 auto;min-width:0}
-.dpo-curve-head .ctl>.lbl{font-size:11.5px}
-.dpo-curve-head .seg-ctl button{padding:5px 8px;font-size:11.5px;white-space:nowrap}
+.dpo-curve-head .ctl>.lbl{font-size:var(--fs-label)}
+.dpo-curve-head .seg-ctl button{padding:5px 8px;font-size:var(--fs-label);white-space:nowrap}
 .dpo-curve{display:block;width:100%;height:156px;margin-top:6px;overflow:visible}
 .dpo-grid{stroke:var(--line-2);stroke-width:1}
-.dpo-ax{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink-3)}
+.dpo-ax{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-3)}
 .dpo-ref{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
 .dpo-now{stroke:var(--ink-2);stroke-width:1;stroke-dasharray:2 3}
 .dpo-ln{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
@@ -74,8 +74,8 @@
 .dpo-d-w,.dpo-d-n{fill:var(--ink)}
 .dpo-d-l{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.8}
 .dpo-d-o{fill:var(--ink-3)}
-.dpo-lbl{font-family:var(--font-mono);font-size:11px;font-weight:600;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
-.dpo-curve-key{display:flex;flex-wrap:wrap;gap:4px 14px;font-family:var(--font-mono);font-size:11px;color:var(--ink-2);margin-top:4px}
+.dpo-lbl{font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:600;fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.dpo-curve-key{display:flex;flex-wrap:wrap;gap:4px 14px;font-family:var(--font-mono);font-size:var(--fs-mark);color:var(--ink-2);margin-top:4px}
 .dpo-curve-key>span{display:inline-flex;align-items:center;gap:6px}
 .dpo-curve-key [data-tip]{cursor:help}
 .dpo-ks{display:inline-block;flex:none;overflow:visible}
@@ -87,17 +87,17 @@
 .dpo-metrics .metric .d{height:auto;min-height:15px;line-height:1.2}   /* 12 px since kit polish r2 (M1); a line about as tall as before (14.4 px, was 14.3 px) */
 
 /* show the math (H2): short blocks, each a lead line, the formula and the reader's numbers in an aligned display */
-.dpo-app .mathbody{font-family:var(--font-ui);font-size:13.5px;line-height:1.55}
-.dpo-mh{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.02em;color:var(--ink-2);margin:2px 0 6px;line-height:1.6}
+.dpo-app .mathbody{font-family:var(--font-ui);font-size:var(--fs-math);line-height:1.55}
+.dpo-mh{font-family:var(--font-mono);font-size:var(--fs-label);letter-spacing:.02em;color:var(--ink-2);margin:2px 0 6px;line-height:1.6}
 .dpo-mb{border-top:1px solid var(--line);padding:10px 0 8px}
-.dpo-ml{margin:0 0 6px;color:var(--ink);font-size:13.5px;line-height:1.55}
-.dpo-mn{margin:6px 0 0;color:var(--ink-2);font-size:13px;line-height:1.5}
+.dpo-ml{margin:0 0 6px;color:var(--ink);font-size:var(--fs-cap);line-height:1.55}
+.dpo-mn{margin:6px 0 0;color:var(--ink-2);font-size:var(--fs-cap);line-height:1.5}
 /* the owner's review of 2026-10-09 (no Show the math row scrolls sideways): the list's one column is as wide as the box, never as its
    widest formula, and a long formula wraps before an operator (.dpo-fxw) */
 .dpo-deriv{margin:6px 0 4px;padding-left:20px;display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
 .dpo-deriv li{padding-left:2px;min-width:0}
-.dpo-dk{display:block;font-size:12.5px;font-weight:650;color:var(--ink-2)}
-.dpo-de{display:block;font-size:13px;color:var(--ink-2);line-height:1.5}
+.dpo-dk{display:block;font-size:var(--fs-cap);font-weight:650;color:var(--ink-2)}
+.dpo-de{display:block;font-size:var(--fs-cap);color:var(--ink-2);line-height:1.5}
 .dpo-app .mathbody p{overflow-wrap:anywhere}
 
 /* typeset formulas (H1): inline in a sentence, or on a line of their own with the name in words on the left */
@@ -106,8 +106,8 @@
 .dpo-fx{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:6px 0;padding-block:.15em;overflow-x:auto;max-width:100%}
 .dpo-fx.dpo-fxw{column-gap:0;row-gap:.25em}
 .dpo-fxr{flex:1 1 0;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;row-gap:.25em}
-.dpo-fxn{flex:none;font-size:12.5px;font-weight:650;color:var(--ink-2);min-width:5.5em}
-.dpo-eq{display:grid;justify-content:start;align-items:baseline;column-gap:.35em;row-gap:.3em;margin:4px 0;padding-block:.2em;overflow-x:auto;max-width:100%;font-size:14px}
+.dpo-fxn{flex:none;font-size:var(--fs-cap);font-weight:650;color:var(--ink-2);min-width:5.5em}
+.dpo-eq{display:grid;justify-content:start;align-items:baseline;column-gap:.35em;row-gap:.3em;margin:4px 0;padding-block:.2em;overflow-x:auto;max-width:100%;font-size:var(--fs-ui)}
 .dpo-el{justify-self:end;white-space:nowrap}
 .dpo-eo{justify-self:center}
 .dpo-ec{justify-self:start;white-space:nowrap}
@@ -115,26 +115,26 @@
 .dpo-pl:first-child{margin-top:0}
 
 /* stage blocks (H5): a small label over the answers and over the picture of where the logits come from */
-.dpo-blk-h{font-size:12px;font-weight:650;color:var(--ink-2);letter-spacing:.01em;margin:14px 0 0;padding-top:10px;border-top:1px solid var(--line)}
+.dpo-blk-h{font-size:var(--fs-label);font-weight:650;color:var(--ink-2);letter-spacing:.01em;margin:14px 0 0;padding-top:10px;border-top:1px solid var(--line)}
 .dpo-blk-h+.dpo-prompt{margin-top:4px}
 .dpo-wire{margin-top:14px}
 .dpo-wire[hidden]{display:none}
 .dpo-wire>.dpo-blk-h{margin-top:0}
 .dpo-wsrc{display:flex;justify-content:center;margin-top:8px}
-.dpo-wsrc>span{font-size:12px;padding:3px 10px;border:1.5px solid var(--ink);border-radius:4px;background:var(--surface);color:var(--ink);white-space:nowrap}
+.dpo-wsrc>span{font-size:var(--fs-label);padding:3px 10px;border:1.5px solid var(--ink);border-radius:4px;background:var(--surface);color:var(--ink);white-space:nowrap}
 .dpo-wsvg{display:block;width:100%;height:24px}
 .dpo-wsvg line{stroke:var(--ink-2);stroke-linecap:round}
 .dpo-wcells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .dpo-wsep{margin-top:8px}
-.dpo-wc{border:1px solid var(--line);border-radius:4px;padding:5px 4px;text-align:center;background:var(--surface);min-width:0}
+.dpo-wc{border:1px solid transparent;border-radius:8px;padding:5px 4px;text-align:center;background:var(--surface-2);min-width:0}   /* soft panels, no frame inside the stage (精装修 step 2) */
 .dpo-wt{display:flex;justify-content:center;align-items:center;gap:5px;flex-wrap:wrap}
-.dpo-wx{font-size:11.5px;color:var(--ink-2);white-space:nowrap}
-.dpo-wd{font-size:11px;color:var(--ink);margin-top:3px;min-height:1.3em;overflow-wrap:anywhere}
-.dpo-wcap{margin:8px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.dpo-wx{font-size:var(--fs-label);color:var(--ink-2);white-space:nowrap}
+.dpo-wd{font-size:var(--fs-mark);color:var(--ink);margin-top:3px;min-height:1.3em;overflow-wrap:anywhere}
+.dpo-wcap{margin:8px 0 0;font-size:var(--fs-cap);line-height:1.5;color:var(--ink-2)}
 
 /* rail extras */
 .dpo-tbtns{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-4px 0 4px}
-.dpo-live{margin:10px 0 0;padding:6px 9px;border-radius:4px;background:var(--surface-2);font-size:12.5px;line-height:1.4;color:var(--ink);overflow-wrap:anywhere}
+.dpo-live{margin:10px 0 0;padding:6px 9px;border-radius:4px;background:var(--surface-2);font-size:var(--fs-label);line-height:1.4;color:var(--ink);overflow-wrap:anywhere}
 .dpo-live:empty{display:none}
 /* scenario names hold β: no uppercase, or β would turn into Β */
 #dpo-insight>.eyebrow{text-transform:none;letter-spacing:.01em}
@@ -145,7 +145,7 @@
 .dpo-app .preset span{overflow-wrap:anywhere}
 .dpo-app .step-b a,.dpo-app .obs a{text-underline-offset:2px}
 .dpo-app .ctl-note code,.dpo-app .c-card code{overflow-wrap:anywhere}
-.dpo-prod{margin:0 0 8px;padding-left:18px;display:grid;gap:6px;font-size:13.5px;line-height:1.5}
+.dpo-prod{margin:0 0 8px;padding-left:18px;display:grid;gap:6px;font-size:var(--fs-cap);line-height:1.5}
 .dpo-simpl{margin-top:10px}
 
 /* mini result bar: a stacked strip of the four probabilities, same fills as the bars */
@@ -161,15 +161,15 @@
 /* home tile teaser */
 .dpo-tz{display:grid;gap:5px}
 .dpo-tz-row{display:grid;grid-template-columns:16px minmax(0,1fr) 44px;gap:8px;align-items:center}
-.dpo-tz-l{font-size:11px;font-weight:700;color:var(--ink-2)}
+.dpo-tz-l{font-size:var(--fs-mark);font-weight:700;color:var(--ink-2)}
 .dpo-tz-t{position:relative;height:12px;background:var(--surface-2);border-radius:2px}
 .dpo-tz-t .dpo-ghost{top:-2px;bottom:-2px}
-.dpo-tz-v{font-size:11.5px;text-align:right;color:var(--ink)}
+.dpo-tz-v{font-size:var(--fs-label);text-align:right;color:var(--ink)}
 .dpo-tz-out{white-space:nowrap}
-.dpo-tz-cap{margin:2px 0 0;font-size:11.5px;line-height:1.35}
+.dpo-tz-cap{margin:2px 0 0;font-size:var(--fs-label);line-height:1.35}
 
 /* narrow stages: the four transport buttons fit on one row */
-@container (max-width:430px){.dpo-transport{gap:4px}.dpo-transport .btn{padding:6px 7px;font-size:12px}}
+@container (max-width:430px){.dpo-transport{gap:4px}.dpo-transport .btn{padding:6px 7px;font-size:var(--fs-label)}}
 @media (prefers-reduced-motion:reduce){.dpo-fill{transition:none}}
 
 /* ---------- 知识梳理: a formula on its own line; its pieces stay close and wrap only between them, so nothing scrolls sideways ---------- */

@@ -7,7 +7,7 @@
 .tmem-graph{padding:12px 14px 14px;min-width:0}
 .tmem-vis{display:grid;grid-template-columns:minmax(200px,240px) minmax(0,1fr);gap:16px;align-items:start;min-width:0}
 .tmem-vis>div{min-width:0}
-.tmem-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px;min-height:2.7em}
+.tmem-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px;min-height:2.7em}
 .tmem-col,.tmem-curve{min-width:0;overflow:hidden}
 .tmem-colsvg,.tmem-cvsvg{display:block;max-width:100%;overflow:visible}
 
@@ -27,13 +27,13 @@
 .tmem-over{fill:var(--c-oom-soft);stroke:var(--c-oom);stroke-width:1.5;stroke-dasharray:4 2}
 .tmem-gpu{fill:none;stroke:var(--ink);stroke-width:1.5;cursor:help;outline:none}
 .tmem-gpu:focus-visible{stroke-width:3}
-.tmem-ax{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.tmem-ax{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-3)}
 .tmem-mid{text-anchor:middle}
-.tmem-bl{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink)}
+.tmem-bl{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink)}
 .tmem-q{font-family:var(--font-mono);font-size:30px;font-weight:700;fill:var(--ink-3)}
-.tmem-capl{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink)}
+.tmem-capl{font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:650;fill:var(--ink)}
 .tmem-capline{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:5 3}
-.tmem-oomt{font-family:var(--font-ui);font-size:11px;font-weight:700;fill:var(--c-oom)}
+.tmem-oomt{font-family:var(--font-ui);font-size:var(--fs-mark);font-weight:700;fill:var(--c-oom)}
 .tmem-halo,.tmem-capl{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 
 /* ---------- the curve ---------- */
@@ -42,7 +42,7 @@
 .tmem-area{fill:var(--line);opacity:.9}
 .tmem-overarea{fill:var(--c-oom-soft);opacity:.95}
 .tmem-line{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
-.tmem-bandl{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink)}
+.tmem-bandl{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink)}
 .tmem-ph-f{fill:var(--ink-2)}
 .tmem-ph-b{fill:var(--ink-3)}
 .tmem-ph-o{fill:var(--ink)}
@@ -51,13 +51,13 @@
 .tmem-cdot.bad{fill:var(--c-oom)}
 .tmem-pk{fill:var(--surface);stroke:var(--ink);stroke-width:2}
 .tmem-pk.bad{stroke:var(--c-oom)}
-.tmem-pkl{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink)}
+.tmem-pkl{font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:650;fill:var(--ink)}
 .tmem-oomdot{fill:var(--c-oom);stroke:var(--surface);stroke-width:1.5}
 .tmem-curve0{display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);border-radius:4px;padding:0 16px;text-align:center}
-.tmem-curve0 p{margin:0;font-size:13px;color:var(--ink-3)}
+.tmem-curve0 p{margin:0;font-size:var(--fs-cap);color:var(--ink-3)}
 
 /* legend beside the curve, under it (R5.9) */
-.tmem-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-family:var(--font-mono);font-size:11px;line-height:1.35;color:var(--ink-2)}
+.tmem-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:1.35;color:var(--ink-2)}
 .tmem-leg>span{display:inline-flex;align-items:center;cursor:help}
 .tmem-leg .sw{width:12px;height:10px;margin-right:5px}
 .tmem-sw-band{background:var(--ink-3);opacity:.6;border-color:transparent}
@@ -69,8 +69,8 @@
 .tmem-player{margin-top:8px}
 .tmem-prow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .tmem-prow .ctl{display:flex;align-items:center;gap:6px;margin:0}
-.tmem-prow .ctl>.lbl{font-size:12px}
-.tmem-prow .seg-ctl button{font-size:12px;padding:3px 9px}
+.tmem-prow .ctl>.lbl{font-size:var(--fs-label)}
+.tmem-prow .seg-ctl button{font-size:var(--fs-label);padding:3px 9px}
 /* H7 (the owner, 2026-10-09, on GRPO's player: “重放按钮和速度按钮没有对齐”): Replay, the step buttons and the speed buttons share one
    height and one centre line */
 .tmem-prow .btn.sm,.tmem-prow .seg-ctl{height:30px;box-sizing:border-box}
@@ -79,7 +79,7 @@
 .tmem-play{min-width:96px;justify-content:center}
 .tmem-scrub{display:flex;align-items:center;margin-top:6px;min-width:0}
 .tmem-scrub input{flex:1 1 auto;min-width:0;width:100%}
-.tmem-phase{margin:4px 0 0;font-size:11.5px;color:var(--ink-2);min-height:1.4em;line-height:1.4}
+.tmem-phase{margin:4px 0 0;font-size:var(--fs-label);color:var(--ink-2);min-height:1.4em;line-height:1.4}
 
 /* ---------- metric cards: four in a row when there is room ---------- */
 .tmem-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -94,16 +94,16 @@
 .tmem-wr{flex:1 1 0;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;row-gap:.35em}
 .tmem-wr>span{flex:none}
 .tmem-four{list-style:none;margin:8px 0;padding:0;display:grid;gap:6px}
-.tmem-four li{display:grid;grid-template-columns:8.2em minmax(0,1fr);gap:8px;font-size:13px;line-height:1.45}
-.tmem-four b{font-family:var(--font-mono);font-size:12.5px}
+.tmem-four li{display:grid;grid-template-columns:8.2em minmax(0,1fr);gap:8px;font-size:var(--fs-cap);line-height:1.45}
+.tmem-four b{font-family:var(--font-mono);font-size:var(--fs-label)}
 .tmem-poplist{margin:4px 0 6px 1.2em;padding:0;list-style:disc}
 .tmem-poplist li{margin:2px 0}
 .tmem-remlist{margin:6px 0 10px;padding-left:18px;display:grid;gap:8px}
-.tmem-rem{font-size:12px;white-space:nowrap}
+.tmem-rem{font-size:var(--fs-label);white-space:nowrap}
 .tmem-mt{margin-top:10px}
 .tmem-asm{margin:8px 0;padding-left:18px;display:grid;gap:4px}
-.tmem-tlist{margin:4px 0 8px;padding-left:18px;font-size:12.5px}
-.tmem-prod{margin:0;padding-left:18px;display:grid;gap:8px;font-size:13px}
+.tmem-tlist{margin:4px 0 8px;padding-left:18px;font-size:var(--fs-label)}
+.tmem-prod{margin:0;padding-left:18px;display:grid;gap:8px;font-size:var(--fs-cap)}
 .tmem-prod code{word-break:break-all}
 .tmem-goal.tmem-miss{border-color:var(--c-oom);background:var(--c-oom-soft)}
 .tmem-goal.met{border-color:var(--c-ok);background:var(--c-ok-soft)}
@@ -113,30 +113,30 @@
    fastest plan, each with its two goals as bars and the goal's dashed line; red only beyond a goal (R5.11); the plans that pass in a
    disclosure closed by default ---------- */
 .tmem-sum{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
-.tmem-sumcap{font-size:13px;font-weight:650;color:var(--ink);line-height:1.4;margin-bottom:4px}
+.tmem-sumcap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.4;margin-bottom:4px}
 .tmem-same{margin:0 0 4px;color:var(--ink-2);line-height:1.45}
 .tmem-c3{list-style:none;margin:0;padding:0}
 .tmem-c3r{display:grid;gap:5px;padding:7px 0 8px;border-bottom:1px solid var(--line-2);min-width:0}
 .tmem-c3h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0}
-.tmem-c3t{font-size:13px;font-weight:700;color:var(--ink);margin-right:2px}
-.tmem-chip{font-size:11.5px;line-height:1.45;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--ink-2);white-space:nowrap}
+.tmem-c3t{font-size:var(--fs-cap);font-weight:700;color:var(--ink);margin-right:2px}
+.tmem-chip{font-size:var(--fs-label);line-height:1.45;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--ink-2);white-space:nowrap}
 .tmem-chip.on{border-color:var(--ink);color:var(--ink);font-weight:700;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--ink)}
 .tmem-c3m{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;min-width:0}
-.tmem-c3k{font-size:12px;color:var(--ink-2);min-width:2.6em}
+.tmem-c3k{font-size:var(--fs-label);color:var(--ink-2);min-width:2.6em}
 .tmem-c3trk{position:relative;height:12px;background:var(--surface-2);border-radius:2px;min-width:0}
 .tmem-c3fill{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px 0 0 2px}
 .tmem-c3o{position:absolute;top:-1px;bottom:-1px;box-sizing:border-box;background:repeating-linear-gradient(135deg,var(--c-oom) 0 2px,transparent 2px 5px);border:1.5px solid var(--c-oom)}
 .tmem-c3g{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed var(--ink);margin-left:-1px;pointer-events:none}
-.tmem-c3v{font-family:var(--font-mono);font-size:12.5px;font-weight:650;color:var(--ink);white-space:nowrap;text-align:right;min-width:4.4em}
+.tmem-c3v{font-family:var(--font-mono);font-size:var(--fs-cap);font-weight:650;color:var(--ink);white-space:nowrap;text-align:right;min-width:4.4em}
 .tmem-c3v.bad{color:var(--c-oom)}
-.tmem-c3leg{display:flex;flex-wrap:wrap;gap:3px 12px;margin:7px 0 2px;color:var(--ink-2);font-size:11.5px}
+.tmem-c3leg{display:flex;flex-wrap:wrap;gap:3px 12px;margin:7px 0 2px;color:var(--ink-2);font-size:var(--fs-label)}
 .tmem-c3leg span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .tmem-c3leg .sw{width:12px;height:10px}
-.tmem-gap,.tmem-next{margin:9px 0 0;font-size:13.5px;line-height:1.5}
+.tmem-gap,.tmem-next{margin:9px 0 0;font-size:var(--fs-cap);line-height:1.5}
 .tmem-all{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
-.tmem-all>summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--ink);padding:4px 0}
+.tmem-all>summary{cursor:pointer;font-weight:650;font-size:var(--fs-cap);color:var(--ink);padding:4px 0}
 .tmem-allb>p{margin:6px 0}
-.tmem-alll{margin:4px 0 6px;padding-left:18px;display:grid;gap:4px;font-size:12.5px;line-height:1.45}
+.tmem-alll{margin:4px 0 6px;padding-left:18px;display:grid;gap:4px;font-size:var(--fs-label);line-height:1.45}
 .tmem-alll li.me{font-weight:650;color:var(--ink)}
 
 /* ---------- the dock (phones) ---------- */

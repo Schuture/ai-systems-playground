@@ -4,28 +4,28 @@
 .rm-stage .stage-head{align-items:center}
 .rm-graph{padding:12px 14px 14px;display:grid;gap:14px;min-width:0}
 .rm-graph>[hidden]{display:none}
-.rm-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+.rm-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
 .rm-phone:empty{display:none}
 @media (min-width:761px){.rm-phone{display:none}}
 
 /* ---------- the pair ---------- */
-.rm-pair{border:1px solid var(--line-2);border-radius:6px;padding:9px 11px 10px;background:var(--surface);min-width:0}
+.rm-pair{border:1px solid transparent;border-radius:8px;padding:9px 11px 10px;background:var(--surface-2);min-width:0}   /* soft panels, no frame inside the stage (精装修 step 2) */
 .rm-anss{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.rm-ans{border:1px solid var(--line);border-radius:5px;padding:7px 9px 8px;display:grid;gap:5px;min-width:0;align-content:start}
+.rm-ans{border:1px solid transparent;border-radius:6px;padding:7px 9px 8px;display:grid;gap:5px;min-width:0;align-content:start;background:var(--surface)}   /* the answer the labeller picked keeps its ring */
 .rm-ans.rm-chosen{border-color:var(--ink-3);box-shadow:inset 0 0 0 1px var(--ink-3)}
 .rm-ah{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
-.rm-ah>b{font-family:var(--font-mono);font-size:13px;color:var(--ink)}
-.rm-tag{font-size:11px;line-height:1.4;border:1px solid var(--ink-3);border-radius:999px;padding:0 7px;color:var(--ink);white-space:nowrap}
+.rm-ah>b{font-family:var(--font-mono);font-size:var(--fs-cap);color:var(--ink)}
+.rm-tag{font-size:var(--fs-mark);line-height:1.4;border:1px solid var(--ink-3);border-radius:999px;padding:0 7px;color:var(--ink);white-space:nowrap}
 .rm-tag-r{border-style:dashed;color:var(--ink-2)}
-.rm-sc{margin-left:auto;font-size:12.5px;color:var(--ink);font-weight:650;white-space:nowrap}
-.rm-at{margin:0;font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.rm-sc{margin-left:auto;font-size:var(--fs-cap);color:var(--ink);font-weight:650;white-space:nowrap}
+.rm-at{margin:0;font-size:var(--fs-label);line-height:1.45;color:var(--ink-2)}
 .rm-len{display:flex;align-items:center;gap:8px;min-width:0}
 .rm-lbar{position:relative;flex:1 1 auto;height:8px;background:var(--surface-2);border-radius:2px;min-width:30px}
 .rm-lbar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-3);border-radius:2px}
 .rm-len .mono{white-space:nowrap;color:var(--ink-2)}
 .rm-foot{margin:8px 0 0;color:var(--ink-2);line-height:1.45}
 /* the reward model's verdict on the pair, a line of its own under the person's choice (Codex review b9v3, 可选 9) */
-.rm-verdict{margin:8px 0 0;font-size:13px;line-height:1.45;font-weight:650;color:var(--ink)}
+.rm-verdict{margin:8px 0 0;font-size:var(--fs-cap);line-height:1.45;font-weight:650;color:var(--ink)}
 .rm-verdict+.rm-foot{margin-top:2px}
 .rm-tag[data-tipx]{cursor:help}
 
@@ -33,8 +33,8 @@
 .rm-graph svg{display:block;max-width:100%;height:auto;overflow:visible}
 .rm-ax{stroke:var(--ink-3);stroke-width:1}
 .rm-grid{stroke:var(--line);stroke-width:1}
-.rm-tk{font-size:10.5px;fill:var(--ink-3);font-family:var(--font-mono)}
-.rm-lab{font-size:12px;fill:var(--ink);font-family:var(--font-mono);font-weight:650}
+.rm-tk{font-size:var(--fs-mark);fill:var(--ink-3);font-family:var(--font-mono)}
+.rm-lab{font-size:var(--fs-label);fill:var(--ink);font-family:var(--font-mono);font-weight:650}
 .rm-line{fill:none;stroke:var(--ink-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .rm-line.rm-bad{stroke:var(--c-oom);stroke-width:2.6}
 .rm-guide{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
@@ -44,7 +44,7 @@
 .rm-axl{margin-top:2px;text-align:center}
 .rm-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-width:0}
 .rm-fig,.rm-fig1{margin:0;min-width:0}
-.rm-fig figcaption,.rm-fig1 figcaption{font-size:12px;color:var(--ink-2);line-height:1.35;margin-bottom:3px}
+.rm-fig figcaption,.rm-fig1 figcaption{font-size:var(--fs-label);color:var(--ink-2);line-height:1.35;margin-bottom:3px}
 .rm-fig1+.rm-fig1{margin-top:8px}
 .rm-bleg{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:4px 16px;color:var(--ink-2)}
 .rm-bleg li{display:flex;align-items:center;gap:6px;line-height:1.35}
@@ -55,12 +55,12 @@
 /* ---------- the weights ---------- */
 .rm-wrows{display:grid;gap:5px}
 .rm-wrow{display:grid;grid-template-columns:64px minmax(0,1fr) 52px;gap:8px;align-items:center;border-radius:3px;cursor:help}
-.rm-wl{font-size:12px;color:var(--ink-2)}
+.rm-wl{font-size:var(--fs-label);color:var(--ink-2)}
 .rm-wt{position:relative;height:14px;background:var(--surface-2);border-radius:2px}
 .rm-wt i{position:absolute;top:0;bottom:0;background:var(--ink-3);border-radius:2px}
 .rm-wt i.neg{background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,var(--surface-2) 1.5px 5px)}
 .rm-w0{position:absolute;left:50%;top:-3px;bottom:-3px;width:0;border-left:1px solid var(--ink-2);z-index:1}
-.rm-wrow em{font-style:normal;font-size:12px;color:var(--ink);text-align:right}
+.rm-wrow em{font-style:normal;font-size:var(--fs-label);color:var(--ink);text-align:right}
 .rm-wrow.on .rm-wl{color:var(--ink);font-weight:650}
 .rm-wrow.on .rm-wt i{background:var(--ink-2);box-shadow:inset 0 0 0 2px var(--ink)}
 .rm-wleg{margin-top:5px;line-height:1.4}
@@ -70,7 +70,7 @@
 .rm-player .ctl{margin:0}
 .rm-scrub{display:flex;align-items:center;gap:8px;flex:1 1 200px;min-width:0}
 .rm-scrub input{flex:1 1 auto;min-width:0}
-.rm-count{font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.rm-count{font-size:var(--fs-label);color:var(--ink-2);white-space:nowrap}
 .rm-cplay{margin-top:8px}
 .rm-scope{margin:0 14px 8px;line-height:1.4}
 
@@ -88,8 +88,8 @@
 
 /* ---------- Settings ---------- */
 .rm-grp{border-top:1px solid var(--line-2);padding-top:8px;margin-top:4px}
-.rm-gh{font-size:11.5px;font-weight:650;color:var(--ink-2);margin-bottom:4px}
-.rm-asm{margin:0;padding-left:16px;display:grid;gap:3px;font-size:12px;line-height:1.4;color:var(--ink-2)}
+.rm-gh{font-size:var(--fs-label);font-weight:650;color:var(--ink-2);margin-bottom:4px}
+.rm-asm{margin:0;padding-left:16px;display:grid;gap:3px;font-size:var(--fs-label);line-height:1.4;color:var(--ink-2)}
 .rm-asm b{color:var(--ink);font-weight:600}
 .rm-prod{padding-left:18px;display:grid;gap:6px;min-width:0}
 .rm-prod code,.rm-prod a{overflow-wrap:anywhere}
@@ -209,3 +209,18 @@
 }}
 /* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
 #rm-pair .rm-foot,.rm-cap,#rm-tr-charts figcaption,#rm-bon figcaption,#rm-metrics .sub{font-variant-numeric:tabular-nums}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730), in English, parts 3 and 5–8 still ran 32–61 px past the
+   stage. The two columns' padding, the gaps inside the pair's panel and above the weights, the weights' rows and the line under the
+   scope note are 2–4 px smaller, and the metric cards take the kit's tight line heights (a card's change row stays reserved). The left
+   column still holds the pair and the weights, so in English parts 6–8 run 29 px and part 5 11 px past 1536 × 730 (129–147 on main) */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden]))){padding-top:6px;padding-bottom:6px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-pair{padding-top:4px;padding-bottom:4px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-pair .rm-ans{padding-top:3px;padding-bottom:3px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-pair .rm-verdict{margin-top:3px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-w{margin-top:4px;padding-top:6px}
+  .rm-graph:is(:has(>#rm-tr:not([hidden])),:has(>#rm-bon:not([hidden])))>#rm-w .rm-wrows{gap:2px}
+  .rm-scope{margin-bottom:4px}
+  .rm-metrics .metric .sub{line-height:1.25}
+  .rm-metrics .metric .d{min-height:13px;line-height:1.1}
+}}

@@ -6,12 +6,12 @@
 .dl-graph{padding:12px 14px 14px;display:grid;gap:14px;min-width:0}
 .dl-graph>div{min-width:0}
 .dl-phone{display:none}
-.dl-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
+.dl-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px}
 
 /* ---------- the funnel ---------- */
 .dl-cvwrap{position:relative;width:100%;min-width:0}
 .dl-cvwrap canvas{display:block;cursor:crosshair;touch-action:pan-y}
-.dl-leg{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;font-size:12px;color:var(--ink-2);line-height:1.35}
+.dl-leg{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;font-size:var(--fs-label);color:var(--ink-2);line-height:1.35}
 .dl-leg>span{display:inline-flex;align-items:center;gap:6px}
 .dl-leg .sw{display:inline-block;width:10px;height:10px;flex:0 0 auto;border-radius:1px}
 .dl-sw-in{background:var(--ink-2)}
@@ -19,8 +19,8 @@
 .dl-sw-red{background:var(--c-oom)}
 .dl-player{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:10px}
 .dl-player .ctl{display:flex;align-items:center;gap:6px;margin:0}
-.dl-player .ctl>.lbl{font-size:12px}
-.dl-player .seg-ctl button{font-size:12px;padding:3px 9px}
+.dl-player .ctl>.lbl{font-size:var(--fs-label)}
+.dl-player .seg-ctl button{font-size:var(--fs-label);padding:3px 9px}
 /* H7 (the owner, 2026-10-09, on GRPO's player: “重放按钮和速度按钮没有对齐”): Replay, the step buttons and the speed buttons share one
    height and one centre line */
 .dl-player .btn.sm,.dl-player .seg-ctl{height:30px;box-sizing:border-box}
@@ -29,12 +29,12 @@
 .dl-play{min-width:92px;justify-content:center}
 .dl-scrub{display:flex;align-items:center;gap:8px;flex:1 1 200px;min-width:0}
 .dl-scrub input{flex:1 1 auto;min-width:0}
-.dl-count{font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.dl-count{font-size:var(--fs-label);color:var(--ink-2);white-space:nowrap}
 
 /* ---------- hover card for one page ---------- */
 .dl-tt{max-width:320px}
 .dl-tt p{margin:4px 0}
-.dl-tt table{border-collapse:collapse;margin:4px 0;font-size:12px}
+.dl-tt table{border-collapse:collapse;margin:4px 0;font-size:var(--fs-label)}
 .dl-tt th{text-align:left;font-weight:500;padding:1px 10px 1px 0;color:inherit;opacity:.85}
 .dl-tt td{text-align:right;padding:1px 0}
 .dl-ttr{color:var(--c-oom);font-weight:650}
@@ -48,18 +48,18 @@
 .dl-legn{color:var(--ink-3)}
 .dl-gl{stroke:var(--line-2);stroke-width:1}
 .dl-tk{stroke:var(--line);stroke-width:1}
-.dl-ax{font:11px var(--font-mono);fill:var(--ink-3)}
-.dl-axt{font:11.5px var(--font-ui);fill:var(--ink-2)}
+.dl-ax{font:var(--fs-mark) var(--font-mono);fill:var(--ink-3)}
+.dl-axt{font:var(--fs-label) var(--font-ui);fill:var(--ink-2)}
 .dl-cur{fill:none;stroke:var(--ink);stroke-width:2.2}
 .dl-ref{fill:none;stroke:var(--ink-3);stroke-width:1.5;stroke-dasharray:5 4}
-.dl-reft{font:11px var(--font-ui);fill:var(--ink-2)}
+.dl-reft{font:var(--fs-mark) var(--font-ui);fill:var(--ink-2)}
 .dl-d1{fill:var(--ink-2);opacity:.75}
 .dl-d0{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.2}
 .dl-dr{fill:var(--c-oom)}
 .dl-goalz{fill:var(--c-ok-soft);stroke:var(--c-ok);stroke-width:1;stroke-dasharray:3 2}
 .dl-gok{fill:var(--c-ok)}
 .dl-gbad{fill:var(--c-oom)}
-.dl-gt{font:11.5px var(--font-mono);fill:var(--ink)}
+.dl-gt{font:var(--fs-label) var(--font-mono);fill:var(--ink)}
 .dl-sw-cur{height:3px!important;background:var(--ink)}
 .dl-sw-ref{height:0!important;border-top:2px dashed var(--ink-3)}
 .dl-sw-goal{background:var(--c-ok-soft);border:1px dashed var(--c-ok)}
@@ -70,17 +70,17 @@
 /* ---------- the mix: epochs per domain ---------- */
 .dl-mix{display:grid;gap:10px}
 .dl-mrow{display:grid;grid-template-columns:150px minmax(0,1fr) 78px;gap:10px;align-items:center;cursor:help;border-radius:3px;outline-offset:2px}
-.dl-ml{font-size:12.5px;color:var(--ink);line-height:1.25}
-.dl-ml small{display:block;font-size:11px;color:var(--ink-3)}
+.dl-ml{font-size:var(--fs-label);color:var(--ink);line-height:1.25}
+.dl-ml small{display:block;font-size:var(--fs-mark);color:var(--ink-3)}
 .dl-mtrk{position:relative;height:16px;background:var(--surface-2);border-radius:2px}
 .dl-mtrk i{position:absolute;left:0;top:0;bottom:0;background:var(--ink-2);border-radius:2px;transition:width .25s ease-out}
 .dl-mtrk i.over{background:var(--c-oom)}
 .dl-mtrk b{position:absolute;top:-3px;bottom:-3px;width:0}
 .dl-m1{border-left:1.5px solid var(--ink)}
 .dl-m3{border-left:1.5px dashed var(--ink)}
-.dl-mrow em{font:600 12px var(--font-mono);font-style:normal;text-align:right;color:var(--ink)}
+.dl-mrow em{font:600 var(--fs-label) var(--font-mono);font-style:normal;text-align:right;color:var(--ink)}
 .dl-mrow em.over{color:var(--c-oom)}
-.dl-mleg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ink-2);margin-top:2px}
+.dl-mleg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:var(--fs-label);color:var(--ink-2);margin-top:2px}
 .dl-mleg span{display:inline-flex;align-items:center;gap:6px}
 .dl-mleg i{display:inline-block;width:0;height:12px}
 .dl-m1l{border-left:1.5px solid var(--ink)}
@@ -93,7 +93,7 @@
 @container (min-width:560px){.dl-metrics[data-n="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
 
 /* ---------- formulas on their own line ---------- */
-.dl-fx{margin:8px 0 10px;overflow-x:auto;font-size:15px;line-height:1.3}
+.dl-fx{margin:8px 0 10px;overflow-x:auto;font-size:var(--fs-stage);line-height:1.3}
 
 /* ---------- rail: rule switches, levers, challenge ---------- */
 .dl-rules{display:grid;gap:6px;margin:8px 0 4px}
@@ -104,9 +104,9 @@
 .dl-sw[aria-pressed="true"] i{background:var(--ink-2)}
 .dl-sw[aria-pressed="true"] i::after{left:14px}
 .dl-sw span{display:grid;gap:1px;min-width:0}
-.dl-sw b{font-size:13px;font-weight:650}
-.dl-sw small{font-size:11.5px;color:var(--ink-2);line-height:1.3}
-.dl-sw em{font:600 12px var(--font-mono);font-style:normal;color:var(--ink-2);min-width:24px;text-align:right}
+.dl-sw b{font-size:var(--fs-cap);font-weight:650}
+.dl-sw small{font-size:var(--fs-label);color:var(--ink-2);line-height:1.3}
+.dl-sw em{font:600 var(--fs-label) var(--font-mono);font-style:normal;color:var(--ink-2);min-width:24px;text-align:right}
 .dl-sw[aria-pressed="false"] b{color:var(--ink-3)}
 .dl-lv{margin-top:6px}
 .dl-br{margin-top:10px;display:grid;gap:8px}
@@ -125,14 +125,14 @@
 
 /* ---------- settings ---------- */
 .dl-grp{display:grid;gap:12px;border-top:1px solid var(--line-2);padding-top:10px}
-.dl-gh{font-size:13.5px;font-weight:700;color:var(--ink)}
+.dl-gh{font-size:var(--fs-cap);font-weight:700;color:var(--ink)}
 .dl-grp .ctl>label{display:flex}
 .dl-app .ctl output{white-space:nowrap}
 .controls .dl-rules{margin:0}
 .controls .dl-sw small{display:none}
 
 /* ---------- connect ---------- */
-.dl-prod{margin:0 0 8px;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.dl-prod{margin:0 0 8px;padding-left:18px;font-size:var(--fs-ui);color:var(--ink-2)}
 .dl-prod li{margin-bottom:6px}
 .dl-prod code,.dl-app .refs code{word-break:break-word}
 
@@ -156,41 +156,41 @@
 /* ---------- fixes after the review (b8v2): the challenge's zoomed strip; a math line inside a paragraph ---------- */
 .dl-zf{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:4 3}
 .dl-gt{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round} /* a halo, so a curve never strikes through a reading */
-.dl-zt{font-size:11px}
+.dl-zt{font-size:var(--fs-mark)}
 span.dl-fx{display:block}
 
 /* ---------- fixes after review codex-b9v3: the curve laid out for its own width, its axis titles in HTML (应修 4) ---------- */
 .dl-cplot{min-width:0}
-.dl-axy{font-size:12px;color:var(--ink-2);line-height:1.3;margin:0 0 2px}
-.dl-axx{font-size:12px;color:var(--ink-2);line-height:1.3;text-align:center;margin-top:2px}
+.dl-axy{font-size:var(--fs-label);color:var(--ink-2);line-height:1.3;margin:0 0 2px}
+.dl-axx{font-size:var(--fs-label);color:var(--ink-2);line-height:1.3;text-align:center;margin-top:2px}
 
 /* ---------- part 4's example: three pages, their whole-text hashes and MinHash signatures (应修 3) ---------- */
 .dl-xbox{display:grid;gap:10px;min-width:0;padding-bottom:12px;border-bottom:1px solid var(--line-2)}
 .dl-xbox .dl-cap{margin:0}
 .dl-xpgs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.dl-xpg{display:flex;flex-direction:column;gap:4px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
+.dl-xpg{display:flex;flex-direction:column;gap:4px;min-width:0;padding:8px 10px;border:1px solid transparent;border-radius:8px;background:var(--surface-2)}   /* soft panels, no frame inside the stage (精装修 step 2) */
 .dl-xpg.bad{border-color:var(--c-oom);box-shadow:inset 0 0 0 1px var(--c-oom)}
-.dl-xh{display:flex;align-items:baseline;gap:6px;font-size:12px;color:var(--ink-2);line-height:1.3}
-.dl-xk{font:700 13px var(--font-mono);color:var(--ink)}
-.dl-xt{margin:0;font-size:12px;line-height:1.55;color:var(--ink)}
+.dl-xh{display:flex;align-items:baseline;gap:6px;font-size:var(--fs-label);color:var(--ink-2);line-height:1.3}
+.dl-xk{font:700 var(--fs-cap) var(--font-mono);color:var(--ink)}
+.dl-xt{margin:0;font-size:var(--fs-label);line-height:1.55;color:var(--ink)}
 .dl-xti{font-weight:700}
 /* a run of shaded words: one background, padding that takes room in the line (never a box-shadow, which a later word would paint
    over the glyphs before it; owner's review b8) */
 .dl-xon{background:var(--line);border-radius:2px;padding:1px 2px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
-.dl-xm{font-size:11.5px;color:var(--ink-2);line-height:1.4}
-.dl-xhash{font:11.5px var(--font-code);color:var(--ink)}   /* a hash is code: one width per character, as wide as it was in IBM Plex Mono */
-.dl-xv{margin:2px 0 0;font-size:12px;line-height:1.4;font-weight:600;color:var(--ink)}
+.dl-xm{font-size:var(--fs-label);color:var(--ink-2);line-height:1.4;text-wrap:balance}   /* two lines split evenly (精装修 step 2: at 12 px “A’s” no longer sits alone) */
+.dl-xhash{font:var(--fs-label) var(--font-code);color:var(--ink);background:var(--surface)}   /* a hash is code: one width per character, as wide as it was in IBM Plex Mono; its chip is var(--surface) inside the page's soft panel (精装修 step 2) */
+.dl-xv{margin:2px 0 0;font-size:var(--fs-label);line-height:1.4;font-weight:600;color:var(--ink)}
 .dl-xv.dl-xbad{color:var(--c-oom)}
 .dl-xsig{display:grid;gap:6px;min-width:0}
 .dl-xsig.off .dl-xgrid{opacity:.45}
-.dl-xsh{font-size:12px;color:var(--ink-2);line-height:1.4}
+.dl-xsh{font-size:var(--fs-label);color:var(--ink-2);line-height:1.4}
 .dl-xgrid{display:grid;grid-template-columns:auto repeat(3,max-content);gap:3px 8px;align-items:center;justify-content:start}
 .dl-xrow{display:contents}
-.dl-xl{font:700 12px var(--font-mono);color:var(--ink);padding-right:2px}
+.dl-xl{font:700 var(--fs-label) var(--font-mono);color:var(--ink);padding-right:2px}
 .dl-xg{display:inline-flex;gap:2px;padding:2px;border:2px solid transparent;border-radius:3px}
 .dl-xg.hit{border-color:var(--ink)}
-.dl-xax .dl-xg{justify-content:center;padding-block:0;font-size:11px;color:var(--ink-3)}
-.dl-xbox .dl-xc{display:inline-block;min-width:26px;padding:2px 0;text-align:center;font:11.5px var(--font-mono);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:2px;cursor:help}
+.dl-xax .dl-xg{justify-content:center;padding-block:0;font-size:var(--fs-mark);color:var(--ink-3)}
+.dl-xbox .dl-xc{display:inline-block;min-width:26px;padding:2px 0;text-align:center;font:var(--fs-label) var(--font-mono);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:2px;cursor:help}
 .dl-xbox .dl-xc.same{background:var(--ink-2);border-color:var(--ink-2);color:var(--surface)}
 .dl-xbox .dl-xc:hover,.dl-xbox .dl-xc:focus{outline:2px solid var(--ink);outline-offset:1px;border-color:var(--ink)}
 .dl-xbox .dl-xc.same:hover,.dl-xbox .dl-xc.same:focus{background:var(--ink-2)}
@@ -198,16 +198,16 @@ span.dl-fx{display:block}
 .dl-sw-xw{background:var(--line);border:1px solid var(--ink-3)}
 .dl-sw-xs{background:var(--ink-2)}
 .dl-sw-xg{border:2px solid var(--ink);box-sizing:border-box}
-.dl-xtip table{border-collapse:collapse;margin:4px 0;font-size:12px}
+.dl-xtip table{border-collapse:collapse;margin:4px 0;font-size:var(--fs-label)}
 .dl-xtip th{text-align:left;font-weight:700;padding:1px 10px 1px 0}
 .dl-xtip td{padding:1px 10px 1px 0;vertical-align:top}
 .dl-xtip p{margin:4px 0 0}
-.dl-xtip .dl-fx{margin:6px 0 2px;font-size:13px;overflow:visible}
+.dl-xtip .dl-fx{margin:6px 0 2px;font-size:var(--fs-cap);overflow:visible}
 @container (max-width:520px){
   .dl-xpgs{grid-template-columns:minmax(0,1fr);gap:8px}
   .dl-xgrid{gap:3px 4px}
   .dl-xg{gap:1px;padding:1px}
-  .dl-xbox .dl-xc{min-width:20px;font-size:11px;padding:2px 0}
+  .dl-xbox .dl-xc{min-width:20px;font-size:var(--fs-mark);padding:2px 0}
 }
 
 /* ---------- part 4 on a wide stage (polish round 2, 2026-10-15): at 1440 × 900 the example filled the stage and the curve sat
@@ -252,28 +252,39 @@ span.dl-fx{display:block}
    that pass behind a closed disclosure; on the chart, the cheapest setting's curve once it is shown ---------- */
 .dl-gap{margin:6px 0 8px}
 .dl-sum{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
-.dl-sumcap{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.dl-sumcap{font-size:var(--fs-cap);font-weight:700;color:var(--ink);margin-bottom:2px}
 .dl-same{margin:0 0 4px;color:var(--ink-2);line-height:1.45}
 .dl-c3{list-style:none;margin:0;padding:0}
 .dl-c3r{display:grid;gap:5px;padding:7px 0 8px;border-bottom:1px solid var(--line-2)}
 .dl-c3h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0}
-.dl-c3t{font-size:13px;font-weight:700;color:var(--ink);margin-right:2px}
-.dl-chip{font-size:11.5px;line-height:1.45;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--ink-2);white-space:nowrap}
+.dl-c3t{font-size:var(--fs-cap);font-weight:700;color:var(--ink);margin-right:2px}
+.dl-chip{font-size:var(--fs-label);line-height:1.45;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--ink-2);white-space:nowrap}
 .dl-chip.on{border-color:var(--ink);color:var(--ink);font-weight:700;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--ink)}
 .dl-c3v{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .dl-c3c{display:grid;gap:1px;min-width:0}
-.dl-c3c small{font-size:11px;color:var(--ink-3);line-height:1.3}
-.dl-c3c b{font-size:13px;font-weight:650;color:var(--ink)}
+.dl-c3c small{font-size:var(--fs-mark);color:var(--ink-3);line-height:1.3}
+.dl-c3c b{font-size:var(--fs-cap);font-weight:650;color:var(--ink)}
 .dl-c3c.dl-over b{color:var(--c-oom)}
-.dl-next{margin:9px 0 0;font-size:13.5px;line-height:1.5}
+.dl-next{margin:9px 0 0;font-size:var(--fs-cap);line-height:1.5}
 .dl-why{margin:7px 0 0;line-height:1.5;color:var(--ink-2)}
 .dl-all{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
-.dl-all>summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--ink);padding:4px 0}
+.dl-all>summary{cursor:pointer;font-weight:650;font-size:var(--fs-cap);color:var(--ink);padding:4px 0}
 .dl-allb>p{margin:6px 0}
-.dl-tbl{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
-.dl-tbl th{font-weight:650;font-size:11.5px;color:var(--ink);text-align:right;padding:4px 4px;border-bottom:1px solid var(--line);vertical-align:bottom}
+.dl-tbl{width:100%;border-collapse:collapse;font-size:var(--fs-label);font-variant-numeric:tabular-nums}
+.dl-tbl th{font-weight:650;font-size:var(--fs-label);color:var(--ink);text-align:right;padding:4px 4px;border-bottom:1px solid var(--line);vertical-align:bottom}
 .dl-tbl td{text-align:right;padding:3px 4px;border-bottom:1px solid var(--line-2);color:var(--ink-2);font-family:var(--font-mono)}
 .dl-tbl th:first-child,.dl-tbl td:first-child{text-align:left;font-family:var(--font-ui,inherit)}
 .dl-tbl tr.me td{font-weight:700;color:var(--ink);background:var(--surface-2)}
 .dl-bestc{fill:none;stroke:var(--c-ok);stroke-width:1.8;stroke-dasharray:1.5 3;stroke-linecap:round}
 .dl-sw-best{height:0!important;border-top:2.5px dotted var(--c-ok)}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) part 4 still ran 21 px past the stage in Chinese and 75 in
+   English. The dedup layout's row gaps and its pages' inner spacing are 1–2 px smaller (the words' line height stays), and the metric
+   cards take the kit's tight line heights (a card's change row stays reserved). In English the signatures' legend still takes four
+   lines, so part 4 runs 54 px past 1536 × 730 (159 on main): fitting it needs another layout */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .dl-graph[data-v="dedup"]{row-gap:6px;padding-top:6px;padding-bottom:6px}
+  .dl-graph[data-v="dedup"]>.dl-xbox,.dl-graph[data-v="dedup"]>.dl-cbox{row-gap:6px}
+  .dl-graph[data-v="dedup"] .dl-xpg{gap:2px;padding-top:5px;padding-bottom:5px}
+  .dl-metrics .metric .sub{line-height:1.25}
+  .dl-metrics .metric .d{min-height:13px;line-height:1.1}
+}}
