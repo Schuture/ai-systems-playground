@@ -73,6 +73,11 @@ def top_of(pg, sel):
     return pg.evaluate("s=>{const e=document.querySelector(s); return e?Math.round(e.getBoundingClientRect().top):null}", sel)
 
 
+def bar_bottom(pg):
+    # what is left of the top bar on the screen: all of it while it stays on top, less once it has scrolled away (a desktop lab page)
+    return pg.evaluate("()=>{const b=document.querySelector('.topbar'); return b?Math.max(0,Math.round(b.getBoundingClientRect().bottom)):0}")
+
+
 def hover_tip(pg, sel):
     loc = pg.locator(sel).first
     loc.evaluate("e=>e.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'})"); pg.wait_for_timeout(150)
@@ -173,7 +178,8 @@ def run_flow(b, w, h, lang, dark=False):
     # part 2: the prediction gates Next and is not locked
     pg.click('#tf-rail [data-nav="next"]'); pg.wait_for_timeout(250)
     t2 = top_of(pg, '#tf-rail .pbar' if w <= 760 else '#tf-rail .step.current')   # phones (m2): the part bar comes back to the top, the picture under it
-    check(f'{tag} Next reveals the new {"part bar" if w <= 760 else "card"} (top on screen)', t2 is not None and 40 <= t2 <= h - 160, t2)
+    bb = bar_bottom(pg)
+    check(f'{tag} Next reveals the new {"part bar" if w <= 760 else "card"} (top on screen)', t2 is not None and min(40, bb) <= t2 <= h - 160, (t2, bb))
     check(f'{tag} part 2: Next disabled until a choice', disabled(pg, '#tf-rail [data-nav="next"]'))
     opts = pg.evaluate("()=>[...document.querySelectorAll('#tf-rail [data-pred]')].map(b=>b.textContent)")
     check(f'{tag} part 2: four options covering the range', opts == [Z('Under 1/4', '不到 1/4'), Z('1/4 to 1/2', '1/4 到 1/2'), Z('1/2 to 3/4', '1/2 到 3/4'), Z('Over 3/4', '3/4 以上')], opts)
@@ -274,7 +280,8 @@ def run_flow(b, w, h, lang, dark=False):
     pg.click('#tf-rail .step.current .stepnav [data-mode-go="sandbox"]'); pg.wait_for_timeout(300)
     check(f'{tag} “See the scenarios” opens Scenarios (R3.12)', state(pg)['mode'] == 'sandbox')
     t8 = top_of(pg, '#view-dyn .bench>.stage' if w <= 760 else '#tf-rail')   # phones (m2): the stage first, the card right under it
-    check(f'{tag} the Scenarios {"stage" if w <= 760 else "card"} comes into view', t8 is not None and 40 <= t8 <= h - 160, t8)
+    bb = bar_bottom(pg)
+    check(f'{tag} the Scenarios {"stage" if w <= 760 else "card"} comes into view', t8 is not None and min(40, bb) <= t8 <= h - 160, (t8, bb))
     sb = txt(pg, '#tf-rail .railcard')
     check(f'{tag} scenarios: “Pick a scenario”, the lead-in (G1, 2026-10-08), the Settings link, and it ends with “Take the challenge” (R3.12)', Z('Pick a scenario', '选一个应用场景') in sb and Z('Pick a scenario and see how many parameters the model has and how much memory its weights take.', '选一个场景，看看模型有多少参数、权重占多少显存。') in sb and vis(pg, '#tf-rail [data-jump="controls"]')
           and vis(pg, '#tf-rail .railcard .stepnav [data-mode-go="challenge"]') and sb.rstrip().endswith(Z('Take the challenge', '去做挑战')), sb[-120:])
@@ -308,7 +315,8 @@ def run_flow(b, w, h, lang, dark=False):
     pg.click('#tf-rail .railcard .stepnav [data-mode-go="challenge"]'); pg.wait_for_timeout(300); settle(pg)   # the reveal is a smooth scroll
     check(f'{tag} “Take the challenge” opens the challenge', state(pg)['mode'] == 'challenge')
     t8 = top_of(pg, '#view-dyn .bench>.stage' if w <= 760 else '#tf-rail')   # phones (m2): the stage, the card right under it
-    check(f'{tag} the button reveals the challenge {"stage" if w <= 760 else "card"}', t8 is not None and 40 <= t8 <= h - 160, t8)
+    bb = bar_bottom(pg)
+    check(f'{tag} the button reveals the challenge {"stage" if w <= 760 else "card"}', t8 is not None and min(40, bb) <= t8 <= h - 160, (t8, bb))
     ch = txt(pg, '#tf-rail .railcard')
     check(f'{tag} challenge: goal with hardware, precision, budget; only the layer slider', 'RTX 4090' in ch and '20 GiB' in ch and 'BF16' in ch and pg.evaluate("()=>document.querySelectorAll('#tf-rail input,#tf-rail .seg-ctl:not(.ex-tabs)').length") == 1)
     locked = pg.evaluate("()=>[...document.querySelectorAll('#tf-controls .lockable')].map(e=>getComputedStyle(e).display)")
