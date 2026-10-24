@@ -870,18 +870,21 @@ function drawLayout(r){
   /* one cell per tensor-parallel group (its t GPUs as small squares, 4 to a row), one column per stage, one row per copy */
   const d=r.d, rowsN=Math.min(d,4), p=S.p, t=S.t;
   $('#tcap-top',app).classList.toggle('wide',p>8);   /* a long pipeline takes the full width; the memory column moves under it */
-  const sq=4, sg=1.5, per=Math.min(t,4), cw=24, ch2=t>4?15:10, cx=4, lw=40, top=14;
-  /* the "… N copies in all" line sets the width when it is longer than the drawing (9px mono: about 5.6 px a Latin character, 9.5 px a CJK one or an ellipsis) */
+  /* refit step 2 (2026-10-24): the stage numbers above the columns are 11 px now (9 before), so they sit 2 px lower (y 11) and the rows
+     with them (top 16), and the numbers stay inside the drawing */
+  const sq=4, sg=1.5, per=Math.min(t,4), cw=24, ch2=t>4?15:10, cx=4, lw=40, top=16;
+  /* the "… N copies in all" line sets the width when it is longer than the drawing (about 5.6 px a Latin character, 9.5 px a CJK one
+     or an ellipsis: set for 9 px text; the 11 px text of the refit still ends 14 px or more inside it) */
   const more=d>rowsN?tx(`… ${fint(d)} copies in all`,`…… 一共 ${fint(d)} 份`):'', tw=[...more].reduce((a,c)=>a+(/[\u2026\u3000-\u9fff\uff00-\uffef]/.test(c)?9.5:5.6),0);
-  const W=Math.max(lw+p*(cw+cx),more?Math.ceil(lw+tw+6):0), H=top+rowsN*(ch2+5)+(more?13:0);
+  const W=Math.max(lw+p*(cw+cx),more?Math.ceil(lw+tw+6):0), H=top+rowsN*(ch2+5)+(more?14:0);   /* the last line's 11 px text ends inside (13 and H − 2 before) */
   let s='';
-  for(let j=0;j<p;j++){const x=lw+j*(cw+cx); if(p<=8||j%4===0||j===p-1) s+=`<text class="tcap-tl" x="${x+cw/2}" y="9" text-anchor="middle">${j+1}</text>`;}
+  for(let j=0;j<p;j++){const x=lw+j*(cw+cx); if(p<=8||j%4===0||j===p-1) s+=`<text class="tcap-tl" x="${x+cw/2}" y="11" text-anchor="middle">${j+1}</text>`;}
   for(let i=0;i<rowsN;i++){const y=top+i*(ch2+5);
     s+=`<text class="tcap-tl" x="${lw-5}" y="${y+ch2/2+3}" text-anchor="end">${tx('copy','份')} ${i+1}</text>`;
     for(let j=0;j<p;j++){const x=lw+j*(cw+cx), me=i===0&&j===0, x0=x+(cw-(per*sq+(per-1)*sg))/2;
       s+=`<rect class="tcap-tpg${me?' me':''}" x="${x}" y="${y}" width="${cw}" height="${ch2}" rx="2"/>`;
       for(let k=0;k<t;k++) s+=`<rect class="tcap-gpu${me&&k===0?' me':''}" x="${(x0+(k%4)*(sq+sg)).toFixed(2)}" y="${y+3+Math.floor(k/4)*(sq+sg)}" width="${sq}" height="${sq}"/>`;}}
-  if(more) s+=`<text class="tcap-tl" x="${lw}" y="${H-2}">${esc(more)}</text>`;
+  if(more) s+=`<text class="tcap-tl" x="${lw}" y="${H-3}">${esc(more)}</text>`;
   $('#tcap-cl',app).innerHTML=`<svg viewBox="0 0 ${W} ${H}" class="tcap-svg" style="width:${Math.round(W*1.15)}px" role="img" aria-label="${esc(layoutName(S))}">${s}</svg>`;
   $('#tcap-cl-cap',app).textContent=tx(`${fint(S.G)} GPUs = TP ${t} × PP ${p} × DP ${fint(d)}`,`${fint(S.G)} 张卡 = 张量并行 ${t} × 流水线 ${p} 段 × 数据并行 ${fint(d)} 份`);
   /* the memory column sits to the right of the cluster, or under it on a phone and for a long pipeline */

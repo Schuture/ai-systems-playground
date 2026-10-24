@@ -7,7 +7,7 @@
 .lora-graph{padding:12px 14px 14px;min-width:0}
 .lora-vis{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px;align-items:start;min-width:0}
 .lora-vis>div{min-width:0}
-.lora-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px;min-height:2.7em}
+.lora-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:6px;min-height:2.7em;text-wrap:balance}   /* a caption that takes two lines splits them evenly (精装修 step 2: at 13 px the last word no longer sits alone on the last line) */
 .lora-mem,.lora-mat{min-width:0;overflow:hidden}
 .lora-memsvg,.lora-matsvg{display:block;max-width:100%;overflow:visible}
 
@@ -35,19 +35,19 @@
 .lora-colbox{fill:none;stroke:var(--ink-3);stroke-width:1;outline:none;cursor:help;pointer-events:all}
 .lora-colbox.main{stroke:var(--ink);stroke-width:1.5;pointer-events:stroke}
 .lora-colbox:focus-visible{stroke:var(--ink);stroke-width:2.5}
-.lora-tot{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink)}
+.lora-tot{font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:650;fill:var(--ink)}
 .lora-tot.bad{fill:var(--c-oom)}
 .lora-mid{text-anchor:middle}
 .lora-halo,.lora-capl{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
-.lora-ax{font-family:var(--font-mono);font-size:10px;fill:var(--ink-3)}
+.lora-ax{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-3)}
 .lora-ax.main{fill:var(--ink);font-weight:650}
-.lora-bl{font-family:var(--font-mono);font-size:10.5px;fill:var(--ink)}
+.lora-bl{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink)}
 .lora-capline{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:5 3}
-.lora-capl{font-family:var(--font-mono);font-size:10.5px;font-weight:650;fill:var(--ink)}
-.lora-oomt{font-family:var(--font-ui);font-size:11px;font-weight:700;fill:var(--c-oom)}
+.lora-capl{font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:650;fill:var(--ink)}
+.lora-oomt{font-family:var(--font-ui);font-size:var(--fs-mark);font-weight:700;fill:var(--c-oom)}
 
 /* legend beside the chart, under it (R5.9) */
-.lora-leg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-family:var(--font-mono);font-size:11px;line-height:1.35;color:var(--ink-2)}
+.lora-leg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-family:var(--font-mono);font-size:var(--fs-mark);line-height:1.35;color:var(--ink-2)}
 .lora-leg>span{display:inline-flex;align-items:center;cursor:help}
 .lora-leg .sw{width:12px;height:10px;margin-right:5px;flex:none}
 .lora-sw-w,.lora-sw-fw{background:var(--c-weights);border-color:transparent}
@@ -64,7 +64,7 @@
 
 /* ---------- the matrix picture ---------- */
 .lora-matp .ctl{margin:0 0 6px}
-.lora-matp .seg-ctl button{padding:5px 2px;font-size:12px}
+.lora-matp .seg-ctl button{padding:5px 2px;font-size:var(--fs-label)}
 .lora-matp .seg-ctl{flex-wrap:wrap}   /* in the narrow column at 761 px the seven keys take two rows instead of running past the panel */
 .lora-w{fill:color-mix(in srgb,var(--c-weights) 30%,var(--surface));stroke:var(--c-weights);stroke-width:1;cursor:help;outline:none}
 .lora-w.tr{fill:var(--c-weights)}
@@ -72,20 +72,20 @@
 .lora-w:focus-visible,.lora-ba:focus-visible{stroke:var(--ink);stroke-width:2}
 .lora-ba{fill:var(--ink);cursor:help;outline:none}
 .lora-bxa{fill:none;stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:.75;cursor:help}
-.lora-ml{font-family:var(--font-mono);font-size:11px;fill:var(--ink)}
+.lora-ml{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink)}
 /* B·A's label under W's: a small dashed square like the outline drawn inside W (the owner's review of 2026-10-08: every block's shape) */
 .lora-ml.lora-mlba{fill:var(--ink-2)}
 .lora-bxs{fill:none;stroke:var(--ink);stroke-width:1;stroke-dasharray:2 2;opacity:.75}
-.lora-matnote{margin:6px 0 0;font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.lora-matnote{margin:6px 0 0;font-size:var(--fs-label);line-height:1.45;color:var(--ink-2)}
 .lora-matnote.lora-nolora{color:var(--ink);font-weight:600}
 
 /* ---------- part 1: the idea, two paths (review codex-b9v3 应修 2): W in the weights blue, A and B in ink like the LoRA block ---------- */
 .lora-ideasvg{display:block;max-width:100%;overflow:visible;margin:2px auto 0}
-.lora-il{font-family:var(--font-ui);font-size:11.5px;fill:var(--ink);pointer-events:none}
-.lora-il.m{font-family:var(--font-mono);font-size:11px}
-.lora-il.b{font-weight:700;font-size:13px}
-.lora-il.s{font-size:11px;fill:var(--ink-2)}
-.lora-il.in{fill:var(--surface);font-weight:700;font-size:12px}
+.lora-il{font-family:var(--font-ui);font-size:var(--fs-label);fill:var(--ink);pointer-events:none}
+.lora-il.m{font-family:var(--font-mono);font-size:var(--fs-mark)}
+.lora-il.b{font-weight:700;font-size:var(--fs-cap)}
+.lora-il.s{font-size:var(--fs-mark);fill:var(--ink-2)}
+.lora-il.in{fill:var(--surface);font-weight:700;font-size:var(--fs-label)}
 .lora-iln{fill:none;stroke:var(--ink-3);stroke-width:1.4}
 .lora-arrh{fill:var(--ink-3)}
 .lora-vec{fill:var(--sunken);stroke:var(--ink-3);stroke-width:1;cursor:help;outline:none}
@@ -115,17 +115,17 @@
 /* each misconception, then the button that puts its case in the chart, under it (the button names the case, so it needs the width) */
 .lora-rem{display:grid;grid-template-columns:minmax(0,1fr);gap:6px 10px;align-items:start;margin:0;padding:10px 0;border-top:1px solid var(--line-2)}
 .lora-rem:first-child{border-top:0;padding-top:2px}
-.lora-rem p{margin:0;font-size:13px;line-height:1.5}
+.lora-rem p{margin:0;font-size:var(--fs-cap);line-height:1.5}
 .lora-remb{white-space:nowrap;justify-self:start}
 .lora-mt{margin-top:10px}
 .lora-goal.lora-miss{border-color:var(--c-oom);background:var(--c-oom-soft)}
 .lora-goal.met{border-color:var(--c-ok);background:var(--c-ok-soft)}
 .lora-ch-res .cmp{margin-top:10px}
 /* the challenge's summary (review codex-b9v3 应修 5): each memory block with the setting that shrinks it, your plan next to the least */
-.lora-sum{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:12.5px;line-height:1.35}
-.lora-sum caption{caption-side:top;text-align:left;font-weight:650;font-size:12.5px;color:var(--ink);padding:0 0 4px}
+.lora-sum{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:var(--fs-cap);line-height:1.35}
+.lora-sum caption{caption-side:top;text-align:left;font-weight:650;font-size:var(--fs-cap);color:var(--ink);padding:0 0 4px}
 .lora-sum th,.lora-sum td{padding:6px 6px 6px 8px;border-top:1px solid var(--line-2);text-align:left;vertical-align:top}
-.lora-sum thead th{border-top:0;font-size:11.5px;font-weight:650;color:var(--ink-2);padding-top:2px;padding-bottom:4px}
+.lora-sum thead th{border-top:0;font-size:var(--fs-label);font-weight:650;color:var(--ink-2);padding-top:2px;padding-bottom:4px}
 .lora-sum tbody th{font-weight:600;color:var(--ink);width:44%}
 /* two plans side by side in the 246–266 px rail of wider screens: three columns would push the English table past the card, so each
    block's name takes its own line and the two plans sit under it (grid; the table markup stays) */
@@ -138,24 +138,24 @@
   .lora-sum.two tr.lora-diff{box-shadow:inset 3px 0 0 var(--ink)}
   .lora-sum.two tr.lora-diff th{box-shadow:none}
 }
-.lora-sum tbody th span{display:block;font-weight:400;font-size:11.5px;color:var(--ink-3)}
-.lora-sum td b{font-weight:650;font-size:12.5px;white-space:nowrap}
-.lora-sset{display:block;font-size:11.5px;color:var(--ink-2)}
+.lora-sum tbody th span{display:block;font-weight:400;font-size:var(--fs-label);color:var(--ink-3)}
+.lora-sum td b{font-weight:650;font-size:var(--fs-cap);white-space:nowrap}
+.lora-sset{display:block;font-size:var(--fs-label);color:var(--ink-2)}
 .lora-sum tr.lora-diff th{box-shadow:inset 3px 0 0 var(--ink)}
 .lora-sum tr.lora-diff .lora-sset{color:var(--ink);font-weight:700}
 .lora-sum tr.lora-sumtot th,.lora-sum tr.lora-sumtot td{border-top:1.5px solid var(--ink-3)}
 .lora-sum td.lora-bad b{color:var(--c-oom)}
 .lora-sumkey{margin:2px 0 6px}
 .lora-allp{margin:10px 0 0;border-top:1px solid var(--line-2);padding-top:6px}
-.lora-allp>summary{cursor:pointer;font-size:13px;font-weight:650;color:var(--ink);padding:4px 0}
+.lora-allp>summary{cursor:pointer;font-size:var(--fs-cap);font-weight:650;color:var(--ink);padding:4px 0}
 
 /* Settings: the estimation assumptions, closed by default (review codex-b9v3 应修 2) */
 .lora-asm{margin:4px 0 0}
-.lora-asm>summary{cursor:pointer;font-size:12.5px;font-weight:650;color:var(--ink-2);padding:4px 0}
+.lora-asm>summary{cursor:pointer;font-size:var(--fs-cap);font-weight:650;color:var(--ink-2);padding:4px 0}
 .lora-asm[open]>summary{margin-bottom:2px}
 
 /* ---------- Connect ---------- */
-.lora-prod{margin:0;padding-left:18px;display:grid;gap:8px;font-size:13px}
+.lora-prod{margin:0;padding-left:18px;display:grid;gap:8px;font-size:var(--fs-cap)}
 .lora-prod code{word-break:break-all}
 
 /* ---------- the dock (phones) ---------- */

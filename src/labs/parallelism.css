@@ -8,7 +8,7 @@
 .zr-stage .stage-head{align-items:center}
 .zr-graph{padding:12px 14px 14px;display:grid;gap:16px;min-width:0}
 .zr-graph>div{min-width:0}
-.zr-cap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:8px}
+.zr-cap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:8px}
 
 /* ---------- memory columns, legend beside them ---------- */
 .zr-membox{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"cap cap" "cols leg";column-gap:14px;min-width:0}
@@ -17,9 +17,9 @@
 .zr-colsin{position:relative;display:flex;gap:6px;height:236px;min-width:0}
 .zr-col{position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column}
 .zr-colin{position:relative;flex:1 1 auto;background:var(--surface-2);border:1px solid var(--line);border-bottom-color:var(--ink-3);border-radius:3px 3px 0 0;overflow:hidden}
-.zr-gl{flex:0 0 22px;line-height:22px;text-align:center;font-size:10.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden}
+.zr-gl{flex:0 0 22px;line-height:22px;text-align:center;font-size:var(--fs-mark);color:var(--ink-3);white-space:nowrap;overflow:hidden}
 .zr-blk{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 0 var(--surface);cursor:help;transition:bottom .25s ease-out,height .25s ease-out}
-.zr-blk em{font:600 10px/1 var(--font-mono);font-style:normal;color:var(--ink);background:var(--surface);padding:1px 3px;border-radius:2px;white-space:nowrap}
+.zr-blk em{font:600 var(--fs-mark)/1 var(--font-mono);font-style:normal;color:var(--ink);background:var(--surface);padding:1px 3px;border-radius:2px;white-space:nowrap}
 .zr-b-w,.zr-sw-w{background:var(--c-weights)}
 .zr-b-g,.zr-sw-g{background:var(--ink-2)}
 .zr-b-c,.zr-sw-c{background:var(--ink-3)}
@@ -31,13 +31,13 @@
 .zr-sw-ovr{background:repeating-linear-gradient(135deg,var(--c-oom) 0 3px,var(--c-oom-soft) 3px 5px);border-color:var(--c-oom)}
 .zr-ovr{position:absolute;left:0;right:0;z-index:2;pointer-events:none;background:repeating-linear-gradient(135deg,var(--c-oom) 0 3px,transparent 3px 6px);border-bottom:2px solid var(--c-oom);opacity:.85}
 .zr-col.over .zr-colin{border-color:var(--c-oom)}
-.zr-clip{position:absolute;top:3px;left:0;right:0;z-index:3;text-align:center;font:600 10px/1.2 var(--font-mono);color:var(--c-oom)}
-.zr-clip::first-letter{font-size:9px}
-.zr-q{position:absolute;inset:0;display:grid;place-items:center;font:600 22px/1 var(--font-mono);color:var(--ink-3)}
+.zr-clip{position:absolute;top:3px;left:0;right:0;z-index:3;text-align:center;font:600 var(--fs-mark)/1.2 var(--font-mono);color:var(--c-oom)}
+.zr-clip::first-letter{font-size:var(--fs-mark)}
+.zr-q{position:absolute;inset:0;display:grid;place-items:center;font:600 var(--fs-big)/1 var(--font-mono);color:var(--ink-3)}
 .zr-cap80{position:absolute;left:0;right:0;height:0;border-top:2px dashed var(--ink);z-index:4;pointer-events:none}
-.zr-cap80 span{position:absolute;right:2px;bottom:3px;font:600 11px/1.2 var(--font-ui);color:var(--ink);background:var(--surface);padding:1px 4px;border-radius:2px;white-space:nowrap}
-.zr-more{margin-top:6px;font-size:12px;color:var(--ink-2)}
-#zr-mem-leg{grid-area:leg;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;padding-bottom:24px;font-size:12px;color:var(--ink-2);min-width:0}
+.zr-cap80 span{position:absolute;right:2px;bottom:3px;font:600 var(--fs-mark)/1.2 var(--font-ui);color:var(--ink);background:var(--surface);padding:1px 4px;border-radius:2px;white-space:nowrap}
+.zr-more{margin-top:6px;font-size:var(--fs-label);color:var(--ink-2)}
+#zr-mem-leg{grid-area:leg;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;padding-bottom:24px;font-size:var(--fs-label);color:var(--ink-2);min-width:0}
 .zr-leg>span{white-space:nowrap;cursor:help;outline-offset:2px}
 .zr-leg .sw{border-color:transparent}
 
@@ -48,7 +48,7 @@
 .zr-membox+.zr-tlbox{border-top:1px solid var(--line);padding-top:14px}
 #zr-tl-leg{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
 .zr-tl{position:relative;margin-left:66px;display:flex;flex-direction:column;gap:5px;min-width:0}
-.zr-rowlab{position:absolute;left:-66px;width:60px;height:18px;line-height:18px;text-align:right;font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.zr-rowlab{position:absolute;left:-66px;width:60px;height:18px;line-height:18px;text-align:right;font-size:var(--fs-label);color:var(--ink-2);white-space:nowrap}
 .zr-tl>.zr-rowlab:nth-child(1){top:0}
 .zr-tl>.zr-rowlab:nth-child(3){top:23px}
 .zr-row{position:relative;height:18px;background:var(--surface-2);border-radius:2px;cursor:help;outline-offset:2px}
@@ -65,22 +65,22 @@
 .zr-cur{position:absolute;top:-3px;height:47px;z-index:2;pointer-events:none;background:var(--surface);opacity:.78}
 .zr-head{position:absolute;top:-4px;height:49px;width:2px;margin-left:-1px;z-index:3;pointer-events:none;background:var(--ink)}
 .zr-ax{position:relative;height:16px;margin-top:2px;border-top:1px solid var(--line)}
-.zr-ax span{position:absolute;top:3px;transform:translateX(-50%);font:10.5px/1.2 var(--font-mono);color:var(--ink-3);white-space:nowrap}
+.zr-ax span{position:absolute;top:3px;transform:translateX(-50%);font:var(--fs-mark)/1.2 var(--font-mono);color:var(--ink-3);white-space:nowrap}
 .zr-ax span:first-child{transform:none}
 .zr-ax span:last-child{transform:translateX(-100%)}
 /* the caption above the legend: a fixed box of three lines (R7.9). The first line (time, pass, layer, time waited) never wraps;
    the second may take two lines on a phone. Its sentences stay put for a whole pass; only the numbers change (tabular figures,
    so the line does not jitter) */
-.zr-now{height:calc(3 * 1.4em);margin-top:8px;font-size:12px;line-height:1.4;color:var(--ink-2);overflow:hidden}
+.zr-now{height:calc(3 * 1.4em);margin-top:8px;font-size:var(--fs-label);line-height:1.4;color:var(--ink-2);overflow:hidden}
 .zr-nl-c{white-space:nowrap;overflow:hidden;color:var(--ink)}
 .zr-nn{font-variant-numeric:tabular-nums}
 .zr-waitn{color:var(--c-oom);font-weight:600;margin-left:.25em}
 html[lang^="zh"] .zr-waitn{margin-left:0}
-#zr-tl-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-size:12px;color:var(--ink-2)}
+#zr-tl-leg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-size:var(--fs-label);color:var(--ink-2)}
 .zr-player{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:10px}
 .zr-player .ctl{display:flex;align-items:center;gap:6px;margin:0}
-.zr-player .ctl>.lbl{font-size:12px}
-.zr-player .seg-ctl button{font-size:12px;padding:3px 9px}
+.zr-player .ctl>.lbl{font-size:var(--fs-label)}
+.zr-player .seg-ctl button{font-size:var(--fs-label);padding:3px 9px}
 /* H7 (the owner, 2026-10-09, on GRPO's player: “重放按钮和速度按钮没有对齐”): Replay, the step buttons and the speed buttons share one
    height and one centre line */
 .zr-player .btn.sm,.zr-player .seg-ctl{height:30px;box-sizing:border-box}
@@ -107,7 +107,7 @@ html[lang^="zh"] .zr-waitn{margin-left:0}
 .zr-numl{margin:2px 0 12px;padding-left:1.4em;overflow-x:auto;max-width:100%}
 .zr-remlist{margin:0 0 10px;padding-left:18px}
 .zr-remlist li{margin:0 0 8px}
-.zr-rem{margin-left:4px;font-size:12.5px}
+.zr-rem{margin-left:4px;font-size:var(--fs-label)}
 .zr-asm{margin:6px 0 10px;padding-left:18px;color:var(--ink-2)}
 .zr-asm li{margin:0 0 4px}
 .zr-goal.zr-over b{color:var(--c-oom)}
@@ -115,30 +115,30 @@ html[lang^="zh"] .zr-waitn{margin-left:0}
 /* the challenge's result (the owner's review of 2026-10-07, R1, after the train-capstone lab): your setting beside the best one,
    the differing settings as chips (bold where yours differs), what fails in red; the settings that pass behind a closed disclosure */
 .zr-sum{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
-.zr-sumcap{font-size:12.5px;font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:4px}
+.zr-sumcap{font-size:var(--fs-cap);font-weight:650;color:var(--ink);line-height:1.35;margin-bottom:4px}
 .zr-same{margin:0 0 4px;color:var(--ink-2);line-height:1.45}
 .zr-c2,.zr-pass{list-style:none;margin:0;padding:0}
 .zr-c2r{padding:7px 0 8px;border-bottom:1px solid var(--line-2)}
 .zr-c2h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0}
-.zr-c2t{font-size:13px;font-weight:700;color:var(--ink);margin-right:2px}
-.zr-chip{font-size:11.5px;line-height:1.45;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--ink-2);white-space:nowrap;margin-left:4px}
+.zr-c2t{font-size:var(--fs-cap);font-weight:700;color:var(--ink);margin-right:2px}
+.zr-chip{font-size:var(--fs-label);line-height:1.45;border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--ink-2);white-space:nowrap;margin-left:4px}
 .zr-c2h .zr-chip{margin-left:0}
 .zr-chip.on{border-color:var(--ink);color:var(--ink);font-weight:700;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--ink)}
-.zr-c2v{display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:4px;font-size:12.5px;color:var(--ink)}
+.zr-c2v{display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:4px;font-size:var(--fs-label);color:var(--ink)}
 .zr-sv:not(.zr-bad){white-space:nowrap}
 .zr-sv.zr-bad{color:var(--c-oom);font-weight:650}
-.zr-gap,.zr-next{margin:9px 0 0;font-size:13.5px;line-height:1.5}
+.zr-gap,.zr-next{margin:9px 0 0;font-size:var(--fs-cap);line-height:1.5}
 .zr-all{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
-.zr-all>summary{cursor:pointer;font-weight:650;font-size:13.5px;color:var(--ink);padding:4px 0}
+.zr-all>summary{cursor:pointer;font-weight:650;font-size:var(--fs-cap);color:var(--ink);padding:4px 0}
 .zr-allb>p{margin:6px 0}
-.zr-pass li{padding:6px 0;border-bottom:1px solid var(--line-2);font-size:13px;line-height:1.5}
-.zr-pass li .zr-sv{margin-right:14px;font-size:12.5px}
+.zr-pass li{padding:6px 0;border-bottom:1px solid var(--line-2);font-size:var(--fs-cap);line-height:1.5}
+.zr-pass li .zr-sv{margin-right:14px;font-size:var(--fs-label)}
 .zr-pass li.me b{text-decoration:underline;text-underline-offset:3px}
 .zr-mt{margin-top:10px}
 .zr-prod{margin:0;padding-left:18px}
 .zr-prod li{margin:0 0 8px}
 .zr-grp{margin-top:6px;padding:8px 10px 2px;border:1px dashed var(--line);border-radius:6px}
-.zr-gh{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.zr-gh{font-size:var(--fs-mark);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
 
 /* ---------- dock mini bar ---------- */
 .zr-dk{position:relative;width:100%;min-width:48px;height:12px;box-sizing:border-box;background:var(--surface-2);border:1px solid var(--line);border-radius:2px;overflow:hidden}
@@ -152,12 +152,12 @@ html[lang^="zh"] .zr-waitn{margin-left:0}
   .zr-graph{padding:10px 10px 12px}
   .zr-membox{grid-template-columns:minmax(0,1fr);grid-template-areas:"cap" "cols" "leg"}
   .zr-colsin{gap:3px;height:200px}
-  .zr-gl{font-size:9.5px}
-  .zr-blk em{font-size:9px;padding:0 1px}
+  .zr-gl{font-size:var(--fs-mark)}
+  .zr-blk em{font-size:var(--fs-mark);padding:0 1px}
   #zr-mem-leg{flex-direction:row;flex-wrap:wrap;gap:4px 12px;padding-bottom:0;margin-top:8px}
   .zr-tl{margin-left:54px}
-  .zr-rowlab{left:-54px;width:48px;font-size:11px}
-  .zr-cap80 span{font-size:10.5px}
+  .zr-rowlab{left:-54px;width:48px;font-size:var(--fs-mark)}
+  .zr-cap80 span{font-size:var(--fs-mark)}
 }
 
 /* the challenge's six token counts wrap in the narrow rail instead of running past it */
@@ -194,3 +194,17 @@ html[lang^="zh"] .zr-waitn{margin-left:0}
 }}
 /* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
 .zr-nl{font-variant-numeric:tabular-nums}
+/* refit step 2 (2026-10-24): at 820 px tall or less (1440 × 800, 1536 × 730) parts 2–7 still ran 14–39 px past the stage in Chinese and
+   29–54 in English. On a wide stage the caption's second line never wraps (nowFit, every setup), so its fixed box holds two lines here
+   instead of three; the columns are 26 px shorter, so a block's label sits in its block without the 1 px pads above and below it (the
+   label's own size is kept); the legend beside them is 3 px tighter per item; a few gaps are 2–4 px smaller. Same blocks, lines and texts */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){@container (min-width:736px){
+  .zr-now{height:calc(2 * 1.4em)}
+  .zr-colsin{height:210px}
+  .zr-blk em{padding-top:0;padding-bottom:0}
+  #zr-mem-leg{gap:2px}
+  .zr-graph{gap:8px}
+  .zr-membox+.zr-tlbox{padding-top:8px}
+  #zr-tl-leg{margin-top:4px;padding-top:6px}
+  .zr-player{margin-top:6px}
+}}
