@@ -398,7 +398,7 @@ with sync_playwright() as p:
         pg.screenshot(path=str(SHOTS / f'1440_{lang}_p4.png'))
         # ----- part 5: across 8 GPUs, from MHA -----
         rail_click(pg, '#gm-rail [data-nav="next"]', 400); pg.wait_for_timeout(700); settle(pg)
-        sg = pg.evaluate("()=>{const b=document.getElementById('gm-status').getBoundingClientRect(), t=document.querySelector('.topbar').offsetHeight; return {badge:Math.round(b.top), bar:t}}")
+        sg = pg.evaluate("()=>{const b=document.getElementById('gm-status').getBoundingClientRect(), t=Math.max(0,Math.round(document.querySelector('.topbar').getBoundingClientRect().bottom)); return {badge:Math.round(b.top), bar:t}}")
         check(f'{T} part 5 entry: the stage’s badge is below the top bar (review A r11 #15)', sg['badge'] >= sg['bar'], sg)
         check(f'{T} part 5 enters with MHA, the initial setup', state(pg)['S'] == INIT, state(pg)['S'])
         check(f'{T} part 5: Next disabled before MQA', disabled(pg, '#gm-rail [data-nav="next"]'))
@@ -432,7 +432,7 @@ with sync_playwright() as p:
         pg.screenshot(path=str(SHOTS / f'1440_{lang}_p5.png'))
         # ----- part 6: MLA, another approach -----
         rail_click(pg, '#gm-rail [data-nav="next"]', 400); pg.wait_for_timeout(700); settle(pg)
-        sg = pg.evaluate("()=>{const b=document.getElementById('gm-status').getBoundingClientRect(), t=document.querySelector('.topbar').offsetHeight; return {badge:Math.round(b.top), bar:t}}")
+        sg = pg.evaluate("()=>{const b=document.getElementById('gm-status').getBoundingClientRect(), t=Math.max(0,Math.round(document.querySelector('.topbar').getBoundingClientRect().bottom)); return {badge:Math.round(b.top), bar:t}}")
         check(f'{T} part 6 entry: the stage’s badge is below the top bar (review A r11 #15)', sg['badge'] >= sg['bar'], sg)
         check(f'{T} part 6: Next disabled before MLA', disabled(pg, '#gm-rail [data-nav="next"]'))
         c6 = pg.evaluate("()=>[...document.querySelectorAll('#gm-chart .gm-ch-r')].map(r=>[r.querySelector('.gm-ch-l .def').textContent, r.querySelectorAll('.gm-cc b')[1].textContent])")

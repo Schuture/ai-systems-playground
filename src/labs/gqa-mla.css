@@ -133,3 +133,13 @@
    (1366 × 650), so the stage fits without scrolling inside */
 @media (min-width:761px) and (min-height:600px) and (max-height:820px){.gm-chart{margin-top:10px;padding-top:8px}}
 @media (min-width:761px) and (min-height:600px) and (max-height:700px){.gm-diag{margin-top:4px}.gm-chart{margin-top:8px;padding-top:6px}}
+/* in English the subtitle takes two lines and the status a line of its own, and parts 6–7 still ran 29 px past 1536 × 730: the chart's
+   rows are 2 px closer to their bars and the gaps between the diagram, the GPU line, the chart and its note a few px smaller */
+@media (min-width:761px) and (min-height:600px) and (max-height:820px){
+  html[lang="en"] .gm-ch-h,html[lang="en"] .gm-ch-r{padding-top:2px;padding-bottom:2px}
+  html[lang="en"] .gm-ch-h{padding-bottom:1px}
+  html[lang="en"] .gm-chart{margin-top:6px;padding-top:6px}
+  html[lang="en"] .gm-diag{margin-top:4px}
+  html[lang="en"] #gm-gpuline{margin-top:4px}
+  html[lang="en"] .gm-ch-note{margin-top:4px}
+}

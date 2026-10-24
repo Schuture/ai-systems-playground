@@ -209,4 +209,7 @@
   .rf-stage .rf-plot{--rf-ph:242}
   .rf-stage .rf-time{gap:6px}
   .rf-stage>.rf-scope{margin:6px 0 2px}
+  /* in English two metric cards and the note under the lanes take a line more, and part 5 still ran 25 px past 1536 × 730: the plot is
+     214 px tall there */
+  html[lang="en"] .rf-stage .rf-plot{--rf-ph:214}
 }
