@@ -1070,7 +1070,8 @@ const bySettings=(el,f)=>el&&el.closest('#rf-controls')?holdPlace(el,()=>byLearn
    resize when the page puts the step list beside it or leaves the primer, so it is drawn again when it does (as labs/ppo.js) */
 let stRO=null, stW=0;
 function watchStage(){if(stRO){stRO.disconnect(); stRO=null;} const st=app&&$('#rf-stage',app); if(!st||typeof ResizeObserver!=='function') return; stW=st.offsetWidth;
-  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth; if(!w||Math.abs(w-stW)<=2) return; stW=w; drawPlot();}));
+  stRO=new ResizeObserver(()=>requestAnimationFrame(()=>{if(!app||!app.contains(st)) return; const w=st.offsetWidth, h=$('#rf-plot',app), pw=h&&h.clientWidth?Math.max(300,Math.min(760,Math.round(h.clientWidth))):plotW;
+    if(!w||(Math.abs(w-stW)<=2&&Math.abs(pw-plotW)<=2)) return; stW=w; drawPlot();}));   // also when the chart was drawn while the stage was hidden (a phone, leaving the primer)
   stRO.observe(st);}
 function bind(el){
   el.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.key; if(!k) return; const v=+e.target.value;

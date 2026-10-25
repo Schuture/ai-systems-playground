@@ -189,6 +189,11 @@
   .tcap-rl li{grid-template-columns:minmax(0,112px) minmax(0,1fr) 46px;font-size:var(--fs-label)}
   .tcap-metrics[data-n="5"]{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+/* refit step 3: the fraction under part 6's bars was squeezed to the line (272–304 px in 360–390 px windows) while its English
+   denominator stayed 319 px wide, so the words ran past the fraction bar and the stage, and at 360 px the page scrolled sideways. On a
+   phone the fraction and its full stop take a line of their own at their own width, and may use 20 px of the stage's right padding,
+   which holds them whole from 390 px up; in a narrower window the last letters scroll in their own box */
+@media (max-width:760px){.tcap-fxs{display:block;width:max-content;max-width:calc(100% + 20px);white-space:nowrap;overflow-x:auto;overflow-y:hidden;padding-block:.3em}.tcap-fxs>math{width:max-content}}
 @media (prefers-reduced-motion:reduce){.tcap-sg,.tcap-mb,.tcap-rt i{transition:none}}
 /* Settings: the GPU counts (nine options) wrap instead of running past the panel */
 #tcap-controls .seg-ctl{flex-wrap:wrap}

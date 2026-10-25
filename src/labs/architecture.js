@@ -105,8 +105,9 @@ const tipText=k=>{const t=TIPS[k]; return t?`${t.d()} ${tx('Formula','公式')}:
 const T=(k,txt)=>`<span class="t ar-term" tabindex="0" role="button" data-ctl="term" data-term="${k}">${txt}</span>`;
 
 /* ---------- drawing kit: colours from CSS variables, crisp canvases, lanes and particles ---------- */
-let COL=null, colT=0;
-function cols(){const now=performance.now(); if(COL&&now-colT<800) return COL;
+let COL=null, colT=0, colK='';
+function cols(){const now=performance.now(), k=(document.documentElement.dataset.theme||'')+(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'d':'l');
+  if(COL&&now-colT<800&&k===colK) return COL; colK=k;
   const cs=getComputedStyle(document.documentElement), g=n=>cs.getPropertyValue(n).trim();
   COL={ink:g('--ink'),ink2:g('--ink-2'),ink3:g('--ink-3'),line:g('--line'),line2:g('--line-2'),surf:g('--surface'),surf2:g('--surface-2'),sunk:g('--sunken'),bg:g('--bg'),
     w:g('--c-weights'),q:g('--ar-q')||'#C8367E',k:g('--c-kv'),v:g('--ar-v')||'#9A5B00',att:g('--ar-att')||'#0E8C8C',tok:[0,1,2,3,4].map(i=>g('--ar-t'+i)||'#888'),
@@ -145,7 +146,10 @@ function makeLoop(host,draw){
   S.io=new IntersectionObserver(es=>{S.vis=es.some(e=>e.isIntersecting); S.sync();},{threshold:0}); S.io.observe(host);
   S.onVis=()=>S.sync(); document.addEventListener('visibilitychange',S.onVis);
   const mq=window.matchMedia?matchMedia('(prefers-reduced-motion: reduce)'):null; S.onMq=()=>S.sync(); if(mq&&mq.addEventListener) mq.addEventListener('change',S.onMq);
-  S.kill=()=>{S.on=false; cancelAnimationFrame(S.raf); S.io.disconnect(); document.removeEventListener('visibilitychange',S.onVis); if(mq&&mq.removeEventListener) mq.removeEventListener('change',S.onMq);};
+  /* a theme change: a still picture is drawn again in the new colours (a running one takes them on its next frame) */
+  const md=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):null; if(md&&md.addEventListener) md.addEventListener('change',S.onMq);
+  S.mo=new MutationObserver(S.onMq); S.mo.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  S.kill=()=>{S.on=false; cancelAnimationFrame(S.raf); S.io.disconnect(); S.mo.disconnect(); document.removeEventListener('visibilitychange',S.onVis); if(mq&&mq.removeEventListener) mq.removeEventListener('change',S.onMq); if(md&&md.removeEventListener) md.removeEventListener('change',S.onMq);};
   S.sync(); return S;}
 
 /* ---------- geometry recorder for the layout audit (tests/architecture_layout.py): the same drawing code runs on a context that also
@@ -731,7 +735,7 @@ function popEmb(st,bare){   // bare: step 3 without the “5th or 50th token” 
   /* steps 1-2: the vocabulary, where the table will be */
   if(st<=1){s+=`<g${NEW(true,200)}><rect x="560" y="14" width="380" height="322" rx="8" class="ar-vcard"/>`+sT(578,322,tx('The vocabulary of Llama 3: 128,256 tokens','Llama 3 的词表：128,256 个 token'),{c:'ar-sv small muted'});
     if(st===0){let vx=580, vy=40; VOCAB.forEach((v,i)=>{const k=TOKS.findIndex(tk=>tokTxt(tk.t)===v), w=v.length*7.4+18; if(vx+w>924){vx=580; vy+=36;}
-        s+=`<rect x="${vx}" y="${vy-13}" width="${w}" height="24" rx="12" ${k>=0?`fill="${tint(k)}"`:'class="ar-vpill"'}/>`+sT(vx+9,vy+4,v,{c:'ar-sv small mono'}); vx+=w+8;});
+        s+=`<rect x="${vx}" y="${vy-13}" width="${w}" height="24" rx="12" ${k>=0?`fill="${tint(k)}"`:'class="ar-vpill"'}/>`+sT(vx+9,vy+4,v,{c:'ar-sv small mono'+(k>=0?' tk':'')}); vx+=w+8;});
       s+=sT(580,vy+42,tx('… and about 128,000 more','……还有大约 128,000 个'),{c:'ar-sv small muted'});}
     else{const ord=[2,4,0,1,3]; ord.forEach((k,n)=>{const y=rows[k]; s+=`<rect x="566" y="${y-11}" width="200" height="22" rx="4" fill="${tint(k)}" fill-opacity=".28"/>`+sT(640,y+4,String(TOKS[k].id),{a:'end',c:'ar-sv mono'})+sT(652,y+4,tokTxt(TOKS[k].t),{c:'ar-sv mono'});
         const nx=n<4?rows[ord[n+1]]:rows[k]+46; if(nx-y>44) s+=sT(630,(y+nx)/2+5,'⋮',{a:'middle',c:'ar-sv muted'});});
@@ -803,7 +807,7 @@ function popEmbN(st,bare){
     if(!bare) s+=`<g${NEW(true,500)}>`+sT(14,344,tx('“ is”, 5th or 50th:','“ is” 不管是第 5 还是第 50 个：'),{c:'ar-sv small muted'})+sStrip(14,354,5,12,VEC[4],tint(4))+sT(82,364,tx('the same row','同一行'),{c:'ar-sv small b'})+`</g>`;}
   if(st<=1){const cx0=206, cw0=140; s+=`<g${NEW(true,200)}><rect x="${cx0}" y="44" width="${cw0}" height="${st===0?232:244}" rx="8" class="ar-vcard"/>`+sT(cx0+10,64,tx('vocabulary:','词表：'),{c:'ar-sv small muted'})+sT(cx0+10,80,tx('128,256 tokens','128,256 个 token'),{c:'ar-sv small muted'});
     if(st===0){let vx=cx0+10, vy=104; VOCAB.slice(0,12).forEach(v=>{const k=TOKS.findIndex(tk=>tokTxt(tk.t)===v), w=v.length*6.6+14; if(vx+w>cx0+cw0-8){vx=cx0+10; vy+=28;}
-        s+=`<rect x="${vx}" y="${vy-11}" width="${w}" height="20" rx="10" ${k>=0?`fill="${tint(k)}"`:'class="ar-vpill"'}/>`+sT(vx+7,vy+3,v,{c:'ar-sv small mono',st:'font-size:10px'}); vx+=w+5;});}
+        s+=`<rect x="${vx}" y="${vy-11}" width="${w}" height="20" rx="10" ${k>=0?`fill="${tint(k)}"`:'class="ar-vpill"'}/>`+sT(vx+7,vy+3,v,{c:'ar-sv small mono'+(k>=0?' tk':''),st:'font-size:10px'}); vx+=w+5;});}
     else{[2,4,0,1,3].forEach((k,n)=>{const y=106+n*36; s+=`<rect x="${cx0+6}" y="${y-12}" width="${cw0-12}" height="22" rx="4" fill="${tint(k)}" fill-opacity=".28"/>`+sT(cx0+56,y+3,String(TOKS[k].id),{a:'end',c:'ar-sv mono',st:'font-size:11px'})+sT(cx0+64,y+3,tokTxt(TOKS[k].t),{c:'ar-sv mono',st:'font-size:11px'});});
       s+=sT(cx0+10,106+5*36-6,tx('in ID order','按 ID 排列'),{c:'ar-sv small muted'});}
     s+='</g>';}
@@ -879,7 +883,7 @@ function attnGrid(st){
     let inner;
     if(st===2) inner=`<rect x="${x+1}" y="${y+1}" width="${cs-2}" height="${cs-2}" rx="4" class="ar-sc" fill-opacity="${(0.08+0.14*Math.abs(S[i][j])).toFixed(2)}"/>`+sT(x+cs/2,y+cs/2+4,(S[i][j]<0?'−':'')+Math.abs(S[i][j]).toFixed(1),{a:'middle',c:'ar-sv mono'});
     else if(masked) inner=`<rect x="${x+1}" y="${y+1}" width="${cs-2}" height="${cs-2}" rx="4" fill="url(#ar-hatch)"/>`;
-    else inner=`<rect x="${x+1}" y="${y+1}" width="${cs-2}" height="${cs-2}" rx="4" class="ar-aw" fill-opacity="${(0.1+0.9*Wm[i][j]).toFixed(2)}"/>`+sT(x+cs/2,y+cs/2+4,Math.round(pc[i][j])+'%',{a:'middle',c:`ar-sv mono${Wm[i][j]>0.45?' inv':''}`});
+    else inner=`<rect x="${x+1}" y="${y+1}" width="${cs-2}" height="${cs-2}" rx="4" class="ar-aw" fill-opacity="${(0.1+0.9*Wm[i][j]).toFixed(2)}"/>`+sT(x+cs/2,y+cs/2+4,Math.round(pc[i][j])+'%',{a:'middle',c:`ar-sv mono aw${Wm[i][j]>0.6?' hi':''}`});
     s+=`<g class="${cls}" data-i="${i}" data-j="${j}" data-tipx="${esc(tip)}"${st===3?` style="animation-delay:${d}ms"`:''}>${inner}</g>`;}
   if(st>=3){for(let i=0;i<5;i++) s+=`<g${NEW(st===3,400+i*60)}>`+sT(gx+5*cs+12,gy+i*cs+cs/2+4,'= 100%',{c:'ar-sv small mono'})+`</g>`;
     s+=`<g${NEW(st===3,200)}>`+tg('mask',`<rect x="${gx+3*cs}" y="${gy-4+5*cs+14}" width="14" height="14" fill="url(#ar-hatch)"/>`+sT(gx+3*cs+20,gy+5*cs+21,tx('causal mask','因果 mask'),{c:'ar-sv small'}),tx('causal mask','因果 mask'))+
@@ -920,7 +924,7 @@ function attnGridN(st){
     let inner;
     if(st===2) inner=`<rect x="${x+1}" y="${y+1}" width="${cs-2}" height="${cs-2}" rx="4" class="ar-sc" fill-opacity="${(0.08+0.14*Math.abs(S[i][j])).toFixed(2)}"/>`+sT(x+cs/2,y+cs/2+4,(S[i][j]<0?'−':'')+Math.abs(S[i][j]).toFixed(1),{a:'middle',c:'ar-sv mono',st:'font-size:11px'});
     else if(masked) inner=`<rect x="${x+1}" y="${y+1}" width="${cs-2}" height="${cs-2}" rx="4" fill="url(#ar-hatch)"/>`;
-    else inner=`<rect x="${x+1}" y="${y+1}" width="${cs-2}" height="${cs-2}" rx="4" class="ar-aw" fill-opacity="${(0.1+0.9*Wm[i][j]).toFixed(2)}"/>`+sT(x+cs/2,y+cs/2+4,Math.round(pc[i][j])+'%',{a:'middle',c:`ar-sv mono${Wm[i][j]>0.45?' inv':''}`,st:'font-size:11px'});
+    else inner=`<rect x="${x+1}" y="${y+1}" width="${cs-2}" height="${cs-2}" rx="4" class="ar-aw" fill-opacity="${(0.1+0.9*Wm[i][j]).toFixed(2)}"/>`+sT(x+cs/2,y+cs/2+4,Math.round(pc[i][j])+'%',{a:'middle',c:`ar-sv mono aw${Wm[i][j]>0.6?' hi':''}`,st:'font-size:11px'});
     s+=`<g class="${cls}" data-i="${i}" data-j="${j}" data-tipx="${esc(tip)}">${inner}</g>`;}
   const ly=gy+5*cs+22;
   if(st>=3){s+=`<g${NEW(st===3,200)}>`+tg('softmax',sT(14,ly,tx('softmax per row: each = 100%','每行 softmax：各 = 100%'),{c:'ar-sv small'}),'softmax')+tg('mask',`<rect x="270" y="${ly-11}" width="13" height="13" fill="url(#ar-hatch)"/>`+sT(288,ly,tx('mask','mask'),{c:'ar-sv small'}),tx('causal mask','因果 mask'))+`</g>`;}

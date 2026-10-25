@@ -132,11 +132,14 @@ html[lang^="zh"] .px-rows-ch .px-row{grid-template-columns:92px minmax(0,1fr) 68
   .px-rows-apps .px-row{grid-template-columns:34px minmax(0,1fr) 50px 62px}
   .px-part{grid-template-columns:22px minmax(0,1fr) auto;gap:6px}
 }
+/* part 5 on a phone: the headline names the changed token once one is picked, a second line in Chinese; keep room for it, so a pick in
+   the chart does not move the chart (m2) */
+@media (max-width:760px){#px-st-sub.px-sub2{min-height:2.9em}}
 /* part 5 (Batch 3 review): what the cache holds after each request, and the requests arriving one at a time */
 .px-rows-apps .px-row{grid-template-columns:86px minmax(0,1fr) 52px 68px}
 .px-rc{display:inline-flex;gap:2px;justify-content:center}
 .px-rc i{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:3px;font-style:normal;font-family:var(--font-mono);font-size:var(--fs-mark);font-weight:700;line-height:1;color:var(--ink-3);border:1px solid var(--line)}
-.px-rc i.on{background:var(--c-kv);border-color:var(--c-kv);color:#fff}
+.px-rc i.on{background:var(--c-kv);border-color:var(--c-kv);color:var(--on-kv)}
 .px-rc i.ev{text-decoration:line-through;color:var(--ink-2);border-style:dashed;border-color:var(--ink-3)}
 .px-row.px-new{animation:px-in .6s ease-out}
 @keyframes px-in{from{background:color-mix(in srgb,var(--c-kv) 24%,transparent)}to{background:transparent}}

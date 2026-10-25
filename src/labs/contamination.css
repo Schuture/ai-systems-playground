@@ -14,6 +14,7 @@
 .ctm-ax{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-3)}
 .ctm-ax.s{font-size:var(--fs-mark)}
 .ctm-rl{font-size:var(--fs-label);fill:var(--ink-2)}
+.ctm-rl.n{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}   /* a phone: the row's name above its bar, over the grid */
 .ctm-vl{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink)}
 .ctm-tl{font-size:var(--fs-mark);fill:var(--ink-2)}
 .ctm-bar{stroke:var(--ink);stroke-width:3;stroke-linecap:round}

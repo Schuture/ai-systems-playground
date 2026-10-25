@@ -938,9 +938,10 @@ function drawRun(r,simple){
 }
 function drawReal(){
   const r=plan(S), rows=REAL.map(x=>({lab:MD[x.id].name,u:x.u,me:false})).concat([{lab:tx('This lab’s 70B plan','这个 Lab 的 70B 计划'),u:r.eff,me:true}]);
+  // the note's two formulas carry their full stops (tcap-fxs, nw), so a narrow line never begins with “.” or “。” (refit step 3)
   $('#tcap-real-cap',app).textContent=tx('What share of the H100’s peak did each run get over all its GPU hours?','每次训练在它的全部 GPU 小时里，做到了 H100 峰值的几成？');
   $('#tcap-real',app).innerHTML=`<ul class="tcap-rl">`+rows.map(x=>`<li class="${x.me?'me':''}"><span>${esc(x.lab)}</span><div class="tcap-rt"><i style="width:${(x.u/0.5*100).toFixed(2)}%"></i></div><b class="mono">${pct(x.u)}</b></li>`).join('')+`</ul>`+
-    `<p class="small muted">${tx(`Llama 3.1 rows: ${A.ui.math('\\frac{6 \\times \\text{parameters} \\times 15\\text{T tokens}}{\\text{the model card’s H100 hours} \\times 3,600 \\times 989.5\\ \\text{TFLOP/s}}')}. This lab’s row: ${A.ui.math('\\text{MFU} \\times \\text{share of time training}')}. The scale ends at 50%.`,`Llama 3.1 三行：${A.ui.math('\\frac{6 \\times \\text{参数量} \\times 15\\text{T 个 token}}{\\text{模型卡的 H100 小时} \\times 3,600 \\times 989.5\\ \\text{TFLOP/s}}')}。这个 Lab 一行：${A.ui.math('\\text{MFU} \\times \\text{往前训练的时间占比}')}。刻度到 50% 为止。`)}</p>`;
+    `<p class="small muted">${tx(`Llama 3.1 rows: <span class="tcap-fxs">${A.ui.math('\\frac{6 \\times \\text{parameters} \\times 15\\text{T tokens}}{\\text{the model card’s H100 hours} \\times 3,600 \\times 989.5\\ \\text{TFLOP/s}}')}.</span> This lab’s row: <span class="nw">${A.ui.math('\\text{MFU} \\times \\text{share of time training}')}.</span> The scale ends at 50%.`,`Llama 3.1 三行：<span class="tcap-fxs">${A.ui.math('\\frac{6 \\times \\text{参数量} \\times 15\\text{T 个 token}}{\\text{模型卡的 H100 小时} \\times 3,600 \\times 989.5\\ \\text{TFLOP/s}}')}。</span>这个 Lab 一行：<span class="nw">${A.ui.math('\\text{MFU} \\times \\text{往前训练的时间占比}')}。</span>刻度到 50% 为止。`)}</p>`;
 }
 function statusOf(){
   if(predHidden()) return {cls:'neutral',txt:tx('Predict first','先预测'),tip:tx('The days stay hidden until you answer the question in part 1.','在第 1 部分作答之前，天数先隐藏。')};

@@ -1500,6 +1500,11 @@ function kindTip(k,o){const n=o.R.filter(r=>r.kind===k).length;
   const p=o.R.find(r=>r.kind===k).pre;
   if(DOCAPPS.includes(k)) return tx(`${n} question${n>1?'s':''} about ${L(KIND[k])}; ${n>1?'each question starts':'it starts'} with the document’s ${fint(p)} tokens, and ${n>1?'they share':'it has'} the goal of every short chat. The same colour in every view.`,`${n} 个问${L(KIND[k])}的问题；每个问题都以这份文档的 ${fint(p)} 个 token 开头，目标和所有短对话一样。每个视图里都是这个颜色。`);
   return tx(`${n} short chat${n>1?'s':''} of the ${L(APPN[k])} app, ${n>1?'each ':''}starting with its ${fint(p)}-token system prompt; the goal of every short chat. The same colour in every view.`,`${L(APPN[k])}应用的 ${n} 个短对话，${n>1?'每个都':'它'}以 ${fint(p)} 个 token 的 system prompt 开头；目标和所有短对话一样。每个视图里都是这个颜色。`);}
+/* a block label's width, measured in its own font (600, 11 px, the mono stack): 6.4 px a character cut “客服 208” at 360 px (a Chinese
+   character is 11 px) and “167” at 1440, and hid names that fit (a space or a comma is 3 px) */
+let labCx=null; const labWM=new Map();
+const labW=s=>{if(labWM.has(s)) return labWM.get(s); if(!labCx){labCx=document.createElement('canvas').getContext('2d'); labCx.font=`600 11px ${getComputedStyle(document.documentElement).getPropertyValue('--font-mono')}`;}
+  const w=labCx.measureText(s).width; if(document.fonts&&document.fonts.status==='loaded') labWM.set(s,w); return w;};
 /* the live strip: queue → GPU step → tokens out, at the playhead (the whole run: its end) */
 function drawStrip(o){
   const tt=play.t==null?o.end+1:play.t, ev=endView(o), s=ev>=0?ev:stepAt(o,tt), k=doneAt(o,tt), phone=innerWidth<=760, narrow=innerWidth<1100, R=o.R;
@@ -1530,8 +1535,8 @@ function drawStrip(o){
     let x=0; const parts=[];
     info.dec.forEach(id=>{const r=R[id]; parts.push(`<i class="sc-sl${sel===id?' sel':''}${relOf().has(id)?' rel':''}" data-sel="${id}" style="left:${x.toFixed(1)}px;width:${Math.max(1,dw-1).toFixed(1)}px;--k:var(--sc-${r.kind})"></i>`); x+=dw;});
     const rest=Math.max(0,W-x), pw=pre.map(p=>Math.max(16,rest*p.n/Math.max(1,preT))), sc=pw.reduce((a,b)=>a+b,0)>rest&&rest>0?rest/pw.reduce((a,b)=>a+b,0):1;
-    pre.forEach((p,i)=>{const r=R[p.id], w=pw[i]*sc, name=r.kind==='doc'?tx('doc','文档'):(r.kind==='chat'?tx('chat','对话'):L(APPN[r.kind])), lab=`${name} ${fint(p.n)}`;
-      parts.push(`<i class="sc-pb${sel===p.id?' sel':''}${relOf().has(p.id)?' rel':''}" data-sel="${p.id}" style="left:${x.toFixed(1)}px;width:${Math.max(2,w-1).toFixed(1)}px;--k:var(--sc-${r.kind})" data-tipx="${esc(tx(`${rName(r)}: prompt tokens ${fint(p.a+1)} to ${fint(p.b)}${p.whole?', its whole prompt in this one step':''}.`,`${rName(r)}：prompt 的第 ${fint(p.a+1)} 到 ${fint(p.b)} 个 token${p.whole?'，整个 prompt 都在这一步里':''}。`))}"><em>${w>lab.length*6.4+8?esc(lab):(w>fint(p.n).length*6.4+6?fint(p.n):'')}</em></i>`); x+=w;});
+    pre.forEach((p,i)=>{const r=R[p.id], w=pw[i]*sc, name=r.kind==='doc'?tx('doc','文档'):(r.kind==='chat'?tx('chat','对话'):L(APPN[r.kind])), lab=`${name} ${fint(p.n)}`, fits=s=>w-1>=labW(s)+(phone?3:6)+1;   // the block is w − 1 wide; its label sits 3 px in on a phone, 6 on a desktop
+      parts.push(`<i class="sc-pb${sel===p.id?' sel':''}${relOf().has(p.id)?' rel':''}" data-sel="${p.id}" style="left:${x.toFixed(1)}px;width:${Math.max(2,w-1).toFixed(1)}px;--k:var(--sc-${r.kind})" data-tipx="${esc(tx(`${rName(r)}: prompt tokens ${fint(p.a+1)} to ${fint(p.b)}${p.whole?', its whole prompt in this one step':''}.`,`${rName(r)}：prompt 的第 ${fint(p.a+1)} 到 ${fint(p.b)} 个 token${p.whole?'，整个 prompt 都在这一步里':''}。`))}"><em>${fits(lab)?esc(lab):(fits(fint(p.n))?fint(p.n):'')}</em></i>`); x+=w;});
     const frac=ev>=0?1:Math.max(0,Math.min(1,(tt-st.t0)/dt));
     const bh=(hide?`<i class="sc-pb sc-anon" style="left:0;width:${Math.max(2,W-1).toFixed(1)}px"></i>`:parts.join(''))+`<i class="sc-sweep" style="width:${(frac*100).toFixed(2)}%"></i>`;
     bar.innerHTML=bh; bar._h=bh;

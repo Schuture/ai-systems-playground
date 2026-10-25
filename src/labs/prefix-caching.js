@@ -980,7 +980,7 @@ function drawHead(){
     if(mode==='sandbox'&&p) s=L(p.t)+tx(`: ${L(p.d)}`,`：${L(p.d)}`);
     else if(S.kind==='chat') s=tx(`${reqN(S.n)} as chat turns: a ${fint(S.P)}-token system prompt, ${fint(S.O)}-token messages`,`${reqN(S.n)}，多轮对话：${fint(S.P)} 个 token 的 system prompt，每条消息 ${fint(S.O)} 个 token`);
     else s=tx(`${reqN(S.n)} with the same ${fint(S.P)}-token prefix, ${fint(S.O)} tokens of their own each`,`${reqN(S.n)}，前缀都是同样的 ${fint(S.P)} 个 token，各有自己的 ${fint(S.O)} 个 token`);}
-  sub.textContent=s;
+  sub.textContent=s; sub.classList.toggle('px-sub2',gid==='onetoken');
   const so=statusOf(); st.className='status '+so.cls; st.textContent=so.txt; st.dataset.tipx=so.tip;
 }
 function legendHTML(){

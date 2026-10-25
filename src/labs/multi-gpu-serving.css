@@ -6,7 +6,7 @@
 .mgs-gpus{width:100%;min-width:0}
 .mgs-svg{display:block;max-width:100%;height:auto}
 .mgs-svg text{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-2)}
-.mgs-svg .mgs-gn{font-size:var(--fs-mark);fill:var(--ink)}
+.mgs-svg .mgs-gn{font-size:var(--fs-mark);fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}   /* a halo: the number sits on the weights or the KV cache */
 .mgs-svg .mgs-bt{font-size:var(--fs-mark);fill:var(--ink-2)}
 .mgs-svg .mgs-bt.off{opacity:0}
 .mgs-svg .mgs-hop{font-size:var(--fs-mark);fill:var(--ink);font-weight:600;opacity:0}

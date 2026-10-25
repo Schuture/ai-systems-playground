@@ -123,6 +123,10 @@
   .op-metrics[data-n="3"]{grid-template-columns:repeat(2,minmax(0,1fr))}
   .op-metrics[data-n="3"] .metric:last-child{grid-column:1 / -1}
   .op-wrow{grid-template-columns:minmax(0,84px) minmax(0,1fr) 56px}
+  /* refit step 3: the loss curve drawn for the phone's width, one unit to a pixel (drawLoss, --op-lh), its labels at 11 px, not 600
+     units scaled to 296 px with 7.9 px labels */
+  .op-loss{--op-lh:130}
+  .op-loss .op-ax{font-size:var(--fs-mark)}
 }
 @media (prefers-reduced-motion:reduce){.op-b{transition:none}}
 /* H1 (2026-10-09): a typeset formula on its own line (the interview drill) */
@@ -165,8 +169,8 @@
 }}
 /* a formula's paragraph in “Show the math” scrolls sideways when it must; its typeset symbols reach a few px below the last line, which
    made each paragraph scroll 2–6 px up and down as well (the stage's inner scroll in part 7); the 6 px between paragraphs are now inside
-   each paragraph, so they read as before */
-@media (min-width:761px){.op-app .mathbody p{margin:0;padding-bottom:6px}.op-app .mathbody p:first-child{margin-top:6px}}
+   each paragraph, so they read as before (refit step 3: on phones too, where the SGD, Momentum and Adam lines still scrolled 6 px) */
+.op-app .mathbody p{margin:0;padding-bottom:6px}.op-app .mathbody p:first-child{margin-top:6px}
 /* text that changes while a run plays: even-width digits, so the words after a number keep their place (2026-10-22 refit: Figtree's own digits differ in width) */
 #op-bars-cap,#op-metrics .k{font-variant-numeric:tabular-nums}
 

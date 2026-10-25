@@ -960,7 +960,7 @@ const obsSameShort=()=>{const fr=accFreq(accMode), R=accRule(); return accMode==
 const prM=t=>A.ui.math(t);
 const prLK=(id,en,zh)=>{const a=labRef(id,en,zh); return tx(a,`“${a}”`);};
 const prP=(...ps)=>({html:()=>ps.map(p=>{const h=p(); return h.startsWith('<div')?h:`<p>${h}</p>`;}).join('')});
-const prFx=f=>()=>`<div class="spd-prfx">${f().map(l=>`<span>${prM(l)}</span>`).join('')}</div>`;   // a formula on its own line, in pieces that wrap before “=” or “+” (made at render time, in the language shown)
+const prFx=f=>()=>`<div class="spd-prfx">${f().map(l=>`<span>${[].concat(l).map(prM).join('<wbr>')}</span>`).join('')}</div>`;   // a formula on its own line, in pieces that wrap before “=” or “+” (made at render time, in the language shown); a piece given as a list wraps inside itself only where the column is narrower than it (refit step 3: at 360 px the line “= min(…) + max(…)” was 28 px too wide and the page scrolled sideways)
 const prPic=(html,cap)=>({fig:[{html,cap}],cls:'spd-prf'});   // a still picture: an HTML grid that sizes to the figure, so nothing is redrawn
 // section 2: one forward pass over x₁…x₅. Row i is position i: it sees x₁…xᵢ (solid cells; the dashed ones come after it) and gives p(· | x₁, …, xᵢ)
 const PR_SEEN=['x_1','x_1, x_2','x_1, x_2, x_3','x_1, \\ldots, x_4','x_1, \\ldots, x_5'];
@@ -1003,7 +1003,7 @@ if(A.registerPrimer) A.registerPrimer(ID,{min:7,sections:[
           '贪心解码时，收下的猜测都等于目标模型在那里会写的 token，换上的本来就是它自己的，所以输出和目标模型单独写时一字不差。'),
    ()=>tx(`With sampling, the target’s output at each position is random, so the requirement becomes that the output follow the target’s distribution ${prM('p')}. The draft model draws a guess from its distribution ${prM('q')}. If the guess is ${prM('x')}, it is kept with probability ${prM('\\min(1, p(x)/q(x))')}; if it is rejected, a new token is drawn in proportion to ${prM('\\max(0, p - q)')}. So the output can be ${prM('x')} in two ways: the guess is ${prM('x')} and is kept, or the guess is rejected and the redraw gives ${prM('x')}. Adding the two:`,
           `按概率采样时，目标模型每个位置的输出本身是随机的，要求就变成输出服从目标模型的分布 ${prM('p')}。draft 模型按它的分布 ${prM('q')} 抽出一个猜测；猜到 ${prM('x')} 时，以概率 ${prM('\\min(1, p(x)/q(x))')} 收下；被拒绝时，按 ${prM('\\max(0, p - q)')} 的比例重抽一个。输出 ${prM('x')} 有两条路：猜到 ${prM('x')} 并收下，或猜测被拒后重抽到 ${prM('x')}。两条路的概率相加：`),
-   prFx(()=>[`P(\\text{${tx('output','输出')}}\\ x)`,'= q(x) \\min(1, p(x)/q(x))','+ r \\cdot \\frac{\\max(0, p(x) - q(x))}{r}','= \\min(p(x), q(x)) + \\max(0, p(x) - q(x))','= p(x)']),
+   prFx(()=>[`P(\\text{${tx('output','输出')}}\\ x)`,'= q(x) \\min(1, p(x)/q(x))','+ r \\cdot \\frac{\\max(0, p(x) - q(x))}{r}',['= \\min(p(x), q(x))','{} + \\max(0, p(x) - q(x))'],'= p(x)']),
    ()=>tx(`Here ${prM('r = 1 - \\sum_y \\min(p(y), q(y))')} is the chance that a guess is rejected, and it is also the normalizer of the redraw, ${prM('\\sum_y \\max(0, p(y) - q(y))')}, so it cancels.`,
           `其中 ${prM('r = 1 - \\sum_y \\min(p(y), q(y))')} 是一次猜测被拒绝的概率，它正好也是重抽时的归一化常数 ${prM('\\sum_y \\max(0, p(y) - q(y))')}，所以消掉了。`),
    ()=>tx('At every position the output follows exactly the target’s distribution: every token kept has the same probabilities as when the target model writes alone. A poor guesser only gets rejected more often; the distribution of the output stays the same.',

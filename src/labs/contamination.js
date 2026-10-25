@@ -493,7 +493,9 @@ function ctx(){
   return {panels:['score','grid','gate','pair'],metrics:'det',allOnly:false};}
 
 /* ---------- drawing ---------- */
-const SX0=150, SX1=448, SLO=-10, SHI=20, sx=v=>SX0+(v-SLO)/(SHI-SLO)*(SX1-SX0);
+/* the score chart is 460 wide, scaled to its box; on a phone (a box narrower than 440 px) it is drawn for the box's width, one unit to
+   a pixel, each row's name above its bar, so its labels keep their size (refit step 3: 7.7 px at 390) */
+let CW=460, SX0=150, SX1=448, SNAR=false; const SLO=-10, SHI=20, sx=v=>SX0+(v-SLO)/(SHI-SLO)*(SX1-SX0);
 function vlab(t,xd,y,tl){const w=t.length*7.4;let a='middle',x=Math.min(SX1-w/2,Math.max(SX0+w/2,xd));
   if(tl!=null&&x-w/2-3<tl&&x+w/2+3>tl){if(xd>=tl){a='start';x=tl+4;}else{a='end';x=tl-4;}}
   return `<text class="ctm-vl" x="${x}" y="${y-10}" text-anchor="${a}">${esc(t)}</text>`;}
@@ -502,12 +504,13 @@ function drawScore(){
   const rows=[{lab:tx('All 1,000 questions','全部 1,000 道题'),g:a}];
   if(!c.allOnly) rows.push({lab:tx(`Clean set: ${I(d.kept)} questions`,`干净子集：${I(d.kept)} 道题`),g:cl});
   $('#ctm-s-title',app).textContent=c.allOnly?tx('How much better is the new model (B) than the model in production (A)? B − A on the math benchmark, in points','新模型（B）比线上模型（A）高了多少？数学 benchmark 上的 B − A（分）'):tx(`The new model’s gain B − A, on all questions and on the clean set (${n2(S.n)}, ${thShort(S.t)})`,`新模型的提高 B − A：全部题，和干净子集（n = ${S.n}，${thShort(S.t)}）`);
-  const yb=26+rows.length*42, H=yb+34; svg.setAttribute('viewBox',`0 0 460 ${H}`);
+  const bw=Math.round(svg.getBoundingClientRect().width); SNAR=innerWidth<=760&&bw>=240&&bw<440; CW=SNAR?bw:460; SX0=SNAR?14:150; SX1=SNAR?CW-14:448;
+  const y0=SNAR?54:42, pitch=SNAR?56:42, yb=y0+(rows.length-1)*pitch+26, H=yb+34; svg.setAttribute('viewBox',`0 0 ${CW} ${H}`);
   let h=''; for(let v=SLO;v<=SHI;v+=5){const x=sx(v); h+=`<line class="ctm-gl${v===0?' z':''}" x1="${x}" y1="14" x2="${x}" y2="${yb}"/><text class="ctm-ax" x="${x}" y="${yb+14}" text-anchor="middle">${v>0?'+':(v<0?'−':'')}${Math.abs(v)}</text>`;}
   h+=`<text class="ctm-ax" x="${SX1}" y="${yb+28}" text-anchor="end">${tx('points','分')}</text>`;
   if(!c.allOnly){const x=sx(CANDS.G.gain*100); h+=`<line class="ctm-true" x1="${x}" y1="10" x2="${x}" y2="${yb}"/><text class="ctm-tl" x="${x+4}" y="12">${tx('real gain','真实提高')} +${f(CANDS.G.gain*100,1)}</text>`;}
-  rows.forEach((r,i)=>{const y=42+i*42, lo=r.g.d*100-r.g.hw*100, hi=r.g.d*100+r.g.hw*100;
-    h+=`<text class="ctm-rl" x="4" y="${y+4}">${esc(r.lab)}</text>`+
+  rows.forEach((r,i)=>{const y=y0+i*pitch, lo=r.g.d*100-r.g.hw*100, hi=r.g.d*100+r.g.hw*100;
+    h+=(SNAR?`<text class="ctm-rl n" x="4" y="${y-26}">${esc(r.lab)}</text>`:`<text class="ctm-rl" x="4" y="${y+4}">${esc(r.lab)}</text>`)+
        `<line class="ctm-bar" x1="${sx(clamp(lo))}" y1="${y}" x2="${sx(clamp(hi))}" y2="${y}"/>`+
        (lo>=SLO?`<line class="ctm-cap" x1="${sx(lo)}" y1="${y-6}" x2="${sx(lo)}" y2="${y+6}"/>`:'')+(hi<=SHI?`<line class="ctm-cap" x1="${sx(hi)}" y1="${y-6}" x2="${sx(hi)}" y2="${y+6}"/>`:'')+
        `<circle class="ctm-dot" cx="${sx(clamp(r.g.d*100))}" cy="${y}" r="4"/>${vlab(pmTxt(r.g.d,r.g.hw),sx(clamp(r.g.d*100)),y,c.allOnly?null:sx(CANDS.G.gain*100))}`;});

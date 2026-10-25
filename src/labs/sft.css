@@ -71,7 +71,11 @@
 .sft-brows{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;align-items:center}
 .sft-brow-t{font-size:var(--fs-mark);color:var(--ink-2);white-space:nowrap}
 .sft-bcells{display:flex;gap:2px;min-width:0}
-.sft-bc{display:block;flex:0 0 auto;width:10px;height:13px;border:1px solid var(--ink-3);border-radius:2px;background:var(--surface)}
+.sft-bc{display:block;flex:0 1 auto;min-width:0;width:10px;height:13px;border:1px solid var(--ink-3);border-radius:2px;background:var(--surface)}
+/* refit step 3: a row of the batch is 21 cells, 250 px; on a phone the column beside the English row names is 196–226 px (360–390 px
+   windows), so the rows ran past the stage and, at 360 px, the page scrolled sideways. A cell may narrow to fit (the gaps narrow first, on
+   phones); where there is room it stays 10 px */
+@media (max-width:760px){.sft-bcells{gap:1px}}
 .sft-bc-p,.sft-batch .sft-sw-p{background:repeating-linear-gradient(135deg,var(--surface) 0 2px,var(--line) 2px 3.5px)}
 .sft-bc-e,.sft-sw-e{border:2px solid var(--ink)!important}
 .sft-bc-x,.sft-sw-x2{border:1px dashed var(--ink-3)!important;background:var(--surface-2)}
