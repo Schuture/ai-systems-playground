@@ -2632,9 +2632,12 @@ window.ASP={
       return {kind:x.kind,branch:b?x.w:null,pid:b?null:x.pid,to:b?null:(x.to||null),prev:x.l?x.l.id:null,n:x.n||null,of:x.of||null,cont:!!x.cont,skip:(x.skip||[]).map(l=>l.id)};}},
   kv:{compute,MODELS,GPUS,PREC,PL,DEFAULT,perGpuBar,aggBar,drawBar,drawAxis},
   start(){
+    /* canvases take their colours when they draw, so a theme change redraws the current view, as a resize does */
+    const repaint=()=>{if(view==='lab') render(); else if(view==='dyn'){if(dyn&&dyn.onResize) dyn.onResize();} else heroRefresh();};
     $('#themeBtn').addEventListener('click',()=>{const root=document.documentElement;
       const cur=root.getAttribute('data-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
-      root.setAttribute('data-theme',cur==='dark'?'light':'dark');});
+      root.setAttribute('data-theme',cur==='dark'?'light':'dark'); repaint();});
+    if(window.matchMedia){const mq=matchMedia('(prefers-color-scheme: dark)'); if(mq.addEventListener) mq.addEventListener('change',repaint);}
     $$('.langsw button').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
     $('#hmCtx').addEventListener('input',heroUpdate);
     applyStatic();

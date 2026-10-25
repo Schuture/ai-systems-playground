@@ -118,9 +118,13 @@
 .ar-sv.w{fill:var(--c-weights);font-weight:700}
 .ar-sv.muted,.ar-sv tspan.muted{fill:var(--ink-3)}
 .ar-sv.mono{font-family:var(--font-mono);font-size:var(--fs-label)}
-.ar-sv.inv{fill:#fff}
+/* a weight on its teal cell: dark ink on the light theme's tints; on the dark theme's, white until the cell is bright (hi) */
+.ar-sv.aw{fill:#10151c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ar-sv.aw{fill:#fff}:root:not([data-theme="light"]) .ar-sv.aw.hi{fill:#10151c}}
+:root[data-theme="dark"] .ar-sv.aw{fill:#fff}:root[data-theme="dark"] .ar-sv.aw.hi{fill:#10151c}
 .ar-sv.huge.mono{font-size:34px;font-weight:700;fill:var(--ink)}
 .ar-sv.tokt{font-size:var(--fs-ui);fill:#10151c;font-weight:600}
+.ar-sv.tk{fill:#10151c}   /* a vocabulary word on its token tint: dark ink, as on the token pills, in both themes */
 .ar-sv.tokl{font-family:var(--font-mono);font-size:var(--fs-label);fill:var(--ink)}
 .ar-sl{stroke:var(--ink-3);stroke-width:1.3;fill:none}
 .ar-sl.id{stroke-dasharray:3 3}

@@ -257,11 +257,21 @@
   .sc-pb em{font-size:var(--fs-mark);padding-left:3px}
   .sc-gdur .sc-dnote,.sc-gdur .sc-gauge{display:none}
   .sc-warn{font-size:var(--fs-mark)}
-  .sc-qw{font-size:var(--fs-mark);padding:0 3px 0 2px}
+  /* refit step 3 (2026-10-25): at 375 and 360 px “whole batch”, “memory full” and “等这步结束” ran 5–11 px past the queue box (“whole
+     batch” 3 px at 390). On a phone a reason pill shows its words without the 10 px icon, so each fits on one line down to 360 px;
+     narrower, it takes two balanced lines (“whole / batch”) at 11 px. One line keeps its 19 px */
+  .sc-qw{font-size:var(--fs-mark);padding:1.5px 3px 1.5px 2px;line-height:14px;white-space:normal;text-wrap:balance;border-radius:9px}
+  .sc-qw svg{display:none}
   .sc-chip{width:10px;height:10px}
   .sc-dot{width:8px;height:8px}
   .sc-onote{font-size:var(--fs-mark);height:28px;line-height:14px}
-  .sc-chips{height:28px}
+  /* the chips under a pill were cut in half (a 19 px pill, then 10 px chips from 22 px down, in 28 px), and a second reason with its
+     chips did not show at all. The queue box has room below them (the tokens-out box sets the strip's height): 64 px hold two reasons
+     with their chips, 2 px between rows, and the strip keeps its height */
+  .sc-chips{height:64px;row-gap:2px}
+  .sc-qg{row-gap:2px}
+  .sc-q{padding-bottom:4px}
+  .sc-more{line-height:10px}   /* “+2” on a row of its own after two reasons is as tall as a row of chips, so it fits the 64 px */
   .sc-dots{height:24px}
   .sc-pills{flex-wrap:nowrap;overflow:hidden;max-width:100%}
   .sc-m2l span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -369,6 +379,9 @@
 .sc-gr1,.sc-gr2{display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;overflow:hidden}
 .sc-gr2 .sc-warn,.sc-gr2 .sc-dnote{overflow:hidden;text-overflow:ellipsis;min-width:0}
 @media (max-width:760px){.sc-gdur{grid-template-rows:15px 15px;row-gap:1px}}
+/* refit step 3: at 375 and 360 px “GPU：空闲，请求全部完成” (132 px) is wider than the GPU box; once the GPU is idle the header may take
+   two balanced lines, and the duration rows, empty while it is idle, give it their room, so the strip keeps its height */
+@media (max-width:760px){.sc-gpu:has(.sc-idle) .sc-bh{white-space:normal;text-wrap:balance}.sc-gpu:has(.sc-idle) .sc-gdur{grid-template-rows:0 0;row-gap:0}}
 /* part 7: the scheduler's code, synced with the playhead. One row per line, a fixed height, no wrapping: nothing moves while it plays (R7.9) */
 .sc-wc{border:1px solid transparent;border-radius:8px;background:var(--surface-2);padding:7px 10px 6px;min-width:0}   /* a soft panel, no frame inside the stage (精装修 step 2) */
 .sc-wc[hidden]{display:none}

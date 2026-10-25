@@ -36,7 +36,7 @@
 .tls-node.done rect{fill:var(--ink-3);stroke:var(--ink-3)}
 .tls-node.done .tls-nt,.tls-node.done .tls-ns{fill:var(--surface)}
 .tls-node.bad rect{fill:var(--c-oom);stroke:var(--c-oom)}
-.tls-node.bad .tls-nt,.tls-node.bad .tls-ns{fill:#fff}
+.tls-node.bad .tls-nt,.tls-node.bad .tls-ns{fill:var(--bg)}   /* the page colour: white on the light theme's red, near black on the dark theme's lighter red */
 .tls-node.sel rect{stroke:var(--ink);stroke-width:2.6}
 .tls-node.up rect{stroke:var(--ink);stroke-width:1.8;fill:var(--sunken)}
 .tls-edge{fill:none;stroke:var(--ink-3);stroke-width:1.3}

@@ -86,6 +86,9 @@
 .emb-cell.dg{stroke:var(--ink);stroke-width:2}
 .emb-cv{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink)}
 .emb-cv.inv{fill:var(--surface)}
+/* light cells on a dark page: the number turns dark a little earlier (dk), where the two colours read equally well */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .emb-cv.dk{fill:var(--surface)}}
+:root[data-theme="dark"] .emb-cv.dk{fill:var(--surface)}
 .emb-pbt{fill:var(--sunken);stroke:var(--line-2);stroke-width:.6}
 .emb-pb{fill:var(--ink-2)}
 .emb-ax{font-family:var(--font-mono);font-size:var(--fs-mark);fill:var(--ink-3)}

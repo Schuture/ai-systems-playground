@@ -804,6 +804,8 @@ function drawLoss(){
   if(S.view==='spike'&&sA>=E.STEPS) lab.push({y:Y(se.run[E.STEPS]),t:tx('with bad data','有坏数据'),c:'ckp-lrun'});
   if(showB&&sB>=E.STEPS) lab.push({y:Y(se.res[E.STEPS]),t:tx('resumed','接着训'),c:'ckp-lres'});
   lab.sort((a,b)=>a.y-b.y); for(let i=1;i<lab.length;i++) if(lab[i].y-lab[i-1].y<12) lab[i].y=lab[i-1].y+12;
+  /* never down into the step numbers under the axis (a phone's shorter chart): lift the stack from the bottom */
+  for(let i=lab.length-1;i>=0;i--){const lim=i===lab.length-1?bot-3:lab[i+1].y-12; if(lab[i].y>lim) lab[i].y=lim;}
   lab.forEach(l=>{g+=`<text x="${rx+5}" y="${(l.y+3.5).toFixed(1)}" class="ckp-ax ${l.c}">${esc(l.t)}</text>`;});
   g+=`<text x="${lx-30}" y="${top-3}" class="ckp-ax">${esc(tx('validation loss (log scale)','验证集 loss（对数坐标）'))}</text>`;
   if(DS) g+=dataStrip(X,lx,bot,Math.min(sA,E.CK),showB?sB:E.CK);

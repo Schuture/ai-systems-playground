@@ -696,12 +696,16 @@ function stageRun(){
   return {r,cmp,upTo:isP('healthy')?stepsShown:STEPS,C:3};
 }
 /* the plot sits below a band of two text lines (PT) that holds the blow-up notes, so no curve crosses them (R7.8) */
-const W=400, Hc=232, PL=34, PR=8, PT=32, PB=30;
+/* the loss chart is 400 × 232, scaled to its pane; on a phone it is drawn for the pane's width, one unit to a pixel and as high, so its
+   labels keep their 11 px (refit step 3: they were 8.1 px) and the line names keep their room under the lines */
+let W=400; const Hc=232, PL=34, PR=8, PT=32, PB=30;
+const fitCurve=()=>{const cw=Math.round(($('#td-curve',app)||{}).clientWidth||0); W=innerWidth<=760&&cw>=240&&cw<400?cw:400;};
 /* rough width of a line of 11 px monospace text in the chart (CJK characters take a full em) */
 const tw11=t=>[...t].reduce((a,c)=>a+(/[\u2e80-\u9fff\uff00-\uffef]/.test(c)?11:6.7),0);
 /* x of a note that starts near x0 and stays inside the plot */
 const noteX=(x0,t,end)=>{const w=tw11(t), x=end?x0-w:x0; return Math.max(PL+2,Math.min(x,W-PR-2-w));};
 function curveSVG(){
+  fitCurve();
   const {r,cmp,upTo,C}=stageRun(), l=lnC(C), yMax=C===3?1.6:2.0, cap=yMax*1.08, X=t=>PL+(W-PL-PR)*t/STEPS, Y=v=>PT+(Hc-PT-PB)*(1-Math.min(v,cap)/yMax);
   const showLn=mode!=='challenge'||chOpen.includes('c1'), lnT=`ln ${C} = ${fixd(l,3)}`;
   const line=(a,n)=>{let d='', on=false; for(let t=0;t<=Math.min(n,a.length-1);t++){const v=a[t]; if(!isFinite(v)){on=false; continue;} d+=(on?'L':'M')+X(t).toFixed(1)+' '+Y(v).toFixed(1); on=true;} return d;};
@@ -1077,6 +1081,7 @@ A.registerLab({
     render();
   },
   leave(){clearTimeout(annT); root=null; app=null;},
+  onResize(){if(app) render();},
   onLang(){if(root){const d=$('#td-math',app), open=d&&d.open; this.mount(root,null); if(open) $('#td-math',app).open=true;}},
   termTip(k,el){if(k==='dfx'){const f=el&&DFXT[el.getAttribute('data-term')]; return f?f():'';} return TERM[k]?`${TERM[k]()}<div class="act">${esc(jumpAct(k))}</div>`:'';},
   jump, jumpAct,

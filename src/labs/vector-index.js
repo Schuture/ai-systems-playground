@@ -891,7 +891,8 @@ const chartCurves=c=>c.curves.reduce((a,k)=>a.concat(k==='hnsw'&&S.M!==16?['hnsw
 const CURN=k=>k==='ivf'?tx('IVF (nprobe 1 to 32)','IVF（nprobe 1 到 32）'):k==='hnsw'?tx(`HNSW, M = ${S.M} (ef 10 to 256)`,`HNSW，M = ${S.M}（ef 10 到 256）`):k==='hnsw16'?tx('HNSW, M = 16 (ef 10 to 256)','HNSW，M = 16（ef 10 到 256）'):tx(`IVF-PQ, ${S.m} bytes (nprobe 1 to 32)`,`IVF-PQ，${S.m} 字节（nprobe 1 到 32）`);
 function drawChart(){
   const c=ctx(), svg=$('#vix-chart',app), cv=chartCurves(c); let h='';
-  for(const r of [0,0.25,0.5,0.75,1]) h+=`<line class="vix-gl" x1="${CX0}" y1="${cym(r).toFixed(1)}" x2="${CX1}" y2="${cym(r).toFixed(1)}"></line><text class="vix-ax" x="${CX0-6}" y="${(cym(r)+4).toFixed(1)}" text-anchor="end">${f(r*100,0)}%</text>`;
+  /* the percentages end 4 px from the plot, so the “@” of the upright “recall@10” beside “50%” does not touch the 5 (refit step 3: at 6 px it did) */
+  for(const r of [0,0.25,0.5,0.75,1]) h+=`<line class="vix-gl" x1="${CX0}" y1="${cym(r).toFixed(1)}" x2="${CX1}" y2="${cym(r).toFixed(1)}"></line><text class="vix-ax" x="${CX0-4}" y="${(cym(r)+4).toFixed(1)}" text-anchor="end">${f(r*100,0)}%</text>`;
   /* the axis text at 12 (review polish check r1, N9): a grid line at each step of the log scale, a number at 100, 1,000 and 5,000 */
   for(const v of [50,100,200,500,1000,2000,5000]) h+=`<line class="vix-gl" x1="${cxm(v).toFixed(1)}" y1="${CY0}" x2="${cxm(v).toFixed(1)}" y2="${CY1}"></line>`+([100,1000,5000].includes(v)?`<text class="vix-ax" x="${cxm(v).toFixed(1)}" y="${CY1+15}" text-anchor="middle">${int(v)}</text>`:'');
   h+=`<text class="vix-ax" x="${(CX0+CX1)/2}" y="${CY1+34}" text-anchor="middle">${tx('vectors compared per question (log scale)','每个问题比较的向量数（对数刻度）')}</text>`;

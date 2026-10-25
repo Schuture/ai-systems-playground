@@ -300,6 +300,11 @@ a.lrow:hover .lq{text-decoration:underline}
 .wname{font-family:var(--font-ui);font-weight:680;font-size:15px;fill:var(--ink)}
 .wsub{font-family:var(--font-mono);font-size:11px;fill:var(--ink-3)}
 .halo{paint-order:stroke;stroke:var(--surface);stroke-width:5px;stroke-linejoin:round}
+/* a word that depends on the theme, for a picture drawn dark on light in one theme and light on dark in the other: .th-lt shows in the
+   light theme, .th-dk in the dark one */
+.th-dk{display:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .th-lt{display:none}:root:not([data-theme="light"]) .th-dk{display:inline}}
+:root[data-theme="dark"] .th-lt{display:none}:root[data-theme="dark"] .th-dk{display:inline}
 .bead{cursor:pointer}
 .bead:focus{outline:none}
 .bead .b{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}
